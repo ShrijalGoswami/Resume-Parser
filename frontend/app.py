@@ -486,7 +486,9 @@ if analyse_btn and uploaded_file:
                 if not ok3:
                     st.write(f"❌  {r3}"); sb.update(label="Failed", state="error"); errs.append(str(r3))
                 else:
+                    # pyrefly: ignore [bad-index, missing-attribute]
                     if r3.get("resume_data"): st.session_state.extraction = r3["resume_data"]
+                    # pyrefly: ignore [bad-index]
                     st.session_state.analysis = r3["analysis"]
                     st.write("✅  Complete"); sb.update(label="✅ Pipeline complete!", state="complete")
     st.session_state.errors = errs
