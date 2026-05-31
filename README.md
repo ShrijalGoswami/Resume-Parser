@@ -1,5 +1,9 @@
 # ✦ AI Resume Intelligence Platform ✦
 
+
+🚀 Live Demo: https://resume-intelligence-platform.streamlit.app/
+
+
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com)
 [![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io)
 [![Groq LLM](https://img.shields.io/badge/Groq_LLM-f3a536?style=for-the-badge)](https://groq.com)
