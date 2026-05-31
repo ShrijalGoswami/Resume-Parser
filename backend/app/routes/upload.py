@@ -40,6 +40,12 @@ async def upload_resume(file: UploadFile = File(...)) -> UploadResponse:
     file_path = upload_dir / filename
     max_bytes = settings.MAX_FILE_SIZE_MB * 1024 * 1024
 
+    # Clear any previously uploaded resumes so the test endpoints always
+    # process the file that was just uploaded, not a stale leftover.
+    for old_file in upload_dir.iterdir():
+        if old_file.is_file() and old_file.suffix.lower() in settings.ALLOWED_EXTENSIONS:
+            old_file.unlink(missing_ok=True)
+
     # Save file and validate size during chunked write
     bytes_written = 0
     try:
