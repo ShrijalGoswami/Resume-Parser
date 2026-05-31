@@ -307,9 +307,6 @@ section[data-testid="stSidebar"] * { color: #475569 !important; }
 /* ── Overrides ── */
 [data-testid="stFileUploader"] label { color:#475569 !important; }
 [data-testid="stFileUploaderDropzone"] { background:#F8FAFC !important; border:2px dashed #CBD5E1 !important; border-radius:10px !important; }
-[data-testid="stFileUploaderDropzone"] span { color:#64748B !important; }
-[data-testid="stFileUploaderDropzone"] small { color:#94A3B8 !important; }
-[data-testid="stFileUploaderDropzone"] button { color:#2563EB !important; }
 button[kind="primary"] {
     background:linear-gradient(135deg,#2563EB,#1D4ED8) !important;
     border:none !important; color:#fff !important;
