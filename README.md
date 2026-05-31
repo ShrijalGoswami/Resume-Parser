@@ -1,7 +1,7 @@
 # ✦ AI Resume Intelligence Platform ✦
 
 
-🚀 Live Demo: https://YOUR-STREAMLIT-URL.streamlit.app
+🚀 Live Demo: https://resume-intelligence-platform.streamlit.app/
 
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com)
