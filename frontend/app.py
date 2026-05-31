@@ -15,7 +15,8 @@ from pathlib import Path
 
 # ─── Config ───────────────────────────────────────────────────────────────────
 
-API_BASE = "http://127.0.0.1:8001/api/v1"
+API_BASE = f"{st.secrets['BACKEND_URL']}/api/v1"
+
 UPLOAD_EP   = f"{API_BASE}/upload"
 EXTRACT_EP  = f"{API_BASE}/test-extraction"
 ANALYSIS_EP = f"{API_BASE}/test-analysis"
@@ -369,7 +370,7 @@ def api_upload(fb, fn, mt):
         if r.status_code in (200,201):
             d=r.json(); return True, f"Saved as {d.get('filename',fn)} ({d.get('file_size_kb','?')} KB)"
         return False, f"Upload failed [{r.status_code}]: {r.json().get('detail',r.text)}"
-    except requests.exceptions.ConnectionError: return False, "Cannot connect to backend (port 8001)."
+    except requests.exceptions.ConnectionError: return False, f"Cannot connect to backend: {API_BASE}."
     except Exception as e: return False, f"Upload error: {e}"
 
 def api_extract():
@@ -377,7 +378,7 @@ def api_extract():
         r = requests.get(EXTRACT_EP, timeout=30)
         if r.status_code == 200: return True, r.json()
         return False, f"Extraction failed [{r.status_code}]: {r.json().get('detail',r.text)}"
-    except requests.exceptions.ConnectionError: return False, "Cannot connect to backend."
+    except requests.exceptions.ConnectionError: return False, f"Cannot connect to backend: {API_BASE}."
     except Exception as e: return False, f"Extraction error: {e}"
 
 def api_analysis():
@@ -386,7 +387,7 @@ def api_analysis():
         if r.status_code == 200:
             p=r.json(); return True, {"analysis":p.get("analysis",p), "resume_data":p.get("resume_data")}
         return False, f"Analysis failed [{r.status_code}]: {r.json().get('detail',r.text)}"
-    except requests.exceptions.ConnectionError: return False, "Cannot connect to backend."
+    except requests.exceptions.ConnectionError: return False, f"Cannot connect to backend: {API_BASE}."
     except Exception as e: return False, f"Analysis error: {e}"
 
 # ─── Session state ────────────────────────────────────────────────────────────
