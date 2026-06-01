@@ -21,6 +21,8 @@ UPLOAD_EP   = f"{API_BASE}/upload"
 EXTRACT_EP  = f"{API_BASE}/test-extraction"
 ANALYSIS_EP = f"{API_BASE}/test-analysis"
 EXPORT_EP   = f"{API_BASE}/export-report"
+MATCH_ANALYSIS_EP = f"{API_BASE}/match-analysis"
+EXPORT_MATCH_EP   = f"{API_BASE}/export-match-report"
 
 SKILL_CATS = {
     "Languages": {"Python","C++","C","C#","Java","JavaScript","TypeScript","SQL","HTML","CSS","Rust","Go","Ruby","PHP","Swift","Kotlin"},
@@ -415,22 +417,72 @@ def api_analysis():
     except requests.exceptions.ConnectionError: return False, f"Cannot connect to backend: {API_BASE}."
     except Exception as e: return False, f"Analysis error: {e}"
 
+def api_match_analysis(job_desc: str, fb: bytes, fn: str, mt: str):
+    try:
+        files = {"file": (fn, fb, mt)}
+        data = {"job_description": job_desc}
+        r = requests.post(MATCH_ANALYSIS_EP, data=data, files=files, timeout=90)
+        if r.status_code == 200:
+            p = r.json()
+            return True, {"analysis": p.get("match_analysis"), "resume_data": p.get("resume_data")}
+        return False, f"Match analysis failed [{r.status_code}]: {r.json().get('detail', r.text)}"
+    except requests.exceptions.ConnectionError:
+        return False, f"Cannot connect to backend: {API_BASE}."
+    except Exception as e:
+        return False, f"Match analysis error: {e}"
+
+def api_export_match_report(match_analysis_data: dict, resume_data: dict):
+    try:
+        payload = {"match_analysis": match_analysis_data, "resume_data": resume_data}
+        r = requests.post(EXPORT_MATCH_EP, json=payload, timeout=60)
+        if r.status_code == 200:
+            return True, r.content
+        return False, f"Export failed [{r.status_code}]: {r.json().get('detail', r.text)}"
+    except requests.exceptions.ConnectionError:
+        return False, f"Cannot connect to backend: {API_BASE}."
+    except Exception as e:
+        return False, f"Export error: {e}"
+
 # ─── Session state ────────────────────────────────────────────────────────────
 
 for k in ("extraction","analysis","upload_info","errors","export_msg","pdf_bytes"):
     if k not in st.session_state: st.session_state[k] = None
+
+if "current_mode" not in st.session_state:
+    st.session_state.current_mode = "Recruiter Screening (Primary)"
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #  SIDEBAR — matches reference exactly
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 with st.sidebar:
+    # Workflow Mode Selection
+    st.markdown('<div class="pw-label" style="margin-bottom:6px;">Workflow Mode</div>', unsafe_allow_html=True)
+    workflow_mode = st.selectbox(
+        "Workflow Mode",
+        ["Recruiter Screening (Primary)", "ATS Analysis (Legacy)"],
+        index=0,
+        label_visibility="collapsed",
+        key="workflow_mode"
+    )
+
+    # Detect mode switch to reset results
+    if st.session_state.current_mode != workflow_mode:
+        st.session_state.current_mode = workflow_mode
+        for k in ("extraction","analysis","upload_info","errors","export_msg","pdf_bytes"):
+            st.session_state[k] = None
+        st.rerun()
+
+    st.markdown("---")
+
     # Brand
+    brand_title = "AI Recruiter Match" if workflow_mode == "Recruiter Screening (Primary)" else "AI Resume Parser"
+    brand_ver = "Version 1.1" if workflow_mode == "Recruiter Screening (Primary)" else "Version 1.0"
     st.markdown(
-        '<div class="sb-brand">'
-        '<div class="sb-logo">✦</div>'
-        '<div><div class="sb-title">AI Resume Parser</div><div class="sb-ver">Version 1.0</div></div>'
-        '</div>',
+        f'<div class="sb-brand">'
+        f'<div class="sb-logo">✦</div>'
+        f'<div><div class="sb-title">{brand_title}</div><div class="sb-ver">{brand_ver}</div></div>'
+        f'</div>',
         unsafe_allow_html=True,
     )
     st.markdown("---")
@@ -465,62 +517,118 @@ with st.sidebar:
     )
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#  TOP HEADER — title + upload button
+#  TOP HEADER — title + upload button / job description
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-hdr_l, hdr_r = st.columns([4, 1])
-with hdr_l:
+if workflow_mode == "Recruiter Screening (Primary)":
     st.markdown(
-        '<div style="margin-bottom:4px;">'
-        '<div class="top-title">✦ AI Resume Intelligence Platform</div>'
-        '<div class="top-sub">Upload a resume and get recruiter-grade ATS scoring powered by Groq LLM.</div>'
+        '<div style="margin-bottom:12px;">'
+        '<div class="top-title">✦ AI Recruiter Match Platform</div>'
+        '<div class="top-sub">Evaluate candidate-job fit using NLP and LLM recruiter analysis.</div>'
         '</div>',
         unsafe_allow_html=True,
     )
-with hdr_r:
-    uploaded_file = st.file_uploader("Upload", type=["pdf","docx"], label_visibility="collapsed", key="uploader")
 
-# Upload button
-if uploaded_file:
-    st.markdown(f'<div class="st-ok" style="margin-bottom:12px;">✅ Ready: <strong>{uploaded_file.name}</strong> ({round(uploaded_file.size/1024,1)} KB)</div>', unsafe_allow_html=True)
+    job_description = st.text_area(
+        "Paste the job description below to evaluate candidate-job fit.",
+        placeholder="Paste the job description here...",
+        height=180,
+        key="job_description_input"
+    )
 
-analyse_btn = st.button("✦  Upload & Analyse Resume", disabled=(uploaded_file is None), type="primary")
+    uploaded_file = st.file_uploader("Upload Resume", type=["pdf","docx"], key="uploader")
+
+    if uploaded_file:
+        st.markdown(f'<div class="st-ok" style="margin-bottom:12px;">✅ Ready: <strong>{uploaded_file.name}</strong> ({round(uploaded_file.size/1024,1)} KB)</div>', unsafe_allow_html=True)
+
+    analyse_btn = st.button("✦  Upload & Analyse Resume", type="primary")
+
+else:
+    hdr_l, hdr_r = st.columns([4, 1])
+    with hdr_l:
+        st.markdown(
+            '<div style="margin-bottom:4px;">'
+            '<div class="top-title">✦ AI Resume Intelligence Platform</div>'
+            '<div class="top-sub">Upload a resume and get recruiter-grade ATS scoring powered by Groq LLM.</div>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+    with hdr_r:
+        uploaded_file = st.file_uploader("Upload", type=["pdf","docx"], label_visibility="collapsed", key="uploader")
+
+    # Upload button
+    if uploaded_file:
+        st.markdown(f'<div class="st-ok" style="margin-bottom:12px;">✅ Ready: <strong>{uploaded_file.name}</strong> ({round(uploaded_file.size/1024,1)} KB)</div>', unsafe_allow_html=True)
+
+    analyse_btn = st.button("✦  Upload & Analyse Resume", disabled=(uploaded_file is None), type="primary")
+    job_description = ""
 
 # ─── Pipeline ─────────────────────────────────────────────────────────────────
 
-if analyse_btn and uploaded_file:
-    for k in ("extraction","analysis","upload_info"): st.session_state[k] = None
+if analyse_btn:
     st.session_state.errors = []
     errs = []
-    with st.status("Running analysis pipeline…", expanded=True) as sb:
-        st.write("📤  Uploading…")
-        ok, msg = api_upload(uploaded_file.getvalue(), uploaded_file.name, mtype(uploaded_file.name, uploaded_file.type))
-        if not ok:
-            st.write(f"❌  {msg}"); sb.update(label="Failed", state="error"); errs.append(msg)
+    
+    if workflow_mode == "Recruiter Screening (Primary)":
+        if not job_description or not job_description.strip():
+            errs.append("Job description cannot be empty. Please paste the job description below to evaluate candidate-job fit.")
+        if not uploaded_file:
+            errs.append("No resume file uploaded. Please upload a resume to proceed.")
+            
+        if errs:
+            st.session_state.errors = errs
         else:
-            st.write(f"✅  {msg}")
-            st.write("🔎  Extracting…")
-            ok2, r2 = api_extract()
-            if not ok2:
-                st.write(f"❌  {r2}"); sb.update(label="Failed", state="error"); errs.append(str(r2))
-            else:
-                st.write("✅  Extraction complete")
-                st.session_state.extraction = r2
-                st.write("🤖  Running ATS + Groq analysis…")
-                ok3, r3 = api_analysis()
-                if not ok3:
-                    st.write(f"❌  {r3}"); sb.update(label="Failed", state="error"); errs.append(str(r3))
+            for k in ("extraction","analysis","upload_info"): st.session_state[k] = None
+            with st.status("Running recruiter match analysis…", expanded=True) as sb:
+                st.write("📤  Uploading and processing candidate-job match analysis…")
+                ok, r = api_match_analysis(
+                    job_description.strip(),
+                    uploaded_file.getvalue(),
+                    uploaded_file.name,
+                    mtype(uploaded_file.name, uploaded_file.type)
+                )
+                if not ok:
+                    st.write(f"❌  {r}"); sb.update(label="Failed", state="error"); errs.append(r)
                 else:
-                    # pyrefly: ignore [bad-index, missing-attribute]
-                    if r3.get("resume_data"): st.session_state.extraction = r3["resume_data"]
-                    # pyrefly: ignore [bad-index]
-                    st.session_state.analysis = r3["analysis"]
+                    st.session_state.extraction = r["resume_data"]
+                    st.session_state.analysis = r["analysis"]
                     st.write("✅  Complete"); sb.update(label="✅ Pipeline complete!", state="complete")
-    st.session_state.errors = errs
+            st.session_state.errors = errs
+            if not errs:
+                st.rerun()
+    else:
+        # Legacy ATS flow
+        if uploaded_file:
+            for k in ("extraction","analysis","upload_info"): st.session_state[k] = None
+            with st.status("Running analysis pipeline…", expanded=True) as sb:
+                st.write("📤  Uploading…")
+                ok, msg = api_upload(uploaded_file.getvalue(), uploaded_file.name, mtype(uploaded_file.name, uploaded_file.type))
+                if not ok:
+                    st.write(f"❌  {msg}"); sb.update(label="Failed", state="error"); errs.append(msg)
+                else:
+                    st.write(f"✅  {msg}")
+                    st.write("🔎  Extracting…")
+                    ok2, r2 = api_extract()
+                    if not ok2:
+                        st.write(f"❌  {r2}"); sb.update(label="Failed", state="error"); errs.append(str(r2))
+                    else:
+                        st.write("✅  Extraction complete")
+                        st.session_state.extraction = r2
+                        st.write("🤖  Running ATS + Groq analysis…")
+                        ok3, r3 = api_analysis()
+                        if not ok3:
+                            st.write(f"❌  {r3}"); sb.update(label="Failed", state="error"); errs.append(str(r3))
+                        else:
+                            if r3.get("resume_data"): st.session_state.extraction = r3["resume_data"]
+                            st.session_state.analysis = r3["analysis"]
+                            st.write("✅  Complete"); sb.update(label="✅ Pipeline complete!", state="complete")
+            st.session_state.errors = errs
+            if not errs:
+                st.rerun()
 
 if st.session_state.errors:
     for e in st.session_state.errors:
-        st.markdown(f'<div class="st-err">❌  {e}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="st-err">⚠️  {e}</div>', unsafe_allow_html=True)
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #  RESULTS DASHBOARD
@@ -529,238 +637,407 @@ if st.session_state.errors:
 if st.session_state.extraction and st.session_state.analysis:
     ext = st.session_state.extraction
     ana = st.session_state.analysis
-    bd  = ana.get("score_breakdown", {})
-    ats = ana.get("ats_score", 0)
-    conf = ana.get("confidence_score", 0)
-    ver = ana.get("analysis_version", "v1.0")
-    clr = s_color(ats)
-    btxt, bbg, bfg, bbd = badge_text(ats)
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # HERO SECTION — ATS Score
-    # ══════════════════════════════════════════════════════════════════════════
+    if workflow_mode == "Recruiter Screening (Primary)":
+        score = ana.get("job_match_score", 0)
+        category = ana.get("match_category", "Weak Match")
+        ver = ana.get("analysis_version", "v1.1")
+        clr = s_color(score)
+        btxt, bbg, bfg, bbd = badge_text(score)
+        
+        rec = ana.get("hiring_recommendation", "")
+        rec_exp = ana.get("recommendation_explanation", "")
 
-    st.markdown(
-        f'<div class="hero-card">'
-        # Ring
-        f'{hero_ring(ats, clr)}'
-        # Info
-        f'<div class="hero-info">'
-        f'  <div class="hero-title-row">'
-        f'    <div class="hero-title">ATS Compatibility Score</div>'
-        f'    <div class="hero-badge" style="background:{bbg};color:{bfg};border-color:{bbd};">● {btxt}</div>'
-        f'  </div>'
-        f'  <div class="hero-desc">This score reflects how well the resume matches industry standards and role expectations.</div>'
-        f'</div>'
-        # Metrics
-        f'<div class="hero-metrics">'
-        f'  <div class="hero-metric">'
-        f'    <div class="hero-metric-icon">🎯</div>'
-        f'    <div class="hero-metric-label">Confidence Score</div>'
-        f'    <div class="hero-metric-val">{conf}%</div>'
-        f'  </div>'
-        f'  <div class="hero-metric">'
-        f'    <div class="hero-metric-icon">⚙️</div>'
-        f'    <div class="hero-metric-label">Analysis Engine</div>'
-        f'    <div class="hero-metric-val">{ver}</div>'
-        f'    <div class="hero-metric-sub">Latest Model</div>'
-        f'  </div>'
-        f'</div>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
-
-    # ══════════════════════════════════════════════════════════════════════════
-    # EXPORT REPORT BUTTON
-    # ══════════════════════════════════════════════════════════════════════════
-
-    export_col1, export_col2, export_col3 = st.columns([1, 1, 3])
-
-    # Step 1: Generate button — calls API and stores PDF bytes in session state
-    with export_col1:
-        generate_btn = st.button("📥  Generate PDF Report", type="primary", key="export_btn")
-
-    # Step 2: Download button — only appears once PDF bytes are available
-    with export_col2:
-        if st.session_state.get("pdf_bytes"):
-            candidate_name = ext.get("name", "Candidate").strip().replace(" ", "_") or "Candidate"
-            filename = f"ATS_Report_{candidate_name}.pdf"
-            st.download_button(
-                label="⬇  Download PDF",
-                data=st.session_state["pdf_bytes"],
-                file_name=filename,
-                mime="application/pdf",
-                key="download_pdf_btn",
-            )
-
-    # Status messages
-    with export_col3:
-        if st.session_state.export_msg:
-            msg_type, msg_text = st.session_state.export_msg
-            if msg_type == "ok":
-                st.markdown(f'<div class="export-msg-ok">✅ {msg_text}</div>', unsafe_allow_html=True)
-            else:
-                st.markdown(f'<div class="export-msg-err">❌ {msg_text}</div>', unsafe_allow_html=True)
-
-    if generate_btn:
-        st.session_state.export_msg = None
-        st.session_state["pdf_bytes"] = None
-        with st.spinner("Generating PDF report…"):
-            resume_payload = {
-                "name": ext.get("name", ""),
-                "email": ext.get("email", ""),
-                "phone": ext.get("phone", ""),
-            }
-            ok, result = api_export_report(ana, resume_payload)
-            if ok:
-                st.session_state["pdf_bytes"] = result
-                candidate_name = ext.get("name", "Candidate").strip().replace(" ", "_") or "Candidate"
-                st.session_state.export_msg = ("ok", f"ATS_Report_{candidate_name}.pdf is ready — click Download PDF!")
-                st.rerun()
-            else:
-                st.session_state.export_msg = ("err", str(result))
-                st.rerun()
-
-    # ══════════════════════════════════════════════════════════════════════════
-    # 3-COLUMN GRID — matches reference
-    # ══════════════════════════════════════════════════════════════════════════
-
-    col1, col2, col3 = st.columns([1, 1, 1], gap="medium")
-
-    # ── COLUMN 1: Candidate Profile ───────────────────────────────────────────
-    with col1:
-        name  = ext.get("name", "—")
-        email = ext.get("email", "—")
-        phone = ext.get("phone", "—")
-
-        # Profile Card
+        # ══════════════════════════════════════════════════════════════════════════
+        # HERO SECTION — Job Match Score
+        # ══════════════════════════════════════════════════════════════════════════
         st.markdown(
-            f'<div class="crd">'
-            f'<div class="crd-title">👤 Candidate Profile</div>'
-            f'<div class="prof-row"><span class="prof-icon person">👤</span><span class="prof-name" style="font-size:0.85rem;">{name}</span></div>'
-            f'<div class="prof-row"><span class="prof-icon mail">✉️</span>{email}</div>'
-            f'<div class="prof-row"><span class="prof-icon phone">📱</span>{phone}</div>'
+            f'<div class="hero-card">'
+            f'{hero_ring(score, clr)}'
+            f'<div class="hero-info">'
+            f'  <div class="hero-title-row">'
+            f'    <div class="hero-title">Job Match Score</div>'
+            f'    <div class="hero-badge" style="background:{bbg};color:{bfg};border-color:{bbd};">● {category}</div>'
+            f'  </div>'
+            f'  <div class="hero-desc">Deterministic job-fit score computed using NLP keyword matching and project relevance.</div>'
+            f'</div>'
+            f'<div class="hero-metrics">'
+            f'  <div class="hero-metric">'
+            f'    <div class="hero-metric-icon">🏆</div>'
+            f'    <div class="hero-metric-label">Hiring Recommendation</div>'
+            f'    <div class="hero-metric-val" style="font-size:1.1rem;margin-top:6px;font-weight:700;">{rec}</div>'
+            f'  </div>'
+            f'  <div class="hero-metric">'
+            f'    <div class="hero-metric-icon">⚙️</div>'
+            f'    <div class="hero-metric-label">Analysis Engine</div>'
+            f'    <div class="hero-metric-val">{ver}</div>'
+            f'  </div>'
+            f'</div>'
             f'</div>',
             unsafe_allow_html=True,
         )
 
-        # Skills Card
-        skills = ext.get("skills", [])
-        if skills:
-            grp = cat_skills(skills)
-            css_map = {"Languages":"lang","ML / AI":"ai","Backend":"backend","Data":"data","Tools":"tools","Other":"other"}
-            sk_html = '<div class="crd"><div class="crd-title">⚡ Skills</div>'
-            for cat, items in grp.items():
-                cc = css_map.get(cat, "other")
-                sk_html += f'<div class="sk-cat">{cat}</div>'
-                sk_html += "".join(f'<span class="sk-pill {cc}">{s}</span>' for s in items)
-            sk_html += '</div>'
-            st.markdown(sk_html, unsafe_allow_html=True)
+        # ══════════════════════════════════════════════════════════════════════════
+        # EXPORT REPORT BUTTON
+        # ══════════════════════════════════════════════════════════════════════════
+        export_col1, export_col2, export_col3 = st.columns([1, 1, 3])
+        with export_col1:
+            generate_btn = st.button("📥  Generate PDF Report", type="primary", key="export_btn")
+        with export_col2:
+            if st.session_state.get("pdf_bytes"):
+                candidate_name = ext.get("name", "Candidate").strip().replace(" ", "_") or "Candidate"
+                filename = f"Match_Report_{candidate_name}.pdf"
+                st.download_button(
+                    label="⬇  Download PDF",
+                    data=st.session_state["pdf_bytes"],
+                    file_name=filename,
+                    mime="application/pdf",
+                    key="download_pdf_btn",
+                )
+        with export_col3:
+            if st.session_state.export_msg:
+                msg_type, msg_text = st.session_state.export_msg
+                if msg_type == "ok":
+                    st.markdown(f'<div class="export-msg-ok">✅ {msg_text}</div>', unsafe_allow_html=True)
+                else:
+                    st.markdown(f'<div class="export-msg-err">❌ {msg_text}</div>', unsafe_allow_html=True)
 
-        # Education Card
-        edu_list = ext.get("education", [])
-        if edu_list:
-            edu_html = '<div class="crd"><div class="crd-title">🎓 Education</div>'
-            for edu in edu_list:
-                edu_html += f'<div class="edu-inst">{edu.get("institution","—")}</div>'
-                edu_html += f'<div class="edu-deg">{edu.get("degree","")}</div>'
-                edu_html += f'<div class="edu-meta">{edu.get("duration","")}'
-                if edu.get("gpa"): edu_html += f' • {edu["gpa"]}'
-                edu_html += '</div>'
-            edu_html += '</div>'
-            st.markdown(edu_html, unsafe_allow_html=True)
+        if generate_btn:
+            st.session_state.export_msg = None
+            st.session_state["pdf_bytes"] = None
+            with st.spinner("Generating PDF report…"):
+                resume_payload = {
+                    "name": ext.get("name", ""),
+                    "email": ext.get("email", ""),
+                    "phone": ext.get("phone", ""),
+                }
+                ok, result = api_export_match_report(ana, resume_payload)
+                if ok:
+                    st.session_state["pdf_bytes"] = result
+                    candidate_name = ext.get("name", "Candidate").strip().replace(" ", "_") or "Candidate"
+                    st.session_state.export_msg = ("ok", f"Match_Report_{candidate_name}.pdf is ready — click Download PDF!")
+                    st.rerun()
+                else:
+                    st.session_state.export_msg = ("err", str(result))
+                    st.rerun()
 
-        # Experience Card
-        exp_list = ext.get("experience", [])
-        if exp_list:
-            exp_html = '<div class="crd"><div class="crd-title">💼 Experience</div>'
-            for exp in exp_list:
-                exp_html += f'<div class="exp-role">{exp.get("role","—")} @ {exp.get("company","—")}</div>'
-                exp_html += f'<div class="exp-dur">{exp.get("duration","")}</div>'
-                for b in exp.get("description", []):
-                    exp_html += f'<div style="font-size:0.82rem;color:#475569;margin:4px 0 4px 12px;">→ {b}</div>'
-            exp_html += '</div>'
-            st.markdown(exp_html, unsafe_allow_html=True)
+        # ══════════════════════════════════════════════════════════════════════════
+        # 3-COLUMN GRID
+        # ══════════════════════════════════════════════════════════════════════════
+        col1, col2, col3 = st.columns([1, 1, 1], gap="medium")
 
-    # ── COLUMN 2: Score Breakdown, Projects, Certifications ───────────────────
-    with col2:
-        # Score Breakdown
-        bd_html = '<div class="crd"><div class="crd-title">📊 Score Breakdown</div>'
-        bar_colors = ["blue","blue","green","green","amber"]
-        for (lbl, key, mx), bc in zip([("Technical Skills","technical_skills",30),("Projects","projects",25),("Experience","experience",20),("Education","education",10),("Impact","impact",15)], bar_colors):
-            v = bd.get(key, 0)
-            pct = v/mx*100 if mx else 0
-            bd_html += f'<div class="bd-row"><div class="bd-lbl">{lbl}</div><div class="bd-track"><div class="bd-fill {bc}" style="width:{pct}%"></div></div><div class="bd-val">{v}/{mx}</div></div>'
-        bd_html += '</div>'
-        st.markdown(bd_html, unsafe_allow_html=True)
-
-        # Projects
-        projects = ext.get("projects", [])
-        if projects:
-            proj_html = '<div class="crd"><div class="crd-title">🚀 Projects</div>'
-            for p in projects:
-                title = p.get("title", "Untitled")
-                desc_lines = p.get("description", [])
-                short_desc = desc_lines[1] if len(desc_lines) > 1 else (desc_lines[0] if desc_lines else "")
-                # Truncate to ~100 chars
-                if len(short_desc) > 120: short_desc = short_desc[:117] + "…"
-                proj_html += f'<div class="proj-item"><div><div class="proj-title">{title}</div><div class="proj-desc">{short_desc}</div></div><div class="proj-arrow">›</div></div>'
-            proj_html += '</div>'
-            st.markdown(proj_html, unsafe_allow_html=True)
-
-        # Certifications
-        certs = ext.get("certifications", [])
-        if certs:
-            cert_html = '<div class="crd"><div class="crd-title">🏆 Certifications</div>'
-            for c in certs:
-                cert_html += f'<div class="cert-item"><span class="cert-icon">✦</span><span>{c}</span></div>'
-            cert_html += '</div>'
-            st.markdown(cert_html, unsafe_allow_html=True)
-
-    # ── COLUMN 3: AI Intelligence ─────────────────────────────────────────────
-    with col3:
-        # Candidate Summary
-        summary = ana.get("candidate_summary", "")
-        if summary:
+        # ── COLUMN 1: Candidate Profile & Experience Relevance ────────────────────
+        with col1:
+            name = ext.get("name", "—")
+            email = ext.get("email", "—")
+            phone = ext.get("phone", "—")
+            
             st.markdown(
-                f'<div class="crd a-blue">'
-                f'<div class="crd-title" style="color:#2563EB;">💡 Candidate Summary</div>'
-                f'<div class="sum-box">{summary}</div>'
+                f'<div class="crd">'
+                f'<div class="crd-title">👤 Candidate Profile</div>'
+                f'<div class="prof-row"><span class="prof-icon person">👤</span><span class="prof-name" style="font-size:0.85rem;">{name}</span></div>'
+                f'<div class="prof-row"><span class="prof-icon mail">✉️</span>{email}</div>'
+                f'<div class="prof-row"><span class="prof-icon phone">📱</span>{phone}</div>'
                 f'</div>',
                 unsafe_allow_html=True,
             )
 
-        # Strengths
-        strengths = ana.get("strengths", [])
-        if strengths:
-            s_html = '<div class="crd a-green"><div class="crd-title" style="color:#16A34A;">✅ Strengths</div>'
-            for s in strengths:
-                s_html += f'<div class="ab green">{s}</div>'
-            s_html += '</div>'
-            st.markdown(s_html, unsafe_allow_html=True)
+            exp_relevance = ana.get("experience_relevance", "")
+            if exp_relevance:
+                st.markdown(
+                    f'<div class="crd a-blue">'
+                    f'<div class="crd-title" style="color:#2563EB;">💼 Experience Relevance</div>'
+                    f'<div class="sum-box">{exp_relevance}</div>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
 
-        # Areas for improvement
-        areas = ana.get("areas_for_improvement", [])
-        if areas:
-            a_html = '<div class="crd a-amber"><div class="crd-title" style="color:#D97706;">⚠️ Areas for Improvement</div>'
-            for a in areas:
-                a_html += f'<div class="ab amber">{a}</div>'
-            a_html += '</div>'
-            st.markdown(a_html, unsafe_allow_html=True)
+            edu_list = ext.get("education", [])
+            if edu_list:
+                edu_html = '<div class="crd"><div class="crd-title">🎓 Education</div>'
+                for edu in edu_list:
+                    edu_html += f'<div class="edu-inst">{edu.get("institution","—")}</div>'
+                    edu_html += f'<div class="edu-deg">{edu.get("degree","")}</div>'
+                    edu_html += f'<div class="edu-meta">{edu.get("duration","")}'
+                    if edu.get("gpa"): edu_html += f' • {edu["gpa"]}'
+                    edu_html += '</div>'
+                edu_html += '</div>'
+                st.markdown(edu_html, unsafe_allow_html=True)
 
-        # Career Recommendations
-        recs = ana.get("career_recommendations", [])
-        if recs:
-            r_html = '<div class="crd a-purple"><div class="crd-title" style="color:#7C3AED;">🎯 Career Recommendations</div>'
-            for r in recs:
-                r_html += f'<div class="ab purple">{r}</div>'
-            r_html += '</div>'
-            st.markdown(r_html, unsafe_allow_html=True)
+            exp_list = ext.get("experience", [])
+            if exp_list:
+                exp_html = '<div class="crd"><div class="crd-title">💼 Experience History</div>'
+                for exp in exp_list:
+                    exp_html += f'<div class="exp-role">{exp.get("role","—")} @ {exp.get("company","—")}</div>'
+                    exp_html += f'<div class="exp-dur">{exp.get("duration","")}</div>'
+                exp_html += '</div>'
+                st.markdown(exp_html, unsafe_allow_html=True)
 
-        # Recommended Roles
-        roles = ana.get("recommended_roles", [])
-        if roles:
-            rt_html = '<div class="crd"><div class="crd-title">🎯 Recommended Roles</div>'
-            rt_html += "".join(f'<span class="rtag">{r}</span>' for r in roles)
-            rt_html += '</div>'
-            st.markdown(rt_html, unsafe_allow_html=True)
+        # ── COLUMN 2: Skill Match & Project Relevance ───────────────────────────
+        with col2:
+            matching_skills = ana.get("matching_skills", [])
+            missing_skills = ana.get("missing_skills", [])
+            
+            sk_html = '<div class="crd"><div class="crd-title">⚡ Skill Match Analysis</div>'
+            if matching_skills:
+                sk_html += '<div class="sk-cat" style="color:#16A34A;">Matching Skills</div>'
+                for s in matching_skills:
+                    sk_html += f'<span class="sk-pill data" style="background:#F0FDF4;color:#15803D;">✓ {s}</span>'
+            if missing_skills:
+                sk_html += '<div class="sk-cat" style="color:#DC2626;margin-top:12px;">Missing Skills</div>'
+                for s in missing_skills:
+                    sk_html += f'<span class="sk-pill other" style="background:#FEF2F2;color:#DC2626;">✗ {s}</span>'
+            sk_html += '</div>'
+            st.markdown(sk_html, unsafe_allow_html=True)
+
+            rel_projects = ana.get("relevant_projects", [])
+            less_rel_projects = ana.get("less_relevant_projects", [])
+
+            if rel_projects or less_rel_projects:
+                proj_html = '<div class="crd"><div class="crd-title">🚀 Project Relevance</div>'
+                if rel_projects:
+                    proj_html += '<div class="sk-cat" style="color:#2563EB;">Most Relevant Projects</div>'
+                    for p in rel_projects:
+                        proj_html += f'<div class="proj-item"><div><div class="proj-title" style="font-size:0.85rem;font-weight:600;color:#0F172A;">{p}</div></div><div class="proj-arrow" style="color:#2563EB;">✓</div></div>'
+                if less_rel_projects:
+                    proj_html += '<div class="sk-cat" style="color:#64748B;margin-top:12px;">Less Relevant Projects</div>'
+                    for p in less_rel_projects:
+                        proj_html += f'<div class="proj-item"><div><div class="proj-title" style="font-size:0.85rem;font-weight:500;color:#475569;">{p}</div></div><div class="proj-arrow" style="color:#94A3B8;">›</div></div>'
+                proj_html += '</div>'
+                st.markdown(proj_html, unsafe_allow_html=True)
+
+        # ── COLUMN 3: Strengths, Improvements & Recommendation ───────────────────
+        with col3:
+            if rec_exp:
+                st.markdown(
+                    f'<div class="crd a-purple">'
+                    f'<div class="crd-title" style="color:#8B5CF6;">🏆 Recommendation Explanation</div>'
+                    f'<div class="sum-box">{rec_exp}</div>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
+
+            strengths = ana.get("candidate_strengths", [])
+            if strengths:
+                s_html = '<div class="crd a-green"><div class="crd-title" style="color:#16A34A;">✅ Strengths</div>'
+                for s in strengths:
+                    s_html += f'<div class="ab green">{s}</div>'
+                s_html += '</div>'
+                st.markdown(s_html, unsafe_allow_html=True)
+
+            areas = ana.get("areas_for_improvement", [])
+            if areas:
+                a_html = '<div class="crd a-amber"><div class="crd-title" style="color:#D97706;">⚠️ Areas for Improvement</div>'
+                for a in areas:
+                    a_html += f'<div class="ab amber">{a}</div>'
+                a_html += '</div>'
+                st.markdown(a_html, unsafe_allow_html=True)
+
+    else:
+        # ══════════════════════════════════════════════════════════════════════════
+        # Legacy ATS Dashboard Layout
+        # ══════════════════════════════════════════════════════════════════════════
+        bd  = ana.get("score_breakdown", {})
+        ats = ana.get("ats_score", 0)
+        conf = ana.get("confidence_score", 0)
+        ver = ana.get("analysis_version", "v1.0")
+        clr = s_color(ats)
+        btxt, bbg, bfg, bbd = badge_text(ats)
+
+        st.markdown(
+            f'<div class="hero-card">'
+            # Ring
+            f'{hero_ring(ats, clr)}'
+            # Info
+            f'<div class="hero-info">'
+            f'  <div class="hero-title-row">'
+            f'    <div class="hero-title">ATS Compatibility Score</div>'
+            f'    <div class="hero-badge" style="background:{bbg};color:{bfg};border-color:{bbd};">● {btxt}</div>'
+            f'  </div>'
+            f'  <div class="hero-desc">This score reflects how well the resume matches industry standards and role expectations.</div>'
+            f'</div>'
+            # Metrics
+            f'<div class="hero-metrics">'
+            f'  <div class="hero-metric">'
+            f'    <div class="hero-metric-icon">🎯</div>'
+            f'    <div class="hero-metric-label">Confidence Score</div>'
+            f'    <div class="hero-metric-val">{conf}%</div>'
+            f'  </div>'
+            f'  <div class="hero-metric">'
+            f'    <div class="hero-metric-icon">⚙️</div>'
+            f'    <div class="hero-metric-label">Analysis Engine</div>'
+            f'    <div class="hero-metric-val">{ver}</div>'
+            f'    <div class="hero-metric-sub">Latest Model</div>'
+            f'  </div>'
+            f'</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+
+        export_col1, export_col2, export_col3 = st.columns([1, 1, 3])
+        with export_col1:
+            generate_btn = st.button("📥  Generate PDF Report", type="primary", key="export_btn")
+        with export_col2:
+            if st.session_state.get("pdf_bytes"):
+                candidate_name = ext.get("name", "Candidate").strip().replace(" ", "_") or "Candidate"
+                filename = f"ATS_Report_{candidate_name}.pdf"
+                st.download_button(
+                    label="⬇  Download PDF",
+                    data=st.session_state["pdf_bytes"],
+                    file_name=filename,
+                    mime="application/pdf",
+                    key="download_pdf_btn",
+                )
+        with export_col3:
+            if st.session_state.export_msg:
+                msg_type, msg_text = st.session_state.export_msg
+                if msg_type == "ok":
+                    st.markdown(f'<div class="export-msg-ok">✅ {msg_text}</div>', unsafe_allow_html=True)
+                else:
+                    st.markdown(f'<div class="export-msg-err">❌ {msg_text}</div>', unsafe_allow_html=True)
+
+        if generate_btn:
+            st.session_state.export_msg = None
+            st.session_state["pdf_bytes"] = None
+            with st.spinner("Generating PDF report…"):
+                resume_payload = {
+                    "name": ext.get("name", ""),
+                    "email": ext.get("email", ""),
+                    "phone": ext.get("phone", ""),
+                }
+                ok, result = api_export_report(ana, resume_payload)
+                if ok:
+                    st.session_state["pdf_bytes"] = result
+                    candidate_name = ext.get("name", "Candidate").strip().replace(" ", "_") or "Candidate"
+                    st.session_state.export_msg = ("ok", f"ATS_Report_{candidate_name}.pdf is ready — click Download PDF!")
+                    st.rerun()
+                else:
+                    st.session_state.export_msg = ("err", str(result))
+                    st.rerun()
+
+        col1, col2, col3 = st.columns([1, 1, 1], gap="medium")
+
+        # ── COLUMN 1: Candidate Profile ───────────────────────────────────────────
+        with col1:
+            name  = ext.get("name", "—")
+            email = ext.get("email", "—")
+            phone = ext.get("phone", "—")
+
+            st.markdown(
+                f'<div class="crd">'
+                f'<div class="crd-title">👤 Candidate Profile</div>'
+                f'<div class="prof-row"><span class="prof-icon person">👤</span><span class="prof-name" style="font-size:0.85rem;">{name}</span></div>'
+                f'<div class="prof-row"><span class="prof-icon mail">✉️</span>{email}</div>'
+                f'<div class="prof-row"><span class="prof-icon phone">📱</span>{phone}</div>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+
+            skills = ext.get("skills", [])
+            if skills:
+                grp = cat_skills(skills)
+                css_map = {"Languages":"lang","ML / AI":"ai","Backend":"backend","Data":"data","Tools":"tools","Other":"other"}
+                sk_html = '<div class="crd"><div class="crd-title">⚡ Skills</div>'
+                for cat, items in grp.items():
+                    cc = css_map.get(cat, "other")
+                    sk_html += f'<div class="sk-cat">{cat}</div>'
+                    sk_html += "".join(f'<span class="sk-pill {cc}">{s}</span>' for s in items)
+                sk_html += '</div>'
+                st.markdown(sk_html, unsafe_allow_html=True)
+
+            edu_list = ext.get("education", [])
+            if edu_list:
+                edu_html = '<div class="crd"><div class="crd-title">🎓 Education</div>'
+                for edu in edu_list:
+                    edu_html += f'<div class="edu-inst">{edu.get("institution","—")}</div>'
+                    edu_html += f'<div class="edu-deg">{edu.get("degree","")}</div>'
+                    edu_html += f'<div class="edu-meta">{edu.get("duration","")}'
+                    if edu.get("gpa"): edu_html += f' • {edu["gpa"]}'
+                    edu_html += '</div>'
+                edu_html += '</div>'
+                st.markdown(edu_html, unsafe_allow_html=True)
+
+            exp_list = ext.get("experience", [])
+            if exp_list:
+                exp_html = '<div class="crd"><div class="crd-title">💼 Experience</div>'
+                for exp in exp_list:
+                    exp_html += f'<div class="exp-role">{exp.get("role","—")} @ {exp.get("company","—")}</div>'
+                    exp_html += f'<div class="exp-dur">{exp.get("duration","")}</div>'
+                    for b in exp.get("description", []):
+                        exp_html += f'<div style="font-size:0.82rem;color:#475569;margin:4px 0 4px 12px;">→ {b}</div>'
+                exp_html += '</div>'
+                st.markdown(exp_html, unsafe_allow_html=True)
+
+        # ── COLUMN 2: Score Breakdown, Projects, Certifications ───────────────────
+        with col2:
+            bd_html = '<div class="crd"><div class="crd-title">📊 Score Breakdown</div>'
+            bar_colors = ["blue","blue","green","green","amber"]
+            for (lbl, key, mx), bc in zip([("Technical Skills","technical_skills",30),("Projects","projects",25),("Experience","experience",20),("Education","education",10),("Impact","impact",15)], bar_colors):
+                v = bd.get(key, 0)
+                pct = v/mx*100 if mx else 0
+                bd_html += f'<div class="bd-row"><div class="bd-lbl">{lbl}</div><div class="bd-track"><div class="bd-fill {bc}" style="width:{pct}%"></div></div><div class="bd-val">{v}/{mx}</div></div>'
+            bd_html += '</div>'
+            st.markdown(bd_html, unsafe_allow_html=True)
+
+            projects = ext.get("projects", [])
+            if projects:
+                proj_html = '<div class="crd"><div class="crd-title">🚀 Projects</div>'
+                for p in projects:
+                    title = p.get("title", "Untitled")
+                    desc_lines = p.get("description", [])
+                    short_desc = desc_lines[1] if len(desc_lines) > 1 else (desc_lines[0] if desc_lines else "")
+                    if len(short_desc) > 120: short_desc = short_desc[:117] + "…"
+                    proj_html += f'<div class="proj-item"><div><div class="proj-title">{title}</div><div class="proj-desc">{short_desc}</div></div><div class="proj-arrow">›</div></div>'
+                proj_html += '</div>'
+                st.markdown(proj_html, unsafe_allow_html=True)
+
+            certs = ext.get("certifications", [])
+            if certs:
+                cert_html = '<div class="crd"><div class="crd-title">🏆 Certifications</div>'
+                for c in certs:
+                    cert_html += f'<div class="cert-item"><span class="cert-icon">✦</span><span>{c}</span></div>'
+                cert_html += '</div>'
+                st.markdown(cert_html, unsafe_allow_html=True)
+
+        # ── COLUMN 3: AI Intelligence ─────────────────────────────────────────────
+        with col3:
+            summary = ana.get("candidate_summary", "")
+            if summary:
+                st.markdown(
+                    f'<div class="crd a-blue">'
+                    f'<div class="crd-title" style="color:#2563EB;">💡 Candidate Summary</div>'
+                    f'<div class="sum-box">{summary}</div>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
+
+            strengths = ana.get("strengths", [])
+            if strengths:
+                s_html = '<div class="crd a-green"><div class="crd-title" style="color:#16A34A;">✅ Strengths</div>'
+                for s in strengths:
+                    s_html += f'<div class="ab green">{s}</div>'
+                s_html += '</div>'
+                st.markdown(s_html, unsafe_allow_html=True)
+
+            areas = ana.get("areas_for_improvement", [])
+            if areas:
+                a_html = '<div class="crd a-amber"><div class="crd-title" style="color:#D97706;">⚠️ Areas for Improvement</div>'
+                for a in areas:
+                    a_html += f'<div class="ab amber">{a}</div>'
+                a_html += '</div>'
+                st.markdown(a_html, unsafe_allow_html=True)
+
+            recs = ana.get("career_recommendations", [])
+            if recs:
+                r_html = '<div class="crd a-purple"><div class="crd-title" style="color:#7C3AED;">🎯 Career Recommendations</div>'
+                for r in recs:
+                    r_html += f'<div class="ab purple">{r}</div>'
+                r_html += '</div>'
+                st.markdown(r_html, unsafe_allow_html=True)
+
+            roles = ana.get("recommended_roles", [])
+            if roles:
+                rt_html = '<div class="crd"><div class="crd-title">🎯 Recommended Roles</div>'
+                rt_html += "".join(f'<span class="rtag">{r}</span>' for r in roles)
+                rt_html += '</div>'
+                st.markdown(rt_html, unsafe_allow_html=True)
