@@ -2,7 +2,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.routes import upload, test, export
+from app.routes import upload, test, export, match
 
 # Configure logging format
 logging.basicConfig(
@@ -32,6 +32,7 @@ app.add_middleware(
 app.include_router(upload.router, prefix="/api/v1", tags=["Upload"])
 app.include_router(test.router, prefix="/api/v1", tags=["Test"])
 app.include_router(export.router, prefix="/api/v1", tags=["Export"])
+app.include_router(match.router, prefix="/api/v1", tags=["Match"])
 
 @app.get("/health", tags=["Health"])
 async def health_check():

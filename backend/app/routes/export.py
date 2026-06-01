@@ -19,7 +19,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from app.schemas.analysis import AnalysisResponse, ScoreBreakdown
-from app.services.report_generator import generate_report
+from app.services.report_generator import generate_report, generate_match_report
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -82,4 +82,41 @@ async def export_report(payload: ExportReportRequest):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate PDF report: {str(e)}",
+        )
+
+
+# ── Match Report Export ───────────────────────────────────────────────────────
+
+class ExportMatchReportRequest(BaseModel):
+    """Payload for match report PDF export."""
+    match_analysis: dict = Field(default_factory=dict)
+    resume_data: ResumeDataPayload = Field(default_factory=ResumeDataPayload)
+
+
+@router.post("/export-match-report", status_code=status.HTTP_200_OK)
+async def export_match_report(payload: ExportMatchReportRequest):
+    """
+    Generate a PDF recruiter match report from the provided match analysis data.
+    """
+    try:
+        pdf_bytes = generate_match_report(
+            payload.match_analysis, payload.resume_data.model_dump()
+        )
+
+        candidate_name = _sanitize_filename(payload.resume_data.name)
+        filename = f"Match_Report_{candidate_name}.pdf"
+
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"',
+            },
+        )
+
+    except Exception as e:
+        logger.exception("Export Match Report: PDF generation failed")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate match report: {str(e)}",
         )
