@@ -11,7 +11,6 @@ Real backend endpoints — no mock data:
 import streamlit as st
 import requests
 import math
-import base64
 from pathlib import Path
 
 # ─── Config ───────────────────────────────────────────────────────────────────
@@ -418,7 +417,7 @@ def api_analysis():
 
 # ─── Session state ────────────────────────────────────────────────────────────
 
-for k in ("extraction","analysis","upload_info","errors","export_msg"):
+for k in ("extraction","analysis","upload_info","errors","export_msg","pdf_bytes"):
     if k not in st.session_state: st.session_state[k] = None
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -575,10 +574,27 @@ if st.session_state.extraction and st.session_state.analysis:
     # EXPORT REPORT BUTTON
     # ══════════════════════════════════════════════════════════════════════════
 
-    export_col1, export_col2 = st.columns([1, 4])
+    export_col1, export_col2, export_col3 = st.columns([1, 1, 3])
+
+    # Step 1: Generate button — calls API and stores PDF bytes in session state
     with export_col1:
-        export_btn = st.button("📥  Download PDF Report", type="primary", key="export_btn")
+        generate_btn = st.button("📥  Generate PDF Report", type="primary", key="export_btn")
+
+    # Step 2: Download button — only appears once PDF bytes are available
     with export_col2:
+        if st.session_state.get("pdf_bytes"):
+            candidate_name = ext.get("name", "Candidate").strip().replace(" ", "_") or "Candidate"
+            filename = f"ATS_Report_{candidate_name}.pdf"
+            st.download_button(
+                label="⬇  Download PDF",
+                data=st.session_state["pdf_bytes"],
+                file_name=filename,
+                mime="application/pdf",
+                key="download_pdf_btn",
+            )
+
+    # Status messages
+    with export_col3:
         if st.session_state.export_msg:
             msg_type, msg_text = st.session_state.export_msg
             if msg_type == "ok":
@@ -586,8 +602,9 @@ if st.session_state.extraction and st.session_state.analysis:
             else:
                 st.markdown(f'<div class="export-msg-err">❌ {msg_text}</div>', unsafe_allow_html=True)
 
-    if export_btn:
+    if generate_btn:
         st.session_state.export_msg = None
+        st.session_state["pdf_bytes"] = None
         with st.spinner("Generating PDF report…"):
             resume_payload = {
                 "name": ext.get("name", ""),
@@ -596,17 +613,9 @@ if st.session_state.extraction and st.session_state.analysis:
             }
             ok, result = api_export_report(ana, resume_payload)
             if ok:
+                st.session_state["pdf_bytes"] = result
                 candidate_name = ext.get("name", "Candidate").strip().replace(" ", "_") or "Candidate"
-                filename = f"ATS_Report_{candidate_name}.pdf"
-                b64 = base64.b64encode(result).decode()
-                # Use a hidden download link triggered by JS for seamless download
-                download_html = (
-                    f'<a id="pdf-download" href="data:application/pdf;base64,{b64}" '
-                    f'download="{filename}" style="display:none;"></a>'
-                    f'<script>document.getElementById("pdf-download").click();</script>'
-                )
-                st.markdown(download_html, unsafe_allow_html=True)
-                st.session_state.export_msg = ("ok", f"{filename} is ready — download started!")
+                st.session_state.export_msg = ("ok", f"ATS_Report_{candidate_name}.pdf is ready — click Download PDF!")
                 st.rerun()
             else:
                 st.session_state.export_msg = ("err", str(result))
