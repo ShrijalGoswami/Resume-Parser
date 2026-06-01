@@ -11,6 +11,7 @@ Real backend endpoints — no mock data:
 import streamlit as st
 import requests
 import math
+import base64
 from pathlib import Path
 
 # ─── Config ───────────────────────────────────────────────────────────────────
@@ -20,6 +21,7 @@ API_BASE = f"{st.secrets['BACKEND_URL']}/api/v1"
 UPLOAD_EP   = f"{API_BASE}/upload"
 EXTRACT_EP  = f"{API_BASE}/test-extraction"
 ANALYSIS_EP = f"{API_BASE}/test-analysis"
+EXPORT_EP   = f"{API_BASE}/export-report"
 
 SKILL_CATS = {
     "Languages": {"Python","C++","C","C#","Java","JavaScript","TypeScript","SQL","HTML","CSS","Rust","Go","Ruby","PHP","Swift","Kotlin"},
@@ -327,6 +329,20 @@ hr { border-color:#E2E8F0 !important; }
 .stMarkdown strong { color:#0F172A; }
 .stMarkdown em { color:#64748B; }
 
+/* ── Export Button ── */
+.export-wrap { display:flex; gap:12px; align-items:center; margin:8px 0 16px 0; }
+.export-btn {
+    display:inline-flex; align-items:center; gap:8px;
+    background:linear-gradient(135deg,#22C55E,#16A34A); color:#fff !important;
+    border:none; border-radius:10px; padding:10px 24px;
+    font-size:0.85rem; font-weight:600; cursor:pointer;
+    box-shadow:0 2px 8px rgba(34,197,94,0.3);
+    text-decoration:none; transition:all 0.15s;
+}
+.export-btn:hover { background:linear-gradient(135deg,#16A34A,#15803D); transform:translateY(-1px); }
+.export-msg-ok { color:#15803D; font-size:0.85rem; font-weight:500; }
+.export-msg-err { color:#DC2626; font-size:0.85rem; font-weight:500; }
+
 #MainMenu, footer, [data-testid="stToolbar"] { visibility:hidden; }
 </style>
 """, unsafe_allow_html=True)
@@ -378,6 +394,19 @@ def api_extract():
     except requests.exceptions.ConnectionError: return False, f"Cannot connect to backend: {API_BASE}."
     except Exception as e: return False, f"Extraction error: {e}"
 
+def api_export_report(analysis_data: dict, resume_data: dict):
+    """Send analysis data to the export endpoint and return PDF bytes."""
+    try:
+        payload = {"analysis": analysis_data, "resume_data": resume_data}
+        r = requests.post(EXPORT_EP, json=payload, timeout=60)
+        if r.status_code == 200:
+            return True, r.content
+        return False, f"Export failed [{r.status_code}]: {r.json().get('detail', r.text)}"
+    except requests.exceptions.ConnectionError:
+        return False, f"Cannot connect to backend: {API_BASE}."
+    except Exception as e:
+        return False, f"Export error: {e}"
+
 def api_analysis():
     try:
         r = requests.get(ANALYSIS_EP, timeout=90)
@@ -389,7 +418,7 @@ def api_analysis():
 
 # ─── Session state ────────────────────────────────────────────────────────────
 
-for k in ("extraction","analysis","upload_info","errors"):
+for k in ("extraction","analysis","upload_info","errors","export_msg"):
     if k not in st.session_state: st.session_state[k] = None
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -541,6 +570,47 @@ if st.session_state.extraction and st.session_state.analysis:
         f'</div>',
         unsafe_allow_html=True,
     )
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # EXPORT REPORT BUTTON
+    # ══════════════════════════════════════════════════════════════════════════
+
+    export_col1, export_col2 = st.columns([1, 4])
+    with export_col1:
+        export_btn = st.button("📥  Download PDF Report", type="primary", key="export_btn")
+    with export_col2:
+        if st.session_state.export_msg:
+            msg_type, msg_text = st.session_state.export_msg
+            if msg_type == "ok":
+                st.markdown(f'<div class="export-msg-ok">✅ {msg_text}</div>', unsafe_allow_html=True)
+            else:
+                st.markdown(f'<div class="export-msg-err">❌ {msg_text}</div>', unsafe_allow_html=True)
+
+    if export_btn:
+        st.session_state.export_msg = None
+        with st.spinner("Generating PDF report…"):
+            resume_payload = {
+                "name": ext.get("name", ""),
+                "email": ext.get("email", ""),
+                "phone": ext.get("phone", ""),
+            }
+            ok, result = api_export_report(ana, resume_payload)
+            if ok:
+                candidate_name = ext.get("name", "Candidate").strip().replace(" ", "_") or "Candidate"
+                filename = f"ATS_Report_{candidate_name}.pdf"
+                b64 = base64.b64encode(result).decode()
+                # Use a hidden download link triggered by JS for seamless download
+                download_html = (
+                    f'<a id="pdf-download" href="data:application/pdf;base64,{b64}" '
+                    f'download="{filename}" style="display:none;"></a>'
+                    f'<script>document.getElementById("pdf-download").click();</script>'
+                )
+                st.markdown(download_html, unsafe_allow_html=True)
+                st.session_state.export_msg = ("ok", f"{filename} is ready — download started!")
+                st.rerun()
+            else:
+                st.session_state.export_msg = ("err", str(result))
+                st.rerun()
 
     # ══════════════════════════════════════════════════════════════════════════
     # 3-COLUMN GRID — matches reference
