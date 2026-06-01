@@ -358,3 +358,208 @@ def generate_report(analysis_data: dict, resume_data: dict) -> bytes:
 
     logger.info(f"PDF report generated: {len(pdf_bytes)} bytes")
     return pdf_bytes
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Match Report Generator
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _match_score_color(score: int) -> colors.HexColor:
+    """Color for match score display."""
+    if score >= 85:
+        return BRAND_GREEN
+    elif score >= 70:
+        return BRAND_PRIMARY
+    elif score >= 50:
+        return BRAND_AMBER
+    return BRAND_RED
+
+
+def generate_match_report(match_data: dict, resume_data: dict) -> bytes:
+    """
+    Generate a professional PDF recruiter match report.
+
+    Args:
+        match_data:  The MatchAnalysisResponse dict.
+        resume_data: The candidate info dict (name, email, phone).
+
+    Returns:
+        PDF file content as bytes.
+    """
+    buf = io.BytesIO()
+    styles = _build_styles()
+
+    doc = SimpleDocTemplate(
+        buf,
+        pagesize=A4,
+        topMargin=20 * mm,
+        bottomMargin=20 * mm,
+        leftMargin=20 * mm,
+        rightMargin=20 * mm,
+        title="AI Recruiter Match Report",
+        author="AI Resume Intelligence Platform",
+    )
+
+    story: list = []
+
+    # ── Header ────────────────────────────────────────────────────────────────
+
+    story.append(Paragraph("✦ AI Recruiter Match Report", styles["title"]))
+    story.append(Paragraph(
+        f"Generated on {datetime.now().strftime('%B %d, %Y at %I:%M %p')}",
+        styles["subtitle"],
+    ))
+    story.append(HRFlowable(width="100%", thickness=1, color=BRAND_BORDER, spaceAfter=12))
+
+    # ── Candidate Information ─────────────────────────────────────────────────
+
+    story.append(Paragraph("👤  Candidate Information", styles["section"]))
+
+    name  = resume_data.get("name", "—")
+    email = resume_data.get("email", "—")
+    phone = resume_data.get("phone", "—")
+
+    info_data = [
+        [Paragraph("<b>Name</b>", styles["label"]),  Paragraph(name, styles["value"])],
+        [Paragraph("<b>Email</b>", styles["label"]), Paragraph(email, styles["value"])],
+        [Paragraph("<b>Phone</b>", styles["label"]), Paragraph(phone, styles["value"])],
+    ]
+    info_table = Table(info_data, colWidths=[90, 380])
+    info_table.setStyle(TableStyle([
+        ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
+        ("TOPPADDING",    (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+    ]))
+    story.append(info_table)
+    story.append(Spacer(1, 6))
+
+    # ── Job Match Score ───────────────────────────────────────────────────────
+
+    story.append(Paragraph("📊  Job Match Score", styles["section"]))
+
+    score    = match_data.get("job_match_score", 0)
+    category = match_data.get("match_category", "Weak Match")
+    version  = match_data.get("analysis_version", "v1.1")
+    clr      = _match_score_color(score)
+
+    score_info = [
+        [
+            Paragraph(
+                f'<font size="32"><b>{score}</b></font>'
+                f'<font size="12" color="#{BRAND_GREY.hexval()[2:]}">&nbsp;/ 100</font>',
+                styles["body"],
+            ),
+            Paragraph(f'<font color="#{clr.hexval()[2:]}"><b>{category}</b></font>', styles["body"]),
+        ],
+        [
+            Paragraph(f'<b>Analysis Version:</b> {version}', styles["body"]),
+            Paragraph("", styles["body"]),
+        ],
+    ]
+    score_table = Table(score_info, colWidths=[235, 235])
+    score_table.setStyle(TableStyle([
+        ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
+        ("TOPPADDING",    (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ("BACKGROUND",    (0, 0), (-1, -1), BRAND_LIGHT_BG),
+        ("BOX",           (0, 0), (-1, -1), 0.5, BRAND_BORDER),
+        ("ROUNDEDCORNERS", [6, 6, 6, 6]),
+    ]))
+    story.append(score_table)
+    story.append(Spacer(1, 10))
+
+    # ── Skill Match Analysis ──────────────────────────────────────────────────
+
+    matching = match_data.get("matching_skills", [])
+    missing  = match_data.get("missing_skills", [])
+
+    if matching or missing:
+        story.append(Paragraph("⚡  Skill Match Analysis", styles["section"]))
+
+        if matching:
+            story.append(Paragraph("Matching Skills", styles["subsection"]))
+            for s in matching:
+                story.append(Paragraph(f"<font color='#15803D'>✓</font>  {s}", styles["bullet"]))
+            story.append(Spacer(1, 6))
+
+        if missing:
+            story.append(Paragraph("Missing Skills", styles["subsection"]))
+            for s in missing:
+                story.append(Paragraph(f"<font color='#DC2626'>✗</font>  {s}", styles["bullet"]))
+            story.append(Spacer(1, 6))
+
+    # ── Experience Relevance ──────────────────────────────────────────────────
+
+    exp_rel = match_data.get("experience_relevance", "")
+    if exp_rel:
+        story.append(Paragraph("💼  Experience Relevance", styles["section"]))
+        story.append(Paragraph(exp_rel, styles["body_grey"]))
+        story.append(Spacer(1, 6))
+
+    # ── Project Relevance ─────────────────────────────────────────────────────
+
+    rel_proj  = match_data.get("relevant_projects", [])
+    less_proj = match_data.get("less_relevant_projects", [])
+
+    if rel_proj or less_proj:
+        story.append(Paragraph("🚀  Project Relevance", styles["section"]))
+
+        if rel_proj:
+            story.append(Paragraph("Most Relevant Projects", styles["subsection"]))
+            for p in rel_proj:
+                story.append(Paragraph(f"•  {p}", styles["bullet"]))
+            story.append(Spacer(1, 6))
+
+        if less_proj:
+            story.append(Paragraph("Less Relevant Projects", styles["subsection"]))
+            for p in less_proj:
+                story.append(Paragraph(f"•  {p}", styles["bullet"]))
+            story.append(Spacer(1, 6))
+
+    # ── Candidate Strengths ───────────────────────────────────────────────────
+
+    strengths = match_data.get("candidate_strengths", [])
+    if strengths:
+        story.append(Paragraph("💪  Candidate Strengths", styles["section"]))
+        for s in strengths:
+            story.append(Paragraph(f"•  {s}", styles["bullet"]))
+        story.append(Spacer(1, 6))
+
+    # ── Areas for Improvement ─────────────────────────────────────────────────
+
+    areas = match_data.get("areas_for_improvement", [])
+    if areas:
+        story.append(Paragraph("⚠️  Areas for Improvement", styles["section"]))
+        for a in areas:
+            story.append(Paragraph(f"•  {a}", styles["bullet"]))
+        story.append(Spacer(1, 6))
+
+    # ── Hiring Recommendation ─────────────────────────────────────────────────
+
+    rec     = match_data.get("hiring_recommendation", "")
+    rec_exp = match_data.get("recommendation_explanation", "")
+
+    if rec:
+        story.append(Paragraph("🏆  Hiring Recommendation", styles["section"]))
+        story.append(Paragraph(f"<b>{rec}</b>", styles["body"]))
+        if rec_exp:
+            story.append(Spacer(1, 4))
+            story.append(Paragraph(rec_exp, styles["body_grey"]))
+        story.append(Spacer(1, 12))
+
+    # ── Footer ────────────────────────────────────────────────────────────────
+
+    story.append(HRFlowable(width="100%", thickness=0.5, color=BRAND_BORDER, spaceBefore=12, spaceAfter=8))
+    story.append(Paragraph(
+        "Generated by AI Resume Intelligence Platform  •  Powered by Groq LLM  •  Confidential",
+        styles["footer"],
+    ))
+
+    # Build PDF
+    doc.build(story)
+    pdf_bytes = buf.getvalue()
+    buf.close()
+
+    logger.info(f"Match PDF report generated: {len(pdf_bytes)} bytes")
+    return pdf_bytes
+
