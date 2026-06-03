@@ -70,9 +70,9 @@ export async function exportAtsReport(data: any): Promise<void> {
   const payload = {
     analysis: data.analysis,
     resume_data: {
-      name: data.resume_data.candidate_name || "Candidate",
-      email: data.resume_data.contact_info?.email || "",
-      phone: data.resume_data.contact_info?.phone || ""
+      name: data.resume_data.name || "Candidate",
+      email: data.resume_data.email || "",
+      phone: data.resume_data.phone || ""
     }
   };
 
@@ -104,9 +104,9 @@ export async function exportMatchReport(data: any): Promise<void> {
   const payload = {
     match_analysis: data.match_analysis,
     resume_data: {
-      name: data.resume_data.candidate_name || "Candidate",
-      email: data.resume_data.contact_info?.email || "",
-      phone: data.resume_data.contact_info?.phone || ""
+      name: data.resume_data.name || "Candidate",
+      email: data.resume_data.email || "",
+      phone: data.resume_data.phone || ""
     }
   };
 
