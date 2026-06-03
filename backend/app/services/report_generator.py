@@ -74,6 +74,7 @@ def _build_styles():
             parent=base["Normal"],
             fontName="Helvetica",
             fontSize=10,
+            leading=14,
             textColor=BRAND_GREY,
             alignment=TA_CENTER,
             spaceAfter=16,
@@ -154,8 +155,17 @@ def _build_styles():
             parent=base["Normal"],
             fontName="Helvetica",
             fontSize=8,
+            leading=12,
             textColor=BRAND_GREY,
             alignment=TA_CENTER,
+        ),
+        "score_value": ParagraphStyle(
+            "ScoreValue",
+            parent=base["Normal"],
+            fontName="Helvetica",
+            fontSize=28,
+            leading=36,
+            textColor=BRAND_DARK,
         ),
     }
     return styles
@@ -255,7 +265,7 @@ def generate_report(analysis_data: dict, resume_data: dict) -> bytes:
     # Score hero table
     score_info = [
         [
-            Paragraph(f'<font size="32"><b>{ats_score}</b></font><font size="12" color="#{BRAND_GREY.hexval()[2:]}">&nbsp;/ 100</font>', styles["body"]),
+            Paragraph(f'<font size="28"><b>{ats_score}</b></font><font size="12" color="#{BRAND_GREY.hexval()[2:]}">&nbsp;/ 100</font>', styles["score_value"]),
             Paragraph(f'<font color="#{score_clr.hexval()[2:]}"><b>{score_lbl}</b></font>', styles["body"]),
         ],
         [
@@ -445,9 +455,9 @@ def generate_match_report(match_data: dict, resume_data: dict) -> bytes:
     score_info = [
         [
             Paragraph(
-                f'<font size="32"><b>{score}</b></font>'
+                f'<font size="28"><b>{score}</b></font>'
                 f'<font size="12" color="#{BRAND_GREY.hexval()[2:]}">&nbsp;/ 100</font>',
-                styles["body"],
+                styles["score_value"],
             ),
             Paragraph(f'<font color="#{clr.hexval()[2:]}"><b>{category}</b></font>', styles["body"]),
         ],

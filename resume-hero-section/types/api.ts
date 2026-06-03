@@ -1,11 +1,7 @@
 export interface ResumeAnalysisResponse {
-  file_name: string;
-  candidate_name: string;
-  contact_info: {
-    email: string | null;
-    phone: string | null;
-    linkedin: string | null;
-  };
+  name: string;
+  email: string | null;
+  phone: string | null;
   education: Array<{
     degree: string;
     institution: string;
