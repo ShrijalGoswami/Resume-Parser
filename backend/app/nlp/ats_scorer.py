@@ -55,7 +55,17 @@ def _score_technical_skills(skills: list[str]) -> int:
         13–16    → 27
         17+      → 30
     """
+    lower_skills = {s.lower() for s in skills}
+    core_frontend = {"react", "next.js", "vue", "angular", "typescript", "javascript", "tailwind css", "tailwindcss", "node.js"}
+    has_strong_frontend = len(lower_skills.intersection(core_frontend)) >= 2
+
     n = len(skills)
+    
+    # Partial credit rule: if a candidate has a strong modern frontend stack, 
+    # we evaluate high semantic baseline learning agility and don't wipe out metrics
+    if has_strong_frontend and n < 17:
+        n += 4
+
     if n == 0:
         return 0
     elif n <= 4:
@@ -169,9 +179,9 @@ def _score_impact(experience, projects) -> int:
 
     Breakpoints:
         No projects AND no experience           →  0
-        Projects/experience present, no metrics →  5
-        1 metric found                          →  9
-        2-3 metrics found                       → 12
+        Projects/experience present, no metrics →  5 (10 for Interns)
+        1 metric found                          →  9 (13 for Interns)
+        2-3 metrics found                       → 12 (15 for Interns)
         4+ metrics found                        → 15
     """
     has_content = bool(experience or projects)
@@ -179,21 +189,35 @@ def _score_impact(experience, projects) -> int:
         return 0
 
     all_bullets: list[str] = []
+    is_intern_profile = False
+
     for exp in experience:
         all_bullets.extend(exp.description)
+        if "intern" in exp.role.lower() or "student" in exp.role.lower():
+            is_intern_profile = True
+
     for proj in projects:
         all_bullets.extend(proj.description)
 
     matches = sum(len(_IMPACT_PATTERN.findall(line)) for line in all_bullets)
 
-    if matches == 0:
-        return 5
-    elif matches == 1:
-        return 9
-    elif matches <= 3:
-        return 12
+    # Soften the impact statement constraint if the user is applying for/is an "Intern" tier
+    if is_intern_profile:
+        if matches == 0:
+            return 10
+        elif matches == 1:
+            return 13
+        else:
+            return 15
     else:
-        return 15
+        if matches == 0:
+            return 5
+        elif matches == 1:
+            return 9
+        elif matches <= 3:
+            return 12
+        else:
+            return 15
 
 
 # ─── confidence score ─────────────────────────────────────────────────────────
