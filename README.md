@@ -143,11 +143,11 @@ The platform calculates a deterministic ATS compatibility score out of **100 poi
 
 | Category | Max Score | Evaluation Heuristics |
 | :--- | :---: | :--- |
-| **Technical Skills** | 30 | Evaluated based on the count of unique, normalized skills found.<br>• 1-4 skills: `10 pts`<br>• 5-8 skills: `16 pts`<br>• 9-12 skills: `22 pts`<br>• 13-16 skills: `27 pts`<br>• 17+ skills: `30 pts` |
+| **Technical Skills** | 30 | Evaluated based on the count of unique, normalized skills found. *(Profiles with strong core modern frontend stacks receive partial credit bonuses for high learning agility).*<br>• 1-4 skills: `10 pts`<br>• 5-8 skills: `16 pts`<br>• 9-12 skills: `22 pts`<br>• 13-16 skills: `27 pts`<br>• 17+ skills: `30 pts` |
 | **Projects** | 25 | Evaluated based on the quantity and depth of project descriptions.<br>• 0 projects: `0 pts`<br>• 1 project (brief): `5 pts`<br>• 1 project (detailed, bullets present): `10 pts`<br>• 2 projects (basic descriptions): `18 pts`<br>• 2 detailed projects (3+ bullets each): `20 pts`<br>• 2+ projects with outcomes containing quantified metrics: `25 pts` |
 | **Work Experience** | 20 | Evaluated based on career history length and detail richness.<br>• 0 experience entries: `0 pts`<br>• 1 experience entry (short description, <2 bullets): `12 pts`<br>• 1 experience entry (rich description, 2+ bullets): `16 pts`<br>• 2+ experience entries: `20 pts` |
 | **Education** | 10 | Evaluated based on academic history, degree, and grade points (GPA/CGPA).<br>• 0 education records: `0 pts`<br>• 1 education entry (no GPA provided): `6 pts`<br>• 1 education entry with GPA/CGPA provided: `8 pts`<br>• 1 entry with CGPA ≥ 7.5 (or GPA ≥ 3.3/4.0): `10 pts`<br>• 2+ education entries: `10 pts` |
-| **Quantified Impact** | 15 | Evaluated on presence of metrics (%, $, x multiplier, values, metrics) in work/projects.<br>• Content present, but no numbers/metrics found: `5 pts`<br>• 1 metric found: `9 pts`<br>• 2-3 metrics found: `12 pts`<br>• 4+ metrics found: `15 pts` |
+| **Quantified Impact** | 15 | Evaluated on presence of metrics (%, $, x multiplier, values, metrics) in work/projects.<br>• Content present, but no numbers/metrics found: `5 pts` *(Interns: `10 pts`)*<br>• 1 metric found: `9 pts` *(Interns: `13 pts`)*<br>• 2-3 metrics found: `12 pts` *(Interns: `15 pts`)*<br>• 4+ metrics found: `15 pts` |
 | **Total** | **100** | **Comprehensive mathematical sum of all categories.** |
 
 ### Confidence Score (Completeness)
