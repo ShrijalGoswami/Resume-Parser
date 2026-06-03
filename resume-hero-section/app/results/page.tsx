@@ -100,7 +100,13 @@ export default function ResultsPage() {
   
   const scoreLabel = isMatchMode ? "Match Score" : "ATS Score";
   const scoreValue = isMatchMode ? analysisObj.job_match_score : analysisObj.ats_score;
-  const summary = analysisObj.candidate_summary || analysisObj.summary || "No summary provided.";
+  const summary = analysisObj.candidate_summary || analysisObj.summary || "";
+  const experienceRelevance = isMatchMode ? analysisObj.experience_relevance : "";
+  const matchingSkills = isMatchMode ? analysisObj.matching_skills || [] : [];
+  const missingSkills = isMatchMode ? analysisObj.missing_skills || [] : [];
+  const relevantProjects = isMatchMode ? analysisObj.relevant_projects || [] : [];
+  const lessRelevantProjects = isMatchMode ? analysisObj.less_relevant_projects || [] : [];
+  
   const skills = resumeObj.skills || [];
   const categorizedSkills = categorizeSkills(skills);
   
@@ -212,19 +218,21 @@ export default function ResultsPage() {
           </div>
         </div>
 
-        {/* 2. Executive Summary */}
-        <Card className="mb-12 border-border/50 bg-white shadow-sm overflow-hidden rounded-2xl">
-          <div className="bg-muted/30 px-6 py-4 border-b border-border/50">
-            <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
-              <Target className="size-5 text-primary" /> Executive Summary
-            </h2>
-          </div>
-          <CardContent className="p-6 md:p-8">
-            <p className="text-lg leading-relaxed text-foreground/80 md:text-xl">
-              {summary}
-            </p>
-          </CardContent>
-        </Card>
+        {/* 2. Experience Relevance / Executive Summary */}
+        {(experienceRelevance || summary) && (
+          <Card className="mb-12 border-border/50 bg-white shadow-sm overflow-hidden rounded-2xl">
+            <div className="bg-muted/30 px-6 py-4 border-b border-border/50">
+              <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
+                <Target className="size-5 text-primary" /> {isMatchMode ? "Experience Relevance" : "Executive Summary"}
+              </h2>
+            </div>
+            <CardContent className="p-6 md:p-8">
+              <p className="text-lg leading-relaxed text-foreground/80 md:text-xl">
+                {isMatchMode ? experienceRelevance : summary}
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* 3. Resume Health Overview */}
         {(strengths.length > 0 || weaknesses.length > 0) && (
@@ -268,35 +276,75 @@ export default function ResultsPage() {
           </div>
         )}
 
-        {/* 4. Visual Skills Intelligence */}
-        {skills.length > 0 && (
-          <div className="mb-12">
-            <h2 className="flex items-center gap-2 text-2xl font-bold text-foreground mb-6">
-              <Zap className="size-6 text-amber-500" /> Skills Intelligence
-            </h2>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {Object.entries(categorizedSkills).map(([category, catSkills]) => {
-                if (catSkills.length === 0) return null;
-                return (
-                  <div key={category} className="rounded-xl border border-border/60 bg-white p-5 shadow-sm transition-all hover:shadow-md">
-                    <div className="mb-4 flex items-center gap-2 border-b border-border/50 pb-3">
-                      <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
-                        <Code className="size-4 text-primary" />
-                      </div>
-                      <h3 className="font-bold text-foreground tracking-tight">{category}</h3>
-                    </div>
+        {/* 4. Skill Match Analysis / Skills Intelligence */}
+        {isMatchMode ? (
+          (matchingSkills.length > 0 || missingSkills.length > 0) && (
+            <div className="mb-12">
+              <h2 className="flex items-center gap-2 text-2xl font-bold text-foreground mb-6">
+                <Zap className="size-6 text-amber-500" /> Skill Match Analysis
+              </h2>
+              <div className="grid gap-6 md:grid-cols-2">
+                {matchingSkills.length > 0 && (
+                  <div className="rounded-xl border border-emerald-100 bg-white p-6 shadow-sm">
+                    <h3 className="font-bold text-emerald-800 mb-4 flex items-center gap-2 text-lg">
+                      <CheckCircle2 className="size-5 text-emerald-500" /> Matching Skills
+                    </h3>
                     <div className="flex flex-wrap gap-2">
-                      {catSkills.map((skill: string, i: number) => (
-                        <Badge key={i} variant="secondary" className="bg-primary/5 text-primary hover:bg-primary/10 transition-colors px-3 py-1 font-medium border border-primary/10">
-                          {skill}
+                      {matchingSkills.map((skill: string, i: number) => (
+                        <Badge key={i} variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200 px-3 py-1 font-medium">
+                          ✓ {skill}
                         </Badge>
                       ))}
                     </div>
                   </div>
-                );
-              })}
+                )}
+                {missingSkills.length > 0 && (
+                  <div className="rounded-xl border border-rose-100 bg-white p-6 shadow-sm">
+                    <h3 className="font-bold text-rose-800 mb-4 flex items-center gap-2 text-lg">
+                      <AlertCircle className="size-5 text-rose-500" /> Missing Skills
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {missingSkills.map((skill: string, i: number) => (
+                        <Badge key={i} variant="destructive" className="bg-red-50 text-red-700 border border-red-200 px-3 py-1 font-medium hover:bg-red-100 shadow-none">
+                          ✕ {skill}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )
+        ) : (
+          skills.length > 0 && (
+            <div className="mb-12">
+              <h2 className="flex items-center gap-2 text-2xl font-bold text-foreground mb-6">
+                <Zap className="size-6 text-amber-500" /> Skills Intelligence
+              </h2>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {Object.entries(categorizedSkills).map(([category, catSkills]) => {
+                  if (catSkills.length === 0) return null;
+                  return (
+                    <div key={category} className="rounded-xl border border-border/60 bg-white p-5 shadow-sm transition-all hover:shadow-md">
+                      <div className="mb-4 flex items-center gap-2 border-b border-border/50 pb-3">
+                        <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
+                          <Code className="size-4 text-primary" />
+                        </div>
+                        <h3 className="font-bold text-foreground tracking-tight">{category}</h3>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {catSkills.map((skill: string, i: number) => (
+                          <Badge key={i} variant="secondary" className="bg-primary/5 text-primary hover:bg-primary/10 transition-colors px-3 py-1 font-medium border border-primary/10">
+                            {skill}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )
         )}
 
         {/* Score Breakdown (if available) */}
@@ -369,32 +417,78 @@ export default function ResultsPage() {
           </div>
         )}
 
-        {/* 6. Elevated Featured Projects */}
-        {projects.length > 0 && (
-          <div className="mb-12 space-y-6">
-            <h2 className="flex items-center gap-2 text-2xl font-bold text-foreground mb-6">
-              <Code className="size-6 text-primary" /> Featured Projects
-            </h2>
-            <div className="grid gap-6 lg:grid-cols-2">
-              {projects.map((proj: any, idx: number) => (
-                <div key={idx} className="flex flex-col rounded-2xl border border-border/60 bg-white shadow-sm transition-all hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1">
-                  <div className="bg-gradient-to-r from-muted/50 to-transparent p-6 border-b border-border/50">
-                    <h3 className="text-xl font-bold text-foreground">{proj.title || "Project"}</h3>
-                  </div>
-                  <div className="p-6 grow">
-                    <ul className="space-y-3">
-                      {proj.description?.map((desc: string, i: number) => (
-                        <li key={i} className="flex items-start gap-3 text-sm text-foreground/80 leading-relaxed">
-                          <div className="size-1.5 rounded-full bg-primary/40 shrink-0 mt-2" />
-                          <span>{desc}</span>
+        {/* 6. Project Relevance / Elevated Featured Projects */}
+        {isMatchMode ? (
+          (relevantProjects.length > 0 || lessRelevantProjects.length > 0) && (
+            <div className="mb-12">
+              <h2 className="flex items-center gap-2 text-2xl font-bold text-foreground mb-6">
+                <Code className="size-6 text-primary" /> Project Relevance
+              </h2>
+              <div className="grid gap-6 md:grid-cols-2">
+                {relevantProjects.length > 0 && (
+                  <div className="rounded-2xl border border-emerald-100 bg-gradient-to-b from-emerald-50/50 to-white p-6 shadow-sm">
+                    <h3 className="flex items-center gap-2 text-lg font-bold text-emerald-800 mb-6">
+                      <CheckCircle2 className="size-5 text-emerald-600" /> Relevant Projects
+                    </h3>
+                    <ul className="space-y-4">
+                      {relevantProjects.map((p: string, i: number) => (
+                        <li key={i} className="flex items-start gap-3">
+                          <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 mt-0.5">
+                            <CheckCircle2 className="size-3.5 text-emerald-600" />
+                          </div>
+                          <span className="text-base text-foreground/80 leading-relaxed font-medium">{p}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
-                </div>
-              ))}
+                )}
+                {lessRelevantProjects.length > 0 && (
+                  <div className="rounded-2xl border border-rose-100 bg-gradient-to-b from-rose-50/50 to-white p-6 shadow-sm">
+                    <h3 className="flex items-center gap-2 text-lg font-bold text-rose-800 mb-6">
+                      <AlertCircle className="size-5 text-rose-600" /> Less Relevant Projects
+                    </h3>
+                    <ul className="space-y-4">
+                      {lessRelevantProjects.map((p: string, i: number) => (
+                        <li key={i} className="flex items-start gap-3">
+                          <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-rose-100 mt-0.5">
+                            <AlertCircle className="size-3.5 text-rose-600" />
+                          </div>
+                          <span className="text-base text-foreground/80 leading-relaxed font-medium">{p}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )
+        ) : (
+          projects.length > 0 && (
+            <div className="mb-12 space-y-6">
+              <h2 className="flex items-center gap-2 text-2xl font-bold text-foreground mb-6">
+                <Code className="size-6 text-primary" /> Featured Projects
+              </h2>
+              <div className="grid gap-6 lg:grid-cols-2">
+                {projects.map((proj: any, idx: number) => (
+                  <div key={idx} className="flex flex-col rounded-2xl border border-border/60 bg-white shadow-sm transition-all hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1">
+                    <div className="bg-gradient-to-r from-muted/50 to-transparent p-6 border-b border-border/50">
+                      <h3 className="text-xl font-bold text-foreground">{proj.title || proj.name || "Project"}</h3>
+                    </div>
+                    <div className="p-6 grow">
+                      <ul className="space-y-3">
+                        {proj.description && (Array.isArray(proj.description) ? proj.description : [proj.description]).map((desc: string, i: number) => (
+                          <li key={i} className="flex items-start gap-3 text-sm text-foreground/80 leading-relaxed">
+                            <div className="size-1.5 rounded-full bg-primary/40 shrink-0 mt-2" />
+                            <span>{desc}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
         )}
 
         {/* Education & Certifications */}
