@@ -34,7 +34,7 @@ app.include_router(test.router, prefix="/api/v1", tags=["Test"])
 app.include_router(export.router, prefix="/api/v1", tags=["Export"])
 app.include_router(match.router, prefix="/api/v1", tags=["Match"])
 
-@app.get("/health", tags=["Health"])
+@app.api_route("/health", methods=["GET", "HEAD"], tags=["Health"])
 async def health_check():
     """Health check endpoint."""
     return {
