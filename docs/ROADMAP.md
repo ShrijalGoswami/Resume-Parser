@@ -56,10 +56,13 @@ so no qualified candidate is lost to formatting and no decision is a black box.
 - **Persistence** of batch AI output (`candidate_analyses`, referenced not recomputed)
 - **Private storage** buckets + signed URLs
 - **Row Level Security** across all tables and storage
+- **Recruiter Workspace (Sprint 2)** — campaign dashboard, candidate management
+  table (ranking, filters, bulk actions), candidate detail page, intelligent
+  upload queue, and the Executive Intelligence analytics dashboard (`/insights`)
 
 ### 🚧 In Progress
 - Copilot conversation persistence (tables + repository exist; route auto-save pending)
-- Client-side resume upload to storage during batch (endpoint exists; batch flow wiring pending)
+- Resume binary → `resumes` bucket during upload (analysis works; file not yet stored)
 - Recruiter onboarding flow (profile fields exist; guided UX pending)
 
 ### 🗓️ Planned
@@ -91,8 +94,8 @@ timeline
 |-------|-------|:------:|
 | v1.0–v1.2 | Stateless AI intelligence | ✅ |
 | **V4 Sprint 1** | Persistence foundation | ✅ |
-| V4 Sprint 2 | Realtime + Copilot memory + packs | 🗓️ |
-| V4 Sprint 3 | Multi-tenant org, billing, analytics | 🗓️ |
+| **V4 Sprint 2** | Recruiter Workspace (dashboard, candidates, upload, analytics) | ✅ |
+| V4 Sprint 3 | Realtime · Copilot memory · pagination · orgs/billing | 🗓️ |
 
 ---
 

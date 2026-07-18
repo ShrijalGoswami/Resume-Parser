@@ -36,11 +36,18 @@ class ActivityRepository(BaseRepository):
         except Exception:  # pragma: no cover - telemetry must not break requests
             return None
 
-    def recent(self, limit: int = 50, campaign_id: Optional[str] = None) -> list[ActivityEvent]:
+    def recent(
+        self,
+        limit: int = 50,
+        campaign_id: Optional[str] = None,
+        candidate_id: Optional[str] = None,
+    ) -> list[ActivityEvent]:
         try:
             q = self._scoped().order("created_at", desc=True).limit(limit)
             if campaign_id:
                 q = q.eq("campaign_id", campaign_id)
+            if candidate_id:
+                q = q.eq("candidate_id", candidate_id)
             resp = q.execute()
         except Exception as exc:  # pragma: no cover
             raise self._wrap(exc, "list activity")

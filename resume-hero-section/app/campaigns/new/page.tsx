@@ -17,6 +17,7 @@ export default function NewCampaignPage() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     title: '',
+    company: '',
     role_title: '',
     location: '',
     employment_type: '',
@@ -33,6 +34,7 @@ export default function NewCampaignPage() {
     try {
       const campaign = await createCampaign({
         title: form.title,
+        company: form.company || undefined,
         role_title: form.role_title || undefined,
         location: form.location || undefined,
         employment_type: form.employment_type || undefined,
@@ -75,6 +77,15 @@ export default function NewCampaignPage() {
             />
           </div>
           <div className="grid gap-5 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="company">Company</Label>
+              <Input
+                id="company"
+                placeholder="Acme Corp"
+                value={form.company}
+                onChange={(e) => set('company', e.target.value)}
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="role">Role title</Label>
               <Input

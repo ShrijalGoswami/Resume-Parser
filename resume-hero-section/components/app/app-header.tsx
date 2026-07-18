@@ -34,6 +34,9 @@ export function AppHeader() {
           <Button asChild variant="ghost" size="sm">
             <Link href="/campaigns">Campaigns</Link>
           </Button>
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/insights">Insights</Link>
+          </Button>
           <div className="ml-2 hidden text-xs text-muted-foreground sm:block">{user?.email}</div>
           <Button variant="ghost" size="icon-sm" onClick={handleSignOut} title="Sign out">
             <LogOut className="h-4 w-4" />

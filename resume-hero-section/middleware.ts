@@ -12,7 +12,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 
 type CookieToSet = { name: string; value: string; options?: CookieOptions };
 
-const PROTECTED_PREFIXES = ['/dashboard', '/campaigns'];
+const PROTECTED_PREFIXES = ['/dashboard', '/campaigns', '/insights'];
 const AUTH_ROUTES = ['/login', '/signup'];
 
 export async function middleware(request: NextRequest) {

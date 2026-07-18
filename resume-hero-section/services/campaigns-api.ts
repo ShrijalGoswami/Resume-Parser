@@ -69,11 +69,25 @@ export const deleteCampaign = (id: string) =>
 export const listCandidates = (campaignId: string) =>
   apiFetch<Candidate[]>(`/campaigns/${campaignId}/candidates`);
 
+export const getCandidate = (campaignId: string, candidateId: string) =>
+  apiFetch<Candidate>(`/campaigns/${campaignId}/candidates/${candidateId}`);
+
 export const updateCandidateStage = (campaignId: string, candidateId: string, stage: string) =>
   apiFetch<Candidate>(`/campaigns/${campaignId}/candidates/${candidateId}/stage`, {
     method: 'PATCH',
     body: JSON.stringify({ stage }),
   });
+
+export const bulkDeleteCandidates = (campaignId: string, candidateIds: string[]) =>
+  apiFetch<{ deleted: number }>(`/campaigns/${campaignId}/candidates/bulk-delete`, {
+    method: 'POST',
+    body: JSON.stringify({ candidate_ids: candidateIds }),
+  });
+
+export const getResumeUrl = (campaignId: string, candidateId: string) =>
+  apiFetch<{ url: string; expires_in: number }>(
+    `/campaigns/${campaignId}/candidates/${candidateId}/resume-url`
+  );
 
 // ── Notes ────────────────────────────────────────────────────────────────────
 export const listNotes = (campaignId: string, candidateId: string) =>
@@ -85,6 +99,14 @@ export const createNote = (campaignId: string, candidateId: string, body: string
     body: JSON.stringify({ body }),
   });
 
+export const deleteNote = (campaignId: string, candidateId: string, noteId: string) =>
+  apiFetch<void>(`/campaigns/${campaignId}/candidates/${candidateId}/notes/${noteId}`, {
+    method: 'DELETE',
+  });
+
+export const candidateActivity = (campaignId: string, candidateId: string) =>
+  apiFetch<ActivityEvent[]>(`/campaigns/${campaignId}/candidates/${candidateId}/activity`);
+
 // ── Persistence: store a completed batch under a campaign ────────────────────
 export const persistBatch = (campaignId: string, batch: BatchAnalysisResponse) =>
   apiFetch<Candidate[]>(`/campaigns/${campaignId}/persist-batch`, {
@@ -95,3 +117,7 @@ export const persistBatch = (campaignId: string, batch: BatchAnalysisResponse) =
 // ── Activity ─────────────────────────────────────────────────────────────────
 export const campaignActivity = (campaignId: string) =>
   apiFetch<ActivityEvent[]>(`/campaigns/${campaignId}/activity`);
+
+// ── Analytics ────────────────────────────────────────────────────────────────
+export const getAnalyticsOverview = (threshold = 80) =>
+  apiFetch<import('@/types/analytics').AnalyticsOverview>(`/analytics/overview?threshold=${threshold}`);

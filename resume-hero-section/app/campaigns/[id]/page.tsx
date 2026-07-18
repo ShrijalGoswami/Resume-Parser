@@ -1,40 +1,37 @@
 'use client';
 
-import { use, useCallback, useEffect, useRef, useState } from 'react';
+import { use, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Trophy, Upload, Users } from 'lucide-react';
+import { ArrowLeft, Building2, Upload, Users } from 'lucide-react';
 import { AppHeader } from '@/components/app/app-header';
-import { analyzeBatch } from '@/services/api';
-import {
-  getCampaign,
-  listCandidates,
-  persistBatch,
-  updateCandidateStage,
-} from '@/services/campaigns-api';
-import type { Campaign, Candidate, PipelineStage } from '@/types/campaign';
+import { getCampaign, listCandidates } from '@/services/campaigns-api';
+import type { Campaign, Candidate } from '@/types/campaign';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/components/ui/use-toast';
-
-const STAGES: PipelineStage[] = [
-  'sourced', 'screening', 'shortlisted', 'interview', 'offer', 'hired', 'rejected',
-];
+import { Spinner, ErrorState } from '@/components/workspace/states';
+import { CandidateTable } from '@/components/workspace/candidate-table';
+import { UploadPanel } from '@/components/workspace/upload-panel';
+import { STATUS_STYLES } from '@/lib/format';
 
 export default function CampaignDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { toast } = useToast();
-  const fileInput = useRef<HTMLInputElement>(null);
 
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
-  const [analyzing, setAnalyzing] = useState(false);
+  const [candLoading, setCandLoading] = useState(false);
+  const [uploadOpen, setUploadOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    const [c, cands] = await Promise.all([getCampaign(id), listCandidates(id)]);
-    setCampaign(c);
-    setCandidates(sortByScore(cands));
+    setCandLoading(true);
+    try {
+      const [c, cands] = await Promise.all([getCampaign(id), listCandidates(id)]);
+      setCampaign(c);
+      setCandidates(cands);
+      setError(null);
+    } finally {
+      setCandLoading(false);
+    }
   }, [id]);
 
   useEffect(() => {
@@ -43,93 +40,54 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
       .finally(() => setLoading(false));
   }, [refresh]);
 
-  async function handleFiles(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []);
-    if (files.length === 0 || !campaign) return;
-    if (!campaign.job_description?.trim()) {
-      toast({ title: 'Add a job description first', description: 'Candidates are ranked against the JD.', variant: 'destructive' });
-      return;
-    }
-    setAnalyzing(true);
-    try {
-      // 1) Existing, unchanged AI pipeline.
-      const batch = await analyzeBatch(campaign.job_description, files);
-      // 2) Persist the result under this campaign (no recompute).
-      const stored = await persistBatch(id, batch);
-      toast({ title: 'Analysis stored', description: `${stored.length} candidates added to the campaign.` });
-      await refresh();
-    } catch (err) {
-      toast({
-        title: 'Analysis failed',
-        description: err instanceof Error ? err.message : 'Something went wrong',
-        variant: 'destructive',
-      });
-    } finally {
-      setAnalyzing(false);
-      if (fileInput.current) fileInput.current.value = '';
-    }
-  }
-
-  async function changeStage(candidate: Candidate, stage: PipelineStage) {
-    try {
-      const updated = await updateCandidateStage(id, candidate.id, stage);
-      setCandidates((prev) => prev.map((c) => (c.id === candidate.id ? { ...c, stage: updated.stage } : c)));
-    } catch (err) {
-      toast({ title: 'Could not update stage', description: err instanceof Error ? err.message : '', variant: 'destructive' });
-    }
-  }
-
   if (loading) {
     return (
       <div className="min-h-screen bg-[#f8fafc]">
         <AppHeader />
-        <div className="flex justify-center py-24">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        <Spinner label="Loading campaign…" />
+      </div>
+    );
+  }
+  if (error && !campaign) {
+    return (
+      <div className="min-h-screen bg-[#f8fafc]">
+        <AppHeader />
+        <div className="mx-auto max-w-3xl px-4 py-10">
+          <ErrorState message={error} onRetry={() => { setLoading(true); refresh().finally(() => setLoading(false)); }} />
         </div>
       </div>
     );
   }
-
-  if (error || !campaign) {
-    return (
-      <div className="min-h-screen bg-[#f8fafc]">
-        <AppHeader />
-        <div className="mx-auto max-w-3xl px-4 py-10 text-sm text-destructive">{error || 'Not found'}</div>
-      </div>
-    );
-  }
+  if (!campaign) return null;
 
   return (
     <div className="min-h-screen bg-[#f8fafc]">
       <AppHeader />
-      <main className="mx-auto max-w-5xl px-4 py-8">
+      <main className="mx-auto max-w-6xl px-4 py-8">
         <Link href="/campaigns" className="mb-4 inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="mr-1 h-4 w-4" /> All campaigns
         </Link>
 
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-border/60 bg-card p-6 shadow-sm">
-          <div>
-            <div className="flex items-center gap-3">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-xl font-semibold text-foreground">{campaign.title}</h1>
-              <Badge variant="secondary" className="capitalize">{campaign.status}</Badge>
+              <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium capitalize ${STATUS_STYLES[campaign.status] ?? 'bg-muted'}`}>
+                {campaign.status}
+              </span>
             </div>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {campaign.role_title || 'No role set'}
-              {campaign.location ? ` · ${campaign.location}` : ''}
+            <p className="mt-1 flex flex-wrap items-center gap-x-3 text-sm text-muted-foreground">
+              {campaign.company && (
+                <span className="inline-flex items-center gap-1"><Building2 className="h-3.5 w-3.5" />{campaign.company}</span>
+              )}
+              <span>{campaign.role_title || 'No role set'}</span>
+              {campaign.location && <span>{campaign.location}</span>}
+              <span>{campaign.total_candidates ?? candidates.length} candidates</span>
             </p>
           </div>
           <div>
-            <input
-              ref={fileInput}
-              type="file"
-              accept=".pdf,.docx"
-              multiple
-              hidden
-              onChange={handleFiles}
-            />
-            <Button onClick={() => fileInput.current?.click()} disabled={analyzing}>
-              {analyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-              {analyzing ? 'Analyzing…' : 'Analyze resumes'}
+            <Button onClick={() => setUploadOpen(true)}>
+              <Upload className="mr-2 h-4 w-4" /> Upload resumes
             </Button>
           </div>
         </div>
@@ -146,83 +104,28 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
         )}
 
         <div className="mb-3 flex items-center gap-2 text-sm font-medium text-muted-foreground">
-          <Users className="h-4 w-4" /> Candidates ({candidates.length})
+          <Users className="h-4 w-4" /> Candidates
         </div>
 
-        {candidates.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center text-sm text-muted-foreground">
-            No candidates yet. Click <strong>Analyze resumes</strong> to rank and store applicants.
-          </div>
-        ) : (
-          <div className="grid gap-3">
-            {candidates.map((c, i) => (
-              <CandidateCard key={c.id} candidate={c} index={i} onStageChange={changeStage} />
-            ))}
-          </div>
-        )}
+        <CandidateTable
+          candidates={candidates}
+          campaignId={id}
+          loading={candLoading && candidates.length === 0}
+          error={error}
+          onChanged={refresh}
+          onRetry={refresh}
+        />
       </main>
+
+      {uploadOpen && (
+        <UploadPanel
+          campaignId={id}
+          jobDescription={campaign.job_description}
+          existingFilenames={candidates.map((c) => c.resume_filename || '').filter(Boolean)}
+          onCandidateAdded={refresh}
+          onClose={() => setUploadOpen(false)}
+        />
+      )}
     </div>
   );
-}
-
-function CandidateCard({
-  candidate,
-  index,
-  onStageChange,
-}: {
-  candidate: Candidate;
-  index: number;
-  onStageChange: (c: Candidate, stage: PipelineStage) => void;
-}) {
-  const a = (candidate.latest_analysis?.result ?? {}) as Record<string, unknown>;
-  const score = (a.overall_score as number) ?? (candidate.latest_analysis?.overall_score as number) ?? null;
-  const category = (a.match_category as string) ?? '';
-
-  return (
-    <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-sm font-semibold text-primary">
-            {index === 0 ? <Trophy className="h-4 w-4" /> : index + 1}
-          </span>
-          <div>
-            <div className="font-medium text-foreground">{candidate.full_name || candidate.resume_filename || 'Candidate'}</div>
-            <div className="text-xs text-muted-foreground">
-              {candidate.email || 'No email'}
-              {category ? ` · ${category}` : ''}
-            </div>
-          </div>
-        </div>
-        {score !== null && (
-          <div className="text-right">
-            <div className="text-lg font-semibold text-foreground">{score}</div>
-            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Score</div>
-          </div>
-        )}
-      </div>
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {STAGES.map((s) => (
-          <button
-            key={s}
-            onClick={() => onStageChange(candidate, s)}
-            className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium capitalize transition ${
-              candidate.stage === s
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground hover:bg-primary/10'
-            }`}
-          >
-            {s}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function sortByScore(cands: Candidate[]): Candidate[] {
-  return [...cands].sort((a, b) => {
-    const sa = (a.latest_analysis?.overall_score as number) ?? -1;
-    const sb = (b.latest_analysis?.overall_score as number) ?? -1;
-    return sb - sa;
-  });
 }

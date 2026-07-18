@@ -39,6 +39,7 @@ class PipelineStage(str, Enum):
 # ── Campaigns ────────────────────────────────────────────────────────────────
 class CampaignCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
+    company: Optional[str] = Field(default=None, max_length=200)
     role_title: Optional[str] = Field(default=None, max_length=200)
     department: Optional[str] = None
     location: Optional[str] = None
@@ -50,6 +51,7 @@ class CampaignCreate(BaseModel):
 
 class CampaignUpdate(BaseModel):
     title: Optional[str] = Field(default=None, min_length=1, max_length=200)
+    company: Optional[str] = None
     role_title: Optional[str] = None
     department: Optional[str] = None
     location: Optional[str] = None
@@ -65,6 +67,7 @@ class Campaign(BaseModel):
     id: str
     recruiter_id: str
     title: str
+    company: Optional[str] = None  # stored in metadata.company (no dedicated column)
     role_title: Optional[str] = None
     department: Optional[str] = None
     location: Optional[str] = None
@@ -78,6 +81,10 @@ class Campaign(BaseModel):
     updated_at: Optional[datetime] = None
     # Aggregates hydrated on demand (not columns).
     candidate_count: Optional[int] = None
+    total_candidates: Optional[int] = None
+    awaiting_analysis: Optional[int] = None
+    average_match_score: Optional[float] = None
+    last_activity_at: Optional[datetime] = None
 
 
 # ── Candidates ───────────────────────────────────────────────────────────────
@@ -161,6 +168,12 @@ class PersistBatchRequest(BaseModel):
     """Attach a completed batch analysis to a campaign for storage."""
 
     campaign_id: str
+
+
+class BulkCandidateIds(BaseModel):
+    """Payload for bulk candidate actions (delete, etc.)."""
+
+    candidate_ids: list[str] = Field(default_factory=list)
 
 
 class ActivityEvent(BaseModel):
