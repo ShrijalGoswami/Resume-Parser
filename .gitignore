@@ -219,3 +219,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Keep example env templates tracked (they contain only placeholders).
+!.env.example
+!**/.env.example

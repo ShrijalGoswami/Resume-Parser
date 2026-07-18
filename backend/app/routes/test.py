@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 @router.get("/test-resume", status_code=status.HTTP_200_OK)
-async def test_resume():
+def test_resume():
     """
     Temporary route to test the parser service on the existing resume in the uploads folder.
     """
@@ -72,7 +72,7 @@ async def test_resume():
         )
 
 @router.get("/test-extraction", response_model=ResumeData, status_code=status.HTTP_200_OK)
-async def test_extraction() -> ResumeData:
+def test_extraction() -> ResumeData:
     """
     Temporary route to test the NLP information extraction engine on the existing resume in uploads.
     """
@@ -121,7 +121,7 @@ async def test_extraction() -> ResumeData:
         )
 
 @router.get("/test-quality", status_code=status.HTTP_200_OK)
-async def test_quality():
+def test_quality():
     """
     Temporary route to test and calculate the quality score of the parsed resume.
     """
@@ -228,7 +228,7 @@ async def test_quality():
         )
 
 @router.get("/test-analysis", status_code=status.HTTP_200_OK)
-async def test_analysis():
+def test_analysis():
     """
     Temporary route to test the Groq-powered resume analysis pipeline.
     Pipeline: File -> Parser -> Extractor -> Groq LLM -> AnalysisResponse
@@ -278,11 +278,11 @@ async def test_analysis():
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(pe)
         )
-    except RuntimeError as re:
-        logger.error(f"Test Analysis Endpoint: Runtime error. Reason: {str(re)}")
+    except RuntimeError as err:
+        logger.error(f"Test Analysis Endpoint: Runtime error. Reason: {str(err)}")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=str(re)
+            detail=str(err)
         )
     except Exception as e:
         logger.exception("Test Analysis Endpoint: Unexpected failure during analysis pipeline")

@@ -8,6 +8,12 @@ logger = logging.getLogger(__name__)
 
 _client: Groq | None = None
 
+
+class GroqConfigError(RuntimeError):
+    """Raised when the Groq client cannot be configured (e.g. missing API key).
+    Unlike transient network errors, this must never be retried."""
+
+
 def get_groq_client() -> Groq:
     """
     Returns a singleton Groq client instance.
@@ -16,7 +22,7 @@ def get_groq_client() -> Groq:
     if _client is None:
         api_key = settings.GROQ_API_KEY
         if not api_key or api_key == "gsk_placeholder_key":
-            raise RuntimeError("GROQ_API_KEY is not configured. Set it in .env.local.")
+            raise GroqConfigError("GROQ_API_KEY is not configured. Set it in the environment or backend/.env.local.")
         _client = Groq(api_key=api_key)
         logger.info("Groq client initialized.")
     return _client

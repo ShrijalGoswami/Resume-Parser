@@ -12,14 +12,13 @@ from datetime import datetime
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import mm, inch
-from reportlab.lib.enums import TA_LEFT, TA_CENTER
+from reportlab.lib.units import mm
+from reportlab.lib.enums import TA_CENTER
 from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle,
-    HRFlowable, KeepTogether,
+    HRFlowable,
 )
 from reportlab.graphics.shapes import Drawing, Rect, String
-from reportlab.graphics import renderPDF
 
 logger = logging.getLogger(__name__)
 

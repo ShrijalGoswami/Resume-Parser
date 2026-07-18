@@ -1,0 +1,22 @@
+# Render Blueprint for the HireLens FastAPI backend.
+# Deploy: point Render at this repo with Root Directory = "backend".
+services:
+  - type: web
+    name: hirelens-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: ENVIRONMENT
+        value: production
+      - key: GROQ_API_KEY
+        sync: false            # set the real value in the Render dashboard
+      - key: ALLOWED_ORIGINS
+        sync: false            # e.g. https://your-frontend.vercel.app
+      - key: MAX_FILE_SIZE_MB
+        value: "10"

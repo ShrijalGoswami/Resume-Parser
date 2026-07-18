@@ -18,7 +18,7 @@ from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
-from app.schemas.analysis import AnalysisResponse, ScoreBreakdown
+from app.schemas.analysis import AnalysisResponse
 from app.services.report_generator import generate_report, generate_match_report
 
 logger = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ def _sanitize_filename(name: str) -> str:
 
 
 @router.post("/export-report", status_code=status.HTTP_200_OK)
-async def export_report(payload: ExportReportRequest):
+def export_report(payload: ExportReportRequest):
     """
     Generate a PDF report from the provided analysis data.
 
@@ -94,7 +94,7 @@ class ExportMatchReportRequest(BaseModel):
 
 
 @router.post("/export-match-report", status_code=status.HTTP_200_OK)
-async def export_match_report(payload: ExportMatchReportRequest):
+def export_match_report(payload: ExportMatchReportRequest):
     """
     Generate a PDF recruiter match report from the provided match analysis data.
     """

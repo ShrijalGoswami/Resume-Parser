@@ -17,8 +17,8 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 
 interface UploadDialogProps {
-  onAnalyzeAts: (file: File) => Promise<void>;
-  onAnalyzeMatch: (file: File, jobDescription: string) => Promise<void>;
+  onAnalyzeAts: (file: File) => Promise<unknown>;
+  onAnalyzeMatch: (file: File, jobDescription: string) => Promise<unknown>;
   isLoading: boolean;
   trigger?: React.ReactNode;
 }
