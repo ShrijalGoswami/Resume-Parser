@@ -25,7 +25,7 @@ import re
 import logging
 from app.schemas.resume import ResumeData
 from app.schemas.analysis import AnalysisResponse, GroqExplanation
-from app.llm.groq_client import call_groq
+from app.llm.groq_client import call_groq, GroqConfigError
 from app.llm.prompts import SYSTEM_PROMPT, build_analysis_prompt
 from app.nlp.ats_scorer import calculate_ats_score
 
@@ -57,6 +57,9 @@ def _call_with_network_retries(
     for attempt in range(1, max_retries + 1):
         try:
             return call_groq(system_prompt=system_prompt, user_prompt=user_prompt)
+        except GroqConfigError:
+            # Misconfiguration can never succeed on retry — fail fast.
+            raise
         except RuntimeError as e:
             last_error = e
             logger.warning(f"Network/timeout error on attempt {attempt}/{max_retries}: {e}")

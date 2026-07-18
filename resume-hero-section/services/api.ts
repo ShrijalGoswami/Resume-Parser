@@ -1,33 +1,21 @@
 import { ResumeAnalysisResponse, CombinedMatchResponse } from '../types/api';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 /**
- * Executes the ATS Analysis workflow:
- * 1. Uploads the resume
- * 2. Triggers the Groq-powered analysis on the uploaded resume
+ * Executes the ATS Analysis workflow in a single stateless request:
+ * the resume is uploaded, parsed and analyzed by POST /api/v1/ats-analysis.
  */
 export async function analyzeAts(file: File): Promise<{
   resume_data: ResumeAnalysisResponse;
   analysis: { ats_score: number; ats_tips: string[] };
 }> {
-  // Step 1: Upload the file
   const formData = new FormData();
   formData.append('file', file);
 
-  const uploadRes = await fetch(`${API_BASE_URL}/api/v1/upload`, {
+  const analysisRes = await fetch(`${API_BASE_URL}/api/v1/ats-analysis`, {
     method: 'POST',
     body: formData,
-  });
-
-  if (!uploadRes.ok) {
-    const errorData = await uploadRes.json().catch(() => ({}));
-    throw new Error(errorData.detail || 'Failed to upload resume');
-  }
-
-  // Step 2: Trigger the analysis
-  const analysisRes = await fetch(`${API_BASE_URL}/api/v1/test-analysis`, {
-    method: 'GET',
   });
 
   if (!analysisRes.ok) {
