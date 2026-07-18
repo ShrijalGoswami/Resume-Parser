@@ -13,7 +13,8 @@ from app.core.observability import (
     MaxBodySizeMiddleware,
 )
 from app.core.startup import validate_startup
-from app.routes import upload, test, export, match, analyze
+from app.db.supabase_client import supabase_available
+from app.routes import export, match, analyze, batch, copilot, campaigns, account
 
 # Install structured, request-ID-aware logging before anything else logs.
 configure_logging()
@@ -60,11 +61,14 @@ app.add_middleware(
 )
 
 # ── Routers ───────────────────────────────────────────────────────────────────
-app.include_router(upload.router, prefix="/api/v1", tags=["Upload"])
-app.include_router(test.router, prefix="/api/v1", tags=["Test"])
-app.include_router(export.router, prefix="/api/v1", tags=["Export"])
-app.include_router(match.router, prefix="/api/v1", tags=["Match"])
 app.include_router(analyze.router, prefix="/api/v1", tags=["Analyze"])
+app.include_router(match.router, prefix="/api/v1", tags=["Match"])
+app.include_router(batch.router, prefix="/api/v1", tags=["Batch"])
+app.include_router(copilot.router, prefix="/api/v1")
+app.include_router(export.router, prefix="/api/v1", tags=["Export"])
+# ── V4 persistence layer (additive; requires Supabase config to function) ─────
+app.include_router(campaigns.router, prefix="/api/v1")
+app.include_router(account.router, prefix="/api/v1")
 
 
 @app.api_route("/health", methods=["GET", "HEAD"], tags=["Health"])
@@ -81,6 +85,8 @@ async def health_check():
         "uptime_seconds": uptime_seconds,
         "dependencies": {
             "llm": "configured" if settings.is_llm_configured else "not_configured",
+            "persistence": "configured" if supabase_available() else "not_configured",
+            "auth": "configured" if settings.is_auth_configured else "not_configured",
         },
         "limits": {
             "max_file_size_mb": settings.MAX_FILE_SIZE_MB,
