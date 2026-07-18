@@ -25,6 +25,7 @@ export interface Campaign {
   id: string;
   recruiter_id: string;
   title: string;
+  company?: string | null;
   role_title?: string | null;
   department?: string | null;
   location?: string | null;
@@ -37,10 +38,16 @@ export interface Campaign {
   created_at?: string;
   updated_at?: string;
   candidate_count?: number | null;
+  // Dashboard aggregates (hydrated by GET /campaigns).
+  total_candidates?: number | null;
+  awaiting_analysis?: number | null;
+  average_match_score?: number | null;
+  last_activity_at?: string | null;
 }
 
 export interface CampaignCreateInput {
   title: string;
+  company?: string;
   role_title?: string;
   department?: string;
   location?: string;

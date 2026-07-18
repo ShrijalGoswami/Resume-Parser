@@ -14,7 +14,7 @@ from app.core.observability import (
 )
 from app.core.startup import validate_startup
 from app.db.supabase_client import supabase_available
-from app.routes import export, match, analyze, batch, copilot, campaigns, account
+from app.routes import export, match, analyze, batch, copilot, campaigns, account, analytics
 
 # Install structured, request-ID-aware logging before anything else logs.
 configure_logging()
@@ -69,6 +69,7 @@ app.include_router(export.router, prefix="/api/v1", tags=["Export"])
 # ── V4 persistence layer (additive; requires Supabase config to function) ─────
 app.include_router(campaigns.router, prefix="/api/v1")
 app.include_router(account.router, prefix="/api/v1")
+app.include_router(analytics.router, prefix="/api/v1")
 
 
 @app.api_route("/health", methods=["GET", "HEAD"], tags=["Health"])

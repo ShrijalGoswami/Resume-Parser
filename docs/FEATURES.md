@@ -9,6 +9,11 @@
 > **activated and live-verified** — auth, campaigns, storage, RLS, triggers, and
 > FK cascades all confirmed against the live project (15/15 e2e). See
 > [PROJECT_AUDIT.md](./PROJECT_AUDIT.md).
+>
+> **Sprint 2 (Recruiter Workspace) shipped:** campaign dashboard, candidate
+> management table, candidate detail page, intelligent upload, and the Executive
+> Intelligence analytics dashboard — 62/62 live checks. See
+> [sprints/V4_SPRINT2.md](./sprints/V4_SPRINT2.md).
 
 ---
 
@@ -30,8 +35,12 @@
 | AI Recruiter Copilot | ✅ | Grounded Q&A about a candidate, with evidence | Copilot, candidate context | P0 |
 | Hiring campaigns | ✅ | One campaign = one hiring process (JD, candidates, pipeline, notes) | Supabase, auth | P0 |
 | Pipeline stages | ✅ | Move candidates sourced → hired/rejected | Campaigns | P1 |
-| Recruiter notes | ✅ | Free-form, pinnable notes per candidate | Campaigns | P1 |
-| Activity timeline | ✅ | Append-only log of recruiter actions | Campaigns | P2 |
+| Recruiter notes | ✅ | Free-form notes per candidate (add/list/delete) | Campaigns | P1 |
+| Activity timeline | ✅ | Append-only log; campaign- and candidate-scoped | Campaigns | P2 |
+| Candidate management table | ✅ | Ranking, 8 filters, bulk actions, search, pagination | Campaigns | P0 |
+| Candidate detail page | ✅ | Tabbed overview / AI analysis / notes / activity | Campaigns | P0 |
+| Intelligent upload | ✅ | Drag&drop, queue, progress, retry, dedupe, auto-insert | AI pipeline | P0 |
+| Executive analytics dashboard | ✅ | KPIs, AI insights, charts, action center (`/insights`) | Analytics endpoint | P1 |
 | Copilot memory | 🚧 | Persist conversations across sessions (tables + repo exist) | Campaigns | P0 |
 | Interview packs | 🗓️ | Generate + store interview kits (PDF) | AI, Storage | P2 |
 | Realtime pipeline board | 🗓️ | Live candidate updates | Supabase Realtime | P1 |
@@ -95,7 +104,8 @@
 |---------|:------:|-------------|--------------|:--------:|
 | Batch analytics | ✅ | Per-batch top/missing skills, distributions | Batch service | P1 |
 | Dashboard stats | ✅ | Campaign/candidate counts on the dashboard | Campaigns | P2 |
-| Cross-campaign analytics | 🗓️ | Trends from `candidate_analyses` projections | DB | P3 |
+| Cross-campaign analytics | ✅ | Executive dashboard aggregating all campaigns (`/insights`) | Analytics endpoint | P1 |
+| Charts (funnel, distributions, trend, skills) | ✅ | Reusable dependency-free chart components | Analytics | P2 |
 
 ## Future
 

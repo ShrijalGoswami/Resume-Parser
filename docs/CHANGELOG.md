@@ -12,6 +12,41 @@ All notable changes to HireLens are documented here. Format based on
 
 ---
 
+## [4.1.0] — Unreleased (V4 Sprint 2: Recruiter Workspace)
+
+Turns the persisted V4 foundation into a usable recruiter product. Reuses the
+repository pattern and the **unchanged** AI pipeline; no migrations. Full detail:
+[sprints/V4_SPRINT2.md](./sprints/V4_SPRINT2.md).
+
+### Added
+- **Campaign Dashboard** (`/dashboard`) — per-campaign KPIs (candidates, awaiting,
+  avg match, last activity) with search, sort, status filters, pagination, states.
+- **Candidate Management table** (`/campaigns/[id]`) — AI-quality ranking, 6 sorts,
+  8 combinable filters, expandable AI preview, multi-select + bulk actions
+  (delete/export/analyze/compare), search, pagination.
+- **Candidate Detail Page** — tabbed Overview / AI Analysis / Notes / Activity.
+- **Intelligent Upload** — drag & drop, real progress, per-file pipeline stages,
+  concurrency queue, retry, validation, duplicate detection, auto-insert.
+- **Executive Intelligence Dashboard** (`/insights`) — overview KPIs, AI insights,
+  visual analytics (funnel, distributions, top skills, trend), action center,
+  recent activity. New `GET /api/v1/analytics/overview`.
+- Reusable workspace UI: `components/workspace/{states,pagination,candidate-table,upload-panel,charts}.tsx`, `components/ui/skeleton.tsx`, `lib/{format,candidate}.ts`.
+- Per-campaign `company` field (stored in `metadata`); candidate bulk-delete,
+  candidate-scoped activity, and note-deletion endpoints.
+
+### Changed
+- Candidate listing now hydrates analyses in **2 queries (no N+1)**; dashboard
+  and analytics use bulk aggregation.
+
+### Performance
+- Eliminated candidate-list N+1; 3-query dashboard stats; 4-query analytics with
+  targeted JSON selection.
+
+### Verified
+- **62/62 live checks** against the project; `next build` + `tsc` green; 23 API routes.
+
+---
+
 ## [4.0.0] — Unreleased (V4 Sprint 1: Supabase Foundation)
 
 Converts HireLens from a stateless AI application into a persistent SaaS

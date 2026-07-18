@@ -22,6 +22,7 @@ from app.repositories import (
     ConversationRepository,
     NoteRepository,
 )
+from app.repositories.analytics_repository import AnalyticsRepository
 from app.services.storage_service import StorageService
 
 RecruiterDep = Annotated[CurrentRecruiter, Depends(require_recruiter)]
@@ -55,9 +56,14 @@ def get_storage_service(recruiter: RecruiterDep) -> StorageService:
     return StorageService(_client_for(recruiter), recruiter.id)
 
 
+def get_analytics_repo(recruiter: RecruiterDep) -> AnalyticsRepository:
+    return AnalyticsRepository(_client_for(recruiter), recruiter.id)
+
+
 CampaignRepoDep = Annotated[CampaignRepository, Depends(get_campaign_repo)]
 CandidateRepoDep = Annotated[CandidateRepository, Depends(get_candidate_repo)]
 NoteRepoDep = Annotated[NoteRepository, Depends(get_note_repo)]
 ConversationRepoDep = Annotated[ConversationRepository, Depends(get_conversation_repo)]
 ActivityRepoDep = Annotated[ActivityRepository, Depends(get_activity_repo)]
 StorageDep = Annotated[StorageService, Depends(get_storage_service)]
+AnalyticsRepoDep = Annotated[AnalyticsRepository, Depends(get_analytics_repo)]

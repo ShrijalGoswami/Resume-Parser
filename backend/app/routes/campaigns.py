@@ -28,6 +28,7 @@ from app.services.storage_service import object_key
 from app.services.upload_utils import validate_resume_upload
 from app.schemas.batch import BatchAnalysisResponse
 from app.schemas.campaign import (
+    BulkCandidateIds,
     Campaign,
     CampaignCreate,
     CampaignUpdate,
@@ -61,16 +62,27 @@ async def list_campaigns(
     status_filter: Optional[str] = Query(default=None, alias="status"),
 ):
     campaigns = repo.list(status_filter=status_filter)
-    # Hydrate candidate counts (cheap; parallelizable later).
+    # Hydrate dashboard aggregates in 3 bulk queries (no N+1).
+    stats = repo.stats_for_recruiter()
     for c in campaigns:
-        c.candidate_count = repo.count_candidates(c.id)
+        s = stats.get(c.id, {})
+        c.total_candidates = s.get("total_candidates", 0)
+        c.candidate_count = c.total_candidates
+        c.awaiting_analysis = s.get("awaiting_analysis", 0)
+        c.average_match_score = s.get("average_match_score")
+        c.last_activity_at = s.get("last_activity_at") or c.updated_at
     return campaigns
 
 
 @router.get("/{campaign_id}", response_model=Campaign)
 async def get_campaign(campaign_id: str, repo: CampaignRepoDep):
     campaign = repo.get(campaign_id)
-    campaign.candidate_count = repo.count_candidates(campaign_id)
+    stats = repo.stats_for_recruiter().get(campaign_id, {})
+    campaign.total_candidates = stats.get("total_candidates", repo.count_candidates(campaign_id))
+    campaign.candidate_count = campaign.total_candidates
+    campaign.awaiting_analysis = stats.get("awaiting_analysis", 0)
+    campaign.average_match_score = stats.get("average_match_score")
+    campaign.last_activity_at = stats.get("last_activity_at") or campaign.updated_at
     return campaign
 
 
@@ -94,10 +106,26 @@ async def delete_campaign(campaign_id: str, repo: CampaignRepoDep):
 # ── Candidates within a campaign ─────────────────────────────────────────────
 @router.get("/{campaign_id}/candidates", response_model=list[Candidate])
 async def list_candidates(campaign_id: str, repo: CandidateRepoDep):
-    candidates = repo.list_for_campaign(campaign_id)
-    for cand in candidates:
-        cand.latest_analysis = repo.latest_analysis(cand.id)
-    return candidates
+    # Two queries total (candidates + latest-analysis view) — no N+1.
+    return repo.list_for_campaign_with_analysis(campaign_id)
+
+
+@router.post("/{campaign_id}/candidates/bulk-delete")
+async def bulk_delete_candidates(
+    campaign_id: str,
+    payload: BulkCandidateIds,
+    candidates: CandidateRepoDep,
+    activity: ActivityRepoDep,
+):
+    """Delete multiple candidates at once (bulk action)."""
+    deleted = candidates.bulk_delete(campaign_id, payload.candidate_ids)
+    activity.record(
+        "campaign_updated",
+        summary=f"Removed {deleted} candidate(s)",
+        campaign_id=campaign_id,
+        payload={"action": "bulk_delete", "count": deleted},
+    )
+    return {"deleted": deleted}
 
 
 @router.get("/{campaign_id}/candidates/{candidate_id}", response_model=Candidate)
@@ -148,6 +176,25 @@ async def create_note(
 )
 async def list_notes(campaign_id: str, candidate_id: str, repo: NoteRepoDep):
     return repo.list_for_candidate(candidate_id)
+
+
+@router.delete(
+    "/{campaign_id}/candidates/{candidate_id}/notes/{note_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_note(campaign_id: str, candidate_id: str, note_id: str, repo: NoteRepoDep):
+    repo.delete(note_id)
+
+
+@router.get("/{campaign_id}/candidates/{candidate_id}/activity")
+async def candidate_activity(
+    campaign_id: str,
+    candidate_id: str,
+    activity: ActivityRepoDep,
+    limit: int = Query(default=50, le=200),
+):
+    """Chronological activity for a single candidate (most recent first)."""
+    return activity.recent(limit=limit, campaign_id=campaign_id, candidate_id=candidate_id)
 
 
 # ── Persistence: store a completed batch analysis ────────────────────────────

@@ -53,6 +53,48 @@ class CandidateRepository(BaseRepository):
             raise self._wrap(exc, "list candidates")
         return [Candidate(**r) for r in self._rows(resp)]
 
+    def list_for_campaign_with_analysis(self, campaign_id: str) -> list[Candidate]:
+        """
+        Candidates for a campaign, each with its latest analysis hydrated —
+        in exactly TWO queries (candidates + latest-analysis view), never N+1.
+        """
+        candidates = self.list_for_campaign(campaign_id)
+        analyses = self.latest_analyses_for_campaign(campaign_id)
+        for c in candidates:
+            c.latest_analysis = analyses.get(c.id)
+        return candidates
+
+    def latest_analyses_for_campaign(self, campaign_id: str) -> dict[str, dict[str, Any]]:
+        """Map candidate_id -> latest analysis row for a whole campaign (1 query)."""
+        try:
+            resp = (
+                self._client.table("candidate_latest_analysis")
+                .select("*")
+                .eq("recruiter_id", self.recruiter_id)
+                .eq("campaign_id", campaign_id)
+                .execute()
+            )
+        except Exception:
+            # View unavailable → fall back to none rather than failing the list.
+            return {}
+        return {r["candidate_id"]: r for r in self._rows(resp) if r.get("candidate_id")}
+
+    def bulk_delete(self, campaign_id: str, candidate_ids: list[str]) -> int:
+        """Delete multiple candidates (recruiter- + campaign-scoped). Returns count."""
+        if not candidate_ids:
+            return 0
+        try:
+            resp = (
+                self._table.delete()
+                .eq("recruiter_id", self.recruiter_id)
+                .eq("campaign_id", campaign_id)
+                .in_("id", candidate_ids)
+                .execute()
+            )
+        except Exception as exc:  # pragma: no cover
+            raise self._wrap(exc, "bulk delete candidates")
+        return len(self._rows(resp))
+
     def get(self, candidate_id: str) -> Candidate:
         try:
             resp = self._scoped().eq("id", candidate_id).limit(1).execute()
