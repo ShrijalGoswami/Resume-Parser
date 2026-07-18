@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { VisualEcosystem } from "./visual-ecosystem"
-import { Upload, Play, CheckCircle } from "lucide-react"
+import { Upload, Play, CheckCircle, Users } from "lucide-react"
 import { UploadDialog } from "./upload-dialog"
 import { useResumeAnalysis } from "../../hooks/useResumeAnalysis"
 import { useMatchAnalysis } from "../../hooks/useMatchAnalysis"
@@ -103,6 +103,13 @@ export function HeroSection() {
               onAnalyzeMatch={analyzeMatch}
               isLoading={isLoading}
             />
+            <a
+              href="/recruiter"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-border bg-white px-6 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted"
+            >
+              <Users className="size-4" />
+              Recruiter Workspace
+            </a>
           </div>
 
           {/* Trust Indicators */}

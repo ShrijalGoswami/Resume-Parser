@@ -118,8 +118,12 @@ class MaxBodySizeMiddleware(BaseHTTPMiddleware):
     """
 
     async def dispatch(self, request: Request, call_next):
-        # Allow multipart overhead on top of the raw file size limit.
-        limit = settings.max_file_size_bytes + (1 * 1024 * 1024)
+        # The batch endpoint accepts many files; size it for a full batch.
+        # Single-file endpoints still enforce their own per-file streaming limit.
+        if request.url.path.endswith("/batch-analysis"):
+            limit = settings.max_file_size_bytes * settings.MAX_BATCH_SIZE + (4 * 1024 * 1024)
+        else:
+            limit = settings.max_file_size_bytes + (1 * 1024 * 1024)
         content_length = request.headers.get("content-length")
         if content_length is not None:
             try:
@@ -128,7 +132,7 @@ class MaxBodySizeMiddleware(BaseHTTPMiddleware):
                         status_code=413,
                         content={
                             "detail": f"Request body exceeds maximum allowed size "
-                                      f"of {settings.MAX_FILE_SIZE_MB}MB."
+                                      f"of {limit // (1024 * 1024)}MB."
                         },
                     )
             except ValueError:

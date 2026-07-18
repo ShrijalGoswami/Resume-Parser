@@ -3,6 +3,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Indeterminate progress bar used by the Recruiter Workspace. */
+@keyframes loading {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(360%); }
+}
+
 :root {
   --background: #FAFAFA;
   --foreground: #1E293B;
