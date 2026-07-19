@@ -58,6 +58,71 @@ class Settings(BaseSettings):
     # Lifetime (seconds) for generated signed download URLs.
     SIGNED_URL_TTL_SECONDS: int = 3600
 
+    # ── AI Foundation Layer (V5 / Sprint 3) ──────────────────────────────────
+    # Centralized AI configuration consumed by app.ai.config.AIConfig. Defaults
+    # preserve the historical Groq behavior exactly (llama-3.3-70b, temp 0.2).
+    AI_DEFAULT_PROVIDER: str = "groq"
+    AI_DEFAULT_MODEL: str = "llama-3.3-70b-versatile"
+    AI_TEMPERATURE: float = 0.2
+    AI_MAX_TOKENS: int = 2048
+    AI_TIMEOUT_SECONDS: int = 30
+    AI_MAX_NETWORK_RETRIES: int = 3
+    AI_MAX_JSON_RETRIES: int = 3
+    AI_MAX_SCHEMA_RETRIES: int = 2
+
+    # ── AI Gateway & Model Management (V5 / Sprint 7.5) ───────────────────────
+    # The whole platform switches providers/models by configuration only — no
+    # feature-level code changes. `AI_PROVIDER` (if set) is the primary reasoning
+    # provider; it falls back to AI_DEFAULT_PROVIDER for backward compatibility.
+    AI_PROVIDER: str = ""                     # groq | gemini | anthropic | openai | openrouter (blank → AI_DEFAULT_PROVIDER)
+    # Configurable, comma-separated fallback provider chain (empty = no fallback).
+    AI_FALLBACK_PROVIDERS: str = ""           # e.g. "groq,gemini"
+    AI_ENABLE_FALLBACK: bool = True
+    # Per-logical-role model overrides (blank → the provider's registered default).
+    DEFAULT_REASONING_MODEL: str = ""
+    FAST_REASONING_MODEL: str = ""
+    CHEAP_REASONING_MODEL: str = ""
+    LONG_CONTEXT_MODEL: str = ""
+    PREMIUM_REASONING_MODEL: str = ""
+    # Provider API keys (server-side only; never exposed to the frontend).
+    GEMINI_API_KEY: str = ""
+    ANTHROPIC_API_KEY: str = ""
+    OPENROUTER_API_KEY: str = ""
+
+    # ── Integration Platform (V6 / Sprint 11) ────────────────────────────────
+    # Fernet key used to encrypt integration credentials (OAuth refresh tokens are
+    # NEVER stored in plaintext). If unset, a stable key is derived from the JWT
+    # secret for dev; set a dedicated 32-byte urlsafe-base64 key in production.
+    INTEGRATION_ENCRYPTION_KEY: str = ""
+    # Per-provider client secrets for OAuth (server-side only).
+    GOOGLE_OAUTH_CLIENT_ID: str = ""
+    GOOGLE_OAUTH_CLIENT_SECRET: str = ""
+    MICROSOFT_OAUTH_CLIENT_ID: str = ""
+    MICROSOFT_OAUTH_CLIENT_SECRET: str = ""
+    SLACK_OAUTH_CLIENT_ID: str = ""
+    SLACK_OAUTH_CLIENT_SECRET: str = ""
+    ZOOM_OAUTH_CLIENT_ID: str = ""
+    ZOOM_OAUTH_CLIENT_SECRET: str = ""
+
+    @property
+    def reasoning_provider(self) -> str:
+        """The configured primary reasoning provider (AI_PROVIDER wins)."""
+        return (self.AI_PROVIDER or self.AI_DEFAULT_PROVIDER or "groq").strip().lower()
+
+    @property
+    def fallback_providers(self) -> list[str]:
+        return [p.strip().lower() for p in self.AI_FALLBACK_PROVIDERS.split(",") if p.strip()]
+
+    # ── Semantic Search / Embeddings (V5 / Sprint 6) ─────────────────────────
+    # Retrieval is separate from the LLM: candidate profiles are embedded and
+    # searched by vector similarity; the LLM only explains results afterwards.
+    # Default provider is dependency-free (deterministic hashing) so semantic
+    # search works out of the box; swap to a real model (OpenAI/Voyage/…) via env.
+    EMBEDDING_PROVIDER: str = "hashing"          # hashing | openai
+    EMBEDDING_MODEL: str = "hashing-v1"          # e.g. text-embedding-3-small
+    EMBEDDING_DIMENSIONS: int = 1536
+    OPENAI_API_KEY: str = ""
+
     # Absolute paths so the env file is found regardless of the launch CWD.
     model_config = SettingsConfigDict(
         env_file=(BACKEND_DIR / ".env", BACKEND_DIR / ".env.local"),

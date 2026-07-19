@@ -32,7 +32,9 @@
 | Feature | Status | Description | Dependencies | Priority |
 |---------|:------:|-------------|--------------|:--------:|
 | Batch ranking | ✅ | Many resumes vs one JD → ranked table + analytics | Batch service, Groq | P0 |
-| AI Recruiter Copilot | ✅ | Grounded Q&A about a candidate, with evidence | Copilot, candidate context | P0 |
+| AI Recruiter Copilot | ✅ | Ambient, context-aware assistant across all recruiter pages; grounds answers in campaign/candidate/resume/JD/notes data (priority-ordered), structured responses with Sources Used, follow-ups | AI orchestrator, context resolver | P0 |
+| AI Candidate Comparison | ✅ | Compare 2–5 candidates into an executive hiring report (rankings, skill matrix, risks, hiring recommendation, interview focus, trade-offs); reused by the Copilot | AI orchestrator, comparison engine | P0 |
+| AI Semantic Talent Search | ✅ | Natural-language + "find similar" candidate discovery by embedding similarity (not keywords); matched-concept highlights, filters, save/history; reused by the Copilot | Embedding layer, vector store | P0 |
 | Hiring campaigns | ✅ | One campaign = one hiring process (JD, candidates, pipeline, notes) | Supabase, auth | P0 |
 | Pipeline stages | ✅ | Move candidates sourced → hired/rejected | Campaigns | P1 |
 | Recruiter notes | ✅ | Free-form notes per candidate (add/list/delete) | Campaigns | P1 |
@@ -41,8 +43,21 @@
 | Candidate detail page | ✅ | Tabbed overview / AI analysis / notes / activity | Campaigns | P0 |
 | Intelligent upload | ✅ | Drag&drop, queue, progress, retry, dedupe, auto-insert | AI pipeline | P0 |
 | Executive analytics dashboard | ✅ | KPIs, AI insights, charts, action center (`/insights`) | Analytics endpoint | P1 |
-| Copilot memory | 🚧 | Persist conversations across sessions (tables + repo exist) | Campaigns | P0 |
-| Interview packs | 🗓️ | Generate + store interview kits (PDF) | AI, Storage | P2 |
+| Copilot memory | ✅ | Persistent, page-scoped conversations (create/list/rename/delete, survive refresh & navigation) | Copilot, conversation repo | P0 |
+| Copilot streaming | 🗓️ | Streamed responses in the panel (backend already streaming-compatible) | Copilot | P2 |
+| AI Interview Intelligence | ✅ | Complete interview workbench per candidate — strategy, technical & behavioral questions, skill verification, risk analysis, interviewer scorecard, hiring recommendation; interactive focus modes; recruiter-ready PDF export; reused by Copilot & Comparison | Interview engine, AI orchestrator | P0 |
+| Multi-Provider AI Gateway | ✅ | Switch LLM & embedding providers (Groq/Gemini/Anthropic/OpenAI/OpenRouter) by config only; logical model roles, configurable fallback, cost & provider-health tracking, runtime provider switch; every AI feature follows automatically | AI gateway, provider/model registries | P0 |
+| Executive Hiring Intelligence | ✅ | AI executive reports grounded in real data — pipeline health, campaign intelligence, recruiter productivity, skill gaps, hiring risks, prioritised recommendations, talent snapshot; expandable cards + PDF export; reused by the Copilot; scheduler-ready | Report engine, analytics, AI orchestrator | P0 |
+| Autonomous Recruiting Agent | ✅ | Proactively detects pipeline situations (stalled campaigns, high-potential candidates, weak pools, interview backlogs, deadline risks) and produces explainable, evidence-backed recommendations requiring human approval; coordinates existing engines via a tool registry; reused by the Copilot; scheduler-ready | Agent framework, all AI engines | P0 |
+| Organizations & Workspaces | ✅ | Multi-tenant orgs with workspaces; switch workspace without re-login; every recruiter auto-provisioned an org; strict membership isolation (RLS) | Enterprise layer, Supabase | P0 |
+| Role-Based Access Control | ✅ | Policy-based RBAC (owner/admin/hiring_manager/recruiter/interviewer/viewer); configurable Role→Permission registry; server-enforced | Enterprise RBAC | P0 |
+| Audit Log | ✅ | Immutable, searchable audit trail for critical actions (members, flags, subscription, AI provider, reports, agent, API keys) | Enterprise audit | P1 |
+| Usage & Subscriptions | ✅ | Org usage accounting (AI requests/tokens/…), plan limits (Free/Pro/Business/Enterprise), per-org feature flags; billing foundation | Enterprise plans, AI gateway | P1 |
+| Admin Console | ✅ | Org settings, workspaces, members, roles, feature flags, usage, audit logs, subscription, scoped API keys | Enterprise routes | P1 |
+| Integration Hub | ✅ | Connect Gmail/Outlook/Calendar/Slack/Teams/Meet/Zoom/ATS/webhook via OAuth (encrypted creds); provider plugins behind one layer; test/disconnect | Integration platform | P1 |
+| Workflow Automation | ✅ | Event-driven automation rules (candidate shortlisted → calendar/Slack/…); retry + backoff, execution history + replay; Agent → Workflow → Integration | Integration platform, agent | P1 |
+| Organizational Knowledge & Memory | ✅ | Company-wide, time-aware recruiting memory (decisions, strategies, outcomes, emergent preferences, skill-demand evolution, knowledge graph) that every AI capability retrieves before reasoning; explainable + governable Knowledge Center | Knowledge layer | P0 |
+| Predictive Intelligence & Digital Twin | ✅ | Deterministic Organizational Digital Twin + forecasts (completion, delay, offer acceptance, recruiter capacity, skill shortage, cost, pipeline health) + scenario simulation; explainable evidence-backed predictions; AI explains, never generates | Prediction layer | P0 |
 | Realtime pipeline board | 🗓️ | Live candidate updates | Supabase Realtime | P1 |
 
 ## Platform
@@ -56,7 +71,9 @@
 | Graceful degradation | ✅ | Runs stateless with no Supabase; LLM failures fall back deterministically | — | P1 |
 | Rate limiting | 🗓️ | Per-IP / per-recruiter throttling | — | P1 |
 | Pagination + search | 🗓️ | Keyset paging, server-side search (trgm indexes ready) | DB | P1 |
-| AI provider abstraction | 🗓️ | Multi-model routing / failover | LLM layer | P3 |
+| AI orchestration layer | ✅ | Central orchestrator: providers, prompts, context, observability | `app/ai` | P1 |
+| AI provider abstraction | ✅ | Common `LLMProvider` interface (Groq active; others by registration) | AI layer | P2 |
+| Multi-provider routing / failover | 🗓️ | Runtime routing across Groq/OpenAI/Anthropic/Gemini | AI layer | P3 |
 
 ## Admin
 

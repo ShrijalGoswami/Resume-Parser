@@ -142,9 +142,12 @@ class CopilotConversation(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     id: str
-    candidate_id: str
-    campaign_id: str
+    # Nullable since V5: conversations can be scoped to a page context
+    # (dashboard / analytics / campaign) that has no specific candidate.
+    candidate_id: Optional[str] = None
+    campaign_id: Optional[str] = None
     recruiter_id: str
+    context_type: str = "global"
     title: str = "New conversation"
     metadata: dict[str, Any] = Field(default_factory=dict)
     created_at: Optional[datetime] = None

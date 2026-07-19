@@ -1,21 +1,32 @@
 /**
- * Next.js middleware — refreshes the Supabase session cookie on every request
- * and guards protected routes. Unauthenticated users hitting /dashboard or
- * /campaigns are redirected to /login; authenticated users hitting /login are
- * sent to /dashboard.
+ * Next.js proxy (formerly `middleware.ts`) — refreshes the Supabase session
+ * cookie on every request and guards protected routes. Unauthenticated users
+ * hitting /dashboard, /campaigns, etc. are redirected to /login; authenticated
+ * users hitting /login are sent to /dashboard.
  *
- * If Supabase env vars are absent (stateless mode), middleware is a no-op so
- * the existing public app keeps working.
+ * If Supabase env vars are absent (stateless mode), this is a no-op so the
+ * existing public app keeps working.
  */
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 
 type CookieToSet = { name: string; value: string; options?: CookieOptions };
 
-const PROTECTED_PREFIXES = ['/dashboard', '/campaigns', '/insights'];
+const PROTECTED_PREFIXES = [
+  '/dashboard',
+  '/campaigns',
+  '/insights',
+  '/search',
+  '/reports',
+  '/agent',
+  '/knowledge',
+  '/predictions',
+  '/integrations',
+  '/admin',
+];
 const AUTH_ROUTES = ['/login', '/signup'];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 

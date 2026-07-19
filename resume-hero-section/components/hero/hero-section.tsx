@@ -104,11 +104,18 @@ export function HeroSection() {
               isLoading={isLoading}
             />
             <a
-              href="/recruiter"
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-border bg-white px-6 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted"
+              href="/login"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
             >
               <Users className="size-4" />
               Recruiter Workspace
+            </a>
+            <a
+              href="/recruiter"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-border bg-white px-6 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted"
+            >
+              <Play className="size-4" />
+              Quick batch demo
             </a>
           </div>
 

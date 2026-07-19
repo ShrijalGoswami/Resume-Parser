@@ -11,10 +11,13 @@ from app.core.observability import (
     RequestContextMiddleware,
     SecurityHeadersMiddleware,
     MaxBodySizeMiddleware,
+    RateLimitMiddleware,
 )
 from app.core.startup import validate_startup
 from app.db.supabase_client import supabase_available
-from app.routes import export, match, analyze, batch, copilot, campaigns, account, analytics
+from fastapi import Depends
+from app.routes import export, match, analyze, batch, copilot, campaigns, account, analytics, search, admin, reports, agent, org, integrations, knowledge, prediction
+from app.enterprise.deps import feature_gate
 
 # Install structured, request-ID-aware logging before anything else logs.
 configure_logging()
@@ -48,6 +51,9 @@ app.add_middleware(RequestContextMiddleware)
 # Early rejection of oversized bodies.
 app.add_middleware(MaxBodySizeMiddleware)
 
+# Per-IP rate limit for expensive/unauthenticated endpoints (cost/DoS safety net).
+app.add_middleware(RateLimitMiddleware)
+
 # CORS. The spec forbids credentials with a wildcard origin, so credentials
 # are only enabled when explicit origins are configured.
 _origins = settings.allowed_origins
@@ -70,6 +76,21 @@ app.include_router(export.router, prefix="/api/v1", tags=["Export"])
 app.include_router(campaigns.router, prefix="/api/v1")
 app.include_router(account.router, prefix="/api/v1")
 app.include_router(analytics.router, prefix="/api/v1")
+app.include_router(search.router, prefix="/api/v1")
+app.include_router(admin.router, prefix="/api/v1")
+# ── V6 enterprise: feature-flag gated + audited AI capabilities ───────────────
+app.include_router(
+    reports.router, prefix="/api/v1",
+    dependencies=[Depends(feature_gate("executive_reports", action="report.generated"))],
+)
+app.include_router(
+    agent.router, prefix="/api/v1",
+    dependencies=[Depends(feature_gate("autonomous_agent", action="agent.accessed"))],
+)
+app.include_router(org.router, prefix="/api/v1")
+app.include_router(integrations.router, prefix="/api/v1")
+app.include_router(knowledge.router, prefix="/api/v1")
+app.include_router(prediction.router, prefix="/api/v1")
 
 
 @app.api_route("/health", methods=["GET", "HEAD"], tags=["Health"])

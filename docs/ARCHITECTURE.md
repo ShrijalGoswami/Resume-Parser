@@ -60,7 +60,8 @@ graph TD
 ### 1. Frontend (`resume-hero-section/`)
 Next.js 16 (App Router), React 19, Tailwind v4, shadcn/Radix. Responsibilities:
 render UI, handle uploads, hold auth session (`@supabase/ssr` + `AuthProvider`),
-guard routes (`middleware.ts`), and call the backend through typed fetch wrappers
+guard routes (`proxy.ts` — the Next.js 16 successor to `middleware.ts`), and call
+the backend through typed fetch wrappers
 (`services/api.ts` for stateless AI, `services/campaigns-api.ts` for authed
 persistence — the latter attaches `Authorization: Bearer <token>`).
 
@@ -72,8 +73,9 @@ FastAPI ASGI app. Two families of routes under `/api/v1`:
   on that recruiter's data only.
 
 All requests pass through middleware (request-id/logging, security headers,
-body-size guard). Business logic lives in `services/`; data access in
-`repositories/`; AI in `parser/` + `nlp/` + `llm/`.
+body-size guard, and a per-IP rate limiter on expensive/unauthenticated routes).
+Business logic lives in `services/`; data access in `repositories/`; AI in
+`parser/` + `nlp/` + `llm/`.
 
 ### 3. Authentication (`app/core/auth.py`)
 Supabase issues JWTs; the backend verifies them locally (HS256) and resolves a
@@ -85,10 +87,15 @@ dependencies. See [SECURITY.md](./SECURITY.md).
 DB enforces tenant isolation. Repositories add a second scoping filter. See
 [DATABASE.md](./DATABASE.md).
 
-### 5. AI (`app/parser`, `app/nlp`, `app/llm`)
+### 5. AI (`app/parser`, `app/nlp`, `app/llm`, `app/ai`)
 Hybrid: deterministic parsing/scoring/ranking + Groq Llama-3.3 for text only.
-Results are stored (`candidate_analyses.result`), not recomputed. See
-[AI_PIPELINE.md](./AI_PIPELINE.md).
+**Every** LLM request — résumé/batch analysis, comparison, interview, copilot,
+match, report, agent — flows through a **single AI Orchestrator** (`app/ai/
+orchestrator`): prompt registry → QA cache → provider selection + fallback chain →
+retry policy (rate-limits not retried) → usage tracking → provider. No direct
+provider calls remain in the backend. Results are stored
+(`candidate_analyses.result`), not recomputed. See
+[AI_ARCHITECTURE.md](./AI_ARCHITECTURE.md) and [AI_PIPELINE.md](./AI_PIPELINE.md).
 
 ### 6. Storage (Supabase Storage)
 Four private buckets, recruiter-namespaced keys, object-level RLS, signed-URL

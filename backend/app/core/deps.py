@@ -17,9 +17,11 @@ from app.core.auth import CurrentRecruiter, require_recruiter
 from app.db.supabase_client import get_user_client
 from app.repositories import (
     ActivityRepository,
+    AgentRepository,
     CampaignRepository,
     CandidateRepository,
     ConversationRepository,
+    EmbeddingRepository,
     NoteRepository,
 )
 from app.repositories.analytics_repository import AnalyticsRepository
@@ -60,6 +62,14 @@ def get_analytics_repo(recruiter: RecruiterDep) -> AnalyticsRepository:
     return AnalyticsRepository(_client_for(recruiter), recruiter.id)
 
 
+def get_embedding_repo(recruiter: RecruiterDep) -> EmbeddingRepository:
+    return EmbeddingRepository(_client_for(recruiter), recruiter.id)
+
+
+def get_agent_repo(recruiter: RecruiterDep) -> AgentRepository:
+    return AgentRepository(_client_for(recruiter), recruiter.id)
+
+
 CampaignRepoDep = Annotated[CampaignRepository, Depends(get_campaign_repo)]
 CandidateRepoDep = Annotated[CandidateRepository, Depends(get_candidate_repo)]
 NoteRepoDep = Annotated[NoteRepository, Depends(get_note_repo)]
@@ -67,3 +77,5 @@ ConversationRepoDep = Annotated[ConversationRepository, Depends(get_conversation
 ActivityRepoDep = Annotated[ActivityRepository, Depends(get_activity_repo)]
 StorageDep = Annotated[StorageService, Depends(get_storage_service)]
 AnalyticsRepoDep = Annotated[AnalyticsRepository, Depends(get_analytics_repo)]
+EmbeddingRepoDep = Annotated[EmbeddingRepository, Depends(get_embedding_repo)]
+AgentRepoDep = Annotated[AgentRepository, Depends(get_agent_repo)]

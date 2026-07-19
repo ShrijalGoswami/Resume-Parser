@@ -17,6 +17,7 @@ Each upload is saved to a unique temp file, processed concurrently, and the
 temp files are always deleted. One invalid resume never fails the batch.
 """
 
+import hashlib
 import json
 import logging
 import uuid
@@ -54,6 +55,10 @@ async def batch_analysis(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="Job description cannot be empty.")
 
+    if len(job_description) > 20000:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Job description too long (max 20000 characters).")
+
     if not files:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="At least one resume file is required.")
@@ -68,6 +73,8 @@ async def batch_analysis(
 
     valid_items: list[tuple[str, str, Path]] = []
     failed_items: list[tuple[str, str, str]] = []
+    # candidate_id -> (sha256_hex, size_bytes) for content-based dedup downstream.
+    content_meta: dict[str, tuple[str, int]] = {}
 
     try:
         # Save each upload; validation failures become failed candidates, not a
@@ -78,6 +85,10 @@ async def batch_analysis(
             try:
                 path = await save_upload_to_temp(f)
                 valid_items.append((candidate_id, filename, path))
+                # SHA-256 of the exact bytes on disk — the content identity used
+                # for idempotent persistence (independent of filename).
+                data = path.read_bytes()
+                content_meta[candidate_id] = (hashlib.sha256(data).hexdigest(), len(data))
             except HTTPException as he:
                 failed_items.append((candidate_id, filename, str(he.detail)))
 
@@ -95,6 +106,11 @@ async def batch_analysis(
         result = await process_batch(
             job_description.strip(), valid_items, failed_items, parsed_weights
         )
+        # Attach content hash + size to each candidate result by id.
+        for c in result.candidates:
+            meta = content_meta.get(c.candidate_id)
+            if meta:
+                c.file_hash, c.file_size = meta
         logger.info(f"Batch: complete | ranked={result.analytics.succeeded} "
                     f"failed={result.analytics.failed}")
         return result

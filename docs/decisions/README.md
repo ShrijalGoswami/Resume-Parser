@@ -12,3 +12,4 @@ ADRs are marked, not deleted.
 | [ADR-003](./ADR-003-repository-pattern.md) | Use the Repository pattern for data access | Accepted |
 | [ADR-004](./ADR-004-store-ai-output.md) | Store AI output instead of recomputing | Accepted |
 | [ADR-005](./ADR-005-jwt-authentication.md) | Verify recruiter identity with JWTs | Accepted |
+| [ADR-006](./ADR-006-ai-orchestration-layer.md) | Centralize AI through an orchestration layer | Accepted |

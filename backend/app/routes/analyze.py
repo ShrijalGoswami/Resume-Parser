@@ -44,7 +44,8 @@ async def ats_analysis(file: UploadFile = File(...)):
     try:
         try:
             resume_data = await run_in_threadpool(ResumeService.process_resume, file_path)
-            logger.info(f"ATS Analysis: Resume parsed for '{resume_data.name}'")
+            # Avoid logging candidate PII (name); log a non-identifying signal only.
+            logger.info(f"ATS Analysis: resume parsed ({len(resume_data.skills)} skills extracted)")
         except ParserError as pe:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

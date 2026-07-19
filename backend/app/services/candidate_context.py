@@ -149,6 +149,17 @@ class JobDescriptionSource:
         return [ContextSection("Job Description", jd or "(no job description provided)", has_data=bool(jd))]
 
 
+class RecruiterNotesSource:
+    """Recruiter-authored notes about the candidate (pinned notes first)."""
+
+    def __init__(self, notes: list[str]):
+        self.notes = [n for n in (notes or []) if n and n.strip()]
+
+    def sections(self) -> list[ContextSection]:
+        body = _bullet(self.notes)
+        return [ContextSection("Recruiter Notes", body, has_data=bool(self.notes))]
+
+
 class CandidateContextBuilder:
     """
     Composes context sections from any number of registered sources into a
@@ -181,13 +192,21 @@ class CandidateContextBuilder:
         return [sec.title for sec in self._all_sections() if sec.has_data]
 
 
-def build_candidate_context(candidate: CandidateResult, job_description: str) -> CandidateContextBuilder:
+def build_candidate_context(
+    candidate: CandidateResult,
+    job_description: str,
+    notes: list[str] | None = None,
+) -> CandidateContextBuilder:
     """
-    Convenience factory wiring the default sources. Future sources
-    (GitHub, Portfolio, LinkedIn, Recruiter Notes, ...) are added here.
+    Convenience factory wiring the default sources. Recruiter notes are included
+    when available. Future sources (GitHub, Portfolio, LinkedIn, Interview
+    Feedback, ...) are added here.
     """
-    return (
+    builder = (
         CandidateContextBuilder()
         .add(JobDescriptionSource(job_description))
         .add(CandidateProfileSource(candidate))
     )
+    if notes:
+        builder.add(RecruiterNotesSource(notes))
+    return builder

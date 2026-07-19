@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   ChevronDown,
   ChevronRight,
@@ -77,6 +78,7 @@ export function CandidateTable({
   onAnalyze?: (candidateIds: string[]) => void;
 }) {
   const { toast } = useToast();
+  const router = useRouter();
   const rows = useMemo(() => candidates.map(toRow), [candidates]);
 
   const [query, setQuery] = useState('');
@@ -267,6 +269,17 @@ export function CandidateTable({
     URL.revokeObjectURL(url);
     toast({ title: 'Exported', description: `${selectedRows.length} candidates → CSV.` });
   }
+  function compareWithAI() {
+    const ids = selectedRows.map((r) => r.id);
+    if (ids.length < 2 || ids.length > 5) {
+      toast({
+        title: 'Select 2–5 candidates',
+        description: 'AI comparison works with between 2 and 5 candidates from this campaign.',
+      });
+      return;
+    }
+    router.push(`/campaigns/${campaignId}/compare?candidates=${ids.join(',')}`);
+  }
   function bulkAnalyze() {
     const analyzable = selectedRows.filter((r) => r.resumePath);
     if (!onAnalyze || analyzable.length === 0) {
@@ -403,8 +416,8 @@ export function CandidateTable({
             <Button size="sm" variant="outline" onClick={bulkExport} disabled={busy}>
               <Download className="mr-1.5 h-4 w-4" /> Export CSV
             </Button>
-            <Button size="sm" variant="outline" onClick={() => toast({ title: 'Compare coming soon', description: 'Side-by-side comparison lands in a later sprint.' })} disabled={busy}>
-              <GitCompare className="mr-1.5 h-4 w-4" /> Compare
+            <Button size="sm" variant="outline" onClick={compareWithAI} disabled={busy || selected.size < 2 || selected.size > 5}>
+              <GitCompare className="mr-1.5 h-4 w-4" /> Compare with AI
             </Button>
             <Button size="sm" variant="destructive" onClick={bulkDelete} disabled={busy}>
               {busy ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Trash2 className="mr-1.5 h-4 w-4" />} Delete
@@ -425,10 +438,10 @@ export function CandidateTable({
                   <input type="checkbox" checked={allOnPageSelected} onChange={toggleSelectAllOnPage} aria-label="Select all on page" />
                 </th>
                 <th className="px-3 py-2">Candidate</th>
-                <HeadCell label="Match" onClick={() => toggleSort('match')} active={sort === 'match'} asc={asc} />
-                <HeadCell label="ATS" onClick={() => toggleSort('ats')} active={sort === 'ats'} asc={asc} />
+                <HeadCell label="Match" onClick={() => toggleSort('match')} active={sort === 'match'} asc={asc} title="Overall fit to this role's job description (skills, experience, semantic match). This is what drives the hiring recommendation." />
+                <HeadCell label="ATS" onClick={() => toggleSort('ats')} active={sort === 'ats'} asc={asc} title="Resume/ATS-readiness only — formatting, structure, keyword hygiene. A high ATS score does NOT mean a strong fit for this role, so it does not drive the recommendation." />
                 <HeadCell label="Exp" onClick={() => toggleSort('experience')} active={sort === 'experience'} asc={asc} />
-                <HeadCell label="Recommendation" onClick={() => toggleSort('recommendation')} active={sort === 'recommendation'} asc={asc} />
+                <HeadCell label="Recommendation" onClick={() => toggleSort('recommendation')} active={sort === 'recommendation'} asc={asc} title="AI hiring judgment from overall fit (match, experience, strengths & risks) — intentionally independent of the ATS score. Open a candidate to see the reasoning." />
                 <th className="px-3 py-2">Skills</th>
                 <th className="px-3 py-2">Status</th>
                 <HeadCell label="Uploaded" onClick={() => toggleSort('uploaded')} active={sort === 'uploaded'} asc={asc} />
@@ -458,11 +471,12 @@ export function CandidateTable({
   );
 }
 
-function HeadCell({ label, onClick, active, asc }: { label: string; onClick: () => void; active: boolean; asc: boolean }) {
+function HeadCell({ label, onClick, active, asc, title }: { label: string; onClick: () => void; active: boolean; asc: boolean; title?: string }) {
   return (
     <th className="px-3 py-2">
-      <button onClick={onClick} className={cn('inline-flex items-center gap-1 font-medium', active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground')}>
+      <button onClick={onClick} title={title} className={cn('inline-flex items-center gap-1 font-medium', active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground')}>
         {label}
+        {title && <span className="text-[10px] text-muted-foreground/70" aria-hidden>ⓘ</span>}
         {active && <span className="text-[10px]">{asc ? '↑' : '↓'}</span>}
       </button>
     </th>

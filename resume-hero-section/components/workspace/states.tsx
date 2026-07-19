@@ -1,7 +1,8 @@
 'use client';
 
 /** Reusable loading / empty / error states shared across the workspace. */
-import { AlertCircle, Inbox, Loader2, RotateCw } from 'lucide-react';
+import Link from 'next/link';
+import { AlertCircle, Inbox, Loader2, Lock, RotateCw, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -45,6 +46,43 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
           <RotateCw className="mr-1.5 h-4 w-4" /> Retry
         </Button>
       )}
+    </div>
+  );
+}
+
+/**
+ * Plan/permission gate state — shown when a capability is disabled for the
+ * org's current plan or feature flags. This is an entitlement state, not a
+ * system error, so it is deliberately calm (not red) and offers a next step.
+ */
+export function FeatureLockedState({
+  feature,
+  description,
+}: {
+  feature: string;
+  description?: string;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-12 text-center shadow-sm">
+      <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+        <Lock className="h-6 w-6" />
+      </span>
+      <div>
+        <p className="font-medium text-foreground">{feature} is unavailable for your current plan</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {description ?? 'Upgrade your plan or ask an organization admin to enable this feature to unlock it.'}
+        </p>
+      </div>
+      <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
+        <Button asChild size="sm">
+          <Link href="/admin?tab=subscription">
+            <Sparkles className="mr-1.5 h-4 w-4" /> View plans &amp; upgrade
+          </Link>
+        </Button>
+        <Button asChild variant="outline" size="sm">
+          <Link href="/admin?tab=feature-flags">Manage feature flags</Link>
+        </Button>
+      </div>
     </div>
   );
 }
