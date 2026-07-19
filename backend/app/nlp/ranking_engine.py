@@ -65,19 +65,58 @@ def semantic_similarity(jd_text: str, resume_text: str) -> float:
     return round(dot / (norm_a * norm_b), 4)
 
 
+_YEARS_PHRASE_RE = re.compile(r"(\d{1,2})\s*\+?\s*years?", re.IGNORECASE)
+_PRESENT_RE = re.compile(r"present|current|now|till date|to date|ongoing", re.IGNORECASE)
+_INTERN_RE = re.compile(r"\bintern|internship\b", re.IGNORECASE)
+
+
 def estimate_years_experience(resume_data: ResumeData) -> float:
     """
-    Rough estimate of total years of experience from the year tokens present
-    in experience durations. Falls back to a per-entry heuristic.
+    Estimate total years of experience. Scans ALL experience text (role, duration
+    and bullet descriptions) — not just the `duration` field, which the parser
+    frequently leaves empty — for both explicit "N years" phrases and date ranges
+    (with 'present' resolved to the current year). Takes the strongest signal.
+
+    This is more robust than reading `duration` alone, which previously produced
+    badly wrong values (e.g. a 5-year engineer estimated at 1).
     """
-    years: list[int] = []
+    # Preferred: the authoritative figure computed from raw résumé text at parse
+    # time (union of dated periods). Only fall back to the structured heuristic
+    # when it is unavailable (e.g. older stored analyses).
+    precomputed = getattr(resume_data, "total_experience_years", None)
+    if precomputed is not None:
+        return float(precomputed)
+
+    import datetime
+
+    texts: list[str] = []
     for exp in resume_data.experience:
-        years.extend(int(m.group()) for m in _YEAR_RE.finditer(exp.duration))
-    if len(years) >= 2:
-        span = max(years) - min(years)
-        # Clamp to something sane (0-45 years).
-        return float(max(0, min(span, 45)))
-    # Fallback: assume ~1 year per listed experience entry.
+        texts.append(exp.duration or "")
+        texts.append(getattr(exp, "role", "") or "")
+        texts.append(getattr(exp, "company", "") or "")
+        texts.extend(exp.description or [])
+    blob = " ".join(texts)
+
+    # 1) Date-range span across all experience entries.
+    years = [int(m.group()) for m in _YEAR_RE.finditer(blob)]
+    if _PRESENT_RE.search(blob) and years:
+        years.append(datetime.datetime.utcnow().year)
+    span = (max(years) - min(years)) if len(years) >= 2 else 0
+    span = max(0, min(span, 45))
+
+    # 2) Explicit "N years" phrases (e.g. "8 years building…").
+    explicit = [int(m.group(1)) for m in _YEARS_PHRASE_RE.finditer(blob)]
+    explicit = [y for y in explicit if 0 < y <= 45]
+    best_explicit = max(explicit) if explicit else 0
+
+    candidates = [v for v in (span, best_explicit) if v > 0]
+    if candidates:
+        return float(max(candidates))
+
+    # 3) Fallback: internship-only history with no multi-year span reads as
+    # entry-level (0); otherwise assume ~1 year per listed entry.
+    if resume_data.experience and _INTERN_RE.search(blob) and span == 0 and best_explicit == 0:
+        return 0.0
     return float(len(resume_data.experience))
 
 

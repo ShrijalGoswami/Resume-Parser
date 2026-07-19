@@ -5,9 +5,14 @@ import Link from 'next/link';
 import {
   ArrowRight,
   ArrowUpDown,
+  Bot,
+  Brain,
   Briefcase,
   Building2,
   Clock,
+  FileBarChart,
+  LineChart,
+  PieChart,
   Plus,
   Search,
   Users,
@@ -129,6 +134,18 @@ export default function DashboardPage() {
           />
         </div>
 
+        {/* Feature launcher — the whole platform, one click away */}
+        <section className="mb-8">
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Explore the platform
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map((f) => (
+              <FeatureCard key={f.href} {...f} />
+            ))}
+          </div>
+        </section>
+
         {/* Controls */}
         <div className="mb-5 flex flex-wrap items-center gap-3">
           <div className="relative min-w-[220px] flex-1">
@@ -219,6 +236,50 @@ export default function DashboardPage() {
         )}
       </main>
     </div>
+  );
+}
+
+const FEATURES: {
+  href: string;
+  title: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+}[] = [
+  { href: '/search', title: 'Talent Search', description: 'Find candidates by meaning, not keywords', icon: Search },
+  { href: '/insights', title: 'Executive Insights', description: 'Cross-campaign KPIs, charts & actions', icon: PieChart },
+  { href: '/reports', title: 'Executive Reports', description: 'AI hiring reports grounded in your data', icon: FileBarChart },
+  { href: '/agent', title: 'Autonomous Agent', description: 'Proactive, human-approved recommendations', icon: Bot },
+  { href: '/knowledge', title: 'Knowledge Center', description: 'Org memory every AI decision draws on', icon: Brain },
+  { href: '/predictions', title: 'Predictions', description: 'Forecasts, scenarios & the digital twin', icon: LineChart },
+];
+
+function FeatureCard({
+  href,
+  title,
+  description,
+  icon: Icon,
+}: {
+  href: string;
+  title: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+}) {
+  return (
+    <Link
+      href={href}
+      className="group flex items-start gap-3 rounded-2xl border border-border/60 bg-card p-4 shadow-sm transition hover:border-primary/40 hover:shadow"
+    >
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+        <Icon className="h-5 w-5" />
+      </span>
+      <div className="min-w-0">
+        <div className="flex items-center gap-1 font-medium text-foreground">
+          {title}
+          <ArrowRight className="h-3.5 w-3.5 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-primary" />
+        </div>
+        <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
+      </div>
+    </Link>
   );
 }
 

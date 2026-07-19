@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Query
 from pydantic import BaseModel
 
 from app.core.auth import CurrentRecruiter

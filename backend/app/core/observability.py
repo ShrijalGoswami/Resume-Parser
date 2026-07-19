@@ -5,8 +5,10 @@ guard. Kept dependency-free so it runs anywhere the app runs.
 """
 
 import logging
+import threading
 import time
 import uuid
+from collections import defaultdict, deque
 from contextvars import ContextVar
 
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -108,6 +110,62 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'"
         )
         return response
+
+
+class RateLimitMiddleware(BaseHTTPMiddleware):
+    """
+    In-process, per-IP sliding-window rate limiter for expensive / unauthenticated
+    endpoints (LLM analysis, copilot chat, PDF export). A cost/DoS abuse safety
+    net — production should ALSO enforce limits at the edge (reverse proxy / WAF).
+    Fail-open: never blocks on limiter error; ignores cheap/GET traffic.
+    """
+    # path prefix -> (max POSTs, window seconds)
+    _LIMITS = {
+        "/api/v1/batch-analysis": (20, 60),
+        "/api/v1/ats-analysis": (30, 60),
+        "/api/v1/match-analysis": (30, 60),
+        "/api/v1/copilot/chat": (30, 60),
+        "/api/v1/export-report": (30, 60),
+        "/api/v1/export-match-report": (30, 60),
+    }
+    _MAX_KEYS = 50_000  # hard memory bound for the abuse case
+
+    def __init__(self, app):
+        super().__init__(app)
+        self._hits: dict[tuple, deque] = defaultdict(deque)
+        self._lock = threading.Lock()
+
+    def _rule(self, path: str):
+        for prefix, limit in self._LIMITS.items():
+            if path.startswith(prefix):
+                return limit
+        return None
+
+    async def dispatch(self, request: Request, call_next):
+        try:
+            rule = self._rule(request.url.path)
+            if rule and request.method == "POST":
+                max_n, window = rule
+                ip = request.client.host if request.client else "unknown"
+                key = (ip, request.url.path)
+                now = time.time()
+                with self._lock:
+                    if len(self._hits) > self._MAX_KEYS:
+                        self._hits.clear()  # crude memory bound; safety net only
+                    dq = self._hits[key]
+                    while dq and dq[0] <= now - window:
+                        dq.popleft()
+                    if len(dq) >= max_n:
+                        retry = int(window - (now - dq[0])) + 1
+                        return JSONResponse(
+                            status_code=429,
+                            content={"detail": "Too many requests. Please slow down and retry shortly."},
+                            headers={"Retry-After": str(max(1, retry))},
+                        )
+                    dq.append(now)
+        except Exception:  # pragma: no cover — never break requests on limiter error
+            pass
+        return await call_next(request)
 
 
 class MaxBodySizeMiddleware(BaseHTTPMiddleware):

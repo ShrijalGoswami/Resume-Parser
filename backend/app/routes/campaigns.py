@@ -21,11 +21,13 @@ from app.core.deps import (
     ActivityRepoDep,
     CampaignRepoDep,
     CandidateRepoDep,
+    EmbeddingRepoDep,
     NoteRepoDep,
     StorageDep,
 )
+from app.enterprise.deps import OrgIdDep
 from app.services.storage_service import object_key
-from app.services.upload_utils import validate_resume_upload
+from app.services.upload_utils import validate_resume_upload, _verify_magic_bytes
 from app.schemas.batch import BatchAnalysisResponse
 from app.schemas.campaign import (
     BulkCandidateIds,
@@ -37,7 +39,13 @@ from app.schemas.campaign import (
     NoteCreate,
     RecruiterNote,
 )
+from app.schemas.comparison import CandidateComparisonReport, ComparisonRequest
+from app.schemas.interview import InterviewGenerateRequest, InterviewPack
+from app.services.comparison_service import run_comparison
+from app.services.embedding_pipeline import reindex_campaign
+from app.services.interview_service import run_interview
 from app.services.persistence_service import PersistenceService
+from fastapi.concurrency import run_in_threadpool
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/campaigns", tags=["Campaigns"])
@@ -236,10 +244,17 @@ async def upload_candidate_resume(
     file: UploadFile = File(...),
 ):
     """Store a candidate's resume in the private `resumes` bucket (server-side)."""
+    # Verify ownership BEFORE writing anything to storage (no orphaned objects).
+    candidates.get(candidate_id)
     ext = validate_resume_upload(file)
     data = await file.read()
     if len(data) > settings.max_file_size_bytes:
         raise HTTPException(status_code=413, detail="File too large.")
+    # Content-based validation: a renamed file (e.g. .exe → .pdf) is rejected by
+    # magic-byte sniffing, not just the (spoofable) extension/MIME.
+    if not _verify_magic_bytes(data[:8], ext):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="File contents do not match a valid PDF/DOCX.")
     key = object_key(storage.recruiter_id, campaign_id, candidate_id, file.filename or f"resume{ext}")
     storage.upload(settings.STORAGE_BUCKET_RESUMES, key, data, _CONTENT_TYPES.get(ext, "application/octet-stream"))
     candidate = candidates.attach_resume(candidate_id, key, file.filename or f"resume{ext}")
@@ -268,3 +283,95 @@ async def campaign_activity(
     campaign_id: str, activity: ActivityRepoDep, limit: int = Query(default=50, le=200)
 ):
     return activity.recent(limit=limit, campaign_id=campaign_id)
+
+
+# ── AI Candidate Comparison (V5 / Sprint 5) ──────────────────────────────────
+@router.post("/{campaign_id}/compare", response_model=CandidateComparisonReport)
+async def compare_candidates(
+    campaign_id: str,
+    payload: ComparisonRequest,
+    campaign_repo: CampaignRepoDep,
+    candidate_repo: CandidateRepoDep,
+    note_repo: NoteRepoDep,
+    activity: ActivityRepoDep,
+    org_id: OrgIdDep,
+):
+    """Generate an executive AI comparison of 2–5 candidates in this campaign.
+
+    Candidates are validated to belong to the authenticated recruiter's campaign
+    (RLS + explicit scoping) — cross-campaign comparison is impossible. The LLM
+    round-trip runs off the event loop; the engine degrades gracefully.
+    """
+    report = await run_in_threadpool(
+        run_comparison,
+        campaign_id,
+        payload.candidate_ids,
+        campaign_repo=campaign_repo,
+        candidate_repo=candidate_repo,
+        note_repo=note_repo,
+    )
+    activity.record(
+        "batch_analyzed",
+        summary=f"AI comparison of {len(payload.candidate_ids)} candidates",
+        campaign_id=campaign_id,
+    )
+    return report
+
+
+# ── Semantic search: (re)build candidate embeddings for a campaign ───────────
+@router.post("/{campaign_id}/embeddings/reindex")
+async def reindex_campaign_embeddings(
+    campaign_id: str,
+    candidate_repo: CandidateRepoDep,
+    embedding_repo: EmbeddingRepoDep,
+    force: bool = Query(default=False),
+):
+    """Embed all analysed candidates in this campaign (skips unchanged unless
+    force=true). Recruiter-scoped; safe to call after uploads/analysis."""
+    return await run_in_threadpool(
+        reindex_campaign,
+        campaign_id,
+        candidate_repo=candidate_repo,
+        embedding_repo=embedding_repo,
+        force=force,
+    )
+
+
+# ── Interview Intelligence: generate an interview workbench ───────────────────
+@router.post(
+    "/{campaign_id}/candidates/{candidate_id}/interview",
+    response_model=InterviewPack,
+)
+async def generate_interview(
+    campaign_id: str,
+    candidate_id: str,
+    payload: InterviewGenerateRequest,
+    candidate_repo: CandidateRepoDep,
+    campaign_repo: CampaignRepoDep,
+    note_repo: NoteRepoDep,
+    activity: ActivityRepoDep,
+    org_id: OrgIdDep,
+):
+    """Generate a grounded interview pack (full or focused) for one candidate.
+
+    Recruiter-scoped: the candidate must belong to the recruiter (RLS + explicit
+    scoping). `focus`/`instruction`/`sections` drive interactive mode so follow-ups
+    regenerate only what was asked. The LLM round-trip runs off the event loop.
+    """
+    pack = await run_in_threadpool(
+        run_interview,
+        candidate_id,
+        campaign_id=campaign_id,
+        focus=payload.focus,
+        instruction=payload.instruction,
+        sections=payload.sections,
+        candidate_repo=candidate_repo,
+        campaign_repo=campaign_repo,
+        note_repo=note_repo,
+    )
+    activity.record(
+        "interview_pack_generated",
+        summary=f"Generated interview pack ({payload.focus})",
+        campaign_id=campaign_id, candidate_id=candidate_id,
+    )
+    return pack

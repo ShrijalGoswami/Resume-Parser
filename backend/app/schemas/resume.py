@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel, Field
 
 class EducationEntry(BaseModel):
@@ -37,3 +39,8 @@ class ResumeData(BaseModel):
     experience: list[ExperienceEntry] = Field(default_factory=list, description="Work history details")
     projects: list[ProjectEntry] = Field(default_factory=list, description="Projects accomplished")
     certifications: list[str] = Field(default_factory=list, description="Certifications and courses completed")
+    total_experience_years: Optional[float] = Field(
+        default=None,
+        description="Total years of professional experience, computed from the raw résumé "
+        "text (union of dated employment periods, with explicit-phrase and months fallbacks).",
+    )

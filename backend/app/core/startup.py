@@ -38,11 +38,12 @@ def validate_startup() -> None:
             f"Set TEMP_UPLOAD_DIR to a writable path."
         ) from e
 
-    # 2. CORS sanity — warn on the insecure wildcard default in production.
+    # 2. CORS — fail closed on the insecure wildcard in production. A prod
+    # deployment must pin ALLOWED_ORIGINS to its frontend domain(s).
     if settings.ENVIRONMENT == "production" and "*" in settings.allowed_origins:
-        logger.warning(
+        raise RuntimeError(
             "CORS is set to allow all origins ('*') in production. "
-            "Set ALLOWED_ORIGINS to your frontend domain(s)."
+            "Set ALLOWED_ORIGINS to your explicit frontend domain(s) before deploying."
         )
 
     # 3. LLM configuration — non-fatal; parsing endpoints still work without it.

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   AlertTriangle,
   CheckCircle2,
+  Circle,
   CloudUpload,
   FileText,
   Loader2,
@@ -13,39 +14,43 @@ import {
 } from 'lucide-react';
 import { analyzeBatchWithProgress } from '@/services/api';
 import { persistBatch } from '@/services/campaigns-api';
+import { reindexCampaign } from '@/services/search-api';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const MAX_MB = 10;
 const ALLOWED = ['.pdf', '.docx'];
 const CONCURRENCY = 3;
-// Sub-stages surfaced while the (single) batch call runs server-side. Timing is
-// indicative; the terminal Completed/Failed state is the real API outcome.
-const AI_STAGES = [
-  'Parsing resume',
-  'Extracting skills',
-  'Computing ATS score',
-  'Matching against job description',
-  'Running AI analysis',
-];
-const STAGE_MS = 1300;
 
-type Phase =
-  | 'queued'
-  | 'duplicate'
-  | 'uploading'
-  | 'analyzing'
-  | 'saving'
-  | 'completed'
-  | 'failed';
+// The real upload → ready pipeline, surfaced stage-by-stage so a recruiter can
+// see exactly how far each resume got (and precisely where it failed).
+type StageKey = 'upload' | 'parse' | 'analyze' | 'index' | 'ready';
+type StageStatus = 'pending' | 'active' | 'done' | 'failed';
+const PIPELINE: { key: StageKey; label: string; active: string }[] = [
+  { key: 'upload', label: 'Uploaded', active: 'Uploading…' },
+  { key: 'parse', label: 'Parsed', active: 'Parsing resume…' },
+  { key: 'analyze', label: 'AI Analysis Complete', active: 'Running AI analysis…' },
+  { key: 'index', label: 'Indexed for Semantic Search', active: 'Indexing…' },
+  { key: 'ready', label: 'Ready', active: 'Finalizing…' },
+];
+const STAGE_LABEL: Record<StageKey, string> = Object.fromEntries(
+  PIPELINE.map((s) => [s.key, s.label])
+) as Record<StageKey, string>;
+
+const initStages = (): Record<StageKey, StageStatus> => ({
+  upload: 'pending', parse: 'pending', analyze: 'pending', index: 'pending', ready: 'pending',
+});
+
+type Phase = 'queued' | 'duplicate' | 'active' | 'completed' | 'failed';
 
 interface Item {
   id: string;
   file: File;
   phase: Phase;
   progress: number; // upload %
-  analyzeStart?: number;
+  stages: Record<StageKey, StageStatus>;
   error?: string;
+  failedStage?: StageKey;
   candidateName?: string;
 }
 
@@ -81,65 +86,97 @@ export function UploadPanel({
 }) {
   const [items, setItems] = useState<Item[]>([]);
   const [dragOver, setDragOver] = useState(false);
-  const [, force] = useState(0);
   const inFlight = useRef(0);
   const itemsRef = useRef<Item[]>([]);
   itemsRef.current = items;
+  // Ids already claimed for processing. `patch()` is async, so within pump()'s
+  // synchronous while-loop `itemsRef.current` still shows just-claimed items as
+  // 'queued' — without this guard the same file would be picked (and uploaded)
+  // up to CONCURRENCY times, creating duplicate candidates.
+  const startedRef = useRef<Set<string>>(new Set());
   const existing = new Set(existingFilenames.map((f) => f.toLowerCase()));
-
-  // ticking clock so analyzing sub-stage advances per item
-  useEffect(() => {
-    const anyAnalyzing = items.some((i) => i.phase === 'analyzing');
-    if (!anyAnalyzing) return;
-    const t = setInterval(() => force((n) => n + 1), 250);
-    return () => clearInterval(t);
-  }, [items]);
 
   const patch = useCallback((id: string, p: Partial<Item>) => {
     setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...p } : it)));
   }, []);
 
+  const patchStage = useCallback((id: string, updates: Partial<Record<StageKey, StageStatus>>) => {
+    setItems((prev) =>
+      prev.map((it) => (it.id === id ? { ...it, stages: { ...it.stages, ...updates } } : it))
+    );
+  }, []);
+
   const processItem = useCallback(
     async (item: Item) => {
       const controller = new AbortController();
+      const fail = (stage: StageKey, msg: string) =>
+        setItems((prev) =>
+          prev.map((it) =>
+            it.id === item.id
+              ? { ...it, phase: 'failed', failedStage: stage, error: msg, stages: { ...it.stages, [stage]: 'failed' } }
+              : it
+          )
+        );
       try {
-        patch(item.id, { phase: 'uploading', progress: 0, error: undefined });
+        patch(item.id, { phase: 'active', error: undefined, failedStage: undefined, progress: 0, stages: { ...initStages(), upload: 'active' } });
+
+        // 1) Upload + 2) Parse + 3) AI Analysis — one server call; upload
+        // progress drives the first stage, the response resolves parse+analysis.
         const batch = await analyzeBatchWithProgress(
           jobDescription,
           [item.file],
           (pct) => {
             patch(item.id, { progress: pct });
-            if (pct >= 100) patch(item.id, { phase: 'analyzing', analyzeStart: Date.now() });
+            if (pct >= 100) patchStage(item.id, { upload: 'done', parse: 'active' });
           },
           controller.signal
         );
         const cand = batch.candidates?.[0];
         if (!cand || cand.status === 'failed') {
-          patch(item.id, { phase: 'failed', error: cand?.error || 'Analysis failed' });
-          return;
+          const err = cand?.error || 'Analysis failed';
+          const parseStage = /pars|read|extract|could not parse|unsupported/i.test(err);
+          return fail(parseStage ? 'parse' : 'analyze', err);
         }
-        patch(item.id, { phase: 'saving' });
-        await persistBatch(campaignId, batch);
-        patch(item.id, { phase: 'completed', candidateName: cand.name || item.file.name });
-        onCandidateAdded(); // auto-insert into table
+        patchStage(item.id, { parse: 'done', analyze: 'done', index: 'active' });
+        patch(item.id, { candidateName: cand.name || item.file.name });
+
+        // 4) Persist (idempotent by content hash) then make it searchable.
+        try {
+          await persistBatch(campaignId, batch);
+        } catch (e) {
+          return fail('index', `Save failed: ${e instanceof Error ? e.message : 'unknown error'}`);
+        }
+        onCandidateAdded(); // candidate now exists in the table
+        try {
+          await reindexCampaign(campaignId);
+        } catch (e) {
+          return fail('index', `Indexing failed: ${e instanceof Error ? e.message : 'unknown error'}`);
+        }
+
+        // 5) Ready
+        patchStage(item.id, { index: 'done', ready: 'done' });
+        patch(item.id, { phase: 'completed' });
       } catch (e) {
-        patch(item.id, {
-          phase: 'failed',
-          error: e instanceof Error ? e.message : 'Upload failed',
-        });
+        if (e instanceof DOMException && e.name === 'AbortError') return;
+        const cur = itemsRef.current.find((x) => x.id === item.id);
+        const stage: StageKey = cur?.stages.upload === 'done' ? 'analyze' : 'upload';
+        fail(stage, e instanceof Error ? e.message : 'Upload failed');
       }
     },
-    [campaignId, jobDescription, onCandidateAdded, patch]
+    [campaignId, jobDescription, onCandidateAdded, patch, patchStage]
   );
 
   // pump: keep CONCURRENCY items processing
   const pump = useCallback(() => {
     if (!jobDescription.trim()) return;
     while (inFlight.current < CONCURRENCY) {
-      const next = itemsRef.current.find((i) => i.phase === 'queued');
+      const next = itemsRef.current.find(
+        (i) => i.phase === 'queued' && !startedRef.current.has(i.id)
+      );
       if (!next) break;
+      startedRef.current.add(next.id); // claim synchronously — processed exactly once
       inFlight.current += 1;
-      patch(next.id, { phase: 'uploading' });
+      patch(next.id, { phase: 'active' });
       processItem(next).finally(() => {
         inFlight.current -= 1;
         setTimeout(pump, 0);
@@ -159,6 +196,7 @@ export function UploadPanel({
         file,
         phase: bad ?? 'queued',
         progress: 0,
+        stages: initStages(),
         error: bad === 'failed' ? validationError(file) : bad === 'duplicate' ? 'Already in this campaign' : undefined,
       };
     });
@@ -166,19 +204,22 @@ export function UploadPanel({
   }
 
   function retry(id: string) {
-    patch(id, { phase: 'queued', error: undefined, progress: 0 });
+    startedRef.current.delete(id); // allow re-processing
+    patch(id, { phase: 'queued', error: undefined, failedStage: undefined, progress: 0, stages: initStages() });
   }
   function remove(id: string) {
+    startedRef.current.delete(id);
     setItems((prev) => prev.filter((i) => i.id !== id));
   }
   function includeDuplicate(id: string) {
+    startedRef.current.delete(id); // allow re-processing
     patch(id, { phase: 'queued', error: undefined });
   }
 
   const total = items.length;
   const done = items.filter((i) => i.phase === 'completed').length;
   const failed = items.filter((i) => i.phase === 'failed').length;
-  const active = items.filter((i) => ['uploading', 'analyzing', 'saving'].includes(i.phase)).length;
+  const active = items.filter((i) => i.phase === 'active').length;
   const queued = items.filter((i) => i.phase === 'queued').length;
   const allDone = total > 0 && active === 0 && queued === 0;
 
@@ -189,7 +230,7 @@ export function UploadPanel({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-border/60 px-5 py-3">
-          <h2 className="font-semibold text-foreground">Upload & analyze resumes</h2>
+          <h2 className="font-semibold text-foreground">Upload &amp; analyze resumes</h2>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground" aria-label="Close">
             <X className="h-5 w-5" />
           </button>
@@ -213,7 +254,7 @@ export function UploadPanel({
             )}
           >
             <CloudUpload className={cn('h-8 w-8', dragOver ? 'text-primary' : 'text-muted-foreground')} />
-            <div className="text-sm font-medium text-foreground">Drag & drop resumes here</div>
+            <div className="text-sm font-medium text-foreground">Drag &amp; drop resumes here</div>
             <div className="text-xs text-muted-foreground">PDF or DOCX · up to {MAX_MB}MB each · multiple files</div>
             <input type="file" accept=".pdf,.docx" multiple hidden onChange={(e) => e.target.files && addFiles(e.target.files)} />
           </label>
@@ -258,6 +299,33 @@ export function UploadPanel({
   );
 }
 
+function StageRow({ label, status, activeLabel, progress }: { label: string; status: StageStatus; activeLabel: string; progress?: number }) {
+  return (
+    <div className="flex items-center gap-2 text-xs">
+      {status === 'done' ? (
+        <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+      ) : status === 'active' ? (
+        <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-primary" />
+      ) : status === 'failed' ? (
+        <XCircle className="h-3.5 w-3.5 shrink-0 text-rose-600" />
+      ) : (
+        <Circle className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40" />
+      )}
+      <span
+        className={cn(
+          status === 'done' ? 'text-foreground' :
+          status === 'active' ? 'font-medium text-primary' :
+          status === 'failed' ? 'text-rose-600' :
+          'text-muted-foreground/60'
+        )}
+      >
+        {status === 'active' ? activeLabel : label}
+        {status === 'active' && progress != null && progress < 100 ? ` ${progress}%` : ''}
+      </span>
+    </div>
+  );
+}
+
 function QueueRow({
   item,
   position,
@@ -271,22 +339,15 @@ function QueueRow({
   onRemove: () => void;
   onIncludeDuplicate: () => void;
 }) {
-  const subStage =
-    item.phase === 'analyzing' && item.analyzeStart
-      ? AI_STAGES[Math.min(Math.floor((Date.now() - item.analyzeStart) / STAGE_MS), AI_STAGES.length - 1)]
-      : null;
+  const isActive = item.phase === 'active';
+  const showPipeline = isActive || item.phase === 'completed' || item.phase === 'failed';
 
-  const label: Record<Phase, string> = {
-    queued: position ? `Queued · #${position}` : 'Queued',
-    duplicate: 'Duplicate',
-    uploading: `Uploading ${item.progress}%`,
-    analyzing: subStage ?? 'Analyzing',
-    saving: 'Saving results',
-    completed: 'Completed',
-    failed: 'Failed',
-  };
-
-  const active = ['uploading', 'analyzing', 'saving'].includes(item.phase);
+  const headline =
+    item.phase === 'queued' ? (position ? `Queued · #${position}` : 'Queued')
+      : item.phase === 'duplicate' ? 'Duplicate'
+      : item.phase === 'completed' ? 'Ready'
+      : item.phase === 'failed' ? `Failed at “${STAGE_LABEL[item.failedStage ?? 'upload']}”`
+      : 'Processing…';
 
   return (
     <div className="rounded-xl border border-border/60 bg-background p-3">
@@ -303,11 +364,11 @@ function QueueRow({
               : item.phase === 'duplicate' ? 'text-amber-600'
               : 'text-muted-foreground'
           )}>
-            {label[item.phase]}{item.error ? ` · ${item.error}` : ''}
+            {headline}{item.error ? ` · ${item.error}` : ''}
           </div>
         </div>
         <div className="flex items-center gap-1.5">
-          {active && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+          {isActive && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
           {item.phase === 'completed' && <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
           {item.phase === 'failed' && (
             <button onClick={onRetry} className="text-muted-foreground hover:text-primary" title="Retry">
@@ -319,7 +380,7 @@ function QueueRow({
               Include
             </button>
           )}
-          {!active && (
+          {!isActive && (
             <button onClick={onRemove} className="text-muted-foreground hover:text-destructive" aria-label="Remove">
               <XCircle className="h-4 w-4" />
             </button>
@@ -327,16 +388,21 @@ function QueueRow({
         </div>
       </div>
 
-      {/* progress bar (upload) or indeterminate (processing) */}
-      {active && (
-        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
-          {item.phase === 'uploading' ? (
-            <div className="h-full bg-primary transition-all" style={{ width: `${item.progress}%` }} />
-          ) : (
-            <div className="h-full w-1/3 animate-pulse rounded-full bg-primary" />
-          )}
+      {/* Pipeline stage checklist */}
+      {showPipeline && (
+        <div className="mt-3 space-y-1.5 border-t border-border/50 pt-2.5 pl-1">
+          {PIPELINE.map((s) => (
+            <StageRow
+              key={s.key}
+              label={s.label}
+              activeLabel={s.active}
+              status={item.stages[s.key]}
+              progress={s.key === 'upload' ? item.progress : undefined}
+            />
+          ))}
         </div>
       )}
+
       {item.phase === 'duplicate' && (
         <div className="mt-1 flex items-center gap-1 text-[11px] text-amber-600">
           <AlertTriangle className="h-3 w-3" /> A resume with this filename is already in the campaign.

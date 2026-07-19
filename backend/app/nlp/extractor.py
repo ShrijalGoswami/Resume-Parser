@@ -1,10 +1,97 @@
+import datetime
 import re
 import logging
-from pathlib import Path
 from app.schemas.resume import ResumeData, EducationEntry, ExperienceEntry, ProjectEntry
 from app.nlp.skill_normalizer import normalize_skills
 
 logger = logging.getLogger(__name__)
+
+# ── Years-of-experience computation (robust, raw-text based) ─────────────────
+# The structured experience parser frequently drops/merges date fields, so the
+# authoritative years figure is computed directly from the raw résumé text:
+#   1) union of all dated employment periods  (handles overlap / concurrent /
+#      ongoing "present" correctly — never double-counts),
+#   2) else an explicit "N years of experience" statement,
+#   3) else a bare "N months" duration (internships).
+_MONTH_MAP = {
+    "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6, "jul": 7, "aug": 8,
+    "sep": 9, "sept": 9, "oct": 10, "nov": 11, "dec": 12,
+    "january": 1, "february": 2, "march": 3, "april": 4, "june": 6, "july": 7,
+    "august": 8, "september": 9, "october": 10, "november": 11, "december": 12,
+}
+_MON = (
+    r"(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec|january|february|march|"
+    r"april|june|july|august|september|october|november|december)"
+)
+_ENDPOINT = rf"(?:present|current|now|ongoing|(?:{_MON})\.?\s*)?(?:19|20)\d{{2}}|present|current|now|ongoing"
+_RANGE_RE = re.compile(
+    rf"((?:{_MON})\.?\s*)?((?:19|20)\d{{2}})\s*(?:-|–|—|to|through|until|–)\s*"
+    rf"(present|current|now|ongoing|(?:(?:{_MON})\.?\s*)?(?:19|20)\d{{2}})",
+    re.IGNORECASE,
+)
+_TOTAL_RE = re.compile(r"(\d{1,2})\s*\+?\s*years?\s+(?:of\s+)?(?:experience|exp)\b", re.IGNORECASE)
+_OVER_RE = re.compile(r"(?:over|more than|nearly|about|around)\s+(\d{1,2})\s*years?", re.IGNORECASE)
+_MONTHS_RE = re.compile(r"(\d{1,2})\s*months?\b", re.IGNORECASE)
+
+
+def _month_index(month_word: str) -> int:
+    if not month_word:
+        return 1
+    return _MONTH_MAP.get(month_word.strip().strip(".").lower(), 1)
+
+
+def _merge_month_intervals(intervals: list[tuple[int, int]]) -> int:
+    """Total covered months across (start_abs, end_abs) pairs, merging overlaps."""
+    if not intervals:
+        return 0
+    ordered = sorted(intervals)
+    merged = [list(ordered[0])]
+    for start, end in ordered[1:]:
+        if start <= merged[-1][1]:
+            merged[-1][1] = max(merged[-1][1], end)
+        else:
+            merged.append([start, end])
+    return sum(end - start for start, end in merged)
+
+
+def years_of_experience_from_text(text: str) -> float:
+    """Total years of professional experience derived from the raw résumé text."""
+    if not text:
+        return 0.0
+    low = text.lower()
+    now = datetime.datetime.utcnow()
+    now_abs = now.year * 12 + (now.month - 1)
+
+    # 1) Union of dated employment periods.
+    intervals: list[tuple[int, int]] = []
+    for m in _RANGE_RE.finditer(low):
+        start_mon, start_year, end_raw = m.group(1), m.group(2), m.group(3)
+        start_abs = int(start_year) * 12 + (_month_index(start_mon) - 1)
+        end_raw = end_raw.strip()
+        if end_raw in ("present", "current", "now", "ongoing"):
+            end_abs = now_abs
+        else:
+            em = re.match(rf"((?:{_MON})\.?\s*)?((?:19|20)\d{{2}})", end_raw, re.IGNORECASE)
+            end_abs = int(em.group(2)) * 12 + (_month_index(em.group(1)) - 1)
+        if 0 <= (end_abs - start_abs) <= 45 * 12:
+            intervals.append((start_abs, end_abs))
+    union_years = round(_merge_month_intervals(intervals) / 12 * 2) / 2
+    if union_years > 0:
+        return float(min(union_years, 45.0))
+
+    # 2) Explicit total statement ("8 years of experience", "over 5 years").
+    totals = [int(m.group(1)) for m in _TOTAL_RE.finditer(low)]
+    totals += [int(m.group(1)) for m in _OVER_RE.finditer(low)]
+    totals = [t for t in totals if 0 < t <= 45]
+    if totals:
+        return float(max(totals))
+
+    # 3) Bare months (e.g. a "6 months" internship) → fractional year.
+    months = [int(m.group(1)) for m in _MONTHS_RE.finditer(low) if 0 < int(m.group(1)) <= 24]
+    if months:
+        return round(max(months) / 12 * 2) / 2
+
+    return 0.0
 
 # Predefined common skills vocabulary for text-matching
 COMMON_SKILLS = {
@@ -473,5 +560,6 @@ def extract_resume_data(text: str) -> ResumeData:
         education=education,
         experience=experience,
         projects=projects,
-        certifications=certifications
+        certifications=certifications,
+        total_experience_years=years_of_experience_from_text(text),
     )

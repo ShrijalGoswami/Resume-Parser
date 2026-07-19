@@ -24,6 +24,9 @@ class CandidateRepository(BaseRepository):
         source_batch_id: Optional[str] = None,
         metadata: Optional[dict[str, Any]] = None,
     ) -> Candidate:
+        # NOTE: the content hash is stored ONLY in public.candidate_uploads
+        # (the canonical, UNIQUE(campaign_id, file_hash) idempotency ledger).
+        # We deliberately do not denormalize it onto candidates — see 0014.
         row = {
             "campaign_id": campaign_id,
             "recruiter_id": self.recruiter_id,
@@ -78,6 +81,105 @@ class CandidateRepository(BaseRepository):
             # View unavailable → fall back to none rather than failing the list.
             return {}
         return {r["candidate_id"]: r for r in self._rows(resp) if r.get("candidate_id")}
+
+    def get_many(self, candidate_ids: list[str]) -> dict[str, Candidate]:
+        """Fetch multiple candidates by id in ONE query (recruiter-scoped)."""
+        if not candidate_ids:
+            return {}
+        try:
+            resp = self._scoped().in_("id", candidate_ids).execute()
+        except Exception:  # pragma: no cover
+            return {}
+        return {c.id: c for c in (Candidate(**r) for r in self._rows(resp))}
+
+    def latest_analyses_for(self, candidate_ids: list[str]) -> dict[str, dict[str, Any]]:
+        """Map candidate_id -> latest analysis for a set of ids in ONE query."""
+        if not candidate_ids:
+            return {}
+        try:
+            resp = (
+                self._client.table("candidate_latest_analysis")
+                .select("*")
+                .eq("recruiter_id", self.recruiter_id)
+                .in_("candidate_id", candidate_ids)
+                .execute()
+            )
+        except Exception:  # pragma: no cover
+            return {}
+        return {r["candidate_id"]: r for r in self._rows(resp) if r.get("candidate_id")}
+
+    # -- content-hash uploads (idempotency) ---------------------------------
+    def uploads_table_available(self) -> bool:
+        """
+        True when migration 0013 (candidate_uploads) is applied. Lets the
+        persistence layer use content-hash dedup when available and fall back to
+        filename dedup otherwise, so the pipeline never breaks pre-migration.
+        """
+        try:
+            self._client.table("candidate_uploads").select("id").limit(1).execute()
+            return True
+        except Exception:
+            return False
+
+    def existing_upload_hashes(self, campaign_id: str) -> set[str]:
+        """SHA-256 hashes already persisted in this campaign (for dedup)."""
+        try:
+            resp = (
+                self._client.table("candidate_uploads")
+                .select("file_hash")
+                .eq("recruiter_id", self.recruiter_id)
+                .eq("campaign_id", campaign_id)
+                .execute()
+            )
+        except Exception as exc:  # pragma: no cover
+            raise self._wrap(exc, "list upload hashes")
+        return {r["file_hash"] for r in self._rows(resp) if r.get("file_hash")}
+
+    def record_upload(
+        self,
+        *,
+        campaign_id: str,
+        candidate_id: str,
+        file_hash: str,
+        filename: Optional[str] = None,
+        file_size: Optional[int] = None,
+    ) -> bool:
+        """
+        Record a persisted upload. The UNIQUE (campaign_id, file_hash) constraint
+        makes this the race-safe idempotency anchor: returns True when inserted,
+        False when the hash already exists in this campaign (duplicate).
+        """
+        row = {
+            "campaign_id": campaign_id,
+            "candidate_id": candidate_id,
+            "recruiter_id": self.recruiter_id,
+            "filename": filename,
+            "file_hash": file_hash,
+            "file_size": file_size,
+        }
+        try:
+            self._client.table("candidate_uploads").insert(row).execute()
+            return True
+        except Exception as exc:
+            # Unique violation (23505) => another request already claimed this
+            # (campaign_id, file_hash). Treat as duplicate, not an error.
+            msg = str(exc).lower()
+            if "23505" in msg or "duplicate" in msg or "unique" in msg or "candidate_uploads_campaign_hash_uniq" in msg:
+                return False
+            raise self._wrap(exc, "record upload")
+
+    def delete_one(self, candidate_id: str, campaign_id: str) -> None:
+        """Delete a single candidate (used to undo a lost dedup race)."""
+        try:
+            (
+                self._table.delete()
+                .eq("recruiter_id", self.recruiter_id)
+                .eq("campaign_id", campaign_id)
+                .eq("id", candidate_id)
+                .execute()
+            )
+        except Exception as exc:  # pragma: no cover
+            raise self._wrap(exc, "delete candidate")
 
     def bulk_delete(self, campaign_id: str, candidate_ids: list[str]) -> int:
         """Delete multiple candidates (recruiter- + campaign-scoped). Returns count."""

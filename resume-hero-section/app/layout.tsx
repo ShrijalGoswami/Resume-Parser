@@ -3,6 +3,9 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from '@/components/ui/toaster'
 import { AuthProvider } from '@/components/auth/auth-provider'
+import { OrgProvider } from '@/components/org/org-provider'
+import { CopilotProvider } from '@/components/copilot/copilot-provider'
+import { RecruiterCopilot } from '@/components/copilot/recruiter-copilot'
 import './globals.css'
 
 const _geist = Geist({ subsets: ["latin"] });
@@ -40,7 +43,12 @@ export default function RootLayout({
     <html lang="en" className="bg-[#FAFAFA]">
       <body className="font-sans antialiased bg-[#FAFAFA]">
         <AuthProvider>
-          {children}
+          <OrgProvider>
+            <CopilotProvider>
+              {children}
+              <RecruiterCopilot />
+            </CopilotProvider>
+          </OrgProvider>
           <Toaster />
         </AuthProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}

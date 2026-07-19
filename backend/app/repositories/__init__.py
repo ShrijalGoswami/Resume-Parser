@@ -13,6 +13,8 @@ from app.repositories.candidate_repository import CandidateRepository
 from app.repositories.note_repository import NoteRepository
 from app.repositories.conversation_repository import ConversationRepository
 from app.repositories.activity_repository import ActivityRepository
+from app.repositories.embedding_repository import EmbeddingRepository
+from app.repositories.agent_repository import AgentRepository
 
 __all__ = [
     "BaseRepository",
@@ -22,4 +24,6 @@ __all__ = [
     "NoteRepository",
     "ConversationRepository",
     "ActivityRepository",
+    "EmbeddingRepository",
+    "AgentRepository",
 ]

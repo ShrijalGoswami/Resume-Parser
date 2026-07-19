@@ -56,6 +56,10 @@ class CandidateResult(BaseModel):
     status: str = Field(default="success", description="'success' or 'failed'")
     error: str | None = Field(default=None, description="Failure reason when status == 'failed'")
 
+    # Content-based identity (for idempotent persistence / dedup).
+    file_hash: str | None = Field(default=None, description="SHA-256 hex of the uploaded file contents")
+    file_size: int | None = Field(default=None, description="Uploaded file size in bytes")
+
     # Ranking
     rank: int = Field(default=0, description="1-based rank among successful candidates")
     overall_score: int = Field(default=0, ge=0, le=100)

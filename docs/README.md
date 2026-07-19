@@ -18,6 +18,7 @@ stateful SaaS platform with recruiter accounts, hiring campaigns, and storage.
 | [DATABASE.md](./DATABASE.md) | Migrations, tables, relationships, indexes, triggers, RLS, storage |
 | [API.md](./API.md) | Every endpoint: method, auth, request, response, errors |
 | [AI_PIPELINE.md](./AI_PIPELINE.md) | Parse → extract → score → LLM → persist; why results are stored |
+| [AI_ARCHITECTURE.md](./AI_ARCHITECTURE.md) | AI Foundation Layer — orchestrator, providers, prompts, context, observability |
 | [SECURITY.md](./SECURITY.md) | Auth, authorization, JWT, RLS, storage, file validation, secrets |
 | [DEPLOYMENT.md](./DEPLOYMENT.md) | Dev/staging/prod, env vars, Vercel, Render, Supabase, DR |
 | [FEATURES.md](./FEATURES.md) | Full feature inventory with status & priority |

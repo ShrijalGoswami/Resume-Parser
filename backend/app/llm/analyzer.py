@@ -20,105 +20,22 @@ Retry policy:
     Schema validation errors : up to 2 attempts (1 retry)
 """
 
-import json
-import re
 import logging
 from app.schemas.resume import ResumeData
 from app.schemas.analysis import AnalysisResponse, GroqExplanation
-from app.llm.groq_client import call_groq, GroqConfigError
-from app.llm.prompts import SYSTEM_PROMPT, build_analysis_prompt
 from app.nlp.ats_scorer import calculate_ats_score
+from app.ai import orchestrator, Capability
+from app.ai.context import build_resume_analysis_context
 
 logger = logging.getLogger(__name__)
-
-_MAX_NETWORK_RETRIES = 3
-_MAX_JSON_RETRIES = 3
-_MAX_SCHEMA_RETRIES = 2  # 1 retry after initial failure
-
-
-def _strip_fences(raw: str) -> str:
-    """Removes markdown code fences that LLMs occasionally emit despite instructions."""
-    cleaned = raw.strip()
-    cleaned = re.sub(r"^```(?:json)?\s*\n?", "", cleaned)
-    cleaned = re.sub(r"\n?```\s*$", "", cleaned)
-    return cleaned.strip()
-
-
-def _call_with_network_retries(
-    system_prompt: str,
-    user_prompt: str,
-    max_retries: int = _MAX_NETWORK_RETRIES
-) -> str:
-    """
-    Calls Groq and retries on network/timeout errors up to max_retries times.
-    Raises RuntimeError if all attempts fail.
-    """
-    last_error: Exception | None = None
-    for attempt in range(1, max_retries + 1):
-        try:
-            return call_groq(system_prompt=system_prompt, user_prompt=user_prompt)
-        except GroqConfigError:
-            # Misconfiguration can never succeed on retry — fail fast.
-            raise
-        except RuntimeError as e:
-            last_error = e
-            logger.warning(f"Network/timeout error on attempt {attempt}/{max_retries}: {e}")
-
-    raise RuntimeError(
-        f"Groq network/timeout failed after {max_retries} attempts: {last_error}"
-    )
-
-
-def _parse_json_with_retries(
-    system_prompt: str,
-    user_prompt: str,
-    max_retries: int = _MAX_JSON_RETRIES
-) -> dict:
-    """
-    Calls Groq and retries if the response cannot be parsed as valid JSON.
-    Raises RuntimeError after exhausting retries.
-    """
-    for attempt in range(1, max_retries + 1):
-        raw = _call_with_network_retries(system_prompt, user_prompt)
-        cleaned = _strip_fences(raw)
-        try:
-            return json.loads(cleaned)
-        except json.JSONDecodeError as e:
-            logger.warning(
-                f"JSON parse failed on attempt {attempt}/{max_retries}: {e} | "
-                f"preview={cleaned[:200]!r}"
-            )
-
-    raise RuntimeError(f"Groq returned invalid JSON after {max_retries} attempts.")
-
-
-def _validate_with_retries(
-    system_prompt: str,
-    user_prompt: str,
-    max_retries: int = _MAX_SCHEMA_RETRIES
-) -> GroqExplanation:
-    """
-    Calls Groq, parses JSON, and validates against GroqExplanation schema.
-    Retries on schema validation failures.
-    Raises RuntimeError after exhausting retries.
-    """
-    for attempt in range(1, max_retries + 1):
-        parsed = _parse_json_with_retries(system_prompt, user_prompt)
-        try:
-            return GroqExplanation(**parsed)
-        except Exception as e:
-            logger.warning(
-                f"Schema validation failed on attempt {attempt}/{max_retries}: {e}"
-            )
-
-    raise RuntimeError(
-        f"Groq response failed schema validation after {max_retries} attempts."
-    )
 
 
 def analyze_resume(resume_data: ResumeData) -> AnalysisResponse:
     """
     Full analysis pipeline: deterministic ATS scoring → Groq explanation → merged response.
+
+    The LLM round-trip now flows through the AI orchestrator
+    (Capability.RESUME_ANALYSIS); deterministic scoring and merging stay here.
 
     Args:
         resume_data: Validated structured resume data from the extraction pipeline.
@@ -133,13 +50,15 @@ def analyze_resume(resume_data: ResumeData) -> AnalysisResponse:
         f"confidence={confidence_score}"
     )
 
-    # ── Step 2: build prompts with scores already embedded ────────────────────
-    resume_json = resume_data.model_dump_json(indent=2)
-    breakdown_json = breakdown.model_dump_json(indent=2)
-    user_prompt = build_analysis_prompt(resume_json, ats_score, breakdown_json)
-
-    logger.info("Requesting Groq explanation layer...")
-    explanation = _validate_with_retries(SYSTEM_PROMPT, user_prompt)
+    # ── Step 2: LLM explanation via the AI orchestrator ───────────────────────
+    logger.info("Requesting Groq explanation layer via AI orchestrator...")
+    context = build_resume_analysis_context(resume_data, ats_score, breakdown)
+    result = orchestrator.run(
+        capability=Capability.RESUME_ANALYSIS,
+        variables=context,
+        schema=GroqExplanation,
+    )
+    explanation = result.data
     logger.info("Groq explanation received and validated.")
 
     # ── Step 3: merge deterministic scores with LLM explanations ─────────────

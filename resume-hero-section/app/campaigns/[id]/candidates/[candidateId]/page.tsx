@@ -13,6 +13,7 @@ import {
   Phone,
   Sparkles,
   Trash2,
+  Users,
 } from 'lucide-react';
 import { AppHeader } from '@/components/app/app-header';
 import { Spinner, ErrorState, EmptyState } from '@/components/workspace/states';
@@ -26,6 +27,7 @@ import {
 } from '@/services/campaigns-api';
 import type { Candidate, RecruiterNote, ActivityEvent } from '@/types/campaign';
 import { toRow, HIRE_STYLES } from '@/lib/candidate';
+import { InterviewIntelligence } from '@/components/interview/interview-intelligence';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -149,6 +151,11 @@ export default function CandidateDetailPage({
           <div className="flex items-center gap-4">
             <ScoreBadge label="Match" value={row.overallScore} />
             <ScoreBadge label="ATS" value={row.atsScore} />
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/search?similar=${candidateId}&campaign=${id}`}>
+                <Users className="mr-1.5 h-4 w-4" /> Find similar
+              </Link>
+            </Button>
             <Button variant="outline" size="sm" onClick={openResume} disabled={!row.resumePath}>
               <Download className="mr-1.5 h-4 w-4" /> Resume
             </Button>
@@ -159,9 +166,14 @@ export default function CandidateDetailPage({
           <TabsList className="mb-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="ai">AI Analysis</TabsTrigger>
+            <TabsTrigger value="interview">Interview</TabsTrigger>
             <TabsTrigger value="notes">Notes ({notes.length})</TabsTrigger>
             <TabsTrigger value="activity">Activity</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="interview">
+            <InterviewIntelligence campaignId={id} candidateId={candidateId} />
+          </TabsContent>
 
           {/* Overview */}
           <TabsContent value="overview" className="space-y-4">
@@ -234,12 +246,17 @@ export default function CandidateDetailPage({
                     <span className={cn('mt-1 inline-block rounded-full border px-2 py-0.5 text-xs font-medium', HIRE_STYLES[row.hire])}>{row.hire}</span>
                   </div>
                 </div>
+                <p className="-mt-1 text-xs text-muted-foreground">
+                  The recommendation reflects <b>overall fit to this role</b> — match score, experience, strengths and risks —
+                  and is intentionally independent of the <b>ATS score</b>, which only measures resume formatting and
+                  keyword readiness. A resume can be ATS-perfect yet a weak fit (or vice-versa).
+                </p>
                 <div className="grid gap-4 md:grid-cols-2">
                   <Section title="Strengths"><ChipList items={row.strengths} tone="emerald" /></Section>
                   <Section title="Weaknesses"><ChipList items={row.weaknesses} tone="rose" /></Section>
                 </div>
                 <Section title="Missing skills"><ChipList items={row.missingSkills} tone="amber" /></Section>
-                <Section title="Recommendation">
+                <Section title="Why this recommendation">
                   <p className="text-sm text-foreground">{row.recommendationText || row.matchCategory || '—'}</p>
                 </Section>
               </>
