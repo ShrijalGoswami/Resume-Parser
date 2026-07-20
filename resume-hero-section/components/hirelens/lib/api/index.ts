@@ -11,3 +11,13 @@ export {
   useUpdateRecommendation,
   useGenerateBrief,
 } from './hooks'
+export {
+  roleKeys,
+  useCampaign,
+  useCandidates,
+  useCampaignActivity,
+  useUpdateStage,
+  useBulkDeleteCandidates,
+  useCompareCandidates,
+  useSearchIntoRole,
+} from './workspace'
