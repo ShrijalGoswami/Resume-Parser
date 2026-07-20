@@ -6,20 +6,20 @@ import { TopBar, type TopBarProps } from './top-bar'
 import { SkipLink } from './skip-link'
 import { OfflineBanner } from '../states/offline-banner'
 import { CommandPalette } from '../command-palette/command-palette'
+import { CopilotRail } from '../copilot/copilot-rail'
 import type { AccountMenuProps } from './account-menu'
 
 /**
- * App shell (Design Bible §4.1, Part V). Composes the nav rail, top bar, and an
- * independently scrolling content region. `rail` is the slot for the Copilot
- * rail (push ≥1440 / overlay < 1440), supplied by the surface.
+ * App shell (Design Bible §4.1, Part V). Composes the nav rail, top bar, an
+ * independently scrolling content region, the Copilot rail (push ≥1440 /
+ * overlay < 1440), and the command palette.
  */
 export interface AppShellProps extends TopBarProps {
   children: React.ReactNode
-  rail?: React.ReactNode
   account?: AccountMenuProps
 }
 
-export function AppShell({ children, rail, account, ...topBarProps }: AppShellProps) {
+export function AppShell({ children, account, ...topBarProps }: AppShellProps) {
   return (
     <div className="flex h-dvh w-full overflow-hidden bg-hl-canvas text-hl-fg">
       <SkipLink />
@@ -31,7 +31,7 @@ export function AppShell({ children, rail, account, ...topBarProps }: AppShellPr
           {children}
         </main>
       </div>
-      {rail}
+      <CopilotRail />
       <CommandPalette />
     </div>
   )
