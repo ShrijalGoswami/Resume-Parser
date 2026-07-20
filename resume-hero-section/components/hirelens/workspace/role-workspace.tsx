@@ -67,12 +67,12 @@ export function RoleWorkspace({
   return <AuthedWorkspace roleId={roleId} lens={lens} initialCandidateId={initialCandidateId} />
 }
 
-/** Sync `?candidate=` into the URL without a navigation (instant + shareable). */
-function syncCandidateParam(id: string | null) {
+/** Current path with/without the `?candidate=` param (no navigation). */
+function candidateUrl(id: string | null): string {
   const url = new URL(window.location.href)
   if (id) url.searchParams.set('candidate', id)
   else url.searchParams.delete('candidate')
-  window.history.replaceState(window.history.state, '', url)
+  return `${url.pathname}${url.search}`
 }
 
 function AuthedWorkspace({
@@ -93,14 +93,39 @@ function AuthedWorkspace({
   const [compareOpen, setCompareOpen] = React.useState(false)
   const [compareIds, setCompareIds] = React.useState<string[]>([])
   const [candidateId, setCandidateId] = React.useState<string | null>(initialCandidateId)
+  // True when the drawer added a history entry this session (so Back closes it).
+  const openedViaPushRef = React.useRef(false)
+
+  // Sync the drawer to Back/Forward navigation.
+  React.useEffect(() => {
+    const onPopState = () => {
+      openedViaPushRef.current = false
+      setCandidateId(new URL(window.location.href).searchParams.get('candidate'))
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
 
   const openCandidate = (id: string) => {
+    if (candidateId === null) {
+      // Opening from closed pushes an entry, so Back closes the drawer.
+      window.history.pushState(null, '', candidateUrl(id))
+      openedViaPushRef.current = true
+    } else {
+      // Switching candidates replaces — no history clutter.
+      window.history.replaceState(null, '', candidateUrl(id))
+    }
     setCandidateId(id)
-    syncCandidateParam(id)
   }
+
   const closeCandidate = () => {
-    setCandidateId(null)
-    syncCandidateParam(null)
+    if (openedViaPushRef.current) {
+      openedViaPushRef.current = false
+      window.history.back() // popstate clears candidateId
+    } else {
+      window.history.replaceState(null, '', candidateUrl(null))
+      setCandidateId(null)
+    }
   }
 
   const account = profile.data
