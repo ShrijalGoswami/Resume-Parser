@@ -24,6 +24,7 @@ export interface PipelineTableProps {
   onToggle: (id: string) => void
   onToggleAll: () => void
   onStageChange: (id: string, stage: PipelineStage) => void
+  onOpenCandidate: (id: string) => void
 }
 
 const COLUMN_COUNT = 8
@@ -34,6 +35,7 @@ export function PipelineTable({
   onToggle,
   onToggleAll,
   onStageChange,
+  onOpenCandidate,
 }: PipelineTableProps) {
   const allSelected = rows.length > 0 && rows.every((row) => selected.has(row.id))
   const scrollRef = React.useRef<HTMLDivElement>(null)
@@ -112,14 +114,18 @@ export function PipelineTable({
                 <td className="px-3 py-2">
                   <div className="flex items-center gap-2">
                     <Avatar name={row.name} size={24} />
-                    <div className="min-w-0">
-                      <p className="hl-body-medium truncate">{row.name}</p>
+                    <button
+                      type="button"
+                      onClick={() => onOpenCandidate(row.id)}
+                      className="min-w-0 text-left outline-none"
+                    >
+                      <p className="hl-body-medium truncate hover:underline">{row.name}</p>
                       {row.matchCategory ? (
                         <p className="hl-caption truncate text-hl-fg-tertiary">
                           {row.matchCategory}
                         </p>
                       ) : null}
-                    </div>
+                    </button>
                   </div>
                 </td>
                 <td className="px-3 py-2">

@@ -14,9 +14,10 @@ export interface PipelineBoardProps {
   rows: CandidateRow[]
   selected: Set<string>
   onToggle: (id: string) => void
+  onOpenCandidate: (id: string) => void
 }
 
-export function PipelineBoard({ rows, selected, onToggle }: PipelineBoardProps) {
+export function PipelineBoard({ rows, selected, onToggle, onOpenCandidate }: PipelineBoardProps) {
   return (
     <div className="flex gap-3 overflow-x-auto pb-2" role="group" aria-label="Pipeline board by stage">
       {BOARD_STAGES.map((stage) => {
@@ -36,6 +37,7 @@ export function PipelineBoard({ rows, selected, onToggle }: PipelineBoardProps) 
                   row={row}
                   selected={selected.has(row.id)}
                   onToggleSelect={() => onToggle(row.id)}
+                  onOpen={() => onOpenCandidate(row.id)}
                 />
               ))}
             </div>
