@@ -302,6 +302,27 @@
 
   /* Scrim (rack focus) */
   --hl-scrim: rgba(11, 13, 13, 0.32);
+
+  /* Density scale — Comfortable (default, §2.1). Toggled by the
+     [data-hl-density='compact'] attribute on this same .hl root. */
+  --hl-control-h-sm: 1.75rem; /* 28 */
+  --hl-control-h-md: 2rem;    /* 32 */
+  --hl-control-h-lg: 2.5rem;  /* 40 */
+  --hl-card-pad: 1rem;        /* 16 */
+  --hl-section-pad: 1.5rem;   /* 24 */
+  --hl-row-h: 2.5rem;         /* 40 */
+  --hl-avatar: 1.5rem;        /* 24 */
+}
+
+/* Density — Compact (§2.1) */
+.hl[data-hl-density='compact'] {
+  --hl-control-h-sm: 1.5rem;  /* 24 */
+  --hl-control-h-md: 1.75rem; /* 28 */
+  --hl-control-h-lg: 2.25rem; /* 36 */
+  --hl-card-pad: 0.75rem;     /* 12 */
+  --hl-section-pad: 1rem;     /* 16 */
+  --hl-row-h: 2rem;           /* 32 */
+  --hl-avatar: 1.25rem;       /* 20 */
 }
 
 /* --- Dark (§3.1–3.7) ---------------------------------------------------- */
@@ -517,6 +538,61 @@
     line-height: 1.5rem;
     font-weight: 500;
     font-variant-numeric: tabular-nums;
+  }
+
+  /* Prism gradient border for AI surfaces (§3.3). The fill defaults to the
+     canvas; AI blocks set --hl-prism-fill: var(--hl-ai-surface). */
+  .hl-prism-border {
+    border: 1px solid transparent;
+    background:
+      linear-gradient(var(--hl-prism-fill, var(--hl-bg-canvas)), var(--hl-prism-fill, var(--hl-bg-canvas))) padding-box,
+      linear-gradient(120deg, var(--hl-prism-from), var(--hl-prism-mid), var(--hl-prism-to)) border-box;
+  }
+
+  /* Prism left hairline for AIAnswer blocks (§4.8). */
+  .hl-prism-edge {
+    border-left: 2px solid transparent;
+    border-image: linear-gradient(180deg, var(--hl-prism-from), var(--hl-prism-to)) 1;
+  }
+
+  /* Neutral skeleton fill + sheen sweep (§3.7). */
+  .hl-skeleton {
+    background-color: var(--hl-skeleton-base);
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--hl-skeleton-sheen) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    background-repeat: no-repeat;
+    animation: hl-skeleton-sheen 1.4s ease-in-out infinite;
+  }
+
+  /* Prism streaming shimmer overlay while an AI answer streams (§3.3). */
+  .hl-ai-shimmer {
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      color-mix(in srgb, var(--hl-prism-mid) 12%, transparent) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    background-repeat: no-repeat;
+    animation: hl-shimmer 1.2s linear infinite;
+  }
+
+  /* Rack Focus backdrop (§1.7) — the surface behind a decision object dims,
+     desaturates, and blurs. Reduced motion keeps the dim, drops blur/saturate. */
+  .hl-rack-scrim {
+    background-color: var(--hl-scrim);
+    backdrop-filter: blur(2px) saturate(0.7);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hl-rack-scrim {
+    backdrop-filter: none;
   }
 }
 
