@@ -56,7 +56,7 @@ export function WorkspaceHeader({
           <Plus /> Add candidates
         </Button>
       </div>
-      <LensSwitcher roleId={campaign.id} />
+      <LensSwitcher />
     </header>
   )
 }
