@@ -4,8 +4,8 @@ import { Home, Briefcase, Users, Sparkles, Settings, type LucideIcon } from 'luc
  * Primary navigation (UX Spec §2, Design Bible §5.1). Order is fixed:
  * Home · Roles · Talent · Ask, then Settings pinned separately.
  *
- * During coexistence the V3 screens are built in later phases; Home resolves to
- * `/` only after cutover (the legacy app holds `/` until then).
+ * During coexistence the legacy app holds `/`, so V3 Home lives at `/home`; the
+ * href returns to `/` at cutover. Roles/Talent/Ask/Settings are built later.
  */
 export interface NavItem {
   label: string
@@ -15,7 +15,7 @@ export interface NavItem {
 }
 
 export const primaryNav: NavItem[] = [
-  { label: 'Home', href: '/', icon: Home, isActive: (p) => p === '/' },
+  { label: 'Home', href: '/home', icon: Home, isActive: (p) => p.startsWith('/home') },
   { label: 'Roles', href: '/roles', icon: Briefcase, isActive: (p) => p.startsWith('/roles') },
   { label: 'Talent', href: '/talent', icon: Users, isActive: (p) => p.startsWith('/talent') },
   { label: 'Ask', href: '/ask', icon: Sparkles, isActive: (p) => p.startsWith('/ask') },
