@@ -78,13 +78,16 @@ export function CommandPalette() {
   )
   const flat = React.useMemo(() => sections.flatMap((section) => section.items), [sections])
 
-  React.useEffect(() => {
-    setActiveIndex(0)
-  }, [query, commandOpen])
-
-  React.useEffect(() => {
-    if (!commandOpen) setQuery('')
-  }, [commandOpen])
+  const onOpenChange = React.useCallback(
+    (open: boolean) => {
+      setCommandOpen(open)
+      if (!open) {
+        setQuery('')
+        setActiveIndex(0)
+      }
+    },
+    [setCommandOpen],
+  )
 
   const runItem = React.useCallback(
     (item: CommandItem) => {
@@ -111,7 +114,7 @@ export function CommandPalette() {
   const activeId = flat[activeIndex]?.id
 
   return (
-    <DialogPrimitive.Root open={commandOpen} onOpenChange={setCommandOpen}>
+    <DialogPrimitive.Root open={commandOpen} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="hl hl-rack-scrim fixed inset-0 z-[var(--hl-z-palette)] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0" />
         <DialogPrimitive.Content
@@ -132,7 +135,10 @@ export function CommandPalette() {
             <input
               autoFocus
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => {
+                setQuery(event.target.value)
+                setActiveIndex(0)
+              }}
               placeholder="Search or ask&hellip;"
               aria-label="Search or run a command"
               role="combobox"

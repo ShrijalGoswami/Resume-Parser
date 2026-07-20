@@ -73,6 +73,8 @@ export function useCommandRegistry(): CommandRegistryValue {
 export function useRegisterCommands(items: CommandItem[]): void {
   const { register } = useCommandRegistry()
   const itemsRef = React.useRef(items)
-  itemsRef.current = items
+  React.useEffect(() => {
+    itemsRef.current = items
+  })
   React.useEffect(() => register(itemsRef.current), [register])
 }

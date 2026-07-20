@@ -1,6 +1,11 @@
 'use client'
 
 import * as React from 'react'
+import { usePersistedState } from '../lib/use-persisted-state'
+
+function isBit(value: string | null): value is '0' | '1' {
+  return value === '0' || value === '1'
+}
 
 /**
  * Shell state (Design Bible Part V). Owns the cross-surface UI state the shell,
@@ -21,32 +26,21 @@ interface ShellContextValue {
 
 const ShellContext = React.createContext<ShellContextValue | null>(null)
 
-const NAV_STORAGE_KEY = 'hl-nav-collapsed'
-
 export function ShellProvider({ children }: { children: React.ReactNode }) {
-  const [navCollapsed, setNavCollapsedState] = React.useState(false)
+  const [navBit, setNavBit] = usePersistedState<'0' | '1'>('hl-nav-collapsed', '0', isBit)
+  const navCollapsed = navBit === '1'
   const [commandOpen, setCommandOpen] = React.useState(false)
   const [railOpen, setRailOpen] = React.useState(false)
 
-  React.useEffect(() => {
-    const stored = window.localStorage.getItem(NAV_STORAGE_KEY)
-    if (stored === '1' || stored === '0') {
-      setNavCollapsedState(stored === '1')
-    }
-  }, [])
+  const setNavCollapsed = React.useCallback(
+    (value: boolean) => setNavBit(value ? '1' : '0'),
+    [setNavBit],
+  )
 
-  const setNavCollapsed = React.useCallback((value: boolean) => {
-    setNavCollapsedState(value)
-    window.localStorage.setItem(NAV_STORAGE_KEY, value ? '1' : '0')
-  }, [])
-
-  const toggleNav = React.useCallback(() => {
-    setNavCollapsedState((current) => {
-      const next = !current
-      window.localStorage.setItem(NAV_STORAGE_KEY, next ? '1' : '0')
-      return next
-    })
-  }, [])
+  const toggleNav = React.useCallback(
+    () => setNavBit(navBit === '1' ? '0' : '1'),
+    [navBit, setNavBit],
+  )
 
   const toggleRail = React.useCallback(() => setRailOpen((open) => !open), [])
 
