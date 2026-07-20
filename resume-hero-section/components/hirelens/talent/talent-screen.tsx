@@ -134,13 +134,35 @@ function AuthedTalent({ initial }: { initial: TalentInitial }) {
     if (query.trim()) syncUrl(query, next)
   }
 
-  const openResult = React.useCallback((result: SearchResultItem) => {
-    if (result.campaign_id) {
-      setDrawerTarget({ roleId: result.campaign_id, candidateId: result.candidate_id })
+  // Drawer opens push a history entry so Back closes it (matches the Role
+  // Workspace); a popstate listener clears it on Back/Forward.
+  const openDrawer = React.useCallback((roleId: string, candidateId: string) => {
+    setDrawerTarget({ roleId, candidateId })
+    window.history.pushState({ hlDrawer: true }, '')
+  }, [])
+  const closeDrawer = React.useCallback(() => {
+    if ((window.history.state as { hlDrawer?: boolean } | null)?.hlDrawer) {
+      window.history.back()
     } else {
-      toast({ variant: 'warning', title: 'This candidate is not attached to a role yet' })
+      setDrawerTarget(null)
     }
   }, [])
+  React.useEffect(() => {
+    const onPopState = () => setDrawerTarget(null)
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
+
+  const openResult = React.useCallback(
+    (result: SearchResultItem) => {
+      if (result.campaign_id) {
+        openDrawer(result.campaign_id, result.candidate_id)
+      } else {
+        toast({ variant: 'warning', title: 'This candidate is not attached to a role yet' })
+      }
+    },
+    [openDrawer],
+  )
 
   const findSimilar = (result: SearchResultItem) => {
     setSimilarSeed({ candidateId: result.candidate_id, campaignId: result.campaign_id, name: result.name })
@@ -293,11 +315,9 @@ function AuthedTalent({ initial }: { initial: TalentInitial }) {
                 <CollectionView
                   collectionId={viewCollectionId}
                   onBack={() => setViewCollectionId(null)}
-                  onOpen={(item) =>
-                    item.campaignId
-                      ? setDrawerTarget({ roleId: item.campaignId, candidateId: item.candidateId })
-                      : undefined
-                  }
+                  onOpen={(item) => {
+                    if (item.campaignId) openDrawer(item.campaignId, item.candidateId)
+                  }}
                 />
               ) : !query.trim() && !similarSeed ? (
                 <EmptyState
@@ -392,7 +412,7 @@ function AuthedTalent({ initial }: { initial: TalentInitial }) {
       <CandidateDrawer
         roleId={drawerTarget?.roleId ?? ''}
         candidateId={drawerTarget?.candidateId ?? null}
-        onClose={() => setDrawerTarget(null)}
+        onClose={closeDrawer}
       />
       <ComparePanel
         open={compareOpen}

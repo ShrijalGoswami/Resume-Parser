@@ -1,10 +1,34 @@
 'use client'
 
+import * as React from 'react'
 import { Input } from '../ui/input'
 import type { SearchFilters } from '@/types/search'
 
 const selectClass =
   'hl-small h-8 rounded-hl-md border border-hl-border bg-hl-canvas px-2 text-hl-fg outline-none focus-visible:border-hl-accent'
+
+/**
+ * Location commits on blur / Enter (not per-keystroke) so a text edit doesn't
+ * fire a semantic search on every character. Keyed by the committed value so an
+ * external change (e.g. running a saved search) resets it without an effect.
+ */
+function LocationInput({ initial, onCommit }: { initial: string; onCommit: (value: string) => void }) {
+  const [value, setValue] = React.useState(initial)
+  const commit = () => onCommit(value.trim())
+  return (
+    <Input
+      value={value}
+      onChange={(event) => setValue(event.target.value)}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') commit()
+      }}
+      placeholder="Location"
+      aria-label="Location"
+      className="h-8 w-36"
+    />
+  )
+}
 
 /** Advanced filters (UX Spec §8) — the fields the backend actually supports. */
 export function TalentFilters({
@@ -39,12 +63,10 @@ export function TalentFilters({
         <option value="5">5+ years</option>
         <option value="8">8+ years</option>
       </select>
-      <Input
-        value={filters.location ?? ''}
-        onChange={(event) => onChange({ location: event.target.value || null })}
-        placeholder="Location"
-        aria-label="Location"
-        className="h-8 w-36"
+      <LocationInput
+        key={filters.location ?? ''}
+        initial={filters.location ?? ''}
+        onCommit={(value) => onChange({ location: value || null })}
       />
     </div>
   )
