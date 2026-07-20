@@ -198,3 +198,354 @@
     transform: translate(-50%, -50%) scale(1.1);
   }
 }
+
+/* ==========================================================================
+   HireLens V3 — Design System
+   Source of truth: docs/HIRELENS_V3_DESIGN_BIBLE.md + HIRELENS_V3_UX_SPEC.md
+
+   Isolation contract: every V3 token lives under `.hl` and NEVER redefines a
+   v1.0 token (:root / .dark). Dark mode is keyed on [data-hl-theme='dark']
+   (written by next-themes), not the `.dark` class, so the frozen light-only
+   legacy app is unaffected regardless of the V3 theme choice.
+   ========================================================================== */
+
+/* --- Light (default) ---------------------------------------------------- */
+.hl {
+  /* Neutral — Ink & Glass (§3.1) */
+  --hl-bg-canvas: #FCFDFC;
+  --hl-bg-subtle: #F4F6F5;
+  --hl-bg-muted: #EBEEED;
+  --hl-bg-inset: #E1E5E4;
+  --hl-border-subtle: #E9EDEC;
+  --hl-border-default: #DCE1E0;
+  --hl-border-strong: #CBD1D0;
+  --hl-text-primary: #131817;
+  --hl-text-secondary: #545C5A;
+  --hl-text-tertiary: #828B89;
+  --hl-text-disabled: #AEB5B3;
+
+  /* Accent — Iris (§3.2) */
+  --hl-accent-solid: #5B5BD6;
+  --hl-accent-hover: #4F4FC4;
+  --hl-accent-text: #4A4AC0;
+  --hl-accent-subtle-bg: #EEEEFB;
+  --hl-accent-border: #D9D9F6;
+
+  /* AI — Prism (§3.3) */
+  --hl-prism-from: #6E5CF0;
+  --hl-prism-mid: #4C8FE0;
+  --hl-prism-to: #2FB8C6;
+  --hl-ai-surface: #F6F8FD;
+  --hl-ai-border: #C9D2F0;
+
+  /* Score / fit — Focus scale (§3.4) */
+  --hl-score-infocus: #0C7C86;
+  --hl-score-infocus-bg: #E4F3F4;
+  --hl-score-sharp: #2E9E86;
+  --hl-score-sharp-bg: #E6F4EE;
+  --hl-score-legible: #B78514;
+  --hl-score-legible-bg: #FBF2D8;
+  --hl-score-soft: #C6702E;
+  --hl-score-soft-bg: #FBEEE1;
+  --hl-score-outfocus: #B4463C;
+  --hl-score-outfocus-bg: #FBEBE8;
+
+  /* Semantic (§3.5) */
+  --hl-success: #1E7A52;
+  --hl-success-bg: #E7F5EE;
+  --hl-warning: #9A6800;
+  --hl-warning-bg: #FBF1DC;
+  --hl-danger: #B4443A;
+  --hl-danger-bg: #FBEBE8;
+  --hl-info: #2C6BD6;
+  --hl-info-bg: #E8F0FD;
+
+  /* Confidence (§3.6) — low is neutral, never red */
+  --hl-confidence-high: #1E7A52;
+  --hl-confidence-med: #9A6800;
+  --hl-confidence-low: #82786A;
+
+  /* Loading / skeleton (§3.7) */
+  --hl-skeleton-base: #EBEEED;
+  --hl-skeleton-sheen: #F4F6F5;
+
+  /* Elevation (§3.9) */
+  --hl-shadow-xs: 0 1px 2px rgba(10, 14, 13, 0.05);
+  --hl-shadow-sm: 0 2px 6px rgba(10, 14, 13, 0.07);
+  --hl-shadow-md: 0 6px 16px rgba(10, 14, 13, 0.09);
+  --hl-shadow-lg: 0 16px 40px rgba(10, 14, 13, 0.14);
+
+  /* Radius (§3.9) */
+  --hl-radius-sm: 6px;
+  --hl-radius-md: 8px;
+  --hl-radius-lg: 12px;
+  --hl-radius-xl: 16px;
+
+  /* Motion (§3.13) */
+  --hl-dur-instant: 90ms;
+  --hl-dur-fast: 120ms;
+  --hl-dur-base: 180ms;
+  --hl-dur-slow: 240ms;
+  --hl-dur-rack: 200ms;
+  --hl-ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --hl-ease-emphasized: cubic-bezier(0.2, 0, 0, 0.2);
+  --hl-ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+  /* Z-index (§3.14) */
+  --hl-z-sticky: 100;
+  --hl-z-dropdown: 200;
+  --hl-z-drawer: 300;
+  --hl-z-modal: 400;
+  --hl-z-palette: 500;
+  --hl-z-toast: 600;
+  --hl-z-tooltip: 700;
+
+  /* Scrim (rack focus) */
+  --hl-scrim: rgba(11, 13, 13, 0.32);
+}
+
+/* --- Dark (§3.1–3.7) ---------------------------------------------------- */
+[data-hl-theme='dark'] .hl {
+  --hl-bg-canvas: #0B0D0D;
+  --hl-bg-subtle: #111413;
+  --hl-bg-muted: #181C1B;
+  --hl-bg-inset: #202523;
+  --hl-border-subtle: #1B201F;
+  --hl-border-default: #272D2C;
+  --hl-border-strong: #38403E;
+  --hl-text-primary: #EDF1F0;
+  --hl-text-secondary: #A3ACAA;
+  --hl-text-tertiary: #6B7472;
+  --hl-text-disabled: #474F4D;
+
+  --hl-accent-solid: #7C7CF0;
+  --hl-accent-hover: #8E8EF5;
+  --hl-accent-text: #A9A9F7;
+  --hl-accent-subtle-bg: #1E1E3A;
+  --hl-accent-border: #34356F;
+
+  --hl-prism-from: #9282FF;
+  --hl-prism-mid: #6FA8F5;
+  --hl-prism-to: #57D6E2;
+  --hl-ai-surface: #0E1319;
+  --hl-ai-border: #2A3350;
+
+  --hl-score-infocus: #33C2CD;
+  --hl-score-infocus-bg: #0C2B2E;
+  --hl-score-sharp: #4FD6A8;
+  --hl-score-sharp-bg: #0E2A20;
+  --hl-score-legible: #EAC15A;
+  --hl-score-legible-bg: #2A2109;
+  --hl-score-soft: #E89A5E;
+  --hl-score-soft-bg: #2A1B0E;
+  --hl-score-outfocus: #F0847A;
+  --hl-score-outfocus-bg: #2C1512;
+
+  --hl-success: #4FD69B;
+  --hl-success-bg: #0E2A1F;
+  --hl-warning: #F0B84A;
+  --hl-warning-bg: #2A2008;
+  --hl-danger: #F08479;
+  --hl-danger-bg: #2C1512;
+  --hl-info: #79A8F5;
+  --hl-info-bg: #0F1D33;
+
+  --hl-confidence-high: #4FD69B;
+  --hl-confidence-med: #F0B84A;
+  --hl-confidence-low: #9A9184;
+
+  --hl-skeleton-base: #181C1B;
+  --hl-skeleton-sheen: #202423;
+
+  /* Dark elevation adds a hairline inset — shadows read weakly on dark (§3.9) */
+  --hl-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --hl-shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --hl-shadow-md: 0 6px 16px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --hl-shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.04);
+
+  --hl-scrim: rgba(0, 0, 0, 0.5);
+}
+
+/* --- Tailwind v4 mapping (utilities: bg-hl-*, text-hl-*, border-hl-*, …) --- */
+@theme inline {
+  /* Fonts (§3.8) */
+  --font-hl-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-hl-display: var(--font-fraunces), Georgia, 'Times New Roman', serif;
+  --font-hl-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, monospace;
+
+  /* Radius */
+  --radius-hl-sm: var(--hl-radius-sm);
+  --radius-hl-md: var(--hl-radius-md);
+  --radius-hl-lg: var(--hl-radius-lg);
+  --radius-hl-xl: var(--hl-radius-xl);
+
+  /* Neutral */
+  --color-hl-canvas: var(--hl-bg-canvas);
+  --color-hl-subtle: var(--hl-bg-subtle);
+  --color-hl-muted: var(--hl-bg-muted);
+  --color-hl-inset: var(--hl-bg-inset);
+  --color-hl-border-subtle: var(--hl-border-subtle);
+  --color-hl-border: var(--hl-border-default);
+  --color-hl-border-strong: var(--hl-border-strong);
+  --color-hl-fg: var(--hl-text-primary);
+  --color-hl-fg-secondary: var(--hl-text-secondary);
+  --color-hl-fg-tertiary: var(--hl-text-tertiary);
+  --color-hl-fg-disabled: var(--hl-text-disabled);
+
+  /* Accent */
+  --color-hl-accent: var(--hl-accent-solid);
+  --color-hl-accent-hover: var(--hl-accent-hover);
+  --color-hl-accent-fg: var(--hl-accent-text);
+  --color-hl-accent-subtle: var(--hl-accent-subtle-bg);
+  --color-hl-accent-border: var(--hl-accent-border);
+
+  /* AI */
+  --color-hl-ai-surface: var(--hl-ai-surface);
+  --color-hl-ai-border: var(--hl-ai-border);
+  --color-hl-prism-from: var(--hl-prism-from);
+  --color-hl-prism-mid: var(--hl-prism-mid);
+  --color-hl-prism-to: var(--hl-prism-to);
+
+  /* Score */
+  --color-hl-score-infocus: var(--hl-score-infocus);
+  --color-hl-score-infocus-bg: var(--hl-score-infocus-bg);
+  --color-hl-score-sharp: var(--hl-score-sharp);
+  --color-hl-score-sharp-bg: var(--hl-score-sharp-bg);
+  --color-hl-score-legible: var(--hl-score-legible);
+  --color-hl-score-legible-bg: var(--hl-score-legible-bg);
+  --color-hl-score-soft: var(--hl-score-soft);
+  --color-hl-score-soft-bg: var(--hl-score-soft-bg);
+  --color-hl-score-outfocus: var(--hl-score-outfocus);
+  --color-hl-score-outfocus-bg: var(--hl-score-outfocus-bg);
+
+  /* Semantic */
+  --color-hl-success: var(--hl-success);
+  --color-hl-success-bg: var(--hl-success-bg);
+  --color-hl-warning: var(--hl-warning);
+  --color-hl-warning-bg: var(--hl-warning-bg);
+  --color-hl-danger: var(--hl-danger);
+  --color-hl-danger-bg: var(--hl-danger-bg);
+  --color-hl-info: var(--hl-info);
+  --color-hl-info-bg: var(--hl-info-bg);
+
+  /* Confidence */
+  --color-hl-confidence-high: var(--hl-confidence-high);
+  --color-hl-confidence-med: var(--hl-confidence-med);
+  --color-hl-confidence-low: var(--hl-confidence-low);
+
+  /* Skeleton */
+  --color-hl-skeleton: var(--hl-skeleton-base);
+  --color-hl-skeleton-sheen: var(--hl-skeleton-sheen);
+}
+
+/* --- Base + typography recipes (§3.8) ----------------------------------- */
+@layer base {
+  .hl {
+    background-color: var(--hl-bg-canvas);
+    color: var(--hl-text-primary);
+    font-family: var(--font-hl-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .hl :focus-visible {
+    outline: 2px solid var(--hl-accent-solid);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+}
+
+@layer components {
+  .hl-display-xl {
+    font-family: var(--font-hl-display);
+    font-weight: 560;
+    font-size: 2.5rem;
+    line-height: 2.875rem;
+    letter-spacing: -0.015em;
+  }
+  .hl-display {
+    font-family: var(--font-hl-display);
+    font-weight: 560;
+    font-size: 1.75rem;
+    line-height: 2.125rem;
+    letter-spacing: -0.015em;
+  }
+  .hl-h1 {
+    font-weight: 600;
+    font-size: 1.375rem;
+    line-height: 1.75rem;
+    letter-spacing: -0.01em;
+  }
+  .hl-h2 {
+    font-weight: 600;
+    font-size: 1.125rem;
+    line-height: 1.5rem;
+    letter-spacing: -0.01em;
+  }
+  .hl-h3 {
+    font-weight: 600;
+    font-size: 1rem;
+    line-height: 1.375rem;
+  }
+  .hl-body {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  .hl-body-medium {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+  }
+  .hl-small {
+    font-size: 0.8125rem;
+    line-height: 1.125rem;
+  }
+  .hl-caption {
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 500;
+  }
+  .hl-mono {
+    font-family: var(--font-hl-mono);
+    font-size: 0.8125rem;
+    line-height: 1.125rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+  .hl-mono-lg {
+    font-family: var(--font-hl-mono);
+    font-size: 1.25rem;
+    line-height: 1.5rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* --- Motion primitives (§3.13, §VIII) ----------------------------------- */
+/* Prism shimmer while an AI response streams (§3.3). */
+@keyframes hl-shimmer {
+  0% { background-position: -150% 0; }
+  100% { background-position: 250% 0; }
+}
+/* Neutral skeleton sheen while loading (§3.7) — distinct from AI shimmer. */
+@keyframes hl-skeleton-sheen {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+/* "Thinking" pulse before the first AI token (§VII). */
+@keyframes hl-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+/* Reduced motion: honor the OS setting across the whole V3 subtree (§IX).
+   Transforms/blur/shimmer collapse to instant; opacity changes simply snap. */
+@media (prefers-reduced-motion: reduce) {
+  .hl *,
+  .hl *::before,
+  .hl *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
