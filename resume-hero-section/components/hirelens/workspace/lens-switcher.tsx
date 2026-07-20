@@ -1,24 +1,27 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
 /**
- * LensSwitcher (Design Bible §7.1) — segmented, URL-bound. Pipeline is the base
- * route; the other lenses are sub-routes (UX Spec §2).
+ * LensSwitcher (Design Bible §7.1) — segmented, URL-bound via a `?lens=` param.
+ * This keeps every lens shareable/deep-linkable (UX Spec §2 deep-link rule)
+ * without a five-file sub-route tree; it can be promoted to sub-route paths
+ * later with no UI change.
  */
 const lenses = [
-  { label: 'Pipeline', segment: '' },
-  { label: 'Analytics', segment: 'analytics' },
-  { label: 'Forecast', segment: 'forecast' },
-  { label: 'Report', segment: 'report' },
-  { label: 'Activity', segment: 'activity' },
+  { label: 'Pipeline', value: 'pipeline' },
+  { label: 'Analytics', value: 'analytics' },
+  { label: 'Forecast', value: 'forecast' },
+  { label: 'Report', value: 'report' },
+  { label: 'Activity', value: 'activity' },
 ] as const
 
-export function LensSwitcher({ roleId }: { roleId: string }) {
+export function LensSwitcher() {
   const pathname = usePathname()
-  const base = `/roles/${roleId}`
+  const params = useSearchParams()
+  const current = params.get('lens') ?? 'pipeline'
 
   return (
     <div
@@ -27,13 +30,11 @@ export function LensSwitcher({ roleId }: { roleId: string }) {
       className="inline-flex items-center gap-1 rounded-hl-md bg-hl-muted p-1"
     >
       {lenses.map((lens) => {
-        const href = lens.segment ? `${base}/${lens.segment}` : base
-        const active = lens.segment
-          ? pathname === href || pathname.startsWith(`${href}/`)
-          : pathname === base
+        const active = current === lens.value
+        const href = lens.value === 'pipeline' ? pathname : `${pathname}?lens=${lens.value}`
         return (
           <Link
-            key={lens.label}
+            key={lens.value}
             href={href}
             role="tab"
             aria-selected={active}
