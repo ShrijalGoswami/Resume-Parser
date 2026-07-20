@@ -5,6 +5,7 @@ import { LeftNav } from './left-nav'
 import { TopBar, type TopBarProps } from './top-bar'
 import { SkipLink } from './skip-link'
 import { OfflineBanner } from '../states/offline-banner'
+import { CommandPalette } from '../command-palette/command-palette'
 import type { AccountMenuProps } from './account-menu'
 
 /**
@@ -31,6 +32,7 @@ export function AppShell({ children, rail, account, ...topBarProps }: AppShellPr
         </main>
       </div>
       {rail}
+      <CommandPalette />
     </div>
   )
 }
