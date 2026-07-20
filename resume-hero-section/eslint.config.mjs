@@ -12,6 +12,10 @@ const eslintConfig = [
       '.next/**',
       'node_modules/**',
       'next-env.d.ts',
+      // Storybook config + stories (dev tooling, not shipped product code).
+      '.storybook/**',
+      '**/*.stories.tsx',
+      'storybook-static/**',
       // Frozen v1.0 — left untouched.
       'app/(legacy)/**',
       'components/ui/**',
