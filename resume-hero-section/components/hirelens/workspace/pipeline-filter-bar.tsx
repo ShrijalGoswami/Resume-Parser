@@ -35,10 +35,12 @@ export function PipelineFilterBar({ filters, onChange, view, onViewChange }: Pip
           aria-hidden
         />
         <Input
+          id="hl-pipeline-search"
           value={filters.search}
           onChange={(event) => onChange({ search: event.target.value })}
           placeholder="Search into this role…"
           aria-label="Search into this role"
+          aria-keyshortcuts="/"
           className="pl-8"
         />
       </div>
