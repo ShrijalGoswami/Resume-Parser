@@ -29,10 +29,10 @@ export interface ToastItem extends ToastOptions {
 
 let counter = 0
 let items: ToastItem[] = []
-const listeners = new Set<(items: ToastItem[]) => void>()
+const listeners = new Set<() => void>()
 
 function emit() {
-  for (const listener of listeners) listener(items)
+  for (const listener of listeners) listener()
 }
 
 export function toast(options: ToastOptions): string {
@@ -47,14 +47,17 @@ export function dismissToast(id: string): void {
   emit()
 }
 
+function subscribe(onStoreChange: () => void): () => void {
+  listeners.add(onStoreChange)
+  return () => {
+    listeners.delete(onStoreChange)
+  }
+}
+
 export function useToasts(): ToastItem[] {
-  const [state, setState] = React.useState<ToastItem[]>(items)
-  React.useEffect(() => {
-    listeners.add(setState)
-    setState(items)
-    return () => {
-      listeners.delete(setState)
-    }
-  }, [])
-  return state
+  return React.useSyncExternalStore(
+    subscribe,
+    () => items,
+    () => items,
+  )
 }

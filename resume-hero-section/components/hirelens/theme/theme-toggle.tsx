@@ -12,11 +12,18 @@ const options: { value: string; label: string; icon: LucideIcon }[] = [
   { value: 'system', label: 'System', icon: Monitor },
 ]
 
+// True on the client, false during SSR — avoids a hydration mismatch on the
+// active segment without a setState-in-effect mount flag.
+const emptySubscribe = () => () => {}
+
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = React.useState(false)
-  React.useEffect(() => setMounted(true), [])
-  const current = mounted ? theme ?? 'system' : 'system'
+  const isClient = React.useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  )
+  const current = isClient ? theme ?? 'system' : 'system'
 
   return (
     <div

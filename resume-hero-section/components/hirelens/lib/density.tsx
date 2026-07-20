@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { usePersistedState } from './use-persisted-state'
 
 /**
  * Density preference (Design Bible §2.1) — a global user setting, persisted.
@@ -11,7 +12,9 @@ import * as React from 'react'
  */
 export type Density = 'comfortable' | 'compact'
 
-const STORAGE_KEY = 'hl-density'
+function isDensity(value: string | null): value is Density {
+  return value === 'comfortable' || value === 'compact'
+}
 
 interface DensityContextValue {
   density: Density
@@ -28,29 +31,17 @@ export function DensityProvider({
   children: React.ReactNode
   defaultDensity?: Density
 }) {
-  const [density, setDensityState] = React.useState<Density>(defaultDensity)
-
-  React.useEffect(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY)
-    if (stored === 'comfortable' || stored === 'compact') {
-      setDensityState(stored)
-    }
-  }, [])
-
-  const setDensity = React.useCallback((next: Density) => {
-    setDensityState(next)
-    window.localStorage.setItem(STORAGE_KEY, next)
-  }, [])
+  const [density, setDensity] = usePersistedState<Density>(
+    'hl-density',
+    defaultDensity,
+    isDensity,
+  )
 
   const toggleDensity = React.useCallback(() => {
-    setDensityState((current) => {
-      const next = current === 'comfortable' ? 'compact' : 'comfortable'
-      window.localStorage.setItem(STORAGE_KEY, next)
-      return next
-    })
-  }, [])
+    setDensity(density === 'comfortable' ? 'compact' : 'comfortable')
+  }, [density, setDensity])
 
-  const value = React.useMemo(
+  const value = React.useMemo<DensityContextValue>(
     () => ({ density, setDensity, toggleDensity }),
     [density, setDensity, toggleDensity],
   )

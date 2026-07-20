@@ -3,21 +3,20 @@
 import * as React from 'react'
 
 /**
- * SSR-safe media query hook. Starts `false` on the server and first client
- * render, then syncs on mount to avoid hydration mismatches.
+ * SSR-safe media query hook via useSyncExternalStore — server renders `false`,
+ * the client subscribes to the query without setState-in-effect.
  */
 export function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = React.useState(false)
-
-  React.useEffect(() => {
-    const list = window.matchMedia(query)
-    setMatches(list.matches)
-    const onChange = (event: MediaQueryListEvent) => setMatches(event.matches)
-    list.addEventListener('change', onChange)
-    return () => list.removeEventListener('change', onChange)
-  }, [query])
-
-  return matches
+  const subscribe = React.useCallback(
+    (onStoreChange: () => void) => {
+      const list = window.matchMedia(query)
+      list.addEventListener('change', onStoreChange)
+      return () => list.removeEventListener('change', onStoreChange)
+    },
+    [query],
+  )
+  const getSnapshot = React.useCallback(() => window.matchMedia(query).matches, [query])
+  return React.useSyncExternalStore(subscribe, getSnapshot, () => false)
 }
 
 /** Breakpoints from Design Bible §3.6 (primary target ≥1024). */
