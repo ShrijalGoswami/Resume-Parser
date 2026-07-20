@@ -10,7 +10,7 @@ import {
   Lightbulb, Target, Briefcase, FileText, User, Mail, Phone,
   GraduationCap, Medal, Code, LayoutGrid, Calendar, ChevronRight, Activity, TrendingUp
 } from "lucide-react"
-import { exportAtsReport, exportMatchReport } from "../../services/api"
+import { exportAtsReport, exportMatchReport } from "@/services/api"
 import { useToast } from "@/components/ui/use-toast"
 
 const categorizeSkills = (skills: string[]) => {
