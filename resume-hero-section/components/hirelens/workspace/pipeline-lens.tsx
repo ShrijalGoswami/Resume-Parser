@@ -77,6 +77,35 @@ export function PipelineLens({ roleId, onCompare, onAddCandidates }: PipelineLen
 
   const rows = React.useMemo(() => filterAndSort(data ?? [], filters), [data, filters])
 
+  // Workspace keyboard shortcuts (Design Bible §7.9): `/` focus search,
+  // `V` toggle view, `A` add candidates. Ignored while typing in a field.
+  React.useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey) return
+      const target = event.target as HTMLElement | null
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable)
+      ) {
+        return
+      }
+      if (event.key === '/') {
+        event.preventDefault()
+        document.getElementById('hl-pipeline-search')?.focus()
+      } else if (event.key.toLowerCase() === 'v') {
+        setView((current) => (current === 'table' ? 'board' : 'table'))
+      } else if (event.key.toLowerCase() === 'a') {
+        event.preventDefault()
+        onAddCandidates()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [onAddCandidates])
+
   const toggle = (id: string) =>
     setSelected((prev) => {
       const next = new Set(prev)
