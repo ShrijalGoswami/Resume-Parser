@@ -8,9 +8,15 @@ export default async function Page({
   searchParams,
 }: {
   params: Promise<{ roleId: string }>
-  searchParams: Promise<{ lens?: string }>
+  searchParams: Promise<{ lens?: string; candidate?: string }>
 }) {
   const { roleId } = await params
-  const { lens } = await searchParams
-  return <RoleWorkspace roleId={roleId} lens={lens ?? 'pipeline'} />
+  const { lens, candidate } = await searchParams
+  return (
+    <RoleWorkspace
+      roleId={roleId}
+      lens={lens ?? 'pipeline'}
+      initialCandidateId={candidate ?? null}
+    />
+  )
 }

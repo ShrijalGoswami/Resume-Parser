@@ -18,9 +18,10 @@ export interface CandidateCardProps {
   row: CandidateRow
   selected?: boolean
   onToggleSelect?: () => void
+  onOpen?: () => void
 }
 
-export function CandidateCard({ row, selected, onToggleSelect }: CandidateCardProps) {
+export function CandidateCard({ row, selected, onToggleSelect, onOpen }: CandidateCardProps) {
   return (
     <Card
       className={cn(
@@ -39,12 +40,21 @@ export function CandidateCard({ row, selected, onToggleSelect }: CandidateCardPr
           />
         ) : null}
         <Avatar name={row.name} size={24} />
-        <div className="min-w-0 flex-1">
-          <p className="hl-body-medium truncate">{row.name}</p>
-          {row.matchCategory ? (
-            <p className="hl-caption truncate text-hl-fg-tertiary">{row.matchCategory}</p>
-          ) : null}
-        </div>
+        {onOpen ? (
+          <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left outline-none">
+            <p className="hl-body-medium truncate hover:underline">{row.name}</p>
+            {row.matchCategory ? (
+              <p className="hl-caption truncate text-hl-fg-tertiary">{row.matchCategory}</p>
+            ) : null}
+          </button>
+        ) : (
+          <div className="min-w-0 flex-1">
+            <p className="hl-body-medium truncate">{row.name}</p>
+            {row.matchCategory ? (
+              <p className="hl-caption truncate text-hl-fg-tertiary">{row.matchCategory}</p>
+            ) : null}
+          </div>
+        )}
         <HireBadge hire={row.hire} />
       </div>
 

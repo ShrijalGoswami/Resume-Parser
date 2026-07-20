@@ -13,6 +13,7 @@ import { ActivityLens } from './activity-lens'
 import { DeferredLens } from './deferred-lens'
 import { AddCandidatesDialog } from './add-candidates-dialog'
 import { ComparePanel } from './compare-panel'
+import { CandidateDrawer } from './candidate/candidate-drawer'
 import { LoadingScreen } from '../states/loading'
 import { ErrorState } from '../states/error-state'
 import { Button } from '../ui/button'
@@ -31,7 +32,15 @@ function Notice({ title, showSignIn }: { title: string; showSignIn?: boolean }) 
 }
 
 /** Role Workspace (Design Bible §7). Lens comes from the `?lens=` param (server). */
-export function RoleWorkspace({ roleId, lens }: { roleId: string; lens: string }) {
+export function RoleWorkspace({
+  roleId,
+  lens,
+  initialCandidateId,
+}: {
+  roleId: string
+  lens: string
+  initialCandidateId: string | null
+}) {
   const { session, loading, configured } = useSession()
 
   if (!configured) {
@@ -55,10 +64,26 @@ export function RoleWorkspace({ roleId, lens }: { roleId: string; lens: string }
       </AppShell>
     )
   }
-  return <AuthedWorkspace roleId={roleId} lens={lens} />
+  return <AuthedWorkspace roleId={roleId} lens={lens} initialCandidateId={initialCandidateId} />
 }
 
-function AuthedWorkspace({ roleId, lens }: { roleId: string; lens: string }) {
+/** Sync `?candidate=` into the URL without a navigation (instant + shareable). */
+function syncCandidateParam(id: string | null) {
+  const url = new URL(window.location.href)
+  if (id) url.searchParams.set('candidate', id)
+  else url.searchParams.delete('candidate')
+  window.history.replaceState(window.history.state, '', url)
+}
+
+function AuthedWorkspace({
+  roleId,
+  lens,
+  initialCandidateId,
+}: {
+  roleId: string
+  lens: string
+  initialCandidateId: string | null
+}) {
   const profile = useProfile()
   const campaign = useCampaign(roleId)
   const candidates = useCandidates(roleId)
@@ -67,6 +92,16 @@ function AuthedWorkspace({ roleId, lens }: { roleId: string; lens: string }) {
   const [addOpen, setAddOpen] = React.useState(false)
   const [compareOpen, setCompareOpen] = React.useState(false)
   const [compareIds, setCompareIds] = React.useState<string[]>([])
+  const [candidateId, setCandidateId] = React.useState<string | null>(initialCandidateId)
+
+  const openCandidate = (id: string) => {
+    setCandidateId(id)
+    syncCandidateParam(id)
+  }
+  const closeCandidate = () => {
+    setCandidateId(null)
+    syncCandidateParam(null)
+  }
 
   const account = profile.data
     ? { name: profile.data.full_name ?? profile.data.email, email: profile.data.email }
@@ -122,6 +157,7 @@ function AuthedWorkspace({ roleId, lens }: { roleId: string; lens: string }) {
             roleId={roleId}
             onCompare={runCompare}
             onAddCandidates={() => setAddOpen(true)}
+            onOpenCandidate={openCandidate}
           />
         )}
       </div>
@@ -142,6 +178,7 @@ function AuthedWorkspace({ roleId, lens }: { roleId: string; lens: string }) {
           compare.reset()
         }}
       />
+      <CandidateDrawer roleId={roleId} candidateId={candidateId} onClose={closeCandidate} />
     </AppShell>
   )
 }

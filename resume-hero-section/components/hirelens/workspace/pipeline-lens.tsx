@@ -59,9 +59,15 @@ export interface PipelineLensProps {
   roleId: string
   onCompare: (candidateIds: string[]) => void
   onAddCandidates: () => void
+  onOpenCandidate: (candidateId: string) => void
 }
 
-export function PipelineLens({ roleId, onCompare, onAddCandidates }: PipelineLensProps) {
+export function PipelineLens({
+  roleId,
+  onCompare,
+  onAddCandidates,
+  onOpenCandidate,
+}: PipelineLensProps) {
   const { data, isLoading, isError, refetch } = useCandidates(roleId)
   const updateStage = useUpdateStage(roleId)
   const bulkDelete = useBulkDeleteCandidates(roleId)
@@ -210,9 +216,15 @@ export function PipelineLens({ roleId, onCompare, onAddCandidates }: PipelineLen
           onToggle={toggle}
           onToggleAll={toggleAll}
           onStageChange={(id, stage) => updateStage.mutate({ candidateId: id, stage })}
+          onOpenCandidate={onOpenCandidate}
         />
       ) : (
-        <PipelineBoard rows={rows} selected={selected} onToggle={toggle} />
+        <PipelineBoard
+          rows={rows}
+          selected={selected}
+          onToggle={toggle}
+          onOpenCandidate={onOpenCandidate}
+        />
       )}
     </div>
   )
