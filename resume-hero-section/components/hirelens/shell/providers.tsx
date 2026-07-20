@@ -9,6 +9,7 @@ import { TooltipProvider } from '../ui/tooltip'
 import { Toaster } from '../ui/toast'
 import { CommandRegistryProvider } from '../command-palette/command-registry'
 import { CopilotProvider } from '../copilot/copilot-context'
+import { ApiProvider } from '../lib/api/query-client'
 import { ShellProvider } from './shell-context'
 
 /**
@@ -41,20 +42,22 @@ export function HireLensProviders({
   children: React.ReactNode
 }) {
   return (
-    <ThemeProvider>
-      <DensityProvider>
-        <AnnouncerProvider>
-          <TooltipProvider>
-            <CommandRegistryProvider>
-              <ShellProvider>
-                <CopilotProvider>
-                  <HireLensRoot fontClassName={fontClassName}>{children}</HireLensRoot>
-                </CopilotProvider>
-              </ShellProvider>
-            </CommandRegistryProvider>
-          </TooltipProvider>
-        </AnnouncerProvider>
-      </DensityProvider>
-    </ThemeProvider>
+    <ApiProvider>
+      <ThemeProvider>
+        <DensityProvider>
+          <AnnouncerProvider>
+            <TooltipProvider>
+              <CommandRegistryProvider>
+                <ShellProvider>
+                  <CopilotProvider>
+                    <HireLensRoot fontClassName={fontClassName}>{children}</HireLensRoot>
+                  </CopilotProvider>
+                </ShellProvider>
+              </CommandRegistryProvider>
+            </TooltipProvider>
+          </AnnouncerProvider>
+        </DensityProvider>
+      </ThemeProvider>
+    </ApiProvider>
   )
 }
