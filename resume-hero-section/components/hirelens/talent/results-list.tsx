@@ -37,6 +37,17 @@ export function ResultsList({
     getItemKey: (index) => results[index]?.candidate_id ?? index,
   })
 
+  // Keep the keyboard-active row in view. Keyed on activeIndex only (depending
+  // on `virtualizer`, which is new each render, would fight the user's scroll);
+  // the live scroll fn is held in a ref updated in an effect.
+  const scrollToIndexRef = React.useRef(virtualizer.scrollToIndex)
+  React.useEffect(() => {
+    scrollToIndexRef.current = virtualizer.scrollToIndex
+  })
+  React.useEffect(() => {
+    if (activeIndex >= 0) scrollToIndexRef.current(activeIndex, { align: 'auto' })
+  }, [activeIndex])
+
   return (
     <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
       {virtualizer.getVirtualItems().map((item) => {
