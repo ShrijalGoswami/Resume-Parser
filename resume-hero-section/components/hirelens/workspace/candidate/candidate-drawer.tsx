@@ -1,7 +1,13 @@
 'use client'
 
 import { useCandidateDetail, getCandidateResult } from '../../lib/api/candidate'
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '../../ui/drawer'
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+} from '../../ui/drawer'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../ui/tabs'
 import { Avatar } from '../../ui/avatar'
 import { LoadingLines } from '../../states/loading'
@@ -68,14 +74,14 @@ function DrawerInner({ roleId, candidateId }: { roleId: string; candidateId: str
         <Avatar name={candidate.full_name} size={40} />
         <div className="min-w-0 flex-1">
           <DrawerTitle>{candidate.full_name}</DrawerTitle>
-          {result?.match_category ? (
-            <p className="hl-small truncate text-hl-fg-secondary">{result.match_category}</p>
-          ) : null}
+          <DrawerDescription className={result?.match_category ? 'truncate' : 'sr-only'}>
+            {result?.match_category ?? 'Candidate profile and analysis'}
+          </DrawerDescription>
         </div>
       </DrawerHeader>
 
       <Tabs defaultValue="overview" className="flex min-h-0 flex-1 flex-col">
-        <div className="border-b border-hl-border-subtle px-4">
+        <div className="overflow-x-auto border-b border-hl-border-subtle px-4">
           <TabsList variant="underline">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="analysis">Analysis</TabsTrigger>

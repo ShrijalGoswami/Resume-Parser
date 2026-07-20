@@ -7,6 +7,7 @@ import { AIAnswer } from '../../domain'
 import { ScoreMeter } from '../../domain/score-meter'
 import { Badge } from '../../ui/badge'
 import { Button } from '../../ui/button'
+import { toast } from '../../ui/use-toast'
 import { StageMenu } from '../stage-menu'
 import { HireBadge } from '../hire-badge'
 import { SkillList } from './parts'
@@ -41,8 +42,20 @@ export function OverviewTab({
   const ats = result?.ats_score ?? null
 
   const downloadResume = async () => {
-    const { data } = await resume.refetch()
-    if (data?.url) window.open(data.url, '_blank', 'noopener,noreferrer')
+    try {
+      const { data } = await resume.refetch({ throwOnError: true })
+      if (data?.url) {
+        window.open(data.url, '_blank', 'noopener,noreferrer')
+      } else {
+        toast({ variant: 'warning', title: 'No résumé on file for this candidate' })
+      }
+    } catch {
+      toast({
+        variant: 'danger',
+        title: "Couldn't open the résumé",
+        description: 'Try again in a moment.',
+      })
+    }
   }
 
   return (
