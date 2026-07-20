@@ -7,6 +7,7 @@ import { DensityProvider, useDensity } from '../lib/density'
 import { AnnouncerProvider } from '../lib/use-announcer'
 import { TooltipProvider } from '../ui/tooltip'
 import { Toaster } from '../ui/toast'
+import { CommandRegistryProvider } from '../command-palette/command-registry'
 import { ShellProvider } from './shell-context'
 
 /**
@@ -43,9 +44,11 @@ export function HireLensProviders({
       <DensityProvider>
         <AnnouncerProvider>
           <TooltipProvider>
-            <ShellProvider>
-              <HireLensRoot fontClassName={fontClassName}>{children}</HireLensRoot>
-            </ShellProvider>
+            <CommandRegistryProvider>
+              <ShellProvider>
+                <HireLensRoot fontClassName={fontClassName}>{children}</HireLensRoot>
+              </ShellProvider>
+            </CommandRegistryProvider>
           </TooltipProvider>
         </AnnouncerProvider>
       </DensityProvider>
