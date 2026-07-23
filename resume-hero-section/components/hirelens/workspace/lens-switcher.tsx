@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils'
  */
 const lenses = [
   { label: 'Pipeline', value: 'pipeline' },
+  { label: 'Triage', value: 'triage' },
   { label: 'Analytics', value: 'analytics' },
   { label: 'Forecast', value: 'forecast' },
   { label: 'Report', value: 'report' },

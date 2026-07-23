@@ -54,25 +54,25 @@ export function TalentScreen({ initial }: { initial: TalentInitial }) {
   const { session, loading, configured } = useSession()
   if (!configured) {
     return (
-      <AppShell title="Talent">
-        <div className="p-12 text-center hl-display">Sign-in isn&rsquo;t configured</div>
+      <AppShell breadcrumbs={[{ label: 'Talent' }]}>
+        <div className="p-12 text-center hl-display-md">Sign-in isn&rsquo;t configured</div>
       </AppShell>
     )
   }
   if (loading) {
     return (
-      <AppShell title="Talent">
+      <AppShell breadcrumbs={[{ label: 'Talent' }]}>
         <LoadingScreen />
       </AppShell>
     )
   }
   if (!session) {
     return (
-      <AppShell title="Talent">
+      <AppShell breadcrumbs={[{ label: 'Talent' }]}>
         <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-6 py-24 text-center">
-          <h1 className="hl-display">Sign in to continue</h1>
+          <h1 className="hl-display-md">Sign in to continue</h1>
           <Button variant="primary" asChild>
-            <Link href="/login">Sign in</Link>
+            <Link href="/auth/login">Sign in</Link>
           </Button>
         </div>
       </AppShell>

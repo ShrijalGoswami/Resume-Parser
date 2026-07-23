@@ -9,20 +9,25 @@ import { cn } from '@/lib/utils'
  */
 export interface AuthFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string
+  /** Optional element rendered on the right of the label row (e.g. a "Forgot password?" link). */
+  labelAction?: React.ReactNode
 }
 
 export const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
-  ({ label, id, className, ...props }, ref) => {
+  ({ label, labelAction, id, className, ...props }, ref) => {
     const generatedId = React.useId()
     const fieldId = id ?? generatedId
     return (
       <div className="flex flex-col gap-1.5">
-        <label
-          htmlFor={fieldId}
-          className="font-hl-mono text-[11px] uppercase tracking-wide text-hl-fg-tertiary"
-        >
-          {label}
-        </label>
+        <div className="flex items-baseline justify-between gap-2">
+          <label
+            htmlFor={fieldId}
+            className="font-hl-mono text-[11px] uppercase tracking-wide text-hl-fg-tertiary"
+          >
+            {label}
+          </label>
+          {labelAction}
+        </div>
         <input
           ref={ref}
           id={fieldId}

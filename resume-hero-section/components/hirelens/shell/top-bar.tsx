@@ -1,6 +1,6 @@
 'use client'
 
-import { Search } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import { useShell } from './shell-context'
 import { Kbd } from '../ui/kbd'
 import { Notifications } from './notifications'
@@ -35,13 +35,19 @@ export function TopBar({ breadcrumbs, title, unreadCount }: TopBarProps) {
       <button
         type="button"
         onClick={() => setCommandOpen(true)}
-        aria-label="Search or run a command"
+        aria-label="Search or ask HireLens"
         aria-keyshortcuts="Meta+K Control+K"
-        className="hl-small inline-flex h-8 items-center gap-2 rounded-hl-md border border-hl-border bg-hl-subtle px-2.5 text-hl-fg-tertiary outline-none transition-colors hover:text-hl-fg-secondary"
+        className="group inline-flex h-8 w-64 max-w-[45vw] items-center gap-2 rounded-hl-md border border-hl-border-subtle bg-hl-subtle px-3 text-left outline-none transition-colors hover:border-hl-border hover:bg-hl-muted"
       >
-        <Search className="size-4" />
-        <span className="hidden sm:inline">Search or ask&hellip;</span>
-        <Kbd className="hidden sm:inline-flex">⌘K</Kbd>
+        {/* Prism sparkle marks this as the AI-aware entry point (§3.3). */}
+        <Sparkles
+          className="size-4 shrink-0 text-hl-prism-mid opacity-80 transition-opacity group-hover:opacity-100"
+          aria-hidden
+        />
+        <span className="hl-small flex-1 truncate text-hl-fg-tertiary">
+          Search or ask HireLens&hellip;
+        </span>
+        <Kbd className="hidden shrink-0 sm:inline-flex">⌘K</Kbd>
       </button>
 
       <Notifications unreadCount={unreadCount} />

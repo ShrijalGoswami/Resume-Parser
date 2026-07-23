@@ -223,3 +223,7 @@ __marimo__/
 # Keep example env templates tracked (they contain only placeholders).
 !.env.example
 !**/.env.example
+
+# Local Stitch inspection cache (downloaded screen HTML/screenshots; never commit).
+.stitch-inspect/
+/design

@@ -47,7 +47,7 @@ export function ResetForm() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="hl-display">Choose a new password.</h1>
+      <h1 className="hl-display-md">Choose a new password.</h1>
       <form onSubmit={onSubmit} className="flex flex-col gap-5">
         <AuthField
           label="New password"

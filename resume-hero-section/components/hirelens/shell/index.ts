@@ -8,4 +8,10 @@ export { WorkspaceSwitcher } from './workspace-switcher'
 export { Notifications } from './notifications'
 export { AccountMenu, type AccountMenuProps } from './account-menu'
 export { SkipLink } from './skip-link'
-export { primaryNav, settingsNav, type NavItem } from './nav-config'
+export {
+  navGroups,
+  primaryNav,
+  settingsNav,
+  type NavItem,
+  type NavGroup,
+} from './nav-config'

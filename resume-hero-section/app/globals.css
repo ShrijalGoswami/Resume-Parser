@@ -443,6 +443,23 @@
   --color-hl-editorial-border: var(--hl-editorial-border);
   --color-hl-editorial-surface: var(--hl-editorial-surface);
 
+  /* Marketing site palette — isolated public surface (used only under the
+     (marketing) route group); intentionally NOT applied to the .hl product. */
+  --color-mkt-ink: #0b0d0d;
+  --color-mkt-ink-raised: #131817;
+  --color-mkt-ink-fg: #edf1f0;
+  --color-mkt-ink-muted: #9aa3a1;
+  --color-mkt-ink-border: #232a29;
+  --color-mkt-paper: #fcfdfc;
+  --color-mkt-paper-raised: #f4f6f5;
+  --color-mkt-fg: #131817;
+  --color-mkt-fg-muted: #545c5a;
+  --color-mkt-fg-subtle: #828b89;
+  --color-mkt-border: #dce1e0;
+  --color-mkt-border-subtle: #e9edec;
+  --color-mkt-iris: #5b5bd6;
+  --color-mkt-iris-text: #4a4ac0;
+
   /* Score */
   --color-hl-score-infocus: var(--hl-score-infocus);
   --color-hl-score-infocus-bg: var(--hl-score-infocus-bg);
@@ -515,6 +532,16 @@
     font-weight: 560;
     font-size: 2.5rem;
     line-height: 2.875rem;
+    letter-spacing: -0.015em;
+  }
+  /* Editorial headline moment (36/40px) — Unified DS `text-4xl` step, used by
+     the auth surface and any single large serif heading that must sit between
+     hl-display (28px) and hl-display-xl (40px). */
+  .hl-display-md {
+    font-family: var(--font-hl-display);
+    font-weight: 560;
+    font-size: 2.25rem;
+    line-height: 2.5rem;
     letter-spacing: -0.015em;
   }
   .hl-display {
