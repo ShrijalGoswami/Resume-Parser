@@ -78,6 +78,13 @@ class Settings(BaseSettings):
     # Configurable, comma-separated fallback provider chain (empty = no fallback).
     AI_FALLBACK_PROVIDERS: str = ""           # e.g. "groq,gemini"
     AI_ENABLE_FALLBACK: bool = True
+    # Providers explicitly disabled (comma list) — never routed to, even if keyed.
+    AI_DISABLED_PROVIDERS: str = ""           # e.g. "openrouter,gemini"
+    # Health cooldowns: how long to skip a provider after a failure before
+    # probing it again (auto-recovery). Rate-limits get a longer cooldown.
+    AI_HEALTH_COOLDOWN_SECONDS: int = 30      # timeout / temporary failure
+    AI_RATE_LIMIT_COOLDOWN_SECONDS: int = 60  # rate-limited / quota
+    AI_UNAVAILABLE_COOLDOWN_SECONDS: int = 120  # config/unavailable
     # Per-logical-role model overrides (blank → the provider's registered default).
     DEFAULT_REASONING_MODEL: str = ""
     FAST_REASONING_MODEL: str = ""
@@ -112,6 +119,10 @@ class Settings(BaseSettings):
     @property
     def fallback_providers(self) -> list[str]:
         return [p.strip().lower() for p in self.AI_FALLBACK_PROVIDERS.split(",") if p.strip()]
+
+    @property
+    def disabled_providers(self) -> set[str]:
+        return {p.strip().lower() for p in self.AI_DISABLED_PROVIDERS.split(",") if p.strip()}
 
     # ── Semantic Search / Embeddings (V5 / Sprint 6) ─────────────────────────
     # Retrieval is separate from the LLM: candidate profiles are embedded and

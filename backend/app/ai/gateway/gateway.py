@@ -118,6 +118,8 @@ def config_snapshot() -> dict:
         for sel in [resolve(role)]
     }
     emb_provider, emb_model, emb_dims = resolve_embedding()
+    from app.ai.gateway.health import health_manager
+    health = health_manager.snapshot()
     providers = []
     for spec in available_provider_specs():
         key_setting = spec.api_key_setting
@@ -129,13 +131,16 @@ def config_snapshot() -> dict:
             "context_window": spec.context_window,
             "max_output_tokens": spec.max_output_tokens,
             "key_configured": configured,   # bool only — never the key itself
+            "health": (health.get(spec.name, {}).get("state") or "healthy"),
         })
     return {
         "active_provider": prov,
         "override_active": _provider_override is not None,
         "fallback_enabled": settings.AI_ENABLE_FALLBACK,
         "fallback_chain": [s.provider for s in fallback_chain()],
+        "disabled_providers": sorted(settings.disabled_providers),
         "roles": roles,
         "embeddings": {"provider": emb_provider, "model": emb_model, "dimensions": emb_dims},
         "providers": providers,
+        "provider_health": health,
     }

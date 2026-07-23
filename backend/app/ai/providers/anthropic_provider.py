@@ -48,7 +48,10 @@ class AnthropicProvider(LLMProvider):
             completion_tokens=getattr(u, "output_tokens", None),
             total_tokens=(getattr(u, "input_tokens", 0) + getattr(u, "output_tokens", 0)) if u else None,
         ) if u else TokenUsage()
-        return ProviderResponse(text=text, model=model, provider=self.name, usage=usage, raw=resp)
+        return ProviderResponse(
+            text=text, model=model, provider=self.name, usage=usage,
+            finish_reason=getattr(resp, "stop_reason", None), raw=resp,
+        )
 
     @staticmethod
     def _classify(exc: Exception) -> AIProviderError:

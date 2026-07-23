@@ -1,3 +1,5 @@
+import { PageHeader } from '../shell/page-header'
+
 function greetingWord(): string {
   const hour = new Date().getHours()
   if (hour < 12) return 'Good morning'
@@ -6,17 +8,23 @@ function greetingWord(): string {
 }
 
 /**
- * Home greeting (UX Spec §6). Renders only after the session resolves on the
- * client, so the time-based word never causes an SSR hydration mismatch.
+ * Home greeting (UX Spec §6). A welcome moment — one of the reserved premium
+ * places the editorial (Fraunces) voice appears — rendered through the shared
+ * PageHeader. Renders only after the session resolves on the client, so the
+ * time/date never causes an SSR hydration mismatch.
  */
 export function Greeting({ name }: { name?: string | null }) {
   const firstName = name?.trim().split(/\s+/)[0]
+  const today = new Date().toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  })
   return (
-    <header className="pt-8">
-      <h1 className="hl-h1">
-        {greetingWord()}
-        {firstName ? `, ${firstName}` : ''}.
-      </h1>
-    </header>
+    <PageHeader
+      className="pt-6"
+      eyebrow={today}
+      title={`${greetingWord()}${firstName ? `, ${firstName}` : ''}.`}
+    />
   )
 }

@@ -25,6 +25,7 @@ from typing import Optional, Type, TypeVar
 from app.ai.config import get_ai_config
 from app.ai.gateway import ModelRole, cost_of, fallback_chain, resolve, usage_tracker
 from app.ai.gateway.gateway import ModelSelection
+from app.ai.gateway.health import health_manager, kind_for_error
 from app.ai.prompts.registry import get_prompt
 from app.ai.providers.registry import get_provider
 from app.ai.schemas.base import AIExecution, AIResult, Capability, TokenUsage
@@ -72,25 +73,52 @@ class AIOrchestrator:
         else:
             selections = fallback_chain(role)
 
+        # Health-aware ordering: try providers currently HEALTHY first; keep
+        # unhealthy ones only as a last resort (so we never hard-fail purely on
+        # stale health). This is what stops us re-calling a known-down provider.
+        healthy = [s for s in selections if health_manager.is_available(s.provider)]
+        unhealthy = [s for s in selections if not health_manager.is_available(s.provider)]
+        ordered = healthy + unhealthy
+        primary = selections[0].provider if selections else ""
+
         last_error: Optional[AIError] = None
-        for selection in selections:
+        for selection in ordered:
             try:
                 data, execution = self._attempt(
                     capability, selection, system, user, schema, cfg, temp, max_tok, timeout,
                 )
                 self._log(execution)
+                health_manager.record_success(selection.provider)
+                # Fallback event: a non-primary provider answered.
+                if selection.provider != primary:
+                    from app.core.observability import request_id_ctx
+                    logger.warning(
+                        "AI gateway FAILOVER | capability=%s from=%s to=%s reason=%s latency=%dms",
+                        capability.value, primary, selection.provider,
+                        type(last_error).__name__ if last_error else "skipped",
+                        execution.latency_ms,
+                    )
+                    usage_tracker.record_fallback(
+                        capability=capability.value, from_provider=primary,
+                        to_provider=selection.provider,
+                        reason=type(last_error).__name__ if last_error else "unhealthy_primary",
+                        latency_ms=execution.latency_ms, request_id=request_id_ctx.get(),
+                    )
                 return AIResult(data=data, execution=execution)  # type: ignore[return-value]
             except AIError as exc:
                 last_error = exc
-                if len(selections) > 1:
+                health_manager.record_failure(
+                    selection.provider, kind=kind_for_error(exc), error=str(exc)
+                )
+                if len(ordered) > 1:
                     logger.warning(
-                        "AI gateway: provider '%s' failed (%s); trying fallback.",
+                        "AI gateway: provider '%s' failed (%s); trying next provider.",
                         selection.provider, type(exc).__name__,
                     )
                 continue
 
-        # All providers exhausted.
-        raise last_error or AIProviderError("All configured providers failed.")
+        # All providers exhausted — never leak a raw vendor error to business logic.
+        raise last_error or AIProviderError("All configured AI providers are unavailable.")
 
     # -- one provider attempt (owns the full retry ladder) -----------------
     def _attempt(self, capability, selection, system, user, schema, cfg, temp, max_tok, timeout):

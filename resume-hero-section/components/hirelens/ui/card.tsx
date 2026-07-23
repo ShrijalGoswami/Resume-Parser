@@ -11,7 +11,7 @@ const cardVariants = cva('rounded-hl-lg text-hl-fg', {
     variant: {
       default: 'border border-hl-border bg-hl-canvas shadow-[var(--hl-shadow-xs)]',
       interactive:
-        'cursor-pointer border border-hl-border bg-hl-canvas shadow-[var(--hl-shadow-xs)] transition-[box-shadow,border-color] duration-[var(--hl-dur-fast)] hover:border-hl-border-strong hover:shadow-[var(--hl-shadow-sm)]',
+        'cursor-pointer border border-hl-border bg-hl-canvas shadow-[var(--hl-shadow-xs)] transition-[box-shadow,border-color,transform] duration-[var(--hl-dur-fast)] hover:-translate-y-px hover:border-hl-border-strong hover:shadow-[var(--hl-shadow-sm)]',
       ai: 'hl-prism-border shadow-[var(--hl-shadow-xs)] [--hl-prism-fill:var(--hl-ai-surface)]',
       approval: 'hl-prism-border shadow-[var(--hl-shadow-xs)] [--hl-prism-fill:var(--hl-ai-surface)]',
     },

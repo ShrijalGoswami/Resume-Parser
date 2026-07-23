@@ -47,10 +47,12 @@ class OpenAICompatProvider(LLMProvider):
         except Exception as exc:  # pragma: no cover — normalize vendor errors
             raise self._classify(exc) from exc
 
-        text = resp.choices[0].message.content or ""
+        choice = resp.choices[0]
+        text = choice.message.content or ""
         return ProviderResponse(
             text=text, model=model, provider=self.name,
-            usage=TokenUsage.from_raw(getattr(resp, "usage", None)), raw=resp,
+            usage=TokenUsage.from_raw(getattr(resp, "usage", None)),
+            finish_reason=getattr(choice, "finish_reason", None), raw=resp,
         )
 
     @staticmethod

@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { Search, Sparkles, GitCompare, FolderPlus, X, Bookmark, Users } from 'lucide-react'
 import { AppShell } from '../shell'
+import { PageHeader } from '../shell/page-header'
 import { useSession } from '../lib/api/use-session'
 import { useProfile } from '../lib/api/hooks'
 import { useCompareCandidates } from '../lib/api/workspace'
@@ -239,6 +240,15 @@ function AuthedTalent({ initial }: { initial: TalentInitial }) {
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
+          <div className="px-4 pt-6">
+            <div className="mx-auto max-w-3xl">
+              <PageHeader
+                title="Talent"
+                description="Search your entire candidate pool in plain language."
+                spacing="compact"
+              />
+            </div>
+          </div>
           <div className="sticky top-0 z-10 border-b border-hl-border-subtle bg-hl-canvas p-4">
             <div className="mx-auto flex max-w-3xl flex-col gap-3">
               <div className="flex items-center gap-2 rounded-hl-lg border border-hl-border bg-hl-canvas px-3 focus-within:border-hl-accent">

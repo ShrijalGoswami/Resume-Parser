@@ -18,7 +18,7 @@ from pydantic import BaseModel
 
 from typing import Annotated
 
-from app.ai.gateway import config_snapshot, set_active_provider, usage_tracker
+from app.ai.gateway import config_snapshot, set_active_provider, usage_tracker, health_manager
 from app.ai.utils.errors import AIConfigError
 from app.core.config import settings
 from app.core.deps import RecruiterDep
@@ -44,8 +44,22 @@ async def get_ai_config(_: RecruiterDep):
 
 @router.get("/usage")
 async def get_ai_usage(_: RecruiterDep):
-    """Usage, estimated cost, and provider health for future dashboards."""
+    """Usage, estimated cost, retries, fallbacks, and cache stats."""
     return usage_tracker.snapshot()
+
+
+@router.get("/health")
+async def get_ai_health(_: RecruiterDep):
+    """Live per-provider health (state, cooldown, failures) + recent fallbacks.
+    No secrets — provider names + counters only."""
+    snap = usage_tracker.snapshot()
+    return {
+        "providers": health_manager.snapshot(),
+        "fallbacks": {
+            "total": snap.get("total_fallbacks", 0),
+            "recent": snap.get("recent_fallbacks", []),
+        },
+    }
 
 
 @router.post("/qa/reset")

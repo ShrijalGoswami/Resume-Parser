@@ -1,5 +1,6 @@
 export { ShellProvider, useShell } from './shell-context'
 export { AppShell, type AppShellProps } from './app-shell'
+export { PageHeader, type PageHeaderProps } from './page-header'
 export { LeftNav } from './left-nav'
 export { TopBar, type TopBarProps } from './top-bar'
 export { Breadcrumbs, type Crumb } from './breadcrumbs'

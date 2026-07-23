@@ -10,7 +10,7 @@ admin (they contain NO secrets — provider/model names and counters only).
 from __future__ import annotations
 
 import threading
-from collections import defaultdict
+from collections import defaultdict, deque
 from dataclasses import dataclass
 from typing import Optional
 
@@ -85,6 +85,9 @@ class UsageTracker:
         # Never populated in production (qa_mode off), so no memory growth there.
         self._qa_cache: dict[str, dict] = {}
         self._cache_hits: int = 0
+        # Fallback events (provider A failed → provider B answered). Bounded ring.
+        self._fallback_count: int = 0
+        self._fallback_events: deque = deque(maxlen=50)
         # Optional hook so the enterprise layer can roll usage up per organization
         # without app.ai depending on app.enterprise (inversion-free).
         self._org_hook = None
@@ -129,6 +132,28 @@ class UsageTracker:
             return
         with self._lock:
             self._qa_cache[fingerprint] = parsed
+
+    # -- fallback events (provider A failed → provider B answered) ----------
+    def record_fallback(
+        self,
+        *,
+        capability: str,
+        from_provider: str,
+        to_provider: str,
+        reason: str,
+        latency_ms: int = 0,
+        request_id: str = "-",
+    ) -> None:
+        with self._lock:
+            self._fallback_count += 1
+            self._fallback_events.append({
+                "capability": capability,
+                "from": from_provider,
+                "to": to_provider,
+                "reason": reason,
+                "latency_ms": latency_ms,
+                "request_id": request_id,
+            })
 
     def record(
         self,
@@ -179,6 +204,8 @@ class UsageTracker:
             unique_prompts = len(self._prompt_counts)
             cache_hits = self._cache_hits
             cache_size = len(self._qa_cache)
+            fallback_count = self._fallback_count
+            fallback_events = list(self._fallback_events)
         total_cost = round(sum(m["estimated_cost_usd"] for m in models.values()), 6)
         total_requests = sum(m["requests"] for m in models.values())
         total_provider_calls = sum(c["provider_calls"] for c in capabilities.values())
@@ -188,6 +215,8 @@ class UsageTracker:
             "total_requests": total_requests,
             "total_provider_calls": total_provider_calls,
             "total_retries": total_retries,
+            "total_fallbacks": fallback_count,
+            "recent_fallbacks": fallback_events[-10:],
             "total_tokens": total_tokens,
             "total_estimated_cost_usd": total_cost,
             "by_capability": capabilities,
@@ -227,6 +256,8 @@ class UsageTracker:
             self._duplicate_calls = 0
             self._qa_cache.clear()
             self._cache_hits = 0
+            self._fallback_count = 0
+            self._fallback_events.clear()
 
 
 #: Module-level singleton.

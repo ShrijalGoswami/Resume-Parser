@@ -16,7 +16,7 @@ export function WorkspaceSwitcher({
   workspaceName?: string
 }) {
   return (
-    <div className={cn('flex items-center gap-2', collapsed && 'justify-center')}>
+    <div className={cn('flex items-center gap-2.5', collapsed && 'justify-center')}>
       <span
         className="flex size-7 shrink-0 items-center justify-center rounded-hl-md bg-hl-accent text-white"
         aria-hidden
@@ -27,7 +27,7 @@ export function WorkspaceSwitcher({
         </svg>
       </span>
       {collapsed ? null : (
-        <span className="truncate text-[15px] font-semibold tracking-tight text-hl-fg">
+        <span className="truncate text-sm font-semibold tracking-tight text-hl-fg">
           {workspaceName}
         </span>
       )}

@@ -238,6 +238,15 @@
   --hl-ai-surface: #F6F8FD;
   --hl-ai-border: #C9D2F0;
 
+  /* Editorial — theme-invariant Ink surface (the auth/marketing Ink half).
+     Defined once and intentionally NOT overridden in dark: this surface is
+     always Deep Ink regardless of the active theme. */
+  --hl-editorial-bg: #0B0D0D;
+  --hl-editorial-fg: #EDF1F0;
+  --hl-editorial-muted: rgba(237, 241, 240, 0.55);
+  --hl-editorial-border: rgba(237, 241, 240, 0.12);
+  --hl-editorial-surface: rgba(237, 241, 240, 0.03);
+
   /* Score / fit — Focus scale (§3.4) */
   --hl-score-infocus: #0C7C86;
   --hl-score-infocus-bg: #E4F3F4;
@@ -427,6 +436,13 @@
   --color-hl-prism-mid: var(--hl-prism-mid);
   --color-hl-prism-to: var(--hl-prism-to);
 
+  /* Editorial (theme-invariant Ink surface) */
+  --color-hl-editorial: var(--hl-editorial-bg);
+  --color-hl-editorial-fg: var(--hl-editorial-fg);
+  --color-hl-editorial-muted: var(--hl-editorial-muted);
+  --color-hl-editorial-border: var(--hl-editorial-border);
+  --color-hl-editorial-surface: var(--hl-editorial-surface);
+
   /* Score */
   --color-hl-score-infocus: var(--hl-score-infocus);
   --color-hl-score-infocus-bg: var(--hl-score-infocus-bg);
@@ -476,6 +492,24 @@
 }
 
 @layer components {
+  /* Marketing / first-run hero display — Unified DS type scale (64→120px).
+     Fluid so a single editorial hero moment scales from mobile to desktop.
+     Fraunces family; use at most once per surface (Constitution lever 3). */
+  .hl-display-hero {
+    font-family: var(--font-hl-display);
+    font-weight: 560;
+    font-size: clamp(4rem, 8vw, 7.5rem);
+    line-height: 1.04;
+    letter-spacing: -0.015em;
+  }
+  /* Section / headline display — Unified DS type scale (32→48px). */
+  .hl-display-lg {
+    font-family: var(--font-hl-display);
+    font-weight: 560;
+    font-size: clamp(2rem, 4vw, 3rem);
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+  }
   .hl-display-xl {
     font-family: var(--font-hl-display);
     font-weight: 560;
@@ -611,6 +645,21 @@
 @keyframes hl-pulse {
   0%, 100% { opacity: 0.35; }
   50% { opacity: 1; }
+}
+/* Calm fade + rise on mount — page headers and first-paint content (§3.13).
+   Automatically neutralized by the reduced-motion rule below. */
+@keyframes hl-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@layer components {
+  .hl-enter {
+    animation: hl-enter var(--hl-dur-slow) var(--hl-ease-out) both;
+  }
+  .hl-enter-soft {
+    animation: hl-enter var(--hl-dur-base) var(--hl-ease-out) both;
+  }
 }
 
 /* Reduced motion: honor the OS setting across the whole V3 subtree (§IX).
