@@ -16,6 +16,7 @@ from app.core.observability import (
 from app.core.startup import validate_startup
 from app.db.supabase_client import supabase_available
 from fastapi import Depends
+from fastapi.openapi.docs import get_swagger_ui_html
 from app.routes import export, match, analyze, batch, copilot, campaigns, account, analytics, search, admin, reports, agent, org, integrations, knowledge, prediction
 from app.enterprise.deps import feature_gate
 
@@ -41,6 +42,7 @@ app = FastAPI(
     description="Backend API for AI-powered Resume Parsing and Analysis",
     version=APP_VERSION,
     lifespan=lifespan,
+    docs_url=None,
 )
 
 # ── Middleware (executed in reverse registration order for requests) ──────────
@@ -91,6 +93,17 @@ app.include_router(org.router, prefix="/api/v1")
 app.include_router(integrations.router, prefix="/api/v1")
 app.include_router(knowledge.router, prefix="/api/v1")
 app.include_router(prediction.router, prefix="/api/v1")
+
+
+@app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui_html():
+    return get_swagger_ui_html(
+        openapi_url=app.openapi_url,
+        title=app.title + " - Swagger UI",
+        oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
+        swagger_js_url="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.18.2/swagger-ui-bundle.js",
+        swagger_css_url="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.18.2/swagger-ui.css",
+    )
 
 
 @app.api_route("/health", methods=["GET", "HEAD"], tags=["Health"])

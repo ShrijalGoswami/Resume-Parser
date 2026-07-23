@@ -44,7 +44,12 @@ class GeminiProvider(LLMProvider):
             completion_tokens=getattr(um, "candidates_token_count", None),
             total_tokens=getattr(um, "total_token_count", None),
         ) if um else TokenUsage()
-        return ProviderResponse(text=text, model=model, provider=self.name, usage=usage, raw=resp)
+        cands = getattr(resp, "candidates", None) or []
+        finish = str(getattr(cands[0], "finish_reason", "")) if cands else None
+        return ProviderResponse(
+            text=text, model=model, provider=self.name, usage=usage,
+            finish_reason=finish or None, raw=resp,
+        )
 
     @staticmethod
     def _classify(exc: Exception) -> AIProviderError:

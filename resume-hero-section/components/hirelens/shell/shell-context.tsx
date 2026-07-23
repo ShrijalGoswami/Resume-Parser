@@ -8,10 +8,9 @@ function isBit(value: string | null): value is '0' | '1' {
 }
 
 /**
- * Shell state (Design Bible Part V). Owns the cross-surface UI state the shell,
- * command palette (§4.2), and Copilot rail (§4.3) share, plus the global
- * keyboard spine: ⌘K opens the palette, ⌘J toggles the rail. Nav-collapse is
- * persisted per user.
+ * Shell state (Design Bible Part V). Owns the cross-surface UI state the shell
+ * and command palette (§4.2) share, plus the global keyboard spine: ⌘K opens
+ * the palette. Nav-collapse is persisted per user.
  */
 interface ShellContextValue {
   navCollapsed: boolean
@@ -19,9 +18,6 @@ interface ShellContextValue {
   toggleNav: () => void
   commandOpen: boolean
   setCommandOpen: (value: boolean) => void
-  railOpen: boolean
-  setRailOpen: (value: boolean) => void
-  toggleRail: () => void
 }
 
 const ShellContext = React.createContext<ShellContextValue | null>(null)
@@ -30,7 +26,6 @@ export function ShellProvider({ children }: { children: React.ReactNode }) {
   const [navBit, setNavBit] = usePersistedState<'0' | '1'>('hl-nav-collapsed', '0', isBit)
   const navCollapsed = navBit === '1'
   const [commandOpen, setCommandOpen] = React.useState(false)
-  const [railOpen, setRailOpen] = React.useState(false)
 
   const setNavCollapsed = React.useCallback(
     (value: boolean) => setNavBit(value ? '1' : '0'),
@@ -42,8 +37,6 @@ export function ShellProvider({ children }: { children: React.ReactNode }) {
     [navBit, setNavBit],
   )
 
-  const toggleRail = React.useCallback(() => setRailOpen((open) => !open), [])
-
   React.useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const mod = event.metaKey || event.ctrlKey
@@ -52,9 +45,6 @@ export function ShellProvider({ children }: { children: React.ReactNode }) {
       if (key === 'k') {
         event.preventDefault()
         setCommandOpen((open) => !open)
-      } else if (key === 'j') {
-        event.preventDefault()
-        setRailOpen((open) => !open)
       }
     }
     window.addEventListener('keydown', onKeyDown)
@@ -68,11 +58,8 @@ export function ShellProvider({ children }: { children: React.ReactNode }) {
       toggleNav,
       commandOpen,
       setCommandOpen,
-      railOpen,
-      setRailOpen,
-      toggleRail,
     }),
-    [navCollapsed, setNavCollapsed, toggleNav, commandOpen, railOpen, toggleRail],
+    [navCollapsed, setNavCollapsed, toggleNav, commandOpen],
   )
 
   return <ShellContext.Provider value={value}>{children}</ShellContext.Provider>

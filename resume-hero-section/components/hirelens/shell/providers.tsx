@@ -8,7 +8,6 @@ import { AnnouncerProvider } from '../lib/use-announcer'
 import { TooltipProvider } from '../ui/tooltip'
 import { Toaster } from '../ui/toast'
 import { CommandRegistryProvider } from '../command-palette/command-registry'
-import { CopilotProvider } from '../copilot/copilot-context'
 import { ApiProvider } from '../lib/api/query-client'
 import { ShellProvider } from './shell-context'
 
@@ -49,9 +48,7 @@ export function HireLensProviders({
             <TooltipProvider>
               <CommandRegistryProvider>
                 <ShellProvider>
-                  <CopilotProvider>
-                    <HireLensRoot fontClassName={fontClassName}>{children}</HireLensRoot>
-                  </CopilotProvider>
+                  <HireLensRoot fontClassName={fontClassName}>{children}</HireLensRoot>
                 </ShellProvider>
               </CommandRegistryProvider>
             </TooltipProvider>

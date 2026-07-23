@@ -21,6 +21,7 @@ from app.ai.gateway.gateway import (
     set_active_provider,
 )
 from app.ai.gateway.usage import usage_tracker
+from app.ai.gateway.health import health_manager, HealthState
 from app.ai.gateway.model_registry import ModelSpec, get_model, register_model
 from app.ai.gateway.provider_registry import ProviderSpec, get_provider_spec
 
@@ -36,6 +37,8 @@ __all__ = [
     "config_snapshot",
     "cost_of",
     "usage_tracker",
+    "health_manager",
+    "HealthState",
     "ModelSpec",
     "get_model",
     "register_model",

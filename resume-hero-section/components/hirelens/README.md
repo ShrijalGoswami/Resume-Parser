@@ -47,7 +47,6 @@ components/hirelens/
     app-shell, left-nav, top-bar, breadcrumbs, workspace-switcher,
     notifications, account-menu
   command-palette/          ⌘K infrastructure (§4.2 / §5.7)
-  copilot/                  Copilot rail infrastructure (§4.3 / §5.8)
   index.ts                  Public barrel for the V3 design system
 ```
 

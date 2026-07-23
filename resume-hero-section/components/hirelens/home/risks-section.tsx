@@ -5,25 +5,21 @@ import { RiskRow } from '../domain'
 import { Section } from './section'
 import { Card } from '../ui/card'
 import { Skeleton } from '../ui/skeleton'
-import { useShell } from '../shell/shell-context'
-import { useCopilot } from '../copilot/copilot-context'
+import { useRouter } from 'next/navigation'
 import type { Forecast } from '@/types/prediction'
 
 /**
  * Hiring Risks (UX Spec §6). Surfaces the backend's forecast output directly —
- * no invented thresholds. "Ask" opens the Copilot rail seeded with a question
- * about that risk. Collapses when there are no forecasts.
+ * no invented thresholds. "Ask" opens the Ask surface (⌘K's AI entry) seeded
+ * with a question about that risk. Collapses when there are no forecasts.
  */
 export function RisksSection() {
   const { data, isLoading, isError } = useForecasts()
-  const { setRailOpen } = useShell()
-  const { setContextLabel, setSuggestions } = useCopilot()
+  const router = useRouter()
 
   const ask = (forecast: Forecast) => {
     const label = forecast.target || forecast.type
-    setContextLabel(label)
-    setSuggestions([`Why is "${label}" at risk?`, `What can I do about ${label}?`])
-    setRailOpen(true)
+    router.push(`/ask?q=${encodeURIComponent(`Why is "${label}" at risk?`)}`)
   }
 
   if (isLoading) {

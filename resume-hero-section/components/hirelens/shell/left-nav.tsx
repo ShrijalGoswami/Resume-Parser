@@ -75,11 +75,21 @@ export function LeftNav({ account }: LeftNavProps) {
         collapsed ? 'w-14' : 'w-60',
       )}
     >
-      <div className={cn('flex items-center p-3', collapsed && 'justify-center px-0')}>
-        <WorkspaceSwitcher collapsed={collapsed} />
+      {/* Brand zone: matches the 52px top-bar height and carries the header
+          divider so the rule reads continuously across rail + header, and the
+          mark aligns to the nav-icon column below (no brand/nav collision). */}
+      <div
+        className={cn(
+          'flex h-[52px] shrink-0 items-center border-b border-hl-border-subtle px-2',
+          collapsed && 'justify-center px-0',
+        )}
+      >
+        <div className={cn('flex items-center', !collapsed && 'px-2.5')}>
+          <WorkspaceSwitcher collapsed={collapsed} />
+        </div>
       </div>
 
-      <div className="flex flex-1 flex-col gap-0.5 px-2">
+      <div className="flex flex-1 flex-col gap-0.5 px-2 pt-3">
         {primaryNav.map((item) => (
           <NavLink key={item.href} item={item} collapsed={collapsed} />
         ))}

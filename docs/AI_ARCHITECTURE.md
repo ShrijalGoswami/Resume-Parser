@@ -3,7 +3,9 @@
 > The AI Foundation Layer introduced in **V4 Sprint 3**. Every AI interaction in
 > the product flows (or will flow) through a single orchestration service — no
 > page, component, or route calls an LLM provider directly. Cross-refs:
-> [AI_PIPELINE.md](./AI_PIPELINE.md) (the deterministic + LLM pipeline),
+> [AI_GATEWAY.md](./AI_GATEWAY.md) (the production multi-provider gateway:
+> routing, fallback, health, config), [AI_PIPELINE.md](./AI_PIPELINE.md) (the
+> deterministic + LLM pipeline),
 > [decisions/ADR-006](./decisions/ADR-006-ai-orchestration-layer.md),
 > [ADR-002](./decisions/ADR-002-groq.md).
 

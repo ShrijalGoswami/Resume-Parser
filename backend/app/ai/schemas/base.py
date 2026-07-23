@@ -66,13 +66,27 @@ class TokenUsage:
 
 @dataclass
 class ProviderResponse:
-    """The raw result of a single provider completion call."""
+    """
+    The normalized result of a single provider completion — identical shape for
+    every provider so downstream code never branches on the vendor.
+
+    `content` is an alias for `text` (both are always populated). `latency_ms`
+    and `cost_usd` are attached by the orchestrator when known; providers that
+    surface a native finish reason set `finish_reason`.
+    """
 
     text: str
     model: str
     provider: str
     usage: TokenUsage = field(default_factory=TokenUsage)
+    finish_reason: Optional[str] = None
+    latency_ms: Optional[int] = None
+    cost_usd: Optional[float] = None
     raw: Any = None
+
+    @property
+    def content(self) -> str:
+        return self.text
 
 
 @dataclass

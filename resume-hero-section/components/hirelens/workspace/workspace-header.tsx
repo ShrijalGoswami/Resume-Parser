@@ -3,13 +3,16 @@
 import { Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '../ui/button'
+import { PageHeader } from '../shell/page-header'
 import { LensSwitcher } from './lens-switcher'
 import type { Campaign } from '@/types/campaign'
 
 /**
- * Role Workspace header (Design Bible §7.1). Title, status, counts, the single
- * primary action (Add candidates), and the LensSwitcher. The live forecast chip
- * is deferred — there is no per-role forecast endpoint yet.
+ * Role Workspace header (Design Bible §7.1). Uses the shared PageHeader so the
+ * role identity carries the same premium (Fraunces) title as every other
+ * surface; status + counts sit on the supporting line, the single primary action
+ * (Add candidates) is the header action, and the LensSwitcher rides beneath.
+ * Stays sticky. The live forecast chip is deferred (no per-role endpoint yet).
  */
 const statusColor: Record<string, string> = {
   active: 'text-hl-success',
@@ -32,31 +35,38 @@ export function WorkspaceHeader({
   onAddCandidates,
 }: WorkspaceHeaderProps) {
   return (
-    <header className="sticky top-0 z-[var(--hl-z-sticky)] flex flex-col gap-3 border-b border-hl-border-subtle bg-hl-canvas px-6 py-3">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <h1 className="hl-h1 truncate">{campaign.title}</h1>
+    <header className="sticky top-0 z-[var(--hl-z-sticky)] border-b border-hl-border-subtle bg-hl-canvas px-6 py-4">
+      <PageHeader
+        title={campaign.title}
+        spacing="none"
+        description={
+          <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
             <span
               className={cn(
-                'hl-caption inline-flex shrink-0 items-center gap-1 capitalize',
+                'inline-flex items-center gap-1 capitalize',
                 statusColor[campaign.status] ?? 'text-hl-fg-tertiary',
               )}
             >
               <span className="size-1.5 rounded-full bg-current" aria-hidden />
               {campaign.status}
             </span>
-          </div>
-          <p className="hl-small text-hl-fg-secondary">
-            {candidateCount} candidate{candidateCount === 1 ? '' : 's'} · {stageCount} stage
-            {stageCount === 1 ? '' : 's'}
-          </p>
-        </div>
-        <Button variant="primary" onClick={onAddCandidates}>
-          <Plus /> Add candidates
-        </Button>
-      </div>
-      <LensSwitcher />
+            <span className="text-hl-fg-tertiary" aria-hidden>
+              ·
+            </span>
+            <span>
+              {candidateCount} candidate{candidateCount === 1 ? '' : 's'} · {stageCount} stage
+              {stageCount === 1 ? '' : 's'}
+            </span>
+          </span>
+        }
+        actions={
+          <Button variant="primary" onClick={onAddCandidates}>
+            <Plus /> Add candidates
+          </Button>
+        }
+      >
+        <LensSwitcher />
+      </PageHeader>
     </header>
   )
 }
