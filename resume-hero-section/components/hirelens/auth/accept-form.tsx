@@ -54,7 +54,7 @@ export function AcceptInviteForm() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="hl-display">You’re invited.</h1>
+      <h1 className="hl-display-md">You’re invited.</h1>
       <p className="hl-small text-hl-fg-secondary">
         Set your name and a password to join your team on HireLens.
       </p>

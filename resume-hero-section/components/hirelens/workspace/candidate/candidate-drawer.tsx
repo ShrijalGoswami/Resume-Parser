@@ -9,7 +9,10 @@ import {
   DrawerDescription,
 } from '../../ui/drawer'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../ui/tabs'
+import Link from 'next/link'
+import { ArrowUpRight } from 'lucide-react'
 import { Avatar } from '../../ui/avatar'
+import { Button } from '../../ui/button'
 import { LoadingLines } from '../../states/loading'
 import { ErrorState } from '../../states/error-state'
 import { OverviewTab } from './overview-tab'
@@ -78,6 +81,11 @@ function DrawerInner({ roleId, candidateId }: { roleId: string; candidateId: str
             {result?.match_category ?? 'Candidate profile and analysis'}
           </DrawerDescription>
         </div>
+        <Button asChild variant="secondary" size="sm" className="shrink-0">
+          <Link href={`/roles/${roleId}/candidates/${candidateId}`}>
+            Full review <ArrowUpRight />
+          </Link>
+        </Button>
       </DrawerHeader>
 
       <Tabs defaultValue="overview" className="flex min-h-0 flex-1 flex-col">

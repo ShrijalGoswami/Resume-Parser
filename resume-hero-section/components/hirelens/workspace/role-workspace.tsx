@@ -8,6 +8,7 @@ import { useProfile } from '../lib/api/hooks'
 import { useCampaign, useCandidates, useCompareCandidates } from '../lib/api/workspace'
 import { WorkspaceHeader } from './workspace-header'
 import { PipelineLens } from './pipeline-lens'
+import { TriageLens } from './triage/triage-lens'
 import { AnalyticsLens } from './analytics-lens'
 import { ActivityLens } from './activity-lens'
 import { DeferredLens } from './deferred-lens'
@@ -24,7 +25,7 @@ function Notice({ title, showSignIn }: { title: string; showSignIn?: boolean }) 
       <h1 className="hl-display">{title}</h1>
       {showSignIn ? (
         <Button variant="primary" asChild>
-          <Link href="/login">Sign in</Link>
+          <Link href="/auth/login">Sign in</Link>
         </Button>
       ) : null}
     </div>
@@ -160,8 +161,13 @@ function AuthedWorkspace({
   const count = candidates.data?.length ?? campaign.data.total_candidates ?? 0
   const stageCount = new Set((candidates.data ?? []).map((row) => row.raw.stage)).size || 5
 
+  const crumbs =
+    lens === 'triage'
+      ? [{ label: campaign.data.title, href: `/roles/${roleId}` }, { label: 'Triage' }]
+      : [{ label: campaign.data.title }]
+
   return (
-    <AppShell account={account} breadcrumbs={[{ label: campaign.data.title }]}>
+    <AppShell account={account} breadcrumbs={crumbs}>
       <WorkspaceHeader
         campaign={campaign.data}
         candidateCount={count}
@@ -169,7 +175,9 @@ function AuthedWorkspace({
         onAddCandidates={() => setAddOpen(true)}
       />
       <div className="mx-auto w-full max-w-6xl px-6 py-4">
-        {lens === 'analytics' ? (
+        {lens === 'triage' ? (
+          <TriageLens roleId={roleId} />
+        ) : lens === 'analytics' ? (
           <AnalyticsLens roleId={roleId} />
         ) : lens === 'activity' ? (
           <ActivityLens roleId={roleId} />

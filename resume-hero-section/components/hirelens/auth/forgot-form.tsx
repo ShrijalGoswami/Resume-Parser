@@ -44,7 +44,7 @@ export function ForgotForm() {
   if (sent) {
     return (
       <div className="flex flex-col gap-4">
-        <h1 className="hl-display">Check your inbox.</h1>
+        <h1 className="hl-display-md">Check your inbox.</h1>
         <p className="hl-small text-hl-fg-secondary" role="status">
           If an account exists for {email}, we sent a link to reset your password. Open it on this
           device to continue.
@@ -60,7 +60,7 @@ export function ForgotForm() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="hl-display">Reset your password.</h1>
+      <h1 className="hl-display-md">Reset your password.</h1>
       <form onSubmit={onSubmit} className="flex flex-col gap-5">
         <AuthField
           label="Work email"

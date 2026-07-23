@@ -73,7 +73,7 @@ export function AskScreen({ initial }: { initial: AskInitial }) {
         <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-6 py-24 text-center">
           <h1 className="hl-display">Sign in to continue</h1>
           <Button variant="primary" asChild>
-            <Link href="/login">Sign in</Link>
+            <Link href="/auth/login">Sign in</Link>
           </Button>
         </div>
       </AppShell>

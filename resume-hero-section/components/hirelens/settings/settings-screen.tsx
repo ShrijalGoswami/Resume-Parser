@@ -49,25 +49,25 @@ export function SettingsScreen({ section }: { section: string }) {
 
   if (!configured) {
     return (
-      <AppShell title="Settings">
-        <div className="hl-display p-12 text-center">Sign-in isn&rsquo;t configured</div>
+      <AppShell breadcrumbs={[{ label: 'Settings' }]}>
+        <div className="hl-display-md p-12 text-center">Sign-in isn&rsquo;t configured</div>
       </AppShell>
     )
   }
   if (loading) {
     return (
-      <AppShell title="Settings">
+      <AppShell breadcrumbs={[{ label: 'Settings' }]}>
         <LoadingScreen />
       </AppShell>
     )
   }
   if (!session) {
     return (
-      <AppShell title="Settings">
+      <AppShell breadcrumbs={[{ label: 'Settings' }]}>
         <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-6 py-24 text-center">
-          <h1 className="hl-display">Sign in to continue</h1>
+          <h1 className="hl-display-md">Sign in to continue</h1>
           <Button variant="primary" asChild>
-            <Link href="/login">Sign in</Link>
+            <Link href="/auth/login">Sign in</Link>
           </Button>
         </div>
       </AppShell>
@@ -86,7 +86,10 @@ function AuthedSettings({ section }: { section: string }) {
   const active = SECTIONS.find((item) => item.id === section) ?? SECTIONS[0]
 
   return (
-    <AppShell title="Settings" account={account}>
+    <AppShell
+      breadcrumbs={[{ label: 'Settings', href: '/settings' }, { label: active.label }]}
+      account={account}
+    >
       <div className="flex h-full">
         <aside className="hidden w-64 shrink-0 overflow-y-auto border-r border-hl-border-subtle p-3 lg:block">
           <nav aria-label="Settings sections" className="flex flex-col gap-4">

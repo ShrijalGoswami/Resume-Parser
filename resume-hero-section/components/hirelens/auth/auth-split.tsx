@@ -12,12 +12,14 @@ export function AuthSplit({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-dvh w-full">
       {/* Form — Glass, theme-aware */}
       <div className="flex w-full flex-col bg-hl-canvas px-6 py-8 sm:px-10 lg:w-[45%] lg:px-16">
-        <div className="hl-body-medium text-hl-fg">HireLens</div>
+        {/* Wordmark — the auth surface's editorial brand mark (serif italic, per
+            the RC-1 Definitive Login). */}
+        <div className="font-hl-display text-lg italic text-hl-fg">HireLens</div>
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-[380px] py-10">{children}</div>
         </div>
         <p className="font-hl-mono text-[11px] tracking-wide text-hl-fg-tertiary">
-          SOC 2 Type II · SSO · your data stays yours
+          SOC 2 Type II · SSO · your data stays yours.
         </p>
       </div>
 

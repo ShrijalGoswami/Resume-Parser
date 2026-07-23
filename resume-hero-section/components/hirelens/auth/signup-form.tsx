@@ -79,7 +79,7 @@ export function SignupForm() {
   if (sent) {
     return (
       <div className="flex flex-col gap-4">
-        <h1 className="hl-display">Check your inbox.</h1>
+        <h1 className="hl-display-md">Check your inbox.</h1>
         <p className="hl-small text-hl-fg-secondary" role="status">
           We sent a confirmation link to {email}. Open it on this device to finish creating your
           account.
@@ -110,7 +110,7 @@ export function SignupForm() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="hl-display">Start with HireLens.</h1>
+      <h1 className="hl-display-md">Start with HireLens.</h1>
       <form onSubmit={onSubmit} className="flex flex-col gap-5">
         <AuthField
           label="Full name"
