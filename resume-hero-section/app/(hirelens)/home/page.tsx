@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
-import { HomeScreen } from '@/components/hirelens/home/home-screen'
+import { InboxScreen } from '@/components/hirelens/inbox'
 
-export const metadata: Metadata = { title: 'Home' }
+export const metadata: Metadata = { title: 'Inbox' }
 
 export default function Page() {
-  return <HomeScreen />
+  return <InboxScreen />
 }
