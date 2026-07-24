@@ -5,10 +5,10 @@
 ## 1. Environment
 
 - **Environment:** `development`
-- **Registered providers:** anthropic, contract_fake, gemini, groq, kimi, openai, openrouter
+- **Registered providers:** anthropic, contract_fake, gemini, groq, kimi, openai, openrouter, routefake
 - **Active provider:** `groq`
-- **Date/time:** 2026-07-24 16:09 UTC
-- **Totals:** 29 PASS · 0 FAIL · 5 SKIPPED
+- **Date/time:** 2026-07-24 16:34 UTC
+- **Totals:** 35 PASS · 0 FAIL · 5 SKIPPED
 - **Overall:** ✅ PASS
 
 ## 2. Behavioral Validation — deterministic
@@ -41,10 +41,16 @@ _In-process; no network. Contract conformance, provider-sourced metadata, health
 | per-provider override applies (timeout/retries/default_model) | ✅ PASS |  |
 | alias resolves (claude→anthropic) + global fallback | ✅ PASS |  |
 | capability routing disabled by default → no override | ✅ PASS |  |
-| when enabled + mapped, routing structure resolves the provider | ✅ PASS |  |
+| model-first: model determines provider (gemini-2.0-flash → gemini) | ✅ PASS |  |
+| list value routes to the PRIMARY model (fallback-ready shape) | ✅ PASS |  |
 | gateway ProviderSpec is derived from the provider (source of truth) | ✅ PASS |  |
 | a newly registered provider is resolvable by name | ✅ PASS |  |
 | Kimi registered as an OpenAI-compatible provider | ✅ PASS |  |
+| validation rejects an unknown model | ✅ PASS |  |
+| validation rejects an invalid capability | ✅ PASS |  |
+| validation rejects a model whose provider key is missing (anthropic) | ✅ PASS |  |
+| validation passes for a valid, configured model (groq) | ✅ PASS |  |
+| orchestrator routes capability → model → provider end-to-end | ✅ PASS |  |
 
 ## 3. Live Provider Validation — one smoke per configured key
 

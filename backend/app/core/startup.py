@@ -55,4 +55,15 @@ def validate_startup() -> None:
             "(/ats-analysis, /match-analysis) will return 503 until it is set."
         )
 
+    # 4. Capability→model routing — FATAL on misconfiguration (unknown model,
+    # un-inferable/unregistered provider, missing key, invalid capability).
+    from app.ai.gateway.capability_routing import RoutingConfigError, validate_capability_routing
+    try:
+        validate_capability_routing()
+        if settings.AI_CAPABILITY_MODELS:
+            logger.info("Capability→model routing validated (enabled=%s).",
+                        settings.AI_ENABLE_CAPABILITY_ROUTING)
+    except RoutingConfigError as e:
+        raise StartupError(str(e)) from e
+
     logger.info("Startup validation complete.")

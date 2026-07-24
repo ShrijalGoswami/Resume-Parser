@@ -92,6 +92,13 @@ def _seed() -> None:
         # ── OpenRouter (routes to many models) ────────────────────────────
         ModelSpec("openai/gpt-4o-mini", "openrouter", cost_tier="cheap", context_window=128000,
                   max_output_tokens=16384, supports_tools=True, supports_streaming=True),
+        # ── Kimi / Moonshot (OpenAI-compatible) ───────────────────────────
+        ModelSpec("kimi-k2-0711-preview", "kimi", cost_tier="standard", context_window=131072,
+                  max_output_tokens=16384, supports_tools=True, supports_streaming=True),
+        ModelSpec("moonshot-v1-8k", "kimi", cost_tier="cheap", context_window=8192,
+                  max_output_tokens=4096, supports_tools=True, supports_streaming=True),
+        ModelSpec("moonshot-v1-128k", "kimi", cost_tier="standard", context_window=131072,
+                  max_output_tokens=8192, supports_tools=True, supports_streaming=True),
         # ── Local / dependency-free embedding ─────────────────────────────
         ModelSpec("hashing-v1", "hashing", purpose="embeddings", cost_tier="cheap",
                   supports_json=False, supports_embeddings=True, dimensions=1536),

@@ -114,12 +114,15 @@ class Settings(BaseSettings):
     #                 "claude":{"timeout_seconds":60}}
     AI_PROVIDERS: dict = {}
 
-    # ── Capability→provider routing (STRUCTURE ONLY; disabled by default) ────
-    # The data structure + hook exist so per-capability routing (e.g. resume
-    # analysis → gemini, interview → claude) becomes a pure CONFIG change later —
-    # no orchestrator edit. Inert until AI_ENABLE_CAPABILITY_ROUTING=true.
-    #   AI_CAPABILITY_ROUTING={"resume_analysis":"gemini","interview_generation":"anthropic"}
-    AI_CAPABILITY_ROUTING: dict = {}
+    # ── Capability→MODEL routing (model-first; disabled by default) ──────────
+    # Pin a capability to a MODEL; the provider is inferred from the model
+    # registry (a model already knows its provider). This is the single routing
+    # mechanism. A value may be one model, or a LIST (primary first) so future
+    # fallback chains need no config-schema change (only the primary is used today).
+    # Inert until AI_ENABLE_CAPABILITY_ROUTING=true. Validated strictly at startup.
+    #   AI_CAPABILITY_MODELS={"resume_analysis":"gemini-2.0-flash",
+    #                         "interview_generation":["claude-opus-4-8","claude-sonnet-5"]}
+    AI_CAPABILITY_MODELS: dict = {}
     AI_ENABLE_CAPABILITY_ROUTING: bool = False
 
     # ── Integration Platform (V6 / Sprint 11) ────────────────────────────────

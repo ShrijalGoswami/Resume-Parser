@@ -25,7 +25,7 @@ from typing import Optional, Type, TypeVar
 
 from app.ai.config import get_ai_config
 from app.ai.gateway import ModelRole, cost_of, fallback_chain, resolve, usage_tracker
-from app.ai.gateway.capability_routing import route_for
+from app.ai.gateway.capability_routing import model_route_for
 from app.ai.gateway.gateway import ModelSelection
 from app.ai.gateway.health import health_manager, kind_for_error
 from app.ai.gateway.provider_config import get_provider_config
@@ -70,17 +70,22 @@ class AIOrchestrator:
         system = template.system
         user = template.build_user(**variables)
 
-        # Capability→provider routing (M5) — INERT by default: route_for returns
-        # None unless routing is enabled AND the capability is mapped, so today this
-        # changes nothing. When set, it pins the capability to a provider.
-        routed = route_for(capability.value) if provider is None else None
-        effective_provider = provider or routed
+        # Capability→MODEL routing — INERT by default. When enabled and mapped, the
+        # capability is pinned to a model and its provider is INFERRED from the model
+        # registry (model-first). Explicit call-site provider/model overrides win.
+        routed_provider = routed_model = None
+        if provider is None and model is None:
+            routed = model_route_for(capability.value)
+            if routed:
+                routed_provider, routed_model = routed
+        effective_provider = provider or routed_provider
+        effective_model = model or routed_model
 
-        # Provider + model come from the Gateway. An explicit/routed provider (or an
-        # explicit model) pins a single selection; otherwise the fallback chain.
-        if effective_provider or model:
+        # Provider + model come from the Gateway. An explicit/routed provider or
+        # model pins a single selection; otherwise the configurable fallback chain.
+        if effective_provider or effective_model:
             base = resolve(role, provider=effective_provider)
-            selections = [ModelSelection(provider=(effective_provider or base.provider), model=(model or base.model), role=role)]
+            selections = [ModelSelection(provider=(effective_provider or base.provider), model=(effective_model or base.model), role=role)]
         else:
             selections = fallback_chain(role)
 

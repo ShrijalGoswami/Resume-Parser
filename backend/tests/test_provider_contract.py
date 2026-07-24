@@ -27,15 +27,32 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from app.ai.gateway import gateway as gw
+import importlib
+
+from pydantic import BaseModel
+
+from app.ai.gateway import gateway as gw, usage_tracker
+from app.ai.gateway.capability_routing import (
+    RoutingConfigError, model_route_for, validate_capability_routing,
+)
+from app.ai.gateway.health import health_manager
+from app.ai.gateway.model_registry import ModelSpec, register_model
 from app.ai.gateway.provider_config import get_provider_config
 from app.ai.gateway.provider_registry import get_provider_spec
 from app.ai.gateway.roles import ModelRole
-from app.ai.gateway.capability_routing import route_for
+from app.ai.prompts.base import PromptTemplate
 from app.ai.providers.base import LLMProvider
 from app.ai.providers.registry import available_providers, get_provider, register_provider
-from app.ai.schemas.base import ProviderResponse, TokenUsage
+from app.ai.schemas.base import Capability, ProviderResponse, TokenUsage
 from app.core.config import settings
+
+
+class _Reply(BaseModel):
+    answer: str = ""
+
+
+# The orchestrator MODULE (not the singleton) — for monkeypatching get_prompt.
+omod = importlib.import_module("app.ai.orchestrator.orchestrator")
 
 for _stream in (sys.stdout, sys.stderr):
     try:
@@ -137,17 +154,23 @@ def layer_a() -> None:
     finally:
         settings.AI_PROVIDERS = orig_providers
 
-    # A7 — capability routing structure (M5) present but INERT by default.
-    o_en, o_tbl = settings.AI_ENABLE_CAPABILITY_ROUTING, settings.AI_CAPABILITY_ROUTING
+    # A7 — capability→MODEL routing (model-first): disabled by default; when
+    # enabled, the MODEL determines the provider (inferred from the registry).
+    o_en, o_tbl = settings.AI_ENABLE_CAPABILITY_ROUTING, settings.AI_CAPABILITY_MODELS
     try:
+        settings.AI_CAPABILITY_MODELS = {"resume_analysis": "gemini-2.0-flash"}
         settings.AI_ENABLE_CAPABILITY_ROUTING = False
-        check("A", "capability routing disabled by default → no override", route_for("resume_analysis") is None)
+        check("A", "capability routing disabled by default → no override",
+              model_route_for("resume_analysis") is None)
         settings.AI_ENABLE_CAPABILITY_ROUTING = True
-        settings.AI_CAPABILITY_ROUTING = {"resume_analysis": "gemini"}
-        check("A", "when enabled + mapped, routing structure resolves the provider",
-              route_for("resume_analysis") == "gemini" and route_for("interview_generation") is None)
+        check("A", "model-first: model determines provider (gemini-2.0-flash → gemini)",
+              model_route_for("resume_analysis") == ("gemini", "gemini-2.0-flash")
+              and model_route_for("interview_generation") is None)
+        settings.AI_CAPABILITY_MODELS = {"interview_generation": ["claude-opus-4-8", "claude-sonnet-5"]}
+        check("A", "list value routes to the PRIMARY model (fallback-ready shape)",
+              model_route_for("interview_generation") == ("anthropic", "claude-opus-4-8"))
     finally:
-        settings.AI_ENABLE_CAPABILITY_ROUTING, settings.AI_CAPABILITY_ROUTING = o_en, o_tbl
+        settings.AI_ENABLE_CAPABILITY_ROUTING, settings.AI_CAPABILITY_MODELS = o_en, o_tbl
 
     # A8 — provider is the source of truth: gateway spec derives from the class.
     spec = get_provider_spec("gemini")
@@ -164,6 +187,72 @@ def layer_a() -> None:
     kimi = get_provider("kimi")
     check("A", "Kimi registered as an OpenAI-compatible provider",
           kimi.name == "kimi" and kimi.api_key_setting == "MOONSHOT_API_KEY" and kimi.model_name() != "")
+
+    # A11 — strict startup validation turns config mistakes into fatal errors.
+    o_en, o_tbl = settings.AI_ENABLE_CAPABILITY_ROUTING, settings.AI_CAPABILITY_MODELS
+
+    def _rejects(table: dict, *, enabled: bool = True) -> bool:
+        settings.AI_CAPABILITY_MODELS = table
+        settings.AI_ENABLE_CAPABILITY_ROUTING = enabled
+        try:
+            validate_capability_routing()
+            return False
+        except RoutingConfigError:
+            return True
+
+    try:
+        check("A", "validation rejects an unknown model", _rejects({"resume_analysis": "no-such-model"}))
+        check("A", "validation rejects an invalid capability", _rejects({"not_a_capability": "gemini-2.0-flash"}))
+        # A model whose provider's key is NOT configured → rejected when enabled.
+        unconfigured = next((n for n in LLM_PROVIDERS if not get_provider(n).is_configured()), None)
+        if unconfigured:
+            mdl = get_provider(unconfigured).model_name()
+            check("A", f"validation rejects a model whose provider key is missing ({unconfigured})",
+                  _rejects({"resume_analysis": mdl}))
+        else:
+            record("A", "validation rejects a model whose provider key is missing", "SKIPPED",
+                   "all providers configured in this env")
+        # A valid, configured model (Groq) passes.
+        settings.AI_CAPABILITY_MODELS = {"resume_analysis": "llama-3.3-70b-versatile"}
+        settings.AI_ENABLE_CAPABILITY_ROUTING = True
+        passed = True
+        try:
+            validate_capability_routing()
+        except RoutingConfigError:
+            passed = False
+        check("A", "validation passes for a valid, configured model (groq)", passed)
+    finally:
+        settings.AI_ENABLE_CAPABILITY_ROUTING, settings.AI_CAPABILITY_MODELS = o_en, o_tbl
+
+    # A12 — end-to-end: model-first routing drives the orchestrator's selection.
+    seen = {"n": 0, "model": None}
+
+    class _RouteFake(LLMProvider):
+        name = "routefake"
+        api_key_setting = ""
+        role_models = {ModelRole.DEFAULT_REASONING: "route-model-x"}
+
+        def complete(self, *, system, user, model, temperature, max_tokens, timeout_seconds):
+            seen["n"] += 1
+            seen["model"] = model
+            return ProviderResponse(text='{"answer":"ok"}', model=model, provider=self.name, usage=TokenUsage(1, 1, 2))
+
+    register_provider("routefake", _RouteFake)
+    register_model(ModelSpec("route-model-x", "routefake"))
+    o_en, o_tbl = settings.AI_ENABLE_CAPABILITY_ROUTING, settings.AI_CAPABILITY_MODELS
+    orig_prompt = omod.get_prompt
+    try:
+        settings.AI_ENABLE_CAPABILITY_ROUTING = True
+        settings.AI_CAPABILITY_MODELS = {"recruiter_copilot": "route-model-x"}
+        omod.get_prompt = lambda cap: PromptTemplate(id="t", version="1", system="s", render=lambda **v: "u")
+        usage_tracker.reset()
+        health_manager.reset()
+        res = omod.orchestrator.run(capability=Capability.RECRUITER_COPILOT, variables={}, schema=_Reply)
+        check("A", "orchestrator routes capability → model → provider end-to-end",
+              res.execution.provider == "routefake" and seen["model"] == "route-model-x")
+    finally:
+        settings.AI_ENABLE_CAPABILITY_ROUTING, settings.AI_CAPABILITY_MODELS = o_en, o_tbl
+        omod.get_prompt = orig_prompt
 
 
 # ── LAYER B — live smoke per CONFIGURED provider ─────────────────────────────
