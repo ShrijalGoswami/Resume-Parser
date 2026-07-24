@@ -2,26 +2,33 @@ import {
   Inbox,
   Briefcase,
   Users,
-  BarChart3,
+  Sparkles,
   BookText,
   GraduationCap,
   Settings,
+  LayoutDashboard,
+  BarChart3,
+  FileText,
+  Bot,
+  Library,
+  TrendingUp,
+  Plug,
+  Shield,
   type LucideIcon,
 } from 'lucide-react'
 
 /**
  * Primary navigation (Stitch RC-1 "Instrument Rail" · UX Spec §2 · Design Bible
  * §5.1). Two labeled groups, order fixed:
- *   WORKSPACE     Inbox · Roles · Talent · Analytics
- *   INTELLIGENCE  Ledger · Learning
- * Settings is pinned separately at the rail foot. Ask is not a rail item — it is
- * a global capability reached via ⌘K and contextual AI surfaces.
+ *   WORKSPACE     Inbox · Roles · Talent
+ *   INTELLIGENCE  Ask · Ledger · Learning
+ * Settings is pinned separately at the rail foot.
  *
- * Routes that are not built yet (Analytics, Ledger, Learning, and the canonical
- * Inbox) follow the existing coexistence pattern: the rail item ships now and
- * the route lands in its own milestone. Inbox points at the current `/home`
- * landing as a transitional placeholder; the href moves to `/inbox` when the
- * Inbox surface is built.
+ * Ask has a visible rail entry AND stays reachable via ⌘K + contextual AI
+ * surfaces (both, by design). The former "Analytics" item was removed because it
+ * pointed at an unbuilt route (404); it will be re-added when the Executive
+ * Overview surface ships. Inbox points at the current `/home` landing as a
+ * transitional placeholder; the href moves to `/inbox` when that surface is built.
  */
 export interface NavItem {
   label: string
@@ -62,18 +69,18 @@ export const navGroups: NavGroup[] = [
         isActive: (p) => p.startsWith('/talent'),
         shortcut: 'G T',
       },
-      {
-        label: 'Analytics',
-        href: '/analytics',
-        icon: BarChart3,
-        isActive: (p) => p.startsWith('/analytics'),
-        shortcut: 'G A',
-      },
     ],
   },
   {
     label: 'Intelligence',
     items: [
+      {
+        label: 'Ask',
+        href: '/ask',
+        icon: Sparkles,
+        isActive: (p) => p.startsWith('/ask'),
+        shortcut: 'G K',
+      },
       {
         label: 'Ledger',
         href: '/ledger',
@@ -87,6 +94,66 @@ export const navGroups: NavGroup[] = [
         icon: GraduationCap,
         isActive: (p) => p.startsWith('/learning'),
         shortcut: 'G E',
+      },
+    ],
+  },
+  // ── Classic (legacy) — MIGRATION BRIDGE, temporary ──────────────────────────
+  // These legacy features have NO fully-complete V4 replacement yet (or only a
+  // partial one), so they stay visibly reachable here rather than being hidden —
+  // "no feature inaccessible before its replacement is production-ready." Each is
+  // removed from this group only when its replacement reaches parity + a redirect
+  // goes live (see the Migration Matrix). Search & Campaigns are absent because
+  // they already redirect to Talent & Roles.
+  {
+    label: 'Classic',
+    items: [
+      {
+        label: 'Dashboard',
+        href: '/dashboard',
+        icon: LayoutDashboard,
+        isActive: (p) => p.startsWith('/dashboard'),
+      },
+      {
+        label: 'Insights',
+        href: '/insights',
+        icon: BarChart3,
+        isActive: (p) => p.startsWith('/insights'),
+      },
+      {
+        label: 'Reports',
+        href: '/reports',
+        icon: FileText,
+        isActive: (p) => p.startsWith('/reports'),
+      },
+      {
+        label: 'Agent',
+        href: '/agent',
+        icon: Bot,
+        isActive: (p) => p.startsWith('/agent'),
+      },
+      {
+        label: 'Knowledge',
+        href: '/knowledge',
+        icon: Library,
+        isActive: (p) => p.startsWith('/knowledge'),
+      },
+      {
+        label: 'Predictions',
+        href: '/predictions',
+        icon: TrendingUp,
+        isActive: (p) => p.startsWith('/predictions'),
+      },
+      {
+        label: 'Integrations',
+        href: '/integrations',
+        icon: Plug,
+        isActive: (p) => p.startsWith('/integrations'),
+      },
+      {
+        label: 'Admin',
+        href: '/admin',
+        icon: Shield,
+        isActive: (p) => p.startsWith('/admin'),
       },
     ],
   },
