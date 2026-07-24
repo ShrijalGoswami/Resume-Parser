@@ -57,6 +57,11 @@ export interface CandidateResult {
   status: "success" | "failed";
   error: string | null;
 
+  // SHA-256 hex of the uploaded file contents — the canonical, collision-proof key
+  // used to map a persisted candidate back to its original résumé binary (A3).
+  file_hash: string | null;
+  file_size: number | null;
+
   rank: number;
   overall_score: number;
   score: CandidateScore | null;

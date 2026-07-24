@@ -89,6 +89,28 @@ export const getResumeUrl = (campaignId: string, candidateId: string) =>
     `/campaigns/${campaignId}/candidates/${candidateId}/resume-url`
   );
 
+// Store a candidate's résumé binary in the private `resumes` bucket. Multipart —
+// we must NOT set Content-Type so the browser adds the multipart boundary itself
+// (apiFetch would force application/json), so this uses fetch directly.
+export const uploadResume = async (
+  campaignId: string,
+  candidateId: string,
+  file: File
+): Promise<Candidate> => {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`${V1}/campaigns/${campaignId}/candidates/${candidateId}/resume`, {
+    method: 'POST',
+    headers: { ...(await authHeaders()) },
+    body: form,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Résumé upload failed: ${res.status}`);
+  }
+  return res.json() as Promise<Candidate>;
+};
+
 // ── Notes ────────────────────────────────────────────────────────────────────
 export const listNotes = (campaignId: string, candidateId: string) =>
   apiFetch<RecruiterNote[]>(`/campaigns/${campaignId}/candidates/${candidateId}/notes`);

@@ -4,9 +4,10 @@ import * as React from 'react'
 import { Upload, FileText, X } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { analyzeBatchWithProgress } from '@/services/api'
-import { persistBatch } from '@/services/campaigns-api'
+import { persistBatch, uploadResume } from '@/services/campaigns-api'
 import { reindexCampaign } from '@/services/search-api'
 import { roleKeys } from '../lib/api/workspace'
+import { hashFiles, buildResumeUploadPlan, runPooled } from './resume-upload'
 import {
   Dialog,
   DialogContent,
@@ -80,7 +81,17 @@ export function AddCandidatesDialog({
         setProgress,
       )
       setPhase('persisting')
-      await persistBatch(roleId, batch)
+      const persisted = await persistBatch(roleId, batch)
+      // A3: store the original résumé binaries (best-effort, mapped by content
+      // hash). A failed upload just leaves that candidate's download gate closed —
+      // it must never fail the ingestion, so this is wrapped and non-blocking.
+      try {
+        const fileByHash = await hashFiles(files)
+        const plan = buildResumeUploadPlan(batch.candidates, persisted, fileByHash)
+        await runPooled(plan, 4, (p) => uploadResume(roleId, p.candidateId, p.file).then(() => undefined))
+      } catch {
+        /* best-effort — résumés can be re-uploaded later */
+      }
       setPhase('indexing')
       await reindexCampaign(roleId).catch(() => undefined)
       await queryClient.invalidateQueries({ queryKey: roleKeys.candidates(roleId) })
