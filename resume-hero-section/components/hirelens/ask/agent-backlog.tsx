@@ -1,7 +1,7 @@
 'use client'
 
 import { useQueryClient } from '@tanstack/react-query'
-import { RefreshCw, CheckCircle2 } from 'lucide-react'
+import { RefreshCw, Inbox } from 'lucide-react'
 import { ApprovalCard, ConfidencePill } from '../domain'
 import { Badge, type BadgeProps } from '../ui/badge'
 import { Button } from '../ui/button'
@@ -85,9 +85,9 @@ export function AgentBacklog() {
           />
         ) : pendingItems.length === 0 && decided.length === 0 ? (
           <EmptyState
-            icon={CheckCircle2}
-            title="Nothing needs your attention"
-            description="Your pipeline looks healthy. Run a scan any time to look again."
+            icon={Inbox}
+            title="No recommendations yet"
+            description="Recommendations from HireLens appear here after an AI scan of your candidates. Run one any time to check."
             action={
               <Button variant="primary" onClick={() => scan.mutate()} loading={scan.isPending}>
                 Run a scan

@@ -38,12 +38,12 @@ export function BriefingHeader({
   const headline =
     briefing?.headline ??
     (total === 0
-      ? 'You’re all caught up.'
+      ? 'No recommendations yet.'
       : `${total} decision${total === 1 ? '' : 's'} need${total === 1 ? 's' : ''} your judgment.`)
   const summary =
     briefing?.summary ??
     (total === 0
-      ? 'Nothing needs you right now. New decisions will surface here as they arrive.'
+      ? "Recommendations from HireLens appear here after an AI scan of your candidates. They don't surface on their own yet."
       : 'Reviewed and ranked by urgency. Start at the top and work down.')
 
   return (

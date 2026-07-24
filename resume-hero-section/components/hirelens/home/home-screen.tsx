@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { Plus, CheckCircle2 } from 'lucide-react'
+import { Plus, Inbox, Search } from 'lucide-react'
 import { AppShell } from '../shell'
 import { useSession } from '../lib/api/use-session'
 import {
@@ -19,7 +19,7 @@ import { BriefingHeader } from './briefing-header'
 import { DecisionHero } from './decision-hero'
 import { DecisionTier } from './decision-list'
 import { FocusRail } from './focus-rail'
-import { tierFor, sortDecisions } from './inbox-meta'
+import { tierFor, sortDecisions, emptyInboxState } from './inbox-meta'
 import type { AgentBriefing } from '@/types/agent'
 
 const INBOX_CRUMBS = [{ label: 'Inbox' }]
@@ -125,30 +125,23 @@ function AuthedInbox() {
       </div>
     )
   } else if (sorted.length === 0) {
-    // No pending decisions: first-run (no roles yet) invites the first role;
-    // otherwise it's the calm all-caught-up state.
-    content = rolesEmpty ? (
+    // No pending decisions. The copy is honest either way (never "all caught up"
+    // before a scan) and always offers a next step — see emptyInboxState (A5).
+    const empty = emptyInboxState(rolesEmpty)
+    content = (
       <div className="mx-auto w-full max-w-3xl px-6 py-16">
         <EmptyState
           variant="first-run"
-          icon={Plus}
-          title="Let's fill your first role"
-          description="Create a role and start evaluating candidates. Your decisions will collect here as HireLens learns."
+          icon={empty.variant === 'first-run' ? Plus : Inbox}
+          title={empty.title}
+          description={empty.description}
           action={
             <Button variant="primary" asChild>
-              <Link href="/campaigns/new">
-                <Plus /> Create a role
+              <Link href={empty.cta.href}>
+                {empty.variant === 'first-run' ? <Plus /> : <Search />} {empty.cta.label}
               </Link>
             </Button>
           }
-        />
-      </div>
-    ) : (
-      <div className="mx-auto w-full max-w-3xl px-6 py-16">
-        <EmptyState
-          icon={CheckCircle2}
-          title="You're all caught up"
-          description="Nothing needs your judgment right now. New decisions will surface here as they arrive."
         />
       </div>
     )

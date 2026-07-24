@@ -37,7 +37,7 @@ export function Notifications({ unreadCount = 0 }: { unreadCount?: number }) {
           <span className="hl-body-medium">Notifications</span>
         </div>
         <div className="px-4 py-10 text-center">
-          <p className="hl-small text-hl-fg-tertiary">You&rsquo;re all caught up.</p>
+          <p className="hl-small text-hl-fg-tertiary">No notifications yet.</p>
         </div>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -7,6 +7,42 @@ import type { Recommendation } from '@/types/agent'
  */
 export type Tier = 'now' | 'today'
 
+/**
+ * The Decision Inbox empty state (A5). Pure + deterministic so the honesty rules
+ * are unit-testable without React rendering. The copy must NEVER imply the user
+ * is "caught up" or "healthy" before anything has been evaluated — an empty inbox
+ * is either a first-run invitation or an honest "no recommendations yet, they come
+ * from an AI scan", each with a next-step CTA (the scan lives on the Ask screen,
+ * which is correctly feature-gated — we navigate there rather than trigger inline).
+ */
+export type EmptyInboxVariant = 'first-run' | 'no-recommendations'
+
+export interface EmptyInboxContent {
+  variant: EmptyInboxVariant
+  title: string
+  description: string
+  cta: { label: string; href: string }
+}
+
+export function emptyInboxState(rolesEmpty: boolean): EmptyInboxContent {
+  if (rolesEmpty) {
+    return {
+      variant: 'first-run',
+      title: "Let's fill your first role",
+      description:
+        'Create a role and start evaluating candidates. Your decisions will collect here as HireLens learns.',
+      cta: { label: 'Create a role', href: '/roles?new=1' },
+    }
+  }
+  return {
+    variant: 'no-recommendations',
+    title: 'No recommendations yet',
+    description:
+      "Recommendations from HireLens appear here after an AI scan of your candidates. They don't surface on their own yet.",
+    cta: { label: 'Run your first AI scan', href: '/ask' },
+  }
+}
+
 /** urgent/high demand attention now; medium/low are today's work. */
 export function tierFor(severity: string): Tier {
   return severity === 'urgent' || severity === 'high' ? 'now' : 'today'
