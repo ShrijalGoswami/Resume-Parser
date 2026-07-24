@@ -69,6 +69,13 @@ class Settings(BaseSettings):
     AI_MAX_NETWORK_RETRIES: int = 3
     AI_MAX_JSON_RETRIES: int = 3
     AI_MAX_SCHEMA_RETRIES: int = 2
+    # Retry backoff (A4 reliability). Network/timeout retries wait an exponential,
+    # jittered delay between attempts; transient rate-limits (RPM/TPM) get a small
+    # bounded number of extra retries honoring Retry-After. Quota exhaustion is
+    # never retried. All delays are capped so total added latency stays bounded.
+    AI_RETRY_BASE_DELAY_MS: int = 250        # base for exponential backoff
+    AI_RETRY_MAX_DELAY_MS: int = 5000        # per-attempt delay cap
+    AI_MAX_RATE_LIMIT_RETRIES: int = 2       # bounded retries for transient 429s
 
     # ── AI Gateway & Model Management (V5 / Sprint 7.5) ───────────────────────
     # The whole platform switches providers/models by configuration only — no

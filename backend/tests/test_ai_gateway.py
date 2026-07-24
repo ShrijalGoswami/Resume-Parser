@@ -141,10 +141,11 @@ def test_fallback_and_skip_unhealthy():
 
 
 def test_retry_policy():
-    print("== retry policy (rate-limit not retried; timeout retried) ==")
-    # rate limit -> exactly 1 provider call (no retry)
+    print("== retry policy (transient RL retried; quota NOT retried; timeout retried) ==")
+    # A4: transient rate limit (RPM/TPM) -> retried up to max_rate_limit_retries.
+    n = settings.AI_MAX_RATE_LIMIT_RETRIES
     rl = {"n": 0}
-    register_provider("t_rl", _fake("t_rl", error=lambda: AIRateLimitError("429"), counter=rl))
+    register_provider("t_rl", _fake("t_rl", error=lambda: AIRateLimitError("rpm rate limit", is_quota=False), counter=rl))
     restore = _with_chain([ModelSelection("t_rl", "m", ModelRole.DEFAULT_REASONING)])
     try:
         usage_tracker.reset(); health_manager.reset()
@@ -152,7 +153,20 @@ def test_retry_policy():
             _run()
         except AIError:
             pass
-        check("rate-limit NOT retried (1 call)", rl["n"] == 1, f"calls={rl['n']}")
+        check("transient rate-limit retried (1 + max_rate_limit_retries)", rl["n"] == 1 + n, f"calls={rl['n']}")
+    finally:
+        restore()
+    # A4: quota exhaustion -> NOT retried (fail fast, never burn more quota).
+    q = {"n": 0}
+    register_provider("t_q", _fake("t_q", error=lambda: AIRateLimitError("limit reached tokens per day", is_quota=True), counter=q))
+    restore = _with_chain([ModelSelection("t_q", "m", ModelRole.DEFAULT_REASONING)])
+    try:
+        usage_tracker.reset(); health_manager.reset()
+        try:
+            _run()
+        except AIError:
+            pass
+        check("quota NOT retried (1 call)", q["n"] == 1, f"calls={q['n']}")
     finally:
         restore()
     # timeout -> retried up to AI_MAX_NETWORK_RETRIES
@@ -206,6 +220,10 @@ def test_usage_metrics():
 
 
 def run():
+    # Keep retry backoff near-zero so the suite stays fast (A4 added real sleeps
+    # between retries); the assertions here are about counts/behavior, not timing.
+    settings.AI_RETRY_BASE_DELAY_MS = 1
+    settings.AI_RETRY_MAX_DELAY_MS = 1
     for t in (test_provider_conformance, test_normalized_response, test_health_manager,
               test_fallback_and_skip_unhealthy, test_retry_policy, test_cache_provider_agnostic,
               test_usage_metrics):

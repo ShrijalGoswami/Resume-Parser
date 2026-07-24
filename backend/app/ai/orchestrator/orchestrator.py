@@ -19,6 +19,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import random
 import time
 from typing import Optional, Type, TypeVar
 
@@ -153,7 +154,11 @@ class AIOrchestrator:
                 parsed: Optional[dict] = None
                 for _ in range(cfg.max_json_retries):
                     text: Optional[str] = None
-                    for _ in range(cfg.max_network_retries):
+                    # Network attempts and transient-rate-limit retries have
+                    # SEPARATE bounded budgets, each with backoff (A4). Quota
+                    # exhaustion is never retried (it won't clear today).
+                    network_fails = rate_limit_retries = 0
+                    while True:
                         provider_calls += 1
                         try:
                             resp = prov.complete(
@@ -166,21 +171,42 @@ class AIOrchestrator:
                         except AIConfigError:
                             raise  # non-retryable for THIS provider → bubble to fallback
                         except AIRateLimitError as exc:
-                            # A rate-limit / quota error will NOT clear on an
-                            # immediate retry — retrying only burns more quota.
-                            # Stop this provider now (fallback provider, if any,
-                            # is still tried by the outer run() loop).
                             last_error = exc
-                            logger.warning("AI provider rate-limited (call %d) — not retrying: %s", provider_calls, exc)
-                            break
+                            if exc.is_quota or rate_limit_retries >= cfg.max_rate_limit_retries:
+                                self._log_retry(
+                                    capability, provider_calls,
+                                    "rate_limit_quota" if exc.is_quota else "rate_limit_exhausted",
+                                    0.0, exc, retry_after=exc.retry_after, final=True,
+                                )
+                                break  # fail fast → outer fallback loop (if any)
+                            rate_limit_retries += 1
+                            delay = self._rate_limit_delay(exc, rate_limit_retries, cfg)
+                            self._log_retry(capability, provider_calls, "rate_limit", delay, exc,
+                                            retry_after=exc.retry_after)
+                            time.sleep(delay)
+                            continue
                         except AITimeoutError as exc:
                             timed_out = True
                             last_error = exc
-                            logger.warning("AI provider timeout (call %d): %s", provider_calls, exc)
+                            network_fails += 1
+                            if network_fails >= cfg.max_network_retries:
+                                self._log_retry(capability, provider_calls, "timeout_exhausted",
+                                                0.0, exc, final=True)
+                                break
+                            delay = self._backoff(network_fails, cfg)
+                            self._log_retry(capability, provider_calls, "timeout", delay, exc)
+                            time.sleep(delay)
                             continue
                         except AIProviderError as exc:
                             last_error = exc
-                            logger.warning("AI provider error (call %d): %s", provider_calls, exc)
+                            network_fails += 1
+                            if network_fails >= cfg.max_network_retries:
+                                self._log_retry(capability, provider_calls, "provider_error_exhausted",
+                                                0.0, exc, final=True)
+                                break
+                            delay = self._backoff(network_fails, cfg)
+                            self._log_retry(capability, provider_calls, "provider_error", delay, exc)
+                            time.sleep(delay)
                             continue
                     if text is None:
                         raise last_error or AIProviderError("Provider call failed.")
@@ -222,6 +248,39 @@ class AIOrchestrator:
             self._record(selection.provider, model_name, execution, timed_out=timed_out)
             self._log(execution)
             raise
+
+    # -- retry backoff + observability (A4) --------------------------------
+    @staticmethod
+    def _backoff(attempt: int, cfg) -> float:
+        """Exponential backoff with EQUAL jitter, capped. `attempt` is 1-based.
+        Equal jitter (half fixed + half random) guarantees a non-trivial minimum
+        wait, so backoff is provable in tests yet still de-correlates retries."""
+        base = cfg.retry_base_delay_ms / 1000.0
+        cap = cfg.retry_max_delay_ms / 1000.0
+        raw = min(cap, base * (2 ** (attempt - 1)))
+        return raw / 2 + random.uniform(0, raw / 2)
+
+    @staticmethod
+    def _rate_limit_delay(exc: AIRateLimitError, attempt: int, cfg) -> float:
+        """Honor Retry-After when the provider sent one (capped); otherwise fall
+        back to exponential jittered backoff."""
+        cap = cfg.retry_max_delay_ms / 1000.0
+        if exc.retry_after is not None:
+            return min(cap, float(exc.retry_after))
+        return AIOrchestrator._backoff(attempt, cfg)
+
+    @staticmethod
+    def _log_retry(capability, attempt: int, reason: str, delay: float, exc,
+                   *, retry_after=None, final: bool = False) -> None:
+        """One concise structured line per retry decision — operational evidence
+        for diagnosing production reliability issues (attempt, reason, delay,
+        Retry-After, outcome). Kept to a single line to avoid log noise."""
+        logger.warning(
+            "AI retry | capability=%s attempt=%d reason=%s delay_ms=%d retry_after=%s outcome=%s error=%s",
+            getattr(capability, "value", capability), attempt, reason, round(delay * 1000),
+            ("none" if retry_after is None else f"{retry_after}s"),
+            ("giving_up" if final else "retrying"), str(exc)[:120],
+        )
 
     # -- helpers -----------------------------------------------------------
     @staticmethod

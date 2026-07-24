@@ -23,6 +23,10 @@ class AIConfig:
     max_network_retries: int
     max_json_retries: int
     max_schema_retries: int
+    # Retry backoff (A4).
+    retry_base_delay_ms: int
+    retry_max_delay_ms: int
+    max_rate_limit_retries: int
     # Embeddings (retrieval layer — separate from the LLM).
     embedding_provider: str
     embedding_model: str
@@ -40,6 +44,9 @@ def get_ai_config() -> AIConfig:
         max_network_retries=settings.AI_MAX_NETWORK_RETRIES,
         max_json_retries=settings.AI_MAX_JSON_RETRIES,
         max_schema_retries=settings.AI_MAX_SCHEMA_RETRIES,
+        retry_base_delay_ms=settings.AI_RETRY_BASE_DELAY_MS,
+        retry_max_delay_ms=settings.AI_RETRY_MAX_DELAY_MS,
+        max_rate_limit_retries=settings.AI_MAX_RATE_LIMIT_RETRIES,
         embedding_provider=settings.EMBEDDING_PROVIDER,
         embedding_model=settings.EMBEDDING_MODEL,
         embedding_dimensions=settings.EMBEDDING_DIMENSIONS,

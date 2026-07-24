@@ -67,6 +67,31 @@ class GroqProvider(LLMProvider):
         msg = str(exc).lower()
         if "timeout" in msg or "timed out" in msg:
             return AITimeoutError(str(exc))
-        if "rate limit" in msg or "429" in msg or "too many requests" in msg:
-            return AIRateLimitError(str(exc))
+        if "rate limit" in msg or "429" in msg or "too many requests" in msg or "quota" in msg:
+            # Per-DAY limits (TPD/RPD) do not clear today → quota, fail fast.
+            # Per-minute limits (RPM/TPM) clear in seconds → transient, retryable.
+            is_quota = any(k in msg for k in ("per day", "tpd", "rpd", "daily", "quota"))
+            return AIRateLimitError(
+                str(exc), retry_after=_retry_after_of(exc), is_quota=is_quota
+            )
         return AIProviderError(str(exc))
+
+
+def _retry_after_of(exc: Exception) -> float | None:
+    """Best-effort parse of a Retry-After (seconds) from the vendor exception's
+    HTTP response headers. Returns None when absent/unparseable."""
+    resp = getattr(exc, "response", None)
+    headers = getattr(resp, "headers", None)
+    if not headers:
+        return None
+    raw = None
+    try:
+        raw = headers.get("retry-after") or headers.get("Retry-After")
+    except Exception:  # pragma: no cover — non-mapping headers
+        return None
+    if not raw:
+        return None
+    try:
+        return max(0.0, float(raw))
+    except (TypeError, ValueError):  # pragma: no cover — HTTP-date form, ignore
+        return None

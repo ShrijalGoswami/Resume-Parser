@@ -41,9 +41,25 @@ class AITimeoutError(AIProviderError):
 
 
 class AIRateLimitError(AIProviderError):
-    """Provider rate-limited the request. Retryable (with backoff upstream)."""
+    """Provider rate-limited the request.
+
+    Two distinct causes, handled differently by the orchestrator (A4):
+      * transient RPM/TPM (per-minute) — clears in seconds → retry with backoff,
+        honoring `retry_after` when the provider sent a Retry-After.
+      * quota exhaustion (per-day/TPD) — will NOT clear today → fail fast, never
+        retry (retrying only burns more of a scarce daily budget).
+    """
 
     public_message = "AI service is busy. Please retry shortly."
+
+    def __init__(self, *args, retry_after: float | None = None, is_quota: bool = False):
+        super().__init__(*args)
+        #: Seconds to wait, parsed from a Retry-After header when present.
+        self.retry_after = retry_after
+        #: True when this is daily-quota exhaustion (do NOT retry).
+        self.is_quota = is_quota
+        #: Quota exhaustion is not retryable; transient rate-limits are.
+        self.retryable = not is_quota
 
 
 class AIParseError(AIProviderError):
