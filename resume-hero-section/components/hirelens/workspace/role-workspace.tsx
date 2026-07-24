@@ -2,10 +2,17 @@
 
 import * as React from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { AppShell } from '../shell'
 import { useSession } from '../lib/api/use-session'
 import { useProfile } from '../lib/api/hooks'
-import { useCampaign, useCandidates, useCompareCandidates } from '../lib/api/workspace'
+import {
+  useCampaign,
+  useCandidates,
+  useCompareCandidates,
+  useUpdateRole,
+  useDeleteRole,
+} from '../lib/api/workspace'
 import { WorkspaceHeader } from './workspace-header'
 import { PipelineLens } from './pipeline-lens'
 import { TriageLens } from './triage/triage-lens'
@@ -14,10 +21,13 @@ import { ActivityLens } from './activity-lens'
 import { DeferredLens } from './deferred-lens'
 import { AddCandidatesDialog } from './add-candidates-dialog'
 import { ComparePanel } from './compare-panel'
-import { CandidateDrawer } from './candidate/candidate-drawer'
+import { CandidatePeek } from '../candidate-object'
+import { RoleFormDialog } from '../roles/role-form-dialog'
+import { TypedConfirmDialog } from '../settings/typed-confirm-dialog'
 import { LoadingScreen } from '../states/loading'
 import { ErrorState } from '../states/error-state'
 import { Button } from '../ui/button'
+import { toast } from '../ui/use-toast'
 
 function Notice({ title, showSignIn }: { title: string; showSignIn?: boolean }) {
   return (
@@ -89,8 +99,13 @@ function AuthedWorkspace({
   const campaign = useCampaign(roleId)
   const candidates = useCandidates(roleId)
   const compare = useCompareCandidates(roleId)
+  const router = useRouter()
+  const updateRole = useUpdateRole(roleId)
+  const deleteRole = useDeleteRole()
 
   const [addOpen, setAddOpen] = React.useState(false)
+  const [editOpen, setEditOpen] = React.useState(false)
+  const [deleteOpen, setDeleteOpen] = React.useState(false)
   const [compareOpen, setCompareOpen] = React.useState(false)
   const [compareIds, setCompareIds] = React.useState<string[]>([])
   const [candidateId, setCandidateId] = React.useState<string | null>(initialCandidateId)
@@ -139,6 +154,43 @@ function AuthedWorkspace({
     setCompareOpen(true)
   }
 
+  const onArchiveRole = () => {
+    const previous = campaign.data?.status ?? 'active'
+    updateRole.mutate(
+      { status: 'archived' },
+      {
+        onSuccess: () => {
+          toast({
+            title: 'Role archived',
+            action: { label: 'Undo', onClick: () => updateRole.mutate({ status: previous }) },
+          })
+          router.push('/roles')
+        },
+        onError: (err) =>
+          toast({
+            variant: 'danger',
+            title: 'Could not archive the role',
+            description: err instanceof Error ? err.message : undefined,
+          }),
+      },
+    )
+  }
+
+  const onConfirmDelete = () => {
+    deleteRole.mutate(roleId, {
+      onSuccess: () => {
+        toast({ title: 'Role deleted' })
+        router.replace('/roles')
+      },
+      onError: (err) =>
+        toast({
+          variant: 'danger',
+          title: 'Could not delete the role',
+          description: err instanceof Error ? err.message : undefined,
+        }),
+    })
+  }
+
   if (campaign.isLoading) {
     return (
       <AppShell title="Role" account={account}>
@@ -173,6 +225,9 @@ function AuthedWorkspace({
         candidateCount={count}
         stageCount={stageCount}
         onAddCandidates={() => setAddOpen(true)}
+        onEditRole={() => setEditOpen(true)}
+        onArchiveRole={onArchiveRole}
+        onDeleteRole={() => setDeleteOpen(true)}
       />
       <div className="mx-auto w-full max-w-6xl px-6 py-4">
         {lens === 'triage' ? (
@@ -211,7 +266,34 @@ function AuthedWorkspace({
           compare.reset()
         }}
       />
-      <CandidateDrawer roleId={roleId} candidateId={candidateId} onClose={closeCandidate} />
+      {candidateId ? (
+        <CandidatePeek
+          key={candidateId}
+          roleId={roleId}
+          candidateId={candidateId}
+          open
+          onOpenChange={(open) => {
+            if (!open) closeCandidate()
+          }}
+        />
+      ) : null}
+
+      <RoleFormDialog
+        mode="edit"
+        role={campaign.data}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+      />
+      <TypedConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete this role?"
+        description={`This permanently deletes “${campaign.data.title}” and its candidates. This cannot be undone.`}
+        confirmWord={campaign.data.title}
+        confirmLabel="Delete role"
+        busy={deleteRole.isPending}
+        onConfirm={onConfirmDelete}
+      />
     </AppShell>
   )
 }
