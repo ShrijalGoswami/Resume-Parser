@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { LogOut, Settings as SettingsIcon } from 'lucide-react'
+import { LogOut, Settings as SettingsIcon, ChevronsUpDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useLogout } from '../lib/api/use-session'
 import { Avatar } from '../ui/avatar'
 import {
   DropdownMenu,
@@ -23,7 +24,6 @@ export interface AccountMenuProps {
   email?: string
   avatarUrl?: string
   collapsed?: boolean
-  onSignOut?: () => void
 }
 
 export function AccountMenu({
@@ -31,14 +31,16 @@ export function AccountMenu({
   email,
   avatarUrl,
   collapsed = false,
-  onSignOut,
 }: AccountMenuProps) {
+  const logout = useLogout()
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          aria-label="Account menu"
+          aria-label="Account — settings and sign out"
+          title={collapsed ? `${name} — account, settings, sign out` : 'Account, settings, sign out'}
           className={cn(
             'flex items-center gap-2.5 rounded-hl-md px-2 py-1.5 outline-none transition-colors hover:bg-hl-muted',
             collapsed && 'justify-center px-0',
@@ -46,7 +48,10 @@ export function AccountMenu({
         >
           <Avatar name={name} src={avatarUrl} size={collapsed ? 24 : 26} />
           {collapsed ? null : (
-            <span className="hl-body-medium truncate text-hl-fg">{name}</span>
+            <>
+              <span className="hl-body-medium flex-1 truncate text-left text-hl-fg">{name}</span>
+              <ChevronsUpDown className="size-4 shrink-0 text-hl-fg-tertiary" aria-hidden />
+            </>
           )}
         </button>
       </DropdownMenuTrigger>
@@ -75,7 +80,10 @@ export function AccountMenu({
             Settings
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => onSignOut?.()}>
+        <DropdownMenuItem
+          onSelect={() => logout()}
+          className="text-hl-danger focus:text-hl-danger"
+        >
           <LogOut />
           Sign out
         </DropdownMenuItem>
