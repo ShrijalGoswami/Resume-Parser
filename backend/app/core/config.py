@@ -102,6 +102,25 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     ANTHROPIC_API_KEY: str = ""
     OPENROUTER_API_KEY: str = ""
+    MOONSHOT_API_KEY: str = ""                # Kimi / Moonshot AI
+
+    # ── Per-provider configuration (overrides the global AI_* defaults) ──────
+    # A JSON map of provider-name → overrides. Only the keys present override;
+    # anything omitted falls back to the global defaults above. API keys stay in
+    # their dedicated env vars (above) for clarity — this block is timeout/retry/
+    # model policy. Keys accept provider names or aliases (e.g. "claude").
+    #   AI_PROVIDERS={"groq":{"timeout_seconds":30,"max_network_retries":3,
+    #                         "default_model":"llama-3.3-70b-versatile"},
+    #                 "claude":{"timeout_seconds":60}}
+    AI_PROVIDERS: dict = {}
+
+    # ── Capability→provider routing (STRUCTURE ONLY; disabled by default) ────
+    # The data structure + hook exist so per-capability routing (e.g. resume
+    # analysis → gemini, interview → claude) becomes a pure CONFIG change later —
+    # no orchestrator edit. Inert until AI_ENABLE_CAPABILITY_ROUTING=true.
+    #   AI_CAPABILITY_ROUTING={"resume_analysis":"gemini","interview_generation":"anthropic"}
+    AI_CAPABILITY_ROUTING: dict = {}
+    AI_ENABLE_CAPABILITY_ROUTING: bool = False
 
     # ── Integration Platform (V6 / Sprint 11) ────────────────────────────────
     # Fernet key used to encrypt integration credentials (OAuth refresh tokens are

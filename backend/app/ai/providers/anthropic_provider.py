@@ -7,6 +7,7 @@ ANTHROPIC_API_KEY is missing so the gateway can fall back.
 
 from __future__ import annotations
 
+from app.ai.gateway.roles import ModelRole
 from app.ai.providers.base import LLMProvider
 from app.ai.schemas.base import ProviderResponse, TokenUsage
 from app.ai.utils.errors import AIConfigError, AIProviderError, AIRateLimitError, AITimeoutError
@@ -15,6 +16,22 @@ from app.core.config import settings
 
 class AnthropicProvider(LLMProvider):
     name = "anthropic"
+    display_name = "Anthropic"
+    api_key_setting = "ANTHROPIC_API_KEY"
+    can_json = True
+    can_stream = True
+    can_reason = True
+    can_tools = True
+    can_vision = True
+    ctx_window = 200000
+    max_output = 8192
+    role_models = {
+        ModelRole.DEFAULT_REASONING: "claude-sonnet-5",
+        ModelRole.FAST_REASONING: "claude-sonnet-5",
+        ModelRole.CHEAP_REASONING: "claude-sonnet-5",
+        ModelRole.LONG_CONTEXT: "claude-sonnet-5",
+        ModelRole.PREMIUM_REASONING: "claude-opus-4-8",
+    }
 
     def complete(self, *, system, user, model, temperature, max_tokens, timeout_seconds) -> ProviderResponse:
         key = settings.ANTHROPIC_API_KEY or ""
@@ -50,7 +67,7 @@ class AnthropicProvider(LLMProvider):
         ) if u else TokenUsage()
         return ProviderResponse(
             text=text, model=model, provider=self.name, usage=usage,
-            finish_reason=getattr(resp, "stop_reason", None), raw=resp,
+            finish_reason=getattr(resp, "stop_reason", None),
         )
 
     @staticmethod

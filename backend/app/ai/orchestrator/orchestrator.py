@@ -25,8 +25,10 @@ from typing import Optional, Type, TypeVar
 
 from app.ai.config import get_ai_config
 from app.ai.gateway import ModelRole, cost_of, fallback_chain, resolve, usage_tracker
+from app.ai.gateway.capability_routing import route_for
 from app.ai.gateway.gateway import ModelSelection
 from app.ai.gateway.health import health_manager, kind_for_error
+from app.ai.gateway.provider_config import get_provider_config
 from app.ai.prompts.registry import get_prompt
 from app.ai.providers.registry import get_provider
 from app.ai.schemas.base import AIExecution, AIResult, Capability, TokenUsage
@@ -60,17 +62,25 @@ class AIOrchestrator:
         cfg = get_ai_config()
         temp = cfg.temperature if temperature is None else temperature
         max_tok = max_tokens or cfg.max_tokens
-        timeout = timeout_seconds or cfg.timeout_seconds
+        # Per-provider timeout is resolved inside _attempt; only an explicit
+        # per-call override is threaded through here (None → provider/global config).
+        timeout_override = timeout_seconds
 
         template = get_prompt(capability)
         system = template.system
         user = template.build_user(**variables)
 
-        # Provider + model come from the Gateway. An explicit provider/model pins a
-        # single selection; otherwise the configurable fallback chain is used.
-        if provider or model:
-            base = resolve(role, provider=provider)
-            selections = [ModelSelection(provider=(provider or base.provider), model=(model or base.model), role=role)]
+        # Capability→provider routing (M5) — INERT by default: route_for returns
+        # None unless routing is enabled AND the capability is mapped, so today this
+        # changes nothing. When set, it pins the capability to a provider.
+        routed = route_for(capability.value) if provider is None else None
+        effective_provider = provider or routed
+
+        # Provider + model come from the Gateway. An explicit/routed provider (or an
+        # explicit model) pins a single selection; otherwise the fallback chain.
+        if effective_provider or model:
+            base = resolve(role, provider=effective_provider)
+            selections = [ModelSelection(provider=(effective_provider or base.provider), model=(model or base.model), role=role)]
         else:
             selections = fallback_chain(role)
 
@@ -86,7 +96,7 @@ class AIOrchestrator:
         for selection in ordered:
             try:
                 data, execution = self._attempt(
-                    capability, selection, system, user, schema, cfg, temp, max_tok, timeout,
+                    capability, selection, system, user, schema, cfg, temp, max_tok, timeout_override,
                 )
                 self._log(execution)
                 health_manager.record_success(selection.provider)
@@ -122,9 +132,14 @@ class AIOrchestrator:
         raise last_error or AIProviderError("All configured AI providers are unavailable.")
 
     # -- one provider attempt (owns the full retry ladder) -----------------
-    def _attempt(self, capability, selection, system, user, schema, cfg, temp, max_tok, timeout):
+    def _attempt(self, capability, selection, system, user, schema, cfg, temp, max_tok, timeout_override):
         prov = get_provider(selection.provider)  # may raise AIConfigError → fallback
-        model_name = selection.model
+        # Per-provider config (M2): timeout / retry policy / default-model override,
+        # each falling back to the global AI_* defaults. Behaviour is unchanged when
+        # AI_PROVIDERS is empty.
+        pcfg = get_provider_config(selection.provider)
+        model_name = pcfg.default_model or selection.model
+        timeout = timeout_override or pcfg.timeout_seconds
         # QA-mode duplicate-prompt detection (no-op in production).
         fingerprint = hashlib.sha256(
             f"{capability.value}|{selection.model}|{system}|{user}".encode("utf-8", "ignore")
@@ -172,7 +187,7 @@ class AIOrchestrator:
                             raise  # non-retryable for THIS provider → bubble to fallback
                         except AIRateLimitError as exc:
                             last_error = exc
-                            if exc.is_quota or rate_limit_retries >= cfg.max_rate_limit_retries:
+                            if exc.is_quota or rate_limit_retries >= pcfg.max_rate_limit_retries:
                                 self._log_retry(
                                     capability, provider_calls,
                                     "rate_limit_quota" if exc.is_quota else "rate_limit_exhausted",
@@ -180,7 +195,7 @@ class AIOrchestrator:
                                 )
                                 break  # fail fast → outer fallback loop (if any)
                             rate_limit_retries += 1
-                            delay = self._rate_limit_delay(exc, rate_limit_retries, cfg)
+                            delay = self._rate_limit_delay(exc, rate_limit_retries, pcfg)
                             self._log_retry(capability, provider_calls, "rate_limit", delay, exc,
                                             retry_after=exc.retry_after)
                             time.sleep(delay)
@@ -189,22 +204,22 @@ class AIOrchestrator:
                             timed_out = True
                             last_error = exc
                             network_fails += 1
-                            if network_fails >= cfg.max_network_retries:
+                            if network_fails >= pcfg.max_network_retries:
                                 self._log_retry(capability, provider_calls, "timeout_exhausted",
                                                 0.0, exc, final=True)
                                 break
-                            delay = self._backoff(network_fails, cfg)
+                            delay = self._backoff(network_fails, pcfg)
                             self._log_retry(capability, provider_calls, "timeout", delay, exc)
                             time.sleep(delay)
                             continue
                         except AIProviderError as exc:
                             last_error = exc
                             network_fails += 1
-                            if network_fails >= cfg.max_network_retries:
+                            if network_fails >= pcfg.max_network_retries:
                                 self._log_retry(capability, provider_calls, "provider_error_exhausted",
                                                 0.0, exc, final=True)
                                 break
-                            delay = self._backoff(network_fails, cfg)
+                            delay = self._backoff(network_fails, pcfg)
                             self._log_retry(capability, provider_calls, "provider_error", delay, exc)
                             time.sleep(delay)
                             continue

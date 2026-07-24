@@ -14,18 +14,20 @@ from app.ai.providers.base import LLMProvider
 from app.ai.providers.groq_provider import GroqProvider
 from app.ai.providers.gemini_provider import GeminiProvider
 from app.ai.providers.anthropic_provider import AnthropicProvider
-from app.ai.providers.openai_compat import OpenAIProvider, OpenRouterProvider
+from app.ai.providers.openai_compat import KimiProvider, OpenAIProvider, OpenRouterProvider
 from app.ai.utils.errors import AIConfigError
 
 # Factories so providers are constructed lazily (their SDK/client init is deferred).
 # Selection is entirely config-driven via the AI Gateway; every provider here can
-# be the platform-wide reasoning provider by setting AI_PROVIDER.
+# be the platform-wide reasoning provider by setting AI_PROVIDER. Adding a provider
+# is exactly: (1) write the class, (2) register it here, (3) add its key/config.
 _FACTORIES: dict[str, Callable[[], LLMProvider]] = {
     "groq": GroqProvider,
     "gemini": GeminiProvider,
     "anthropic": AnthropicProvider,
     "openai": OpenAIProvider,
     "openrouter": OpenRouterProvider,
+    "kimi": KimiProvider,
 }
 _INSTANCES: dict[str, LLMProvider] = {}
 

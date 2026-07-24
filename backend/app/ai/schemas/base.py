@@ -73,6 +73,9 @@ class ProviderResponse:
     `content` is an alias for `text` (both are always populated). `latency_ms`
     and `cost_usd` are attached by the orchestrator when known; providers that
     surface a native finish reason set `finish_reason`.
+
+    No raw vendor object is retained — the normalized fields are the only contract,
+    so a provider's SDK types never leak past its own module.
     """
 
     text: str
@@ -82,11 +85,23 @@ class ProviderResponse:
     finish_reason: Optional[str] = None
     latency_ms: Optional[int] = None
     cost_usd: Optional[float] = None
-    raw: Any = None
 
     @property
     def content(self) -> str:
         return self.text
+
+
+@dataclass(frozen=True)
+class ProviderHealth:
+    """A provider's SELF-report (distinct from the gateway's runtime
+    ProviderHealthManager, which tracks failure-based routing). Answers "can this
+    provider serve a request right now?" from its own point of view."""
+
+    name: str
+    configured: bool          # API key present (or none required)
+    model: str                # the provider's default model
+    ok: bool                  # configured (and, when pinged, reachable)
+    detail: str = ""
 
 
 @dataclass

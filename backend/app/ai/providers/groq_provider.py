@@ -1,42 +1,64 @@
 """
 Groq provider.
 
-Reuses the existing singleton client from `app.llm.groq_client` (no duplicated
-SDK setup) but performs a single attempt and captures token usage, so the
-orchestrator can own retries and observability. Wraps every vendor exception in
-the AI error hierarchy.
+Owns its Groq SDK client directly (lazy singleton) — the legacy
+`app.llm.groq_client` shared factory was folded in here so the Groq SDK, like
+every other vendor SDK, lives only inside its provider module. Performs a single
+attempt and captures token usage; the orchestrator owns retries and observability.
+Wraps every vendor exception in the AI error hierarchy.
 """
 
 from __future__ import annotations
 
 import logging
+from typing import Any, Optional
 
+from app.ai.gateway.roles import ModelRole
 from app.ai.providers.base import LLMProvider
 from app.ai.schemas.base import ProviderResponse, TokenUsage
 from app.ai.utils.errors import AIConfigError, AIProviderError, AIRateLimitError, AITimeoutError
-from app.llm.groq_client import GroqConfigError, get_groq_client
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+
+_PLACEHOLDER_KEY = "gsk_placeholder_key"
 
 
 class GroqProvider(LLMProvider):
     name = "groq"
+    display_name = "Groq"
+    api_key_setting = "GROQ_API_KEY"
+    can_json = True
+    can_stream = True
+    can_reason = True
+    can_tools = True
+    ctx_window = 131072
+    max_output = 32768
+    role_models = {
+        ModelRole.DEFAULT_REASONING: "llama-3.3-70b-versatile",
+        ModelRole.FAST_REASONING: "llama-3.1-8b-instant",
+        ModelRole.CHEAP_REASONING: "llama-3.1-8b-instant",
+        ModelRole.LONG_CONTEXT: "llama-3.3-70b-versatile",
+        ModelRole.PREMIUM_REASONING: "llama-3.3-70b-versatile",
+    }
 
-    def complete(
-        self,
-        *,
-        system: str,
-        user: str,
-        model: str,
-        temperature: float,
-        max_tokens: int,
-        timeout_seconds: int,
-    ) -> ProviderResponse:
-        try:
-            client = get_groq_client()
-        except GroqConfigError as exc:
-            raise AIConfigError(str(exc)) from exc
+    _client: Any = None  # lazily-constructed singleton Groq() client
 
+    def _get_client(self) -> Any:
+        if GroqProvider._client is None:
+            key = settings.GROQ_API_KEY
+            if not key or key == _PLACEHOLDER_KEY:
+                raise AIConfigError("GROQ_API_KEY is not configured.")
+            try:
+                from groq import Groq  # lazy — only needed for this provider
+            except ImportError as exc:  # pragma: no cover
+                raise AIConfigError("The 'groq' package is not installed.") from exc
+            GroqProvider._client = Groq(api_key=key)
+            logger.info("Groq client initialized.")
+        return GroqProvider._client
+
+    def complete(self, *, system, user, model, temperature, max_tokens, timeout_seconds) -> ProviderResponse:
+        client = self._get_client()
         try:
             resp = client.chat.completions.create(
                 model=model,
@@ -59,7 +81,6 @@ class GroqProvider(LLMProvider):
             provider=self.name,
             usage=TokenUsage.from_raw(getattr(resp, "usage", None)),
             finish_reason=getattr(choice, "finish_reason", None),
-            raw=resp,
         )
 
     @staticmethod
@@ -68,23 +89,18 @@ class GroqProvider(LLMProvider):
         if "timeout" in msg or "timed out" in msg:
             return AITimeoutError(str(exc))
         if "rate limit" in msg or "429" in msg or "too many requests" in msg or "quota" in msg:
-            # Per-DAY limits (TPD/RPD) do not clear today → quota, fail fast.
-            # Per-minute limits (RPM/TPM) clear in seconds → transient, retryable.
             is_quota = any(k in msg for k in ("per day", "tpd", "rpd", "daily", "quota"))
-            return AIRateLimitError(
-                str(exc), retry_after=_retry_after_of(exc), is_quota=is_quota
-            )
+            return AIRateLimitError(str(exc), retry_after=_retry_after_of(exc), is_quota=is_quota)
         return AIProviderError(str(exc))
 
 
-def _retry_after_of(exc: Exception) -> float | None:
+def _retry_after_of(exc: Exception) -> Optional[float]:
     """Best-effort parse of a Retry-After (seconds) from the vendor exception's
     HTTP response headers. Returns None when absent/unparseable."""
     resp = getattr(exc, "response", None)
     headers = getattr(resp, "headers", None)
     if not headers:
         return None
-    raw = None
     try:
         raw = headers.get("retry-after") or headers.get("Retry-After")
     except Exception:  # pragma: no cover — non-mapping headers
