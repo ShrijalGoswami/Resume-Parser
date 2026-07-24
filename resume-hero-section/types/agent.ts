@@ -24,6 +24,10 @@ export interface Recommendation {
   status: ApprovalStatus;
   created_at: string | null;
   updated_at: string | null;
+  // Immutable decision metadata — stamped at decision time and frozen (A2).
+  // Null while pending.
+  decided_at: string | null;
+  decided_by: string | null;
 }
 
 export interface AgentBriefing {

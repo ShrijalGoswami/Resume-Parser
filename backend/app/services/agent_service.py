@@ -15,10 +15,20 @@ from __future__ import annotations
 import logging
 from typing import Any, Optional
 
+from fastapi import HTTPException, status as http_status
+
 from app.ai.agent import ToolContext, agent_engine
-from app.schemas.agent import AgentScanResponse, Recommendation
+from app.schemas.agent import ApprovalStatus, AgentScanResponse, Recommendation
 
 logger = logging.getLogger(__name__)
+
+# The only status values a human decision may set (the pending -> terminal step of
+# the approved state machine). `executed` is a system-only forward transition.
+_HUMAN_DECISIONS = {
+    ApprovalStatus.approved.value,
+    ApprovalStatus.rejected.value,
+    ApprovalStatus.dismissed.value,
+}
 
 
 def _context(*, recruiter_id, campaign_repo, candidate_repo, note_repo, analytics_repo, activity_repo, embedding_repo) -> ToolContext:
@@ -70,5 +80,22 @@ def list_recommendations(*, agent_repo: Any, status: Optional[str] = None) -> li
 
 
 def update_recommendation_status(*, agent_repo: Any, rec_id: str, status: str) -> Recommendation:
-    agent_repo.get(rec_id)  # 404 if not owned
+    """Decide a recommendation. Decisions are FINAL: only a pending recommendation
+    may be decided, and only to a terminal human-decision state. Re-deciding is
+    rejected here with 409 (clean UX); the DB trigger (migration 0015) is the
+    authoritative backstop against any path that bypasses this guard."""
+    if status not in _HUMAN_DECISIONS:
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid decision '{status}'. Allowed: {sorted(_HUMAN_DECISIONS)}.",
+        )
+    current = agent_repo.get(rec_id)  # 404 if not owned
+    if current.status != ApprovalStatus.pending.value:
+        raise HTTPException(
+            status_code=http_status.HTTP_409_CONFLICT,
+            detail=(
+                f"Recommendation already {current.status}; decisions are final and "
+                "cannot be changed (Decision Ledger)."
+            ),
+        )
     return agent_repo.update_status(rec_id, status)

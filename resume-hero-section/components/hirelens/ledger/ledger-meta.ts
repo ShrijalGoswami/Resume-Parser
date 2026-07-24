@@ -9,11 +9,17 @@ export function isResolved(rec: Recommendation): boolean {
   return rec.status !== 'pending'
 }
 
-/** Most-recent decision first. */
+/**
+ * The decision timestamp — the immutable `decided_at` stamped at decision time
+ * (A2), falling back to `updated_at`/`created_at` only for legacy rows.
+ */
+export function decidedAt(rec: Recommendation): string | null {
+  return rec.decided_at ?? rec.updated_at ?? rec.created_at ?? null
+}
+
+/** Most-recent decision first (by immutable decision time). */
 export function sortLedger(recs: Recommendation[]): Recommendation[] {
-  return [...recs].sort((a, b) =>
-    (b.updated_at ?? b.created_at ?? '').localeCompare(a.updated_at ?? a.created_at ?? ''),
-  )
+  return [...recs].sort((a, b) => (decidedAt(b) ?? '').localeCompare(decidedAt(a) ?? ''))
 }
 
 export interface DecisionMeta {
@@ -37,10 +43,11 @@ export function decisionMeta(status: ApprovalStatus): DecisionMeta {
   }
 }
 
-/** Real decision latency from created → updated, or null if unavailable. */
+/** Real decision latency from created → decided, or null if unavailable. */
 export function decisionLatency(rec: Recommendation): string | null {
-  if (!rec.created_at || !rec.updated_at) return null
-  const ms = new Date(rec.updated_at).getTime() - new Date(rec.created_at).getTime()
+  const decided = decidedAt(rec)
+  if (!rec.created_at || !decided) return null
+  const ms = new Date(decided).getTime() - new Date(rec.created_at).getTime()
   if (!(ms > 0)) return null
   const mins = Math.round(ms / 60000)
   if (mins < 1) return 'under a minute to decide'

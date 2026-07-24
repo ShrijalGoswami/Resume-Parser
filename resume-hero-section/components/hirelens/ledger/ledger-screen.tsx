@@ -13,7 +13,7 @@ import { ErrorState } from '../states/error-state'
 import { Button } from '../ui/button'
 import { LedgerTable } from './ledger-table'
 import { LedgerRecordDrawer } from './ledger-record-drawer'
-import { isResolved, sortLedger, fmtDate } from './ledger-meta'
+import { isResolved, sortLedger, fmtDate, decidedAt } from './ledger-meta'
 import type { Recommendation } from '@/types/agent'
 
 const LEDGER_CRUMBS = [{ label: 'Ledger' }]
@@ -85,9 +85,10 @@ function AuthedLedger() {
   const pageRows = resolved.slice(clampedPage * PAGE_SIZE, clampedPage * PAGE_SIZE + PAGE_SIZE)
   const rangeStart = resolved.length === 0 ? 0 : clampedPage * PAGE_SIZE + 1
   const rangeEnd = Math.min((clampedPage + 1) * PAGE_SIZE, resolved.length)
-  const newest = resolved[0]?.updated_at ?? resolved[0]?.created_at
-  const oldest =
-    resolved[resolved.length - 1]?.updated_at ?? resolved[resolved.length - 1]?.created_at
+  const newest = resolved[0] ? decidedAt(resolved[0]) : undefined
+  const oldest = resolved.length
+    ? decidedAt(resolved[resolved.length - 1])
+    : undefined
 
   let body: React.ReactNode
   if (recs.isLoading) {

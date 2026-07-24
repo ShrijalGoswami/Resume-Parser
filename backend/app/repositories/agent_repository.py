@@ -63,9 +63,13 @@ class AgentRepository(BaseRepository):
         return Recommendation(**self._normalize(self._one_or_404(resp, "Recommendation")))
 
     def update_status(self, rec_id: str, status: str) -> Recommendation:
+        # `decided_by` records who decided; the DB trigger stamps `decided_at` and
+        # freezes both once set, and rejects any illegal (re-)decision. The write
+        # is thus safe even though this repo does not re-check current status.
+        patch = {"status": status, "decided_by": self.recruiter_id}
         try:
             resp = (
-                self._table.update({"status": status})
+                self._table.update(patch)
                 .eq("recruiter_id", self.recruiter_id)
                 .eq("id", rec_id)
                 .execute()
@@ -76,8 +80,8 @@ class AgentRepository(BaseRepository):
 
     @staticmethod
     def _normalize(row: dict[str, Any]) -> dict[str, Any]:
-        # Stringify timestamps for the API model.
-        for key in ("created_at", "updated_at"):
+        # Stringify timestamps / uuids for the API model.
+        for key in ("created_at", "updated_at", "decided_at", "decided_by"):
             if row.get(key) is not None and not isinstance(row[key], str):
                 row[key] = str(row[key])
         return row

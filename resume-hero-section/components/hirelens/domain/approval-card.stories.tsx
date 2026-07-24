@@ -24,6 +24,8 @@ const recommendation: Recommendation = {
   status: 'pending',
   created_at: '2026-07-20T07:00:00Z',
   updated_at: null,
+  decided_at: null,
+  decided_by: null,
 }
 
 const meta: Meta = { title: 'Domain/ApprovalCard' }

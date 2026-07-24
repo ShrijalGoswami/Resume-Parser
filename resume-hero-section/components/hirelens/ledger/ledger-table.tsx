@@ -3,7 +3,7 @@
 import { CircleCheck, TriangleAlert, CircleSlash } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ConfidenceChip } from '../decision-intelligence/confidence-chip'
-import { decisionMeta, fmtDate, fmtTime } from './ledger-meta'
+import { decisionMeta, fmtDate, fmtTime, decidedAt } from './ledger-meta'
 import type { Recommendation } from '@/types/agent'
 
 function DecisionCell({ rec }: { rec: Recommendation }) {
@@ -53,7 +53,7 @@ export function LedgerTable({
         </thead>
         <tbody>
           {rows.map((rec) => {
-            const stamp = rec.updated_at ?? rec.created_at
+            const stamp = decidedAt(rec)
             return (
               <tr
                 key={rec.id}

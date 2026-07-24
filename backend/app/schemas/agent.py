@@ -68,6 +68,10 @@ class Recommendation(BaseModel):
     status: str = ApprovalStatus.pending.value
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
+    # Immutable decision metadata — stamped by the DB at decision time and frozen
+    # thereafter (Decision Ledger, migration 0015). Null while pending.
+    decided_at: Optional[str] = None
+    decided_by: Optional[str] = None
 
 
 class AgentBriefing(BaseModel):

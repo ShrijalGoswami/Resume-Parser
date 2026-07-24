@@ -5,7 +5,7 @@ import { ArrowUpRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody } from '../ui/drawer'
 import { ConfidenceChip } from '../decision-intelligence/confidence-chip'
-import { decisionMeta, decisionLatency, recordLabel, fmtDate, fmtTime } from './ledger-meta'
+import { decisionMeta, decisionLatency, recordLabel, fmtDate, fmtTime, decidedAt } from './ledger-meta'
 import type { Recommendation } from '@/types/agent'
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -23,7 +23,7 @@ export function LedgerRecordDrawer({
   rec: Recommendation | null
   onClose: () => void
 }) {
-  const stamp = rec?.updated_at ?? rec?.created_at
+  const stamp = rec ? decidedAt(rec) : null
   const decision = rec ? decisionMeta(rec.status) : null
   const latency = rec ? decisionLatency(rec) : null
 
@@ -116,7 +116,7 @@ export function LedgerRecordDrawer({
                   <div className="flex justify-between gap-4">
                     <dt className="text-hl-fg-tertiary">Decided</dt>
                     <dd className="tabular-nums">
-                      {fmtDate(rec.updated_at)} · {fmtTime(rec.updated_at)}
+                      {fmtDate(decidedAt(rec))} · {fmtTime(decidedAt(rec))}
                     </dd>
                   </div>
                   <div className="flex justify-between gap-4">
