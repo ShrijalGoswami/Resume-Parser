@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { DeepReview } from '@/components/hirelens/deep-review/deep-review'
+import { CandidateFullDossier } from '@/components/hirelens/candidate-object'
 
 export const metadata: Metadata = { title: 'Candidate review' }
 
@@ -9,5 +9,5 @@ export default async function Page({
   params: Promise<{ roleId: string; candidateId: string }>
 }) {
   const { roleId, candidateId } = await params
-  return <DeepReview roleId={roleId} candidateId={candidateId} />
+  return <CandidateFullDossier roleId={roleId} candidateId={candidateId} />
 }
