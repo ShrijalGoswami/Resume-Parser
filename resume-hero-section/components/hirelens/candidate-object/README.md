@@ -1,4 +1,19 @@
-# Candidate Object
+# Candidate Object — v1.0.0
+
+> **Versioned platform component · FROZEN.** Treat like a shared SDK: consumers
+> adapt to it; it does not adapt to consumers.
+>
+> **v1.x** — only additive, backward-compatible changes (a new *optional* prop with
+> a safe default; a new composition reusing existing sections). Every screen must
+> stay compatible with v1.x.
+>
+> **v2.0 (breaking)** — removing props, or changing `CandidateModel` / the event
+> contract / the AI contract / structure. Requires **RFC → approval → new major
+> version**. Never implement automatically.
+>
+> **Change process** — if a screen seems to need a change: **STOP** and file a
+> Change Request (1 Reason · 2 Current limitation · 3 Proposed change · 4 Impact
+> analysis · 5 Migration plan · 6 Alternatives considered), then wait for approval.
 
 The single source of truth for candidate UI in V5. One normalized model
 (`CandidateModel`) rendered by 13 reusable sections, composed into two densities:
