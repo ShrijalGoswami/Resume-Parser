@@ -437,6 +437,17 @@ Every record ever created, current status, one line each. **The register is neve
 | [DDL-GOV-004](#ddl-gov-004--five-blocking-gates-override-the-scoring-model) | Five blocking gates override the scoring model | GOV | **Accepted** | 2026-07-25 |
 | [DDL-AIX-001](#ddl-aix-001--calibrated-confidence-with-an-under-trust-default) | Calibrated confidence, with an under-trust default | AIX | **Accepted** | 2026-07-25 |
 | [DDL-VIS-001](#ddl-vis-001--border-first-near-monochrome-surface-language) | Border-first, near-monochrome surface language | VIS | **Accepted** | 2026-07-25 |
+| [DDL-ENG-001](#ddl-eng-001--rename-the-repository-from-resume-parser) | Rename the repository from `Resume-Parser` | ENG | **Proposed** | 2026-07-25 |
+| [DDL-VIS-002](#ddl-vis-002--4px-base-unit-with-a-three-register-spacing-system) | 4px base unit with a three-register spacing system | VIS | **Accepted** | 2026-07-25 |
+| [DDL-VIS-003](#ddl-vis-003--two-type-families-no-display-face-tabular-figures-by-default) | Two type families, no display face, tabular figures by default | VIS | **Accepted** | 2026-07-25 |
+| [DDL-VIS-004](#ddl-vis-004--confidence-rendered-on-a-non-hue-definition-channel) | Confidence rendered on a non-hue definition channel | VIS | **Accepted** | 2026-07-25 |
+| [DDL-VIS-005](#ddl-vis-005--desktop-first-with-density-preserving-adaptation) | Desktop-first with density-preserving adaptation | VIS | **Accepted** | 2026-07-25 |
+| [DDL-VIS-006](#ddl-vis-006--three-tier-token-architecture-components-consume-semantic-tokens-only) | Three-tier token architecture; components consume semantic tokens only | VIS | **Accepted** | 2026-07-25 |
+| [DDL-VIS-007](#ddl-vis-007--no-candidate-photography-on-assessment-surfaces) | No candidate photography on assessment surfaces | VIS | **Accepted** | 2026-07-25 |
+| [DDL-VIS-008](#ddl-vis-008--toasts-restricted-to-asynchronous-completion) | Toasts restricted to asynchronous completion | VIS | **Accepted** | 2026-07-25 |
+| [DDL-VIS-009](#ddl-vis-009--table-and-data-grid-are-distinct-components) | Table and Data Grid are distinct components | VIS | **Accepted** | 2026-07-25 |
+| [DDL-MKT-001](#ddl-mkt-001--homepage-narrative-arc-nine-scenes-across-five-movements) | Homepage narrative arc: nine scenes across five movements | MKT | **Proposed** | 2026-07-25 |
+| [DDL-MKT-002](#ddl-mkt-002--thinking-is-shown-through-structure-not-animation) | Thinking is shown through structure, not animation | MKT | **Proposed** | 2026-07-25 |
 
 ---
 
@@ -1037,6 +1048,694 @@ The design system cannot express a genuine product need within three elevation l
 
 **Amendment History**
 2026-07-25 · Design Ops · Record created from Bible v1.0 Ch. 6 and Ch. 8.
+
+---
+
+## DDL-ENG-001 — Rename the repository from `Resume-Parser`
+
+**Status:** Proposed
+**Date:** 2026-07-25
+**Owner:** Engineering Owner
+
+**Decision Summary**
+Proposed: rename the repository from `Resume-Parser` to a name consistent with the accepted category positioning. **Filed for future review. Neither accepted nor rejected.**
+
+**Context**
+Surfaced by the Governance Drift Report (2026-07-25) against baseline `65ac71e`. The repository is named `Resume-Parser`; the string appears in roughly 2,000 files as a path fragment, in the git remote, in every absolute path a contributor sees, in CI logs, and in `package.json` as `"name": "resume-hero-section"`.
+
+The name predates the governance baseline by a wide margin — it describes what the project was when it started, and it was accurate then. It was not chosen in conflict with governance; governance arrived afterward.
+
+**Problem Statement**
+Should the repository be renamed to match the accepted category, given that the conflict is real but almost entirely internal, and the change is broad and mechanically risky?
+
+**Alternatives Considered**
+
+1. **Rename now.** Repository, remote, and the `resume-hero-section` package name, with CI, deploy configuration, and local clones updated together.
+2. **Rename at a natural boundary.** Defer to a moment when the repository is already being restructured — a monorepo reorganization, a deploy-target change, or an open-source release.
+3. **Never rename.** Accept the name as an internal artifact and rely on documentation to carry positioning.
+4. **Rename the package only,** leaving the repository name unchanged — a partial move addressing the more visible half.
+
+**Why Alternatives Were Rejected**
+
+*No alternative has been rejected. This record is Proposed and the analysis below is preliminary — it exists so that whoever decides is not starting from nothing.*
+
+Observations for the eventual decision:
+
+1. **Rename now** — resolves the conflict cleanly, at the cost of coordinated changes across CI, deploy configuration, and every existing clone. The risk is not the rename itself but the long tail of hardcoded paths, which the current 2,000-file footprint suggests is substantial.
+2. **Rename at a boundary** — cheapest total cost, because the coordination is already being paid for. Its weakness is that the boundary may not arrive, and "defer to a natural moment" is how a decision becomes permanent through inaction. If chosen, it needs a dated review trigger rather than a hope.
+3. **Never rename** — defensible on the argument that `DDL-POS-001` governs external positioning and this is internal. The counter-argument is that the name is visible in every clone URL, CI log, and contributor path, and that the component-category framing is exactly what Bible Ch. 2 warns caps the company's self-conception.
+4. **Package only** — addresses the string most likely to be published while leaving the repository name. Possibly the best cost-to-benefit ratio; needs checking against whether the package is ever externally visible.
+
+**Final Decision**
+**None. Status: Proposed.** No action is taken and no work is scheduled until this record is resolved.
+
+**Expected Benefits**
+Internal coherence between what the repository is called and what the company is. Removal of the last significant artifact of the pre-governance framing. Elimination of a small, repeated friction: every contributor reads "Resume-Parser" many times a day, and naming shapes self-conception more than it appears to.
+
+**Trade-offs**
+A rename is broad and mechanically risky, touching CI, deploy configuration, imports, documentation, and every existing clone. It delivers no user-visible benefit and no revenue. **It is the kind of work that is easy to justify and hard to schedule**, which is precisely why it is filed as a decision rather than a backlog item — a backlog would let it be deferred indefinitely by nobody owning it.
+
+**Risks**
+*If renamed:* broken CI, broken deploy targets, broken absolute imports, stale local clones, and a long tail of hardcoded paths discovered over weeks. Mitigated by doing it at a boundary where the surrounding coordination is already happening.
+
+*If not renamed:* the component-category framing persists in the most-repeated string in the codebase. Low external risk, non-zero internal one — Bible Ch. 2's argument is that the naming caps how the team conceives of the product, and that argument does not stop applying because the audience is internal.
+
+**Consequences**
+*If accepted:* a coordinated change across repository, remote, CI, deploy configuration, and documentation, plus a communication to anyone holding a clone. *If rejected:* the drift is recorded as knowingly accepted, and future audits reference this record rather than re-raising it — which is most of the value of filing it either way.
+
+**Related Decisions**
+Depends on `DDL-POS-001` (the positioning that creates the conflict). Related: `DDL-POS-002`.
+
+**Related Governance Documents**
+*Derives from:* Bible Ch. 2 (Resume Screening / Parsing rejected as a component category). *Would require amendment:* none — this record is consistent with governance whichever way it resolves. The conflict is in the artifact, not the governance.
+
+**Related Product Areas**
+Repository name · git remote · CI configuration · deploy targets · `resume-hero-section` package name · absolute import paths · contributor onboarding.
+
+**Review Trigger**
+A repository restructuring event of any kind — monorepo reorganization, deploy-target change, or an open-source or public release. **Any of these makes the rename substantially cheaper and should force this record to Accepted or Rejected rather than leaving it Proposed.**
+
+Independently: if this record is still Proposed in twelve months, that is itself the trigger. A proposal open past a year is not under consideration; it is being avoided (§1).
+
+**Amendment History**
+2026-07-25 · Design Ops · Record created from the approved Governance Drift Report. Filed as Proposed at the instruction of the Product Owner; explicitly not accepted or rejected.
+
+---
+
+## DDL-VIS-002 — 4px base unit with a three-register spacing system
+
+**Status:** Accepted
+**Date:** 2026-07-25
+**Owner:** Design Owner
+
+**Decision Summary**
+Spacing uses a 4px base with a non-linear scale, governed by three registers — Intra (2–8), Inter (12–32), Section (48–128) — under the law that the smallest Section gap exceeds the largest Inter gap, which exceeds the largest Intra gap.
+
+**Context**
+Filed with Visual Design System Book I. Checklist §14 D5 catalogues uniform spacing as a smell: it looks tidy, passes any check phrased as "is spacing consistent," and makes structure invisible. A flat scale does not prevent it — a flat scale says what values exist, not which to use, so teams default to using one everywhere.
+
+**Problem Statement**
+What spacing structure makes non-uniform, meaning-bearing spacing the default rather than an act of individual judgment?
+
+**Alternatives Considered**
+
+1. **8px base, flat scale.** The industry default.
+2. **4px base, flat scale.** Finer control, same governance problem.
+3. **4px base, three registers with an ordering law.**
+4. **Strict baseline grid.** Typographically rigorous.
+
+**Why Alternatives Were Rejected**
+
+1. **8px flat** — too coarse for our density. It forces a choice between 8 (too tight) and 16 (too loose) at exactly the scale where Index and Inspector panels live, and it leaves §14 D5 unaddressed.
+2. **4px flat** — fixes granularity, not uniformity. Still leaves every spacing decision to taste.
+3. **Registers** — accepted. The ordering law is directly checkable in review (Checklist §6.3) and catches more structural problems than any other single test in Book I.
+4. **Baseline grid** — rejected on survival grounds. It is beautiful and does not survive contact with mixed content — tables, form controls, images, embedded data. We take the useful half: consistent values applied consistently to the same relationships.
+
+**Final Decision**
+As summarized. Component spacing is fixed by the component and not overridable by consumers. Two density modes (Comfortable, Compact) apply per surface, chosen by task, not by user preference — and Section spacing does not change between them.
+
+**Expected Benefits**
+Structure that is visible pre-attentively. A review test that is objective rather than a matter of taste. Two designers producing spacing that matches without coordination.
+
+**Trade-offs**
+More to learn than a flat scale. The ordering law will occasionally be inconvenient and will be argued as pedantry. Rejecting a per-user density toggle gives up a frequently-requested preference — deliberately, because it lets users mask a badly structured screen by loosening it, hiding the defect from us.
+
+**Risks**
+Registers erode through component-level overrides, one reasonable exception at a time. Detection: any component accepting a padding or spacing prop is the leading indicator.
+
+**Consequences**
+No component exposes spacing configuration. Heading spacing is asymmetric by rule. Compact mode reduces Intra and Inter only. A surface uncomfortable at Compact is a structural problem, not a spacing one.
+
+**Related Decisions**
+Depends on `DDL-VIS-001`. Related: `DDL-VIS-003`, `DDL-VIS-005`.
+
+**Related Governance Documents**
+*Derives from:* Bible Ch. 6 (space as punctuation), Ch. 9. *Enforced by:* Checklist §6.3, §14 D5.
+
+**Related Product Areas**
+Design system · every product and marketing surface · Book II tokens.
+
+**Review Trigger**
+Evidence that the register law is systematically unworkable on a real surface class — filed as a versioned change to Book I with the failing case, not as a local exception.
+
+**Amendment History**
+2026-07-25 · Design Owner · Record created with Visual Design System Book I. Proposed pending approval of that book.
+2026-07-25 · Product Owner · **Accepted** on approval of the book.
+
+---
+
+## DDL-VIS-003 — Two type families, no display face, tabular figures by default
+
+**Status:** Accepted
+**Date:** 2026-07-25
+**Owner:** Design Owner
+
+**Decision Summary**
+One sans family for everything and one mono for machine identifiers only. No display face. Tabular figures are the default everywhere; proportional figures are permitted only in flowing prose.
+
+**Context**
+Filed with Book I. HireLens is text-dense and number-dense: scores, counts, dates, evidence tallies, comparison tables. Bible Ch. 9 requires complete numerals and small-size excellence and warns against monospace used as a credibility costume.
+
+**Problem Statement**
+What typographic family structure supports a product that is simultaneously long-form reading and dense tabular data, without introducing styling decisions that will diverge across teams?
+
+**Alternatives Considered**
+
+1. **Display + text + mono** — three families, the standard "premium" configuration.
+2. **Single family for everything**, including machine values.
+3. **Two families: sans + mono.**
+
+**Why Alternatives Were Rejected**
+
+1. **Three families** — rejected on two grounds. A display face has personality, and personality competes with content on a screen someone reads for four minutes. It also dates visibly, and it creates a permanent consistency question ("does the display face apply here?") that will be answered differently by different people.
+2. **Single family** — rejected because machine values genuinely need character-exact, disambiguated rendering. An ID or hash in proportional sans is harder to verify and harder to transcribe, and verification is our product.
+3. **Two families** — accepted. Headings are *large*, not *different*; scale carries the emphasis.
+
+**Final Decision**
+Sans for all UI, prose, headings, and data. Mono strictly for machine identifiers — never as texture, never for metrics, never for names. Tabular figures default. Face selection follows six criteria (Book I Ch. 5) so the choice is remakeable without abandoning the system.
+
+**Expected Benefits**
+One less axis of inconsistency. Numeric columns comparable by scanning rather than reading. Longevity — a neutral pairing does not date the way a display face does.
+
+**Trade-offs**
+We give up the most reliable route to an immediately distinctive typographic identity. Our type will read as unremarkable to a designer evaluating a screenshot, which is a real cost against a category where display type is common.
+
+**Risks**
+Mono creep — it is the most likely rule here to be broken, because mono reads as technical and that is tempting. Detection: mono anywhere other than an ID, hash, path, or code value.
+
+**Consequences**
+No third family may be introduced (Book I never 15). Headings differentiate by scale, weight, and space only. Any face adopted must ship true tabular figures and disambiguated glyphs — this is a hard selection filter, not a preference.
+
+**Related Decisions**
+Depends on `DDL-VIS-001`. Related: `DDL-VIS-002`, `DDL-VIS-004`.
+
+**Related Governance Documents**
+*Derives from:* Bible Ch. 9. *Enforced by:* Checklist §6.4, §14 D6.
+
+**Related Product Areas**
+Design system · all tables and data surfaces · marketing typography · Book II tokens.
+
+**Review Trigger**
+A brand identity decision that requires a display face for the wordmark or marketing headline — which would be a scoped exception for brand assets, not a change to product typography, and must be recorded as such.
+
+**Amendment History**
+2026-07-25 · Design Owner · Record created with Book I. Proposed pending approval.
+2026-07-25 · Product Owner · **Accepted** on approval of the book.
+
+---
+
+## DDL-VIS-004 — Confidence rendered on a non-hue definition channel
+
+**Status:** Accepted
+**Date:** 2026-07-25
+**Owner:** Design Owner · co-owner: AI Owner
+
+**Decision Summary**
+Confidence is expressed through **definition, explicitness, and words** — never hue. Low confidence renders as *less resolved*, not as *worse*.
+
+**Context**
+Filed with Book I. Checklist §8.11 identifies the trap: every conventional vocabulary for certainty — red-amber-green, progress bars, star ratings, percentage badges — reads as an axis of *quality*. A candidate shown with a red confidence indicator is read as a bad candidate rather than as one we know little about, and §8.11 states plainly that the misreading is our defect, not the user's error.
+
+Governance names the constraint (non-hue, intensity-based) but does not specify the mechanism. This record supplies it.
+
+**Problem Statement**
+What visual channel expresses degree of certainty without colliding with the semantic state palette and without being read as a judgment of the person?
+
+**Alternatives Considered**
+
+1. **A dedicated confidence hue**, distinct from the four semantic colors.
+2. **Opacity applied to the whole component** at lower confidence.
+3. **A neutral bar or meter**, uncolored.
+4. **Definition channel** — the claim rendered at reduced contrast and completeness, with an explicit qualifier and a resolution mark.
+
+**Why Alternatives Were Rejected**
+
+1. **Dedicated hue** — rejected. Any hue placed beside the state palette gets read against it, and a fifth semantic color makes the whole palette harder to learn. It also spends color on something Bible Ch. 8 assigns to intensity.
+2. **Component opacity** — rejected. It reduces contrast indiscriminately, breaking the Ch. 12 floors, and it makes low-confidence content *harder to read* precisely when the user most needs to read it carefully.
+3. **Neutral meter** — rejected as the most dangerous option. Anything shaped like a bar is read as a score regardless of its color, so it reintroduces the quality misreading through form rather than hue.
+4. **Definition channel** — accepted. It is honest to the epistemics (*we see this less clearly*), it makes the misreading structurally unavailable because reduced definition does not resemble a warning, and it is the Resolution metaphor doing structural work rather than decorating.
+
+**Final Decision**
+Confidence carries: the tier stated in words; the claim rendered at full or reduced definition; an explicit qualifier naming what is missing at lower tiers; and a resolution mark whose completeness encodes tier. Three tiers, never four. Where calibration is unvalidated, evidence sufficiency replaces confidence. Applies identically in charts (Book I Ch. 11).
+
+**Expected Benefits**
+The product's central differentiator becomes visually unmistakable and hard to copy without the architecture behind it. The good/bad misreading is designed out rather than warned against. Immune to grayscale, color-vision deficiency, and projection by construction.
+
+**Trade-offs**
+Less immediately legible than a red-amber-green badge, which every user already knows how to read. It requires a short learning step, and it will be argued as insufficiently obvious. Accepted: the obvious version communicates the wrong thing, and a fast wrong read is worse than a slightly slower correct one.
+
+**Risks**
+Reduced definition drifts far enough to breach contrast floors — mitigated by Ch. 12 minimums applying without exception, including to low-confidence text. Second risk: a future surface reintroduces a percentage or a bar under delivery pressure, which is a §8.10/§8.11 gate failure and should be caught at review.
+
+**Consequences**
+No confidence display uses hue, anywhere. Charts express uncertainty as extent or reduced definition (Ch. 11). Marketing must show a low-confidence state (Checklist §10.8). The resolution mark becomes a Book II component with its own specification.
+
+**Related Decisions**
+Depends on `DDL-AIX-001`, `DDL-BRD-001`, `DDL-VIS-001`. Related: `DDL-GOV-004` (Gate 2).
+
+**Related Governance Documents**
+*Derives from:* Bible Ch. 8 (tier 3), Ch. 7. *Enforced by:* Checklist §8.11 (**Gate 2**), §8.10, §10.8.
+
+**Related Product Areas**
+Every surface where model output reaches a user · candidate assessment · comparison · search ranking · analytics · marketing imagery.
+
+**Review Trigger**
+Calibration validated against outcome data, which would permit genuine numeric confidence and require revisiting how precision is displayed. **Or** usability evidence that the definition channel is not being read as certainty — which would be a real failure and must be tested rather than assumed.
+
+**Amendment History**
+2026-07-25 · Design Owner · Record created with Book I. Proposed pending approval.
+2026-07-25 · Product Owner · **Accepted** on approval of the book.
+
+---
+
+## DDL-VIS-005 — Desktop-first with density-preserving adaptation
+
+**Status:** Accepted
+**Date:** 2026-07-25
+**Owner:** Design Owner · co-owner: UX Owner
+
+**Decision Summary**
+Product surfaces are designed desktop-first at a 1280–1535px reference viewport. Narrow viewports adapt by **removing panels, never by reducing density**. Marketing surfaces are designed responsive-first.
+
+**Context**
+Filed with Book I. The primary user works at volume, on a laptop, in a browser, alongside other tools, for hours. The workspace derives its value from seeing evidence and subject simultaneously, which has no meaningful mobile analogue.
+
+**Problem Statement**
+What responsive posture serves a dense, multi-panel workspace without producing either an unusable mobile experience or a loose, under-informative desktop one?
+
+**Alternatives Considered**
+
+1. **Mobile-first**, the prevailing default.
+2. **Desktop-first with proportional scaling** — same panels, everything smaller.
+3. **Desktop-first with panel removal**, density preserved.
+4. **Separate mobile application** with its own design language.
+
+**Why Alternatives Were Rejected**
+
+1. **Mobile-first** — rejected because it means designing the least important experience first and expanding into the important one, which reliably produces loose, oversized desktop screens. Correct for most products; wrong for a dense workspace.
+2. **Proportional scaling** — rejected as the worst option. It preserves all information at unusable size and breaks the Ch. 12 contrast and hit-target floors to do it.
+3. **Panel removal** — accepted. Fewer regions, each at full density.
+4. **Separate mobile app** — rejected as sub-branding, which Bible Ch. 15 prohibits and which Book I Ch. 15 names as the largest five-year risk.
+
+**Final Decision**
+Five breakpoints, authored at Standard (1280–1535). Panels collapse in fixed priority: Inspector, then Navigation, then Index. **Subject is never collapsed.** Type sizes, border weight, radius, contrast targets, and hit-target minimums do not change across viewports. Below 768px the workspace becomes a reading-and-triage surface, and tasks unavailable there are stated as unavailable rather than degraded.
+
+**Expected Benefits**
+A desktop experience designed for the viewport where the work actually happens. A mobile experience that is honest about its scope instead of offering a version that would produce worse decisions.
+
+**Trade-offs**
+**Mobile requires deliberate, separate design work rather than falling out of the process.** Some product surfaces will not have a mobile version — a real limitation, accepted knowingly, and one that must be stated plainly rather than concealed.
+
+**Risks**
+Mobile is deferred indefinitely because it is never the sprint's priority — the predictable failure of desktop-first. Detection: analytics showing mobile attempts on surfaces with no mobile design. Second risk: authoring drifts to wide monitors, producing layouts that feel correct nowhere.
+
+**Consequences**
+Design files are authored at the Standard reference viewport. Every collapse step is a designed state, not a media-query fallback. Checklist §11.8 (200% zoom, narrow viewport) is satisfied by the same panel-removal mechanism, so accessibility and responsive share one implementation rather than competing.
+
+**Related Decisions**
+Depends on `DDL-VIS-001`. Related: `DDL-VIS-002`.
+
+**Related Governance Documents**
+*Derives from:* Bible Ch. 6 (density as respect). *Enforced by:* Checklist §11.8, §6.12. Governance is silent on responsive posture; this decision fills that space without contradicting it.
+
+**Related Product Areas**
+All product surfaces · workspace panel architecture · marketing (responsive-first, separate) · design file conventions.
+
+**Review Trigger**
+Evidence that a meaningful share of primary workflow occurs on tablet or mobile, measured rather than assumed — which would make the workspace's mobile scope a product question rather than a layout one.
+
+**Amendment History**
+2026-07-25 · Design Owner · Record created with Book I. Proposed pending approval.
+2026-07-25 · Product Owner · **Accepted** on approval of the book.
+
+---
+
+## DDL-VIS-006 — Three-tier token architecture; components consume semantic tokens only
+
+**Status:** Accepted
+**Date:** 2026-07-25
+**Owner:** Design Owner · co-owner: Engineering Owner
+
+**Decision Summary**
+Design tokens are structured in three tiers — primitive, semantic, component. **Components reference semantic tokens exclusively**; primitives and raw values are prohibited at the component layer. Spacing tokens are named by register, not by pixel value.
+
+**Context**
+Filed with Book II. Book I established rules — the register law, three elevation levels, four colour tiers, confidence-without-hue — that live in a document and are therefore followed by people who have read it recently. Checklist §12.2 already requires token compliance and states that a token gap is fixed by adding the token, never by hard-coding.
+
+**Problem Statement**
+What token architecture makes Book I's rules structural rather than advisory — so that the correct choice is the available one and an incorrect choice is visible in review?
+
+**Alternatives Considered**
+
+1. **Flat token set** — one layer of named values.
+2. **Two tiers** — primitive and semantic, with components free to use either.
+3. **Three tiers with a strict semantic-only rule at the component layer.**
+4. **Pixel-named spacing** (`space-16`) rather than register-named (`space-inter-2`).
+
+**Why Alternatives Were Rejected**
+
+1. **Flat** — every reference becomes a claim that the *value* is right rather than the *meaning*, which breaks the first time the ramp is retuned or a theme is added.
+2. **Two tiers, permissive** — rejected because permission is the whole problem. A component referencing `neutral-7` is asserting a specific grey; dark theme immediately proves it wrong, and nothing catches it.
+3. **Three tiers, strict** — accepted. The semantic layer becomes the theme boundary, and nothing above it is theme-aware.
+4. **Pixel-named spacing** — rejected, and this is the substantive part of the decision. Book I Ch. 4 makes the register law (Section > Inter > Intra) the mechanism preventing uniform spacing, which Checklist §14 D5 catalogues as a smell that passes every check phrased as "is spacing consistent." **Encoding the register in the name makes a violation legible in a diff**: `space-section-1` between a label and its value is visibly wrong, where `space-48` is just a number.
+
+**Final Decision**
+As summarized. Elevation is a composite token (surface + border + shadow) because dark theme carries depth through a lightness step rather than shadow, and composing it per-component would produce a dark theme with no perceptible elevation. Components accept no spacing or colour overrides.
+
+**Expected Benefits**
+Book I's rules become enforceable in code review rather than in memory. Theming resolves in one place. Two designers produce matching output without coordination.
+
+**Trade-offs**
+More indirection than a flat set, and a real learning cost — a contributor must learn the semantic vocabulary before they can build anything. Naming by register is unfamiliar and will be argued as needlessly abstract by anyone who has not read Book I Ch. 4.
+
+**Risks**
+Erosion through component-level overrides, one reasonable exception at a time. **Leading indicator: any component accepting a padding, spacing, or colour prop.** Second risk: semantic tokens proliferate until the layer is as unmanageable as primitives — mitigated by Tier 3 admitting a token only when it is genuinely local to one component.
+
+**Consequences**
+No component may reference a primitive. No component exposes spacing configuration. A token gap is fixed by adding the token (Checklist §12.2, **Gate 5** adjacency). Confidence gets named tokens that resolve to non-hue values, which makes reaching for `color-state-warning-fg` to express uncertainty visibly wrong to a reviewer.
+
+**Related Decisions**
+Depends on `DDL-VIS-001`, `DDL-VIS-002`, `DDL-VIS-004`. Related: `DDL-VIS-003`.
+
+**Related Governance Documents**
+*Derives from:* Bible Ch. 8; Book I Ch. 1–8. *Enforced by:* Checklist §12.2, §6.10.
+
+**Related Product Areas**
+Design system implementation · every component · theming · Book III motion hooks.
+
+**Review Trigger**
+A platform change altering how theming resolves, or evidence that the semantic layer has grown past the point of being learnable — measured by contributors reaching for primitives, not by token count.
+
+**Amendment History**
+2026-07-25 · Design Owner · Record created with Book II. Proposed pending approval.
+2026-07-25 · Product Owner · **Accepted** on approval of the book.
+
+---
+
+## DDL-VIS-007 — No candidate photography on assessment surfaces
+
+**Status:** Accepted
+**Date:** 2026-07-25
+**Owner:** Design Owner · co-owner: AI Owner
+
+**Decision Summary**
+Candidate photographs do not appear on assessment surfaces — candidate rows, cards, comparison, ranking, or review. Recruiter and interviewer avatars are unaffected. Initials are the default candidate identity rendering.
+
+**Context**
+Filed with Book II (C-17 Avatar). **This is an interpretation of governance, not a rule governance states**, and it is filed precisely so that the interpretation is visible and reviewable rather than embedded silently in a component spec.
+
+Bible Ch. 2 commits us to never assessing protected characteristics. Checklist §8.6 prohibits any assessment *referencing* them. A rendered photograph does neither — it makes inferences about age, ethnicity, gender, and appearance *available* at the moment of judgement, through a channel that never enters the evidence trail.
+
+**Problem Statement**
+Should candidate photographs appear adjacent to assessments, given that governance does not prohibit them and that photographs are a documented bias vector in exactly this context?
+
+**Alternatives Considered**
+
+1. **Show photographs** where available, as most hiring tools do.
+2. **Show photographs with an option to hide them.**
+3. **Do not show photographs on assessment surfaces**; initials as default.
+4. **Hide by default, reveal on explicit request.**
+
+**Why Alternatives Were Rejected**
+
+1. **Show** — rejected. It sits directly against the product's central claim: that reasoning is traceable. A face beside a score influences the decision through a channel that is unlogged and unauditable, in a product built to make influence auditable.
+2. **Optional hide** — rejected because defaults are what actually ship. An option nobody changes is a decision made by inaction, and it puts the burden on the recruiter to protect against a bias we introduced.
+3. **Do not show** — accepted.
+4. **Reveal on request** — considered seriously and rejected as worse than either. It makes viewing a face a deliberate act adjacent to an assessment, which is a stranger artifact than simply not showing it, and it creates an audit question we would then have to answer.
+
+**Final Decision**
+As summarized. The distinction is *who is being evaluated*: recruiter, interviewer, and note-author avatars are unaffected because they are not the subject of assessment.
+
+**Expected Benefits**
+Removes a bias vector from the moment of decision at no cost to the recruiter's task — a photograph does not help anyone decide who to hire. Consistent with the traceability claim. Defensible in a security, legal, or procurement review, where it is a differentiator rather than a limitation.
+
+**Trade-offs**
+Recruiters accustomed to photographs will find candidates harder to recognise at a glance in a queue, which is a genuine ergonomic cost in high-volume workflows. Some customers will ask for photographs and we will decline. **Neither cost is imaginary and both are accepted.**
+
+**Risks**
+A future workflow legitimately requires candidate imagery — identity verification, for instance — and this decision is treated as blocking it. Mitigation: that would be a scoped decision with its own record, not a relaxation of this default. Second risk: the interpretation is judged to exceed governance, in which case this record is rejected and C-17 changes — which is why it is a record rather than a rule.
+
+**Consequences**
+C-17 renders initials as a first-class state, not a degraded fallback. D-04, D-07 carry no imagery. Book I Ch. 10 already prohibits real candidate data in marketing imagery; this extends the same reasoning into the running product.
+
+**Related Decisions**
+Depends on `DDL-POS-003` (claim boundaries), `DDL-AIX-001`. Related: `DDL-VIS-004`.
+
+**Related Governance Documents**
+*Derives from:* Bible Ch. 2, Ch. 14. *Adjacent to:* Checklist §8.6 (**Gate 2**) — this decision is consistent with it but is **not required by it**, and that distinction is deliberate.
+
+**Related Product Areas**
+Candidate rows · candidate cards · comparison · ranking · review · search results.
+
+**Review Trigger**
+A product requirement that genuinely needs candidate imagery, **or** a determination by the Product Owner that this interpretation exceeds what governance supports — in which case reject this record rather than amending governance, since governance never required it.
+
+**Amendment History**
+2026-07-25 · Design Owner · Record created with Book II. Filed explicitly as an interpretation, not as a governance requirement.
+
+---
+
+## DDL-VIS-008 — Toasts restricted to asynchronous completion
+
+**Status:** Accepted
+**Date:** 2026-07-25
+**Owner:** Design Owner · co-owner: UX Owner
+
+**Decision Summary**
+Toasts notify only that an **asynchronous** operation completed or failed. Feedback for a direct user action is **inline, at the site of the action**. Errors requiring action never use a toast.
+
+**Context**
+Filed with Book II (C-22). Toasts are the default success-feedback pattern across the industry, which is why this needs a record: we are departing from a near-universal convention, and without a written reason the convention will reassert itself.
+
+**Problem Statement**
+Where should feedback appear, given that the transient-corner-notification pattern is what every contributor will reach for by default?
+
+**Alternatives Considered**
+
+1. **Conventional toasts** for all feedback.
+2. **Inline only**, no toast component.
+3. **Toasts restricted to async completion; inline as the default.**
+
+**Why Alternatives Were Rejected**
+
+1. **Conventional** — rejected on Bible Ch. 13: feedback is proportional to consequence and belongs at the point of consequence. A toast appears away from where the user is looking, disappears on a timer, stacks, and is frequently missed. A saved field should say "saved" where the field is.
+2. **Inline only** — rejected because background work genuinely completes when the user is elsewhere, and inline feedback has nowhere to appear. A batch analysis finishing needs a channel.
+3. **Restricted** — accepted.
+
+**Final Decision**
+As summarized. Error toasts do not auto-dismiss. Maximum three stacked, then collapse to a count. Never the only notification of an important event.
+
+**Expected Benefits**
+Feedback where the user is looking. A notification channel that retains meaning because it is rare. Fewer missed confirmations.
+
+**Trade-offs**
+Inline feedback requires design work per surface, where a toast is one shared component — this is more expensive and it is the reason the convention exists. Contributors will need the reason explained repeatedly, since the pattern is deeply habitual.
+
+**Risks**
+Erosion: one toast for a direct action, then another. Each is defensible in isolation and the aggregate is notification noise, which then costs us the toast that mattered. Detection: any toast fired synchronously from a user gesture.
+
+**Consequences**
+Every surface with mutations designs its inline feedback. C-24 Alert handles persistent conditions. The toast component exists but is rarely correct.
+
+**Related Decisions**
+Related: `DDL-VIS-006`.
+
+**Related Governance Documents**
+*Derives from:* Bible Ch. 13 (feedback proportional to consequence). *Enforced by:* Checklist §5.7 (all states designed).
+
+**Related Product Areas**
+All mutation surfaces · batch operations · import and export · bulk actions.
+
+**Review Trigger**
+Evidence that inline feedback is being missed at a higher rate than toasts were — measured, not assumed.
+
+**Amendment History**
+2026-07-25 · Design Owner · Record created with Book II. Proposed pending approval.
+2026-07-25 · Product Owner · **Accepted** on approval of the book.
+
+---
+
+## DDL-VIS-009 — Table and Data Grid are distinct components
+
+**Status:** Accepted
+**Date:** 2026-07-25
+**Owner:** Design Owner · co-owner: Engineering Owner
+
+**Decision Summary**
+Table (C-31, read and compare) and Data Grid (C-32, edit in place) are separate components with separate contracts. Neither is a mode of the other.
+
+**Context**
+Filed with Book II. Most design systems ship one tabular component with an editing mode, because they share a visual structure. Book I Ch. 11 establishes the table as our primary data visualisation, which raises the cost of getting it wrong.
+
+**Problem Statement**
+Should reading and editing tabular data be one component with modes, or two components?
+
+**Alternatives Considered**
+
+1. **One component with an edit mode.** Shared code, shared styling.
+2. **Two components** with distinct contracts.
+3. **One component, edit delegated to a cell-renderer plugin.**
+
+**Why Alternatives Were Rejected**
+
+1. **One with modes** — rejected because the affordances directly conflict. A read table wants minimal chrome, truncation, and row-level selection. An edit grid needs visible cell boundaries, cell-level focus, an editing state, per-cell validation, conflict handling, and undo. **Merging them produces a table that is noisy to read and a grid that is unsafe to edit** — and the read table is our primary visualisation, so the cost lands on the more important surface.
+2. **Two components** — accepted.
+3. **Plugin** — rejected as option 1 with indirection. The conflicting requirements remain; they are just harder to see.
+
+**Final Decision**
+Two components. Table inherits Book I's typography, alignment, and no-zebra rules. Data Grid adds visible cell boundaries — the one place `color-border-subtle` appears on every cell — plus two-dimensional keyboard navigation, per-cell validation, and a mandatory `conflicted` state.
+
+**Expected Benefits**
+Each is optimised for its actual job. The read table stays quiet, which matters because it is where most user time is spent. The grid can be as explicit as safe editing requires without polluting the read case.
+
+**Trade-offs**
+Two components to build and maintain where most systems have one. Some duplicated implementation. Contributors will ask why, which is what this record answers.
+
+**Risks**
+Divergence — the two drift in typography or alignment until they no longer look related. Mitigation: Data Grid inherits Table's type and alignment tokens rather than defining its own. Second risk: someone builds editing into Table under deadline pressure, which is a system change made by accident.
+
+**Consequences**
+Editing requirements route to C-32. Data Grid requires a `conflicted` cell state — concurrent editing is real, and silently overwriting a colleague's change is a data-integrity failure presented as a UI convenience. Grid keyboard navigation is among the most demanding patterns in the system and is not optional (Checklist §11, **Gate 1**).
+
+**Related Decisions**
+Depends on `DDL-VIS-006`. Related: `DDL-VIS-002`.
+
+**Related Governance Documents**
+*Derives from:* Book I Ch. 5, Ch. 11. *Enforced by:* Checklist §11, §5.8.
+
+**Related Product Areas**
+All Index panels · bulk correction surfaces · structured annotation · analytics tables.
+
+**Review Trigger**
+Evidence that the two have diverged visually, or a surface that genuinely needs both behaviours simultaneously — which would be a real finding worth a versioned change to Book II rather than a local merge.
+
+**Amendment History**
+2026-07-25 · Design Owner · Record created with Book II. Proposed pending approval.
+2026-07-25 · Product Owner · **Accepted** on approval of the book.
+
+---
+
+## DDL-MKT-001 — Homepage narrative arc: nine scenes across five movements
+
+**Status:** Proposed
+**Date:** 2026-07-25
+**Owner:** Marketing Owner · co-owner: Design Owner
+
+**Decision Summary**
+The homepage follows nine scenes mapped to Bible Ch. 4's five movements — Recognition, Relief, Comprehension, Confidence, Resolve — with one candidate carried continuously through the five Comprehension scenes.
+
+**Context**
+Filed with the Homepage Storyboard. The creative brief proposed an eight-beat arc (Chaos → Focus → Understanding → Evidence → Confidence → Decision → Trust → CTA) and explicitly invited challenge. Bible Ch. 4 is frozen and describes its sequence as "a mechanism, not a suggestion."
+
+**Problem Statement**
+What narrative sequence satisfies the frozen emotional arc while delivering what the proposed arc was reaching for?
+
+**Alternatives Considered**
+
+1. **The proposed arc as briefed**, eight beats opening on Chaos.
+2. **The proposed arc with a Relief beat inserted** after Chaos.
+3. **Nine scenes rebuilt on the five movements**, with a single candidate threaded through Comprehension.
+4. **A feature-led structure** — capability sections in priority order.
+
+**Why Alternatives Were Rejected**
+
+1. **As briefed** — conflicts with Bible Ch. 4 in three places. Opening on Chaos cannot satisfy Movement I, which requires one claim, one focal point, and nothing moving; a chaos scene invites the opposite. It contains no Relief beat, so the first capability claim lands on unbroken skepticism. And Trust at position seven arrives after the reader already needed it (Movement IV precedes Resolve).
+2. **Patched arc** — fixes the missing beat and leaves the opening and the Trust placement wrong. Half-compliance with a frozen mechanism is not compliance.
+3. **Nine scenes on five movements** — accepted.
+4. **Feature-led** — rejected as the inventory shape Bible Ch. 11 prohibits and Checklist §14 G3 catalogues. It has no thesis, so nothing is remembered.
+
+**Final Decision**
+Nine scenes: The Sentence · The Admission · The Pile · Resolution · The Trail · What We Don't Know · The Record · The Room · The Close. Movement III is not a feature tour but one decision followed from an overloaded queue to a defensible record, with the same candidate present in Scenes 03–07. Every scene boundary is a hard cut, a match cut, or an answer cut; the logical transition is always a question the previous scene raised.
+
+**Expected Benefits**
+Satisfies the frozen arc without losing what the brief wanted. The single-candidate thread makes five scenes read as one continuous thought rather than five feature sections, and it is the shape Bible Ch. 11 identifies as hardest for a competitor to copy — they would need the product to back it. The reader finishes able to explain HireLens to a colleague, which is the actual §10.2 comprehension test.
+
+**Trade-offs**
+Optimised for the engaged reader, not the scanner. A scanner-optimised page would front-load claims and thin the middle — cheaper to build and better on bounce metrics, and it produces a reader who can recite our benefits and could not describe what we do. **Scene 02 must therefore work standalone**, since it is the only scene a scanner reliably reads.
+
+Second trade: the chaos the brief wanted as a spectacle appears instead as real content at real density in Scene 03. Less immediately dramatic; considerably more credible.
+
+**Risks**
+The single-candidate thread breaks if any scene substitutes a different example — the continuity is invisible when present and glaring when absent. Second risk: Scene 06 (the limitations turn) will be argued as momentum-killing by anyone optimising conversion, and removing it would strip the page of the beat that makes Scenes 03–05 credible retroactively.
+
+**Consequences**
+Scenes 02, 04, and 05 render model output and are therefore subject to **Gate 2** in full — sixteen checkpoints, no marketing exemption. Scene 02 satisfies the §10.8 obligation to show an imperfect state, and its position at number two is load-bearing rather than incidental. Scene 09 carries the only primary CTA.
+
+**Related Decisions**
+Depends on `DDL-POS-001`, `DDL-POS-002`, `DDL-BRD-001`. Related: `DDL-MKT-002`, `DDL-VIS-004`.
+
+**Related Governance Documents**
+*Derives from:* Bible Ch. 4 (five movements), Ch. 11 (storytelling shapes). *Enforced by:* Checklist §10.1, §10.2, §10.8, §8 (**Gate 2**), §10.7 (**Gate 3**).
+
+**Related Product Areas**
+Homepage · marketing site structure · Stitch prototyping briefs · marketing screenshot fixtures.
+
+**Review Trigger**
+Evidence that the Comprehension block loses readers before Scene 05 — measured by scroll depth and interaction rate, not assumed. **Not a trigger:** a request to front-load claims for conversion, which is the pressure this record exists to resist.
+
+**Amendment History**
+2026-07-25 · Marketing Owner · Record created with the Homepage Storyboard. The briefed arc was explicitly challenged and revised to follow frozen governance; no amendment to Bible Ch. 4 was sought or warranted.
+
+---
+
+## DDL-MKT-002 — Thinking is shown through structure, not animation
+
+**Status:** Proposed
+**Date:** 2026-07-25
+**Owner:** Marketing Owner · co-owner: AI Owner
+
+**Decision Summary**
+The homepage conveys reasoning through **sequence and structure** — evidence before conclusion, uncertainty stated, one decision followed end to end — never through animated cognition. Page-wide motion budget: **three user-triggered moments.**
+
+**Context**
+Filed with the Homepage Storyboard. The creative brief asked that the reader feel they are "watching HireLens think." That instinct is right and has one obvious execution that is prohibited: a pulsing indicator, a typing cursor, a scanning sweep, or a deliberate pause simulating cognition.
+
+**Problem Statement**
+How does a page convey reasoning under a motion regime that prohibits loops, ambient motion, scroll-jacking, and any implication of computation duration?
+
+**Alternatives Considered**
+
+1. **Animated thinking** — the conventional execution.
+2. **Scroll-driven choreography** — reasoning revealed as the reader scrolls.
+3. **Structural** — the page organised the way reasoning is organised, near-zero motion.
+4. **Restrained animation** — a small number of tasteful cognition cues.
+
+**Why Alternatives Were Rejected**
+
+1. **Animated thinking** — **prohibited.** Checklist §7.8 is **Gate 4**: no fake progress, no artificial thinking delay. §14 F3 explains the specific damage: it is a lie the interface tells about a product whose entire positioning is honest output, and discovery is catastrophic and permanent.
+2. **Scroll choreography** — rejected. Scroll-jacking, pinning, and staggered reveals are prohibited (Bible Ch. 10), and each delays reading, which is Book II Ch. 9's second motion commitment.
+3. **Structural** — accepted. Harder, and the only defensible option.
+4. **Restrained animation** — rejected because the boundary is not one of degree. A brief cognition cue is still a cue about duration we are inventing. Once the principle is that some simulated thinking is acceptable, the amount becomes a negotiation.
+
+**Final Decision**
+Three motion moments page-wide, all user-triggered: a confidence state change (Scene 02), the separation (Scene 04), and primary-action feedback (Scene 09). Six of nine scenes are completely still. Nothing animates on load or on scroll. Every motion moment resolves and stops.
+
+**Expected Benefits**
+A page that is composed rather than anxious — which is the register Book I Ch. 1 commits to, and which differentiates immediately in a category where every hero is animated. Reduced-motion parity by construction rather than by remediation: because no motion carries meaning the layout does not already carry, nothing is lost (§14 H4). And it is the more impressive execution — anyone can animate a shimmer.
+
+**Trade-offs**
+Gives up the most immediately arresting version of the brief. A still hero will be argued as unfinished at least once, likely by someone comparing it side by side with an animated competitor. The structural approach is also more expensive: it requires the *content* to actually be organised as reasoning, where an animation could have implied it.
+
+**Risks**
+**The primary risk is downstream reinterpretation.** A Stitch brief or an implementation ticket carrying the phrase "watching HireLens think" without this constraint will produce animated cognition, and it will look good enough that it survives casual review. Mitigation: the storyboard states the prohibition in its Director's Note rather than in a footnote, and Scenes 02, 04, and 05 name it individually.
+
+**Consequences**
+No scroll-triggered reveals, parallax, pinned sections, ambient loops, shimmer, counting numbers, chart load animations, or scanning lines anywhere on the homepage. Any scene proposing motion must name what the reader would misunderstand without it (§7.1). Book III (Motion) may set the three durations; it may not add a fourth moment to this page without a versioned change.
+
+**Related Decisions**
+Depends on `DDL-POS-002`, `DDL-BRD-001`. Related: `DDL-MKT-001`, `DDL-VIS-004`.
+
+**Related Governance Documents**
+*Derives from:* Bible Ch. 10, Ch. 13; Book I Ch. 1. *Enforced by:* Checklist §7.8 (**Gate 4**), §7.1, §7.3, §7.7, §14 F3, §14 E1–E4.
+
+**Related Product Areas**
+Homepage · all marketing surfaces · Stitch prototyping briefs · Book III motion specification.
+
+**Review Trigger**
+Book III concluding that a fourth motion moment carries information the layout cannot — filed as a versioned change with the specific misunderstanding it prevents. **Not a trigger:** a judgement that the page feels static, which is the intended reading.
+
+**Amendment History**
+2026-07-25 · Marketing Owner · Record created with the Homepage Storyboard. Gate 4 risk in the brief's phrasing identified and resolved structurally.
 
 ---
 
