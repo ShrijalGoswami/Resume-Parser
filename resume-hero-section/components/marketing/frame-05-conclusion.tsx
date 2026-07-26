@@ -116,7 +116,9 @@ export function Frame05Conclusion() {
             <div className="mt-12">
               <Link
                 href="/auth/signup"
-                className="inline-flex items-center font-mkt-body text-sm font-medium text-mkt-accent-text transition-opacity hover:opacity-80"
+                // `py-1` is hit area only — the link was 20px tall, under the
+                // 24px WCAG 2.5.8 minimum for a standalone target on touch.
+                className="-my-1 inline-flex items-center py-1 font-mkt-body text-sm font-medium text-mkt-accent-text transition-opacity hover:opacity-80"
               >
                 Read more stories
                 <span className="material-symbols-outlined ml-1 text-[16px]">
@@ -193,7 +195,8 @@ export function Frame05Conclusion() {
         <div className="mt-12 text-center">
           <Link
             href="/auth/signup"
-            className="inline-flex items-center font-mkt-body text-sm text-mkt-fg-tertiary transition-colors hover:text-mkt-fg"
+            // `py-1` is hit area only — see the note on the CTA above.
+            className="-my-1 inline-flex items-center py-1 font-mkt-body text-sm text-mkt-fg-tertiary transition-colors hover:text-mkt-fg"
           >
             See full pricing
             <span className="material-symbols-outlined ml-1 text-[16px]">

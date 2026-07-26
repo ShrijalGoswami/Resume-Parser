@@ -8,14 +8,16 @@
  *   - V4 (hirelens):   protected → /auth/login; authed users bounced to /home.
  */
 
-// Legacy app (frozen) — behavior preserved for routes it still owns.
+// Legacy app (frozen) — behavior preserved for the routes it still owns:
+// /insights, /reports, /agent, /knowledge and /predictions, reachable through the
+// V4 rail's "Classic" group.
 //
-// Routes whose V4 replacement is live are deliberately NOT listed here. They are
-// redirected to V4 by `next.config.mjs`, and their V4 destination is itself in
-// V4_PROTECTED — so an unauthenticated request lands on `/auth/login` (the V4
-// sign-in) rather than being bounced to the legacy `/login` for a page the user
-// will never actually see. Removed on migration: /campaigns, /search,
-// /integrations, /admin, /dashboard.
+// Migrated routes are deliberately NOT listed here. /campaigns, /search,
+// /integrations, /admin and /dashboard are redirected to V4 by
+// `next.config.mjs` and their page files have been deleted; their V4
+// destinations are themselves in V4_PROTECTED, so an unauthenticated request
+// lands on `/auth/login` (the V4 sign-in) rather than being bounced to the
+// legacy `/login` for a page that no longer exists.
 export const LEGACY_PROTECTED = [
   '/insights',
   '/reports',
@@ -30,9 +32,12 @@ export const V4_PROTECTED = [
   '/home',
   '/roles',
   '/talent',
+  '/interviews',
   '/ask',
+  '/analytics',
   '/ledger',
   '/learning',
+  '/notifications',
   '/settings',
   '/foundations',
 ]

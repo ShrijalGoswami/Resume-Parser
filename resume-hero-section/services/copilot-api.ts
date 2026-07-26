@@ -7,7 +7,6 @@
  *
  * The stateless `/copilot/chat` endpoint remains in `services/api.ts`.
  */
-import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import type {
   Conversation,
   ConversationMessagePublic,
@@ -15,18 +14,7 @@ import type {
   PostMessageResponse,
   SuggestionGroup,
 } from '@/types/copilot';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-const V1 = `${API_BASE_URL}/api/v1`;
-
-async function authHeaders(): Promise<Record<string, string>> {
-  const supabase = getSupabaseBrowserClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session?.access_token) throw new Error('Not authenticated');
-  return { Authorization: `Bearer ${session.access_token}` };
-}
+import { authHeaders, V1 } from './auth-headers';
 
 async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {

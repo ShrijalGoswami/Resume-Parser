@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field
 
 from app.ai import Capability, orchestrator
 from app.ai.utils.errors import AIError
+from app.ai.utils.untrusted import ground_claims, normalize_skill
 from app.schemas.resume import ResumeData
 
 logger = logging.getLogger(__name__)
@@ -40,6 +41,50 @@ class GroqBatchAnalysis(BaseModel):
     interview_questions: list[str] = Field(default_factory=list)
 
 
+def _enforce_grounding(analysis: GroqBatchAnalysis, resume_json: str) -> GroqBatchAnalysis:
+    """Drop claimed matching skills the résumé does not actually evidence.
+
+    The last line of defence against a résumé that talks the model into inflating
+    it. Prompt hardening asks the model to behave; this does not depend on it.
+    It matters disproportionately because the match score is derived from these
+    fields — `matching/(matching+missing) * 40` — so a fabricated skill list is
+    worth real points, and an emptied `missing_skills` is worth the rest.
+
+    A rejected claim is recorded as a weakness rather than silently deleted: a
+    recruiter should be able to see that the document overstated itself.
+    """
+    supported, unsupported = ground_claims(analysis.matching_skills, resume_json)
+    if not unsupported:
+        return analysis
+
+    logger.warning(
+        "Dropped %d unevidenced matching_skills claim(s) from candidate analysis: %s",
+        len(unsupported),
+        ", ".join(unsupported[:10]),
+    )
+    analysis.matching_skills = supported
+
+    # A rejected claim is a JD-relevant skill the document does not evidence — which
+    # is the definition of a missing skill. Reclassifying rather than deleting is
+    # what actually closes the scoring exploit: the score is
+    # `matching/(matching+missing) * 40`, so merely removing fabricated matches
+    # while `missing_skills` stayed empty still awarded full marks on whatever
+    # single claim survived.
+    known = {normalize_skill(s) for s in analysis.missing_skills}
+    analysis.missing_skills = [
+        *analysis.missing_skills,
+        *[s for s in unsupported if normalize_skill(s) not in known],
+    ]
+
+    note = (
+        "Résumé asserted skills it does not evidence "
+        f"({', '.join(unsupported[:5])}) — treat its claims with care."
+    )
+    if note not in analysis.weaknesses:
+        analysis.weaknesses = [*analysis.weaknesses, note]
+    return analysis
+
+
 def analyze_candidate(resume_data: ResumeData, job_description: str) -> GroqBatchAnalysis:
     """
     Run the single-call JD-aware analysis for one candidate through the AI
@@ -55,7 +100,7 @@ def analyze_candidate(resume_data: ResumeData, job_description: str) -> GroqBatc
             variables={"job_description": job_description, "resume_json": resume_json},
             schema=GroqBatchAnalysis,
         )
-        return result.data
+        return _enforce_grounding(result.data, resume_json)
     except AIError as exc:
         # Preserve the historical contract: batch_service catches RuntimeError and
         # degrades that candidate to a deterministic-only result.

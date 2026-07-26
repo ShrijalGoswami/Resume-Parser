@@ -33,6 +33,13 @@ function NavLink({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
     <Link
       href={item.href}
       aria-current={active ? 'page' : undefined}
+      // Collapsed, the link renders an icon and nothing else, so it has no
+      // accessible name — the label only exists in a Tooltip, and a tooltip is
+      // not a name. Assistive tech announced the whole primary rail as bare
+      // "link". Expanded, the visible label already names it, so the attribute
+      // is only added where it is missing (the Settings link below the rail was
+      // already doing this).
+      aria-label={collapsed ? item.label : undefined}
       className={cn(
         'group relative flex h-9 items-center gap-2.5 rounded-hl-md px-2.5 outline-none transition-colors',
         collapsed && 'justify-center px-0',

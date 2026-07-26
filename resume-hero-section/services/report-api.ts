@@ -4,21 +4,9 @@
  * Authenticated + recruiter-scoped. Reports are grounded in server-computed
  * metrics; the AI only narrates them.
  */
-import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { ApiError } from '@/lib/api-error';
 import type { ExecutiveReport, ExecutiveReportRequest } from '@/types/report';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-const V1 = `${API_BASE_URL}/api/v1`;
-
-async function authHeaders(): Promise<Record<string, string>> {
-  const supabase = getSupabaseBrowserClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session?.access_token) throw new Error('Not authenticated');
-  return { Authorization: `Bearer ${session.access_token}` };
-}
+import { authHeaders, V1 } from './auth-headers';
 
 export async function generateExecutiveReport(body: ExecutiveReportRequest = {}): Promise<ExecutiveReport> {
   const res = await fetch(`${V1}/reports/executive`, {

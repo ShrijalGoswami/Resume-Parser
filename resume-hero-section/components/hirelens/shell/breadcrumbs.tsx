@@ -22,7 +22,11 @@ export function Breadcrumbs({ items, className }: { items: Crumb[]; className?: 
             {crumb.href && !isLast ? (
               <Link
                 href={crumb.href}
-                className="hl-small truncate text-hl-fg-tertiary outline-none transition-colors hover:text-hl-fg"
+                // `py-1` is hit area, not spacing: the label alone is 18px tall,
+                // under the 24px WCAG 2.5.8 minimum, which made this a fiddly
+                // target on a phone. The row is centred inside a 52px bar, so the
+                // extra padding changes the touch target without moving anything.
+                className="hl-small -my-1 truncate py-1 text-hl-fg-tertiary outline-none transition-colors hover:text-hl-fg"
               >
                 {crumb.label}
               </Link>

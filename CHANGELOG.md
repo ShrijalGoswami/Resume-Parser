@@ -4,19 +4,170 @@ All notable changes to HireLens are documented here. Format based on
 [Keep a Changelog](https://keepachangelog.com/); versioning follows
 [Semantic Versioning](https://semver.org/).
 
-> **Note on versioning:** the backend `APP_VERSION` constant is currently
-> `1.2.0` (the last shipped release). The **V4 Supabase Foundation** below is an
-> in-development major line (`4.0.0`) that adds the persistence platform; it is
-> feature-complete for Sprint 1 but not yet cut as a release. See
-> [ROADMAP.md](./ROADMAP.md) and [sprints/V4_SPRINT1.md](./sprints/V4_SPRINT1.md).
+> **Note on versioning — two tracks in this file.** Entries marked
+> `Unreleased (V… Sprint N)` are a **feature log**: their version numbers were
+> assigned per sprint and were never cut as releases, so `4.3.0` through `8.0.0`
+> appear there without ever having shipped. **Shipped releases** follow the git
+> tags (`v1.0.0` … `v4.2.0`) and carry a date. Dated entries are releases; entries
+> marked `Unreleased` are not, whatever their number.
+>
+> The backend `APP_VERSION` constant matches the current release and is reported by
+> `/health` — keep them in step, because a version string that lags is a wrong
+> answer during an incident.
+>
+> See [docs/ROADMAP.md](./docs/ROADMAP.md).
+
+---
+
+## [4.3.0] — 2026-07-26 — Release Candidate 1 · Architecture Freeze
+
+**The V4 architecture is frozen as of this release.** It is the baseline for all
+future development — see [CONTRIBUTING.md](./CONTRIBUTING.md) for what may change
+and what may not, and [RELEASE_CANDIDATE.md](./RELEASE_CANDIDATE.md) for the full
+status report and the standing recommendation (**READY FOR PILOT**).
+
+No features were added in this release. Everything below is correctness,
+reliability, security, accessibility or deployment.
+
+### Security
+
+- **Prompt injection closed at three layers.** `scrub()` now drops whole
+  instruction-like *lines* at the single extraction chokepoint in
+  `parser/factory.py`; `fence()` wraps untrusted text in a per-call nonce; and
+  `ground_claims()` drops unevidenced `matching_skills` **and reclassifies them
+  into `missing_skills`**. Each layer exists because the previous one was measured
+  being bypassed — in particular, merely dropping a fabricated skill *raised* the
+  fit score, because the score is `matching/(matching+missing)`.
+  63 attack attempts → 27 surviving, zero fabricated skills, zero false positives
+  on honest résumés. Regressions pinned in `tests/test_prompt_injection.py`.
+- **Local JWT verification via JWKS.** ES256/RS256 tokens are now verified against
+  a cached JWKS key set instead of a network call to Supabase Auth on *every*
+  authenticated request (~55% latency reduction). Unparseable tokens 401
+  immediately, so a flood of garbage cannot be amplified into outbound requests.
+- **Rate limiting no longer collapses to one bucket** behind a proxy.
+  `X-Forwarded-For` is honoured only when `TRUST_PROXY_HEADERS` is set, so a
+  directly-exposed instance cannot be spoofed while a proxied one still gets
+  per-client limits.
+- **HSTS** emitted only on requests that actually arrived over TLS.
+- **Feature flags enforced server-side** via a `feature_gate()` dependency on
+  `/compare` and `/interview` — previously enforced only in the UI.
+- **Storage no longer orphans PII.** Deleting a campaign or bulk-deleting
+  candidates now removes the storage prefix as well as the rows.
+- **Inbound `X-Request-ID` validated** (`^[A-Za-z0-9._-]{1,64}$`). A 300-character
+  header was previously copied verbatim into every log line for the request, and a
+  caller could replay another request's ID to merge into its trace.
+
+### Accessibility
+
+- **Five WCAG AA contrast failures fixed**, hue-preserving, both themes:
+  `--hl-text-tertiary` light 3.43/3.22/3.00 → 5.24/4.92/4.57 and dark
+  4.05/3.85/3.58 → 5.13/4.88/4.53; white on the dark accent 3.50 → 4.56;
+  `--hl-warning` 4.30 → 4.52; `--hl-info` 4.38 → 4.52. Tertiary carries every
+  caption, timestamp and metadata line, so it was the most-read failing text in
+  the product. Pinned by `tests/contrast.test.ts`, which also asserts disabled
+  text stays deliberately *below* AA.
+- **`prefers-reduced-motion` extended to the Classic surfaces**, which animate
+  spinners and bounces and were previously uncovered.
+- **Hit areas raised to ≥ 24 px** on the breadcrumb link, marketing footer links,
+  two CTAs and the marketing nav.
+
+### Responsive
+
+- Verified at **390 / 768 / 1024 / 1440 / 1920 px — 44 page × width combinations,
+  zero horizontal overflow**. Breadcrumb no longer crushes to ~12 px of
+  unreadable text at 390 px.
+
+### Reliability
+
+- **Error boundaries** added at the root (`app/global-error.tsx`, self-contained
+  inline styles) and per route group.
+- **Backup, restore and a rehearsed drill.** `scripts/backup_restore.py`
+  (28 tables + storage, checksum `verify` proven to detect single-byte
+  corruption; `audit_logs` refused on restore because it is append-only) and
+  `scripts/dr_drill.py` (**9/9 PASS**, byte-identical résumé recovery). The drill
+  caught two defects that would otherwise have appeared mid-incident: restore
+  silently restoring **zero** files (415 from the bucket's MIME allowlist, because
+  uploads defaulted to `text/plain`), and `download()` succeeding on a deleted
+  object because Supabase serves it from cache — the bucket **listing** is
+  authoritative, which changes how an erasure request is attested.
+- **Startup says so when production has no persistence.** Previously the service
+  booted, reported healthy, and had a completely dead authenticated product.
+  Non-fatal, because a stateless deployment is deliberately supported.
+- **`LOG_LEVEL`** is configurable; an unrecognised value falls back to `INFO`
+  rather than raising at startup. The level was hardcoded, so raising verbosity
+  during an incident required a code change and a redeploy.
+
+### Deployment
+
+- **Dependency pinning.** `requirements.lock.txt` holds the exact 49-package set
+  the release was verified against; `render.yaml`, `backend/Dockerfile` and CI all
+  install from it. Measured: a clean resolve of `requirements.txt` selected fastapi
+  0.140.0 / groq 1.6.0 while the release was verified on 0.139.2 / 1.5.0.
+- **Render blueprint declares the Supabase variables.** It previously declared
+  six env vars, none of them Supabase, so applying it produced a production
+  service where sign-in and every authenticated route were dead while `/health`
+  returned 200.
+- **Container images** for both apps (`backend/Dockerfile`,
+  `resume-hero-section/Dockerfile`, `docker-compose.yml`), non-root, multi-stage,
+  with health checks. Every step *inside* them verified on the host; the
+  `docker build` itself is **UNVERIFIED** — no daemon was available — and the
+  `containers` CI job is what closes that gap.
+- **CI/CD** (`.github/workflows/ci.yml`): frontend typecheck · lint · 101 tests ·
+  production build · standalone build; backend install-from-lock · startup
+  validation · 10 suites; container build and run. Plus
+  `release-gate.yml` for the four destructive suites and the DR drill against
+  staging, which refuses to run if pointed at production.
+- `output: 'standalone'` is opt-in via `NEXT_OUTPUT_STANDALONE=1` so the Vercel
+  production build stays exactly the build that was verified.
+
+### Performance
+
+- **Org-context resolution fans out.** Four independent Supabase queries that ran
+  sequentially now run concurrently (verified by log timestamps landing in the same
+  millisecond). Deliberately concurrency, **not** caching: a revoked role still
+  takes effect on the next request.
+- **Client bundle 2.80 MB → 2.37 MB.**
+- End-to-end latency −12% (2558 → 2253 ms) on this host, where ~2 s Supabase
+  round-trips dominate. The four-to-one collapse is real; the proportional win is
+  larger when co-located.
+
+### Cleanup
+
+- Single `authHeaders()` helper replaced 13 duplicated implementations;
+  `services/api.ts` trimmed 283 → 62 lines.
+- `docs/ARCHITECTURE_FINAL.md` folded into `docs/ARCHITECTURE.md`;
+  `docs/DEPLOYMENT_PACKAGE.md` folded into `DEPLOYMENT.md` / `OPERATIONS.md` /
+  `MONITORING.md`; `CHANGELOG.md` moved to the repository root.
+- Four unused motion tokens removed.
+
+### Added — documentation
+
+`CONTRIBUTING.md`, `docs/OPERATIONS.md`, `docs/MONITORING.md`,
+`docs/DISASTER_RECOVERY.md`, `RELEASE_CANDIDATE.md`, and rewritten
+`docs/ARCHITECTURE.md` and `docs/DEPLOYMENT.md`.
+
+### Tests
+
+101 frontend tests across 14 files (was 85); backend gains
+`test_prompt_injection.py`, `test_security_headers_and_limits.py`,
+`test_feature_flag_enforcement.py`, `test_copilot_dashboard_context.py`,
+`test_production_logging.py` and `test_deployment_config.py`.
+
+### Known issues
+
+Carried forward deliberately, with reasons, in
+[RELEASE_CANDIDATE.md](./RELEASE_CANDIDATE.md) §7 and
+[docs/OPERATIONS.md](./docs/OPERATIONS.md) §7. The two blocking READY FOR
+PRODUCTION: **no PITR plus an unrehearsed full-cluster restore**, and **no
+screen-reader pass**.
 
 ---
 
 ## [1.0.0] — Production Stabilization & Freeze
 
 The full AI platform, stabilized and frozen for a production v1.0 release. See
-[RELEASE_NOTES.md](./RELEASE_NOTES.md) for the narrative and
-[KNOWN_LIMITATIONS.md](./KNOWN_LIMITATIONS.md) for scoped-out items.
+[RELEASE_NOTES.md](./docs/RELEASE_NOTES.md) for the narrative and
+[KNOWN_LIMITATIONS.md](./docs/KNOWN_LIMITATIONS.md) for scoped-out items.
 
 ### Added
 - **QA mode** (dev-only): identical-request LLM response cache, duplicate-prompt
@@ -64,8 +215,8 @@ The full AI platform, stabilized and frozen for a production v1.0 release. See
 HireLens models the hiring organization and forecasts the future — deterministic,
 explainable predictions + scenario simulation, grounded in the org's own history.
 LLMs explain forecasts; they never generate them. Full detail:
-[sprints/V8_SPRINT13.md](./sprints/V8_SPRINT13.md),
-[decisions/ADR-017](./decisions/ADR-017-predictive-intelligence-architecture.md).
+[sprints/V8_SPRINT13.md](./docs/sprints/V8_SPRINT13.md),
+[decisions/ADR-017](./docs/decisions/ADR-017-predictive-intelligence-architecture.md).
 
 ### Added
 - **Predictive Intelligence Layer** (`app/prediction/`): Organizational **Digital Twin**
@@ -94,8 +245,8 @@ LLMs explain forecasts; they never generate them. Full detail:
 
 A company-wide recruiting knowledge system — persistent, structured, time-aware,
 org-scoped memory that every AI capability retrieves before reasoning. Full detail:
-[sprints/V7_SPRINT12.md](./sprints/V7_SPRINT12.md),
-[decisions/ADR-016](./decisions/ADR-016-organizational-knowledge-architecture.md).
+[sprints/V7_SPRINT12.md](./docs/sprints/V7_SPRINT12.md),
+[decisions/ADR-016](./docs/decisions/ADR-016-organizational-knowledge-architecture.md).
 
 ### Added
 - **Organizational Knowledge Layer** (`app/knowledge/`): knowledge store, extractor
@@ -125,8 +276,8 @@ org-scoped memory that every AI capability retrieves before reasoning. Full deta
 
 HireLens as the AI layer above existing HR software — a provider-plugin integration
 platform + event-driven workflow automation, with all AI reasoning and approvals kept
-inside HireLens. Full detail: [sprints/V6_SPRINT11.md](./sprints/V6_SPRINT11.md),
-[decisions/ADR-015](./decisions/ADR-015-integration-platform-architecture.md).
+inside HireLens. Full detail: [sprints/V6_SPRINT11.md](./docs/sprints/V6_SPRINT11.md),
+[decisions/ADR-015](./docs/decisions/ADR-015-integration-platform-architecture.md).
 
 ### Added
 - **Integration Platform** (`app/integrations/`): one `IntegrationProvider` interface
@@ -159,8 +310,8 @@ inside HireLens. Full detail: [sprints/V6_SPRINT11.md](./sprints/V6_SPRINT11.md)
 The transition from an AI recruiting application to an enterprise AI recruiting
 platform — multi-tenant organizations, RBAC, auditing, usage, subscriptions,
 feature flags, and API keys, layered additively over V5. Full detail:
-[sprints/V6_SPRINT10.md](./sprints/V6_SPRINT10.md),
-[decisions/ADR-014](./decisions/ADR-014-enterprise-platform-architecture.md).
+[sprints/V6_SPRINT10.md](./docs/sprints/V6_SPRINT10.md),
+[decisions/ADR-014](./docs/decisions/ADR-014-enterprise-platform-architecture.md).
 
 ### Added
 - **Organizations & Workspaces** (migration `0008`): Organization → Workspace →
@@ -197,8 +348,8 @@ feature flags, and API keys, layered additively over V5. Full detail:
 
 The first proactive AI teammate — observes the pipeline, coordinates the existing
 engines, and produces explainable recommendations requiring human approval. Full
-detail: [sprints/V4_SPRINT9.md](./sprints/V4_SPRINT9.md),
-[decisions/ADR-013](./decisions/ADR-013-autonomous-agent-architecture.md).
+detail: [sprints/V4_SPRINT9.md](./docs/sprints/V4_SPRINT9.md),
+[decisions/ADR-013](./docs/decisions/ADR-013-autonomous-agent-architecture.md).
 
 ### Added
 - **Agent Framework** (`app/ai/agent/`): a **Tool Registry** wrapping existing
@@ -233,8 +384,8 @@ detail: [sprints/V4_SPRINT9.md](./sprints/V4_SPRINT9.md),
 
 An AI-powered executive decision system — explains hiring health, why, and what to
 do, grounded in real data and composing existing engines. Full detail:
-[sprints/V4_SPRINT8.md](./sprints/V4_SPRINT8.md),
-[decisions/ADR-012](./decisions/ADR-012-executive-intelligence-architecture.md).
+[sprints/V4_SPRINT8.md](./docs/sprints/V4_SPRINT8.md),
+[decisions/ADR-012](./docs/decisions/ADR-012-executive-intelligence-architecture.md).
 
 ### Added
 - **Executive Intelligence** (`Capability.EXECUTIVE_REPORT`): deterministic data
@@ -264,8 +415,8 @@ do, grounded in real data and composing existing engines. Full detail:
 
 The AI Foundation becomes a true AI Gateway — switch LLM and embedding providers
 by configuration only, with every capability following automatically. Full detail:
-[sprints/V4_SPRINT7_5.md](./sprints/V4_SPRINT7_5.md),
-[decisions/ADR-011](./decisions/ADR-011-ai-gateway-and-provider-management.md).
+[sprints/V4_SPRINT7_5.md](./docs/sprints/V4_SPRINT7_5.md),
+[decisions/ADR-011](./docs/decisions/ADR-011-ai-gateway-and-provider-management.md).
 
 ### Added
 - **AI Gateway** (`app/ai/gateway/`): logical `ModelRole`s (DEFAULT/FAST/CHEAP/
@@ -303,8 +454,8 @@ by configuration only, with every capability following automatically. Full detai
 
 A complete AI interview workbench for any candidate — grounded, structured, and
 reused by the Copilot and Comparison. Full detail:
-[sprints/V4_SPRINT7.md](./sprints/V4_SPRINT7.md),
-[decisions/ADR-010](./decisions/ADR-010-interview-intelligence-engine.md).
+[sprints/V4_SPRINT7.md](./docs/sprints/V4_SPRINT7.md),
+[decisions/ADR-010](./docs/decisions/ADR-010-interview-intelligence-engine.md).
 
 ### Added
 - **Interview Intelligence Engine** (`Capability.INTERVIEW_GENERATION`): versioned
@@ -334,8 +485,8 @@ reused by the Copilot and Comparison. Full detail:
 
 The platform's semantic retrieval layer: discover talent by meaning, not
 keywords. Embedding-based, fully separate from the LLM, reused by the Copilot.
-Full detail: [sprints/V4_SPRINT6.md](./sprints/V4_SPRINT6.md),
-[decisions/ADR-009](./decisions/ADR-009-semantic-search-architecture.md).
+Full detail: [sprints/V4_SPRINT6.md](./docs/sprints/V4_SPRINT6.md),
+[decisions/ADR-009](./docs/decisions/ADR-009-semantic-search-architecture.md).
 
 ### Added
 - **Embedding layer** (`app/ai/embeddings/`): provider-agnostic `EmbeddingProvider`
@@ -373,8 +524,8 @@ Full detail: [sprints/V4_SPRINT6.md](./sprints/V4_SPRINT6.md),
 
 The first flagship AI capability on the Copilot: an **AI Hiring Analyst** that
 compares 2–5 candidates into an executive report, reused by the Copilot. Full
-detail: [sprints/V4_SPRINT5.md](./sprints/V4_SPRINT5.md),
-[decisions/ADR-008](./decisions/ADR-008-ai-candidate-comparison.md).
+detail: [sprints/V4_SPRINT5.md](./docs/sprints/V4_SPRINT5.md),
+[decisions/ADR-008](./docs/decisions/ADR-008-ai-candidate-comparison.md).
 
 ### Added
 - **AI Candidate Comparison** (`Capability.CANDIDATE_COMPARISON`): versioned
@@ -404,8 +555,8 @@ detail: [sprints/V4_SPRINT5.md](./sprints/V4_SPRINT5.md),
 
 The first production **Recruiter Copilot** — an ambient, context-aware assistant
 built entirely on the Sprint 3 orchestration layer. Full detail:
-[sprints/V4_SPRINT4.md](./sprints/V4_SPRINT4.md),
-[decisions/ADR-007](./decisions/ADR-007-ai-recruiter-copilot.md).
+[sprints/V4_SPRINT4.md](./docs/sprints/V4_SPRINT4.md),
+[decisions/ADR-007](./docs/decisions/ADR-007-ai-recruiter-copilot.md).
 
 ### Added
 - **Recruiter Copilot** (`Capability.RECRUITER_COPILOT`): versioned system prompt
@@ -439,7 +590,7 @@ built entirely on the Sprint 3 orchestration layer. Full detail:
 
 Introduces the centralized AI architecture every future AI feature will use. No
 new product feature; the AI pipeline behavior is preserved. Full detail:
-[sprints/V4_SPRINT3.md](./sprints/V4_SPRINT3.md), [AI_ARCHITECTURE.md](./AI_ARCHITECTURE.md).
+[sprints/V4_SPRINT3.md](./docs/sprints/V4_SPRINT3.md), [AI_ARCHITECTURE.md](./docs/AI_ARCHITECTURE.md).
 
 ### Added
 - **AI Foundation Layer** (`backend/app/ai/`): central **AIOrchestrator**,
@@ -468,7 +619,7 @@ new product feature; the AI pipeline behavior is preserved. Full detail:
 
 Turns the persisted V4 foundation into a usable recruiter product. Reuses the
 repository pattern and the **unchanged** AI pipeline; no migrations. Full detail:
-[sprints/V4_SPRINT2.md](./sprints/V4_SPRINT2.md).
+[sprints/V4_SPRINT2.md](./docs/sprints/V4_SPRINT2.md).
 
 ### Added
 - **Campaign Dashboard** (`/dashboard`) — per-campaign KPIs (candidates, awaiting,
@@ -503,7 +654,7 @@ repository pattern and the **unchanged** AI pipeline; no migrations. Full detail
 
 Converts HireLens from a stateless AI application into a persistent SaaS
 platform. **The AI pipeline was not modified** — persistence is layered on top,
-additively. Full detail: [sprints/V4_SPRINT1.md](./sprints/V4_SPRINT1.md).
+additively. Full detail: [sprints/V4_SPRINT1.md](./docs/sprints/V4_SPRINT1.md).
 
 ### Added
 - **Supabase persistence layer**: PostgreSQL schema across 4 migrations

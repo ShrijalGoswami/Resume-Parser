@@ -1,7 +1,9 @@
 'use client'
 
 import * as React from 'react'
+import { usePathname } from 'next/navigation'
 import { Sparkles } from 'lucide-react'
+import { detectPageContext } from '@/lib/copilot-context'
 import { EmptyState } from '../states/empty-state'
 import { ErrorState } from '../states/error-state'
 import { Skeleton } from '../ui/skeleton'
@@ -10,9 +12,7 @@ import { UserTurn, AssistantTurn, ThinkingTurn } from './ask-message'
 import { AskComposer } from './ask-composer'
 import { ScenarioSimulator } from './scenario-simulator'
 import { isWhatIf, ASK_EXAMPLES } from './intent'
-import type { CopilotPageContext, ConversationMessagePublic } from '@/types/copilot'
-
-const CONTEXT: CopilotPageContext = { type: 'global' }
+import type { ConversationMessagePublic } from '@/types/copilot'
 
 /**
  * The Ask conversation canvas (UX Spec §9). A single reading column: a Fraunces
@@ -35,6 +35,13 @@ export function AskThread({
   const create = useCreateConversation()
   const post = usePostMessage()
 
+  // Grounding context is derived from the route rather than hardcoded, so that
+  // mounting Ask under a role or candidate path grounds the answer on that
+  // record instead of silently asking a global question. On `/ask` itself this
+  // resolves to `global`, which is the correct scope there.
+  const pathname = usePathname()
+  const context = React.useMemo(() => detectPageContext(pathname ?? ''), [pathname])
+
   const [draft, setDraft] = React.useState(seed)
   const [pending, setPending] = React.useState<string | null>(null)
   const [errorText, setErrorText] = React.useState<string | null>(null)
@@ -56,13 +63,13 @@ export function AskThread({
         let id = threadId
         if (!id) {
           const conversation = await create.mutateAsync({
-            context: CONTEXT,
+            context,
             title: question.slice(0, 60),
           })
           id = conversation.id
           onThreadCreated(id)
         }
-        await post.mutateAsync({ id, message: question, context: CONTEXT })
+        await post.mutateAsync({ id, message: question, context })
       } catch {
         setErrorText(question)
       } finally {
@@ -70,7 +77,7 @@ export function AskThread({
         inputRef.current?.focus()
       }
     },
-    [create, post, pending, threadId, onThreadCreated],
+    [create, post, pending, threadId, onThreadCreated, context],
   )
 
   // Keep the newest turn in view as the conversation grows.

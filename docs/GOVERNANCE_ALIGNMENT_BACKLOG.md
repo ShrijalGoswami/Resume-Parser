@@ -283,7 +283,7 @@ Prepend the dated governance note. **Do not edit the entry.**
 |---|---|
 | **Backlog ID** | GAB-E2 |
 | **Severity** | Minor |
-| **Repository Path** | `docs/CHANGELOG.md` (lines 159, 234) |
+| **Repository Path** | `CHANGELOG.md` (lines 159, 234) |
 | **Estimated Effort** | S |
 | **Dependencies** | None |
 | **Owner** | Design Ops |
@@ -380,7 +380,7 @@ ATS is named here as an **external system we are compatible with**, which is fac
 | GAB-D1 | D | Major **⚠ GATE** | `report_generator.py` | S | AI Owner | Not Started |
 | GAB-D2 | D | Major | `backend/app/main.py` | S | Engineering | Not Started |
 | GAB-E1 | E | Major | `docs/RELEASE_NOTES.md` | S | Design Ops | Not Started |
-| GAB-E2 | E | Minor | `docs/CHANGELOG.md` | S | Design Ops | Not Started |
+| GAB-E2 | E | Minor | `CHANGELOG.md` | S | Design Ops | Not Started |
 | GAB-E3 | E | Minor | `docs/sprints/*` | S | Design Ops | Not Started |
 | GAB-E4 | E | Minor | `ADR-012` | S | Design Ops | Not Started |
 | GAB-X1 | — | — | `upload-dialog.tsx` | — | Design | **Closed — No Action** |

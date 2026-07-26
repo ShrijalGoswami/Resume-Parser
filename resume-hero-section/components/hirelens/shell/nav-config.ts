@@ -2,6 +2,7 @@ import {
   Inbox,
   Briefcase,
   Users,
+  ClipboardList,
   Sparkles,
   BookText,
   GraduationCap,
@@ -22,9 +23,9 @@ import {
  * Settings is pinned separately at the rail foot.
  *
  * Ask has a visible rail entry AND stays reachable via ⌘K + contextual AI
- * surfaces (both, by design). The former "Analytics" item was removed because it
- * pointed at an unbuilt route (404); it will be re-added when the Executive
- * Overview surface ships. Inbox points at the current `/home` landing as a
+ * surfaces (both, by design). Analytics is back in INTELLIGENCE now that the
+ * Executive Overview surface ships at `/analytics` (it had been removed while
+ * the route 404'd). Inbox points at the current `/home` landing as a
  * transitional placeholder; the href moves to `/inbox` when that surface is built.
  */
 export interface NavItem {
@@ -66,6 +67,13 @@ export const navGroups: NavGroup[] = [
         isActive: (p) => p.startsWith('/talent'),
         shortcut: 'G T',
       },
+      {
+        label: 'Interviews',
+        href: '/interviews',
+        icon: ClipboardList,
+        isActive: (p) => p.startsWith('/interviews'),
+        shortcut: 'G V',
+      },
     ],
   },
   {
@@ -77,6 +85,13 @@ export const navGroups: NavGroup[] = [
         icon: Sparkles,
         isActive: (p) => p.startsWith('/ask'),
         shortcut: 'G K',
+      },
+      {
+        label: 'Analytics',
+        href: '/analytics',
+        icon: BarChart3,
+        isActive: (p) => p.startsWith('/analytics'),
+        shortcut: 'G A',
       },
       {
         label: 'Ledger',

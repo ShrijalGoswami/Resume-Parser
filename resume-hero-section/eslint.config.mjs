@@ -2,9 +2,18 @@ import coreWebVitals from 'eslint-config-next/core-web-vitals'
 import typescript from 'eslint-config-next/typescript'
 
 /**
- * Lint scope is the HireLens V3 surface (app/(hirelens), components/hirelens).
- * The frozen v1.0 app was never linted and is intentionally left untouched, so
- * it is ignored here rather than retrofitted.
+ * Lint scope.
+ *
+ * Originally this ignored everything outside `components/hirelens` on the grounds
+ * that the frozen v1.0 app "was never linted". That reasoning went stale during
+ * the V4 migration: `services/`, `lib/`, `types/`, `proxy.ts`,
+ * `components/workspace/charts` and `components/interview` are all consumed by
+ * the V4 product now, so ignoring them left shipped code — including the auth
+ * middleware and every API client — unlinted.
+ *
+ * What stays ignored is only what is genuinely legacy-only UI, still reachable
+ * through the "Classic" nav group but frozen: it is not being changed, and
+ * retrofitting it is a separate exercise from keeping the live surface clean.
  */
 const eslintConfig = [
   {
@@ -16,22 +25,14 @@ const eslintConfig = [
       '.storybook/**',
       '**/*.stories.tsx',
       'storybook-static/**',
-      // Frozen v1.0 — left untouched.
+      // Frozen v1.0 UI — reachable but not under active change.
       'app/(legacy)/**',
       'components/ui/**',
       'components/app/**',
       'components/auth/**',
       'components/org/**',
-      'components/hero/**',
       'components/copilot/**',
       'components/recruiter/**',
-      'components/interview/**',
-      'components/workspace/**',
-      'services/**',
-      'hooks/**',
-      'lib/**',
-      'types/**',
-      'proxy.ts',
     ],
   },
   ...coreWebVitals,

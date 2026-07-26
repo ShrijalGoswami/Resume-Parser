@@ -4,7 +4,6 @@ import '../app/globals.css'
 import { TooltipProvider } from '../components/hirelens/ui/tooltip'
 import { DensityProvider } from '../components/hirelens/lib/density'
 import { CommandRegistryProvider } from '../components/hirelens/command-palette/command-registry'
-import { CopilotProvider } from '../components/hirelens/copilot/copilot-context'
 import { ShellProvider } from '../components/hirelens/shell/shell-context'
 
 /**
@@ -25,11 +24,9 @@ const withHireLens: Decorator = (Story, context) => {
       <DensityProvider>
         <CommandRegistryProvider>
           <ShellProvider>
-            <CopilotProvider>
-              <TooltipProvider>
-                <Story />
-              </TooltipProvider>
-            </CopilotProvider>
+            <TooltipProvider>
+              <Story />
+            </TooltipProvider>
           </ShellProvider>
         </CommandRegistryProvider>
       </DensityProvider>

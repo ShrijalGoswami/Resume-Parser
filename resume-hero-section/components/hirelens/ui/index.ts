@@ -43,6 +43,12 @@ export {
 } from './drawer'
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs'
 export {
+  DataTable,
+  type DataTableProps,
+  type DataTableColumn,
+  type SortDirection,
+} from './data-table'
+export {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuGroup,

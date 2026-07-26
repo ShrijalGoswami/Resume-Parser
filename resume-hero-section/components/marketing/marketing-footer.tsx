@@ -35,7 +35,11 @@ export function MarketingFooter() {
             <a
               key={link.label}
               href={link.href}
-              className="font-mkt-body text-xs tracking-wide text-mkt-fg-tertiary transition-colors hover:text-mkt-fg"
+              // `py-1.5` is hit area only. At 12px type these links were 16px
+              // tall — well under the 24px WCAG 2.5.8 minimum and awkward to tap
+              // on a phone. The negative margin keeps the footer's visual rhythm
+              // identical while the touch target grows to 28px.
+              className="-my-1.5 py-1.5 font-mkt-body text-xs tracking-wide text-mkt-fg-tertiary transition-colors hover:text-mkt-fg"
             >
               {link.label}
             </a>

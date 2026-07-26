@@ -5,6 +5,7 @@ guard. Kept dependency-free so it runs anywhere the app runs.
 """
 
 import logging
+import re
 import threading
 import time
 import uuid
@@ -23,6 +24,21 @@ request_id_ctx: ContextVar[str] = ContextVar("request_id", default="-")
 
 LOG_FORMAT = "%(asctime)s | %(levelname)-8s | %(request_id)s | %(name)s | %(message)s"
 
+# An inbound X-Request-ID is honoured so a trace can span the frontend proxy, this
+# API and a log aggregator. But it is attacker-controlled data that lands in EVERY
+# log line for the request, so it is accepted only in this shape. Measured before
+# the guard: a 300-character header was copied verbatim into the logs, and a
+# client could replay another request's ID and quietly merge itself into that
+# request's trace during an investigation.
+_REQUEST_ID_RE = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
+
+
+def _safe_request_id(incoming: str | None) -> str:
+    """Trust an inbound request ID only if it is short and alphanumeric-ish."""
+    if incoming and _REQUEST_ID_RE.match(incoming):
+        return incoming
+    return uuid.uuid4().hex[:12]
+
 
 class RequestIdLogFilter(logging.Filter):
     """Injects the current request ID into every log record."""
@@ -35,7 +51,11 @@ class RequestIdLogFilter(logging.Filter):
 def configure_logging() -> None:
     """Install the request-ID-aware formatter on the root logger."""
     root = logging.getLogger()
-    root.setLevel(logging.INFO)
+    # An unrecognised LOG_LEVEL must not silence logging — `getLevelName` returns
+    # the string "BADVALUE" rather than raising, and passing that to setLevel
+    # would throw at startup. Fall back to INFO instead.
+    level = logging.getLevelName(str(settings.LOG_LEVEL).strip().upper())
+    root.setLevel(level if isinstance(level, int) else logging.INFO)
 
     handler = logging.StreamHandler()
     handler.setFormatter(logging.Formatter(LOG_FORMAT))
@@ -50,6 +70,15 @@ def configure_logging() -> None:
         lg.handlers = []
         lg.propagate = True
 
+    # `uvicorn.access` logs one line per request and so does RequestContextMiddleware
+    # (`app.access`), which measured as exactly 2 lines for every single request —
+    # double the log volume, and log ingest is billed by volume. Our line is a
+    # superset: it carries the request ID and the duration, which uvicorn's does
+    # not. What is given up is the client's source PORT and the HTTP version; if a
+    # future investigation needs those, re-enable this logger rather than adding a
+    # third access log.
+    logging.getLogger("uvicorn.access").disabled = True
+
 
 class RequestContextMiddleware(BaseHTTPMiddleware):
     """
@@ -60,8 +89,7 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
     _logger = logging.getLogger("app.access")
 
     async def dispatch(self, request: Request, call_next):
-        incoming = request.headers.get("X-Request-ID")
-        request_id = incoming or uuid.uuid4().hex[:12]
+        request_id = _safe_request_id(request.headers.get("X-Request-ID"))
         token = request_id_ctx.set(request_id)
 
         start = time.perf_counter()
@@ -109,7 +137,47 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers.setdefault(
             "Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'"
         )
+        # HSTS instructs browsers never to talk to this host over plaintext again.
+        # Only sent for requests that actually arrived over TLS (directly or via a
+        # terminating proxy) — emitting it on a local http:// dev server would pin
+        # localhost to https for two years in the developer's browser.
+        if _is_secure_request(request):
+            response.headers.setdefault(
+                "Strict-Transport-Security", "max-age=63072000; includeSubDomains"
+            )
         return response
+
+
+def _is_secure_request(request: Request) -> bool:
+    """True when the original client request used HTTPS."""
+    if request.url.scheme == "https":
+        return True
+    # Set by TLS-terminating proxies (Render, Vercel, most load balancers).
+    return request.headers.get("x-forwarded-proto", "").split(",")[0].strip() == "https"
+
+
+def client_ip(request: Request) -> str:
+    """Best-effort originating client IP.
+
+    Behind a TLS-terminating proxy — which is how this service is deployed —
+    `request.client.host` is the *proxy's* address, identical for every user. A
+    per-IP rate limiter keyed on it therefore shares one bucket across all
+    traffic, so a single abusive client exhausts the limit for everyone: a
+    self-inflicted denial of service rather than a protection.
+
+    `X-Forwarded-For` is only trusted when `TRUST_PROXY_HEADERS` is enabled,
+    because the header is client-supplied and trusting it unconditionally would
+    let anyone mint a fresh bucket per request. The deployment sets the flag; the
+    edge is responsible for overwriting (not appending to) the header.
+    """
+    if getattr(settings, "TRUST_PROXY_HEADERS", False):
+        forwarded = request.headers.get("x-forwarded-for", "")
+        if forwarded:
+            # Leftmost entry is the original client; the rest are proxy hops.
+            first = forwarded.split(",")[0].strip()
+            if first:
+                return first
+    return request.client.host if request.client else "unknown"
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
@@ -146,8 +214,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             rule = self._rule(request.url.path)
             if rule and request.method == "POST":
                 max_n, window = rule
-                ip = request.client.host if request.client else "unknown"
-                key = (ip, request.url.path)
+                key = (client_ip(request), request.url.path)
                 now = time.time()
                 with self._lock:
                     if len(self._hits) > self._MAX_KEYS:

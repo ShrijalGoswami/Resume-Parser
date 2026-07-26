@@ -4,15 +4,46 @@ import { useOrgContext, useOrgUsage, useAuditLogs } from '../../lib/api/settings
 import { SettingsSection } from '../settings-ui'
 import { PERMS, hasPerm } from '../permissions'
 import { Card } from '../../ui/card'
+import { DataTable, type DataTableColumn } from '../../ui/data-table'
 import { Skeleton } from '../../ui/skeleton'
 import { GateState } from '../../states/gate-state'
 import { EmptyState } from '../../states/empty-state'
 import { ErrorState } from '../../states/error-state'
 import { relativeTime } from '../../lib/format'
+import type { AuditLog } from '@/types/org'
 
 function humanize(value: string) {
   return value.replace(/[._]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }
+
+const auditColumns: DataTableColumn<AuditLog>[] = [
+  {
+    key: 'action',
+    header: 'Action',
+    sortValue: (row) => humanize(row.action),
+    render: (row) => <span className="text-hl-fg">{humanize(row.action)}</span>,
+  },
+  {
+    key: 'resource',
+    header: 'Resource',
+    sortValue: (row) => row.resource_type,
+    render: (row) => <span className="text-hl-fg-secondary">{row.resource_type}</span>,
+  },
+  {
+    key: 'by',
+    header: 'By',
+    sortValue: (row) => row.user_email ?? null,
+    render: (row) => <span className="text-hl-fg-secondary">{row.user_email ?? '—'}</span>,
+  },
+  {
+    key: 'when',
+    header: 'When',
+    // Sort on the raw timestamp — the rendered value is a relative phrase.
+    sortValue: (row) => (row.created_at ? Date.parse(row.created_at) : null),
+    className: 'hl-caption whitespace-nowrap text-hl-fg-tertiary',
+    render: (row) => relativeTime(row.created_at),
+  },
+]
 
 export function UsageAuditSection() {
   const ctx = useOrgContext()
@@ -109,39 +140,15 @@ function AuditPanel() {
     )
   }
   return (
-    <Card className="overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="border-b border-hl-border-subtle">
-              <th scope="col" className="hl-caption px-3 py-2 font-medium text-hl-fg-tertiary">
-                Action
-              </th>
-              <th scope="col" className="hl-caption px-3 py-2 font-medium text-hl-fg-tertiary">
-                Resource
-              </th>
-              <th scope="col" className="hl-caption px-3 py-2 font-medium text-hl-fg-tertiary">
-                By
-              </th>
-              <th scope="col" className="hl-caption px-3 py-2 font-medium text-hl-fg-tertiary">
-                When
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.id} className="border-b border-hl-border-subtle last:border-0">
-                <td className="hl-small px-3 py-2 text-hl-fg">{humanize(row.action)}</td>
-                <td className="hl-small px-3 py-2 text-hl-fg-secondary">{row.resource_type}</td>
-                <td className="hl-small px-3 py-2 text-hl-fg-secondary">{row.user_email ?? '—'}</td>
-                <td className="hl-caption whitespace-nowrap px-3 py-2 text-hl-fg-tertiary">
-                  {relativeTime(row.created_at)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </Card>
+    <DataTable
+      rows={rows}
+      columns={auditColumns}
+      getRowId={(row) => row.id}
+      getSearchText={(row) => `${humanize(row.action)} ${row.resource_type} ${row.user_email ?? ''}`}
+      searchPlaceholder="Search the audit log…"
+      pageSize={10}
+      initialSort={{ key: 'when', direction: 'desc' }}
+      caption="Administrative changes"
+    />
   )
 }

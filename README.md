@@ -9,7 +9,7 @@
   <img src="https://img.shields.io/badge/Python_3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
   <img src="https://img.shields.io/badge/Vercel-Deployed-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel">
   <img src="https://img.shields.io/badge/Render-Backend-46E3B7?style=for-the-badge&logo=render&logoColor=white" alt="Render">
-  <img src="https://img.shields.io/badge/Version-1.2.0-blue?style=for-the-badge" alt="Version 1.2">
+  <img src="https://img.shields.io/badge/Version-4.3.0-blue?style=for-the-badge" alt="Version 4.3.0">
   <img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge" alt="License">
 </p>
 
@@ -271,7 +271,7 @@ The FastAPI backend is designed to run seamlessly as a Render Web Service.
 
 > Full vision, phases, priority matrix, and cost-scaling plan live in
 > [`docs/ROADMAP.md`](docs/ROADMAP.md). Version history is in
-> [`docs/CHANGELOG.md`](docs/CHANGELOG.md).
+> [`CHANGELOG.md`](CHANGELOG.md).
 
 ### Implemented
 * ✅ High-Fidelity PDF & DOCX Parsing

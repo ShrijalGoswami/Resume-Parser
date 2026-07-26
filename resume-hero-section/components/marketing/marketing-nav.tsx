@@ -103,7 +103,10 @@ export function MarketingNav() {
             <a
               key={link.label}
               href={link.href}
-              className={`font-mkt-mono text-[12px] leading-4 font-medium uppercase tracking-widest transition-all duration-500 ${label}`}
+              // `py-1` is hit area only: 12px uppercase type renders 16px tall,
+              // under the 24px WCAG 2.5.8 minimum, and this bar is reachable on
+              // tablets. The negative margin keeps the bar's height unchanged.
+              className={`-my-1 py-1 font-mkt-mono text-[12px] leading-4 font-medium uppercase tracking-widest transition-all duration-500 ${label}`}
             >
               {link.label}
             </a>
@@ -114,7 +117,8 @@ export function MarketingNav() {
         <div className="hidden items-center gap-4 md:flex">
           <Link
             href="/auth/login"
-            className={`font-mkt-mono text-[12px] leading-4 font-medium uppercase tracking-widest transition-colors duration-500 ${
+            // `py-1` is hit area only — see the note on the nav links above.
+            className={`-my-1 py-1 font-mkt-mono text-[12px] leading-4 font-medium uppercase tracking-widest transition-colors duration-500 ${
               onInk
                 ? 'text-mkt-dark-fg-variant hover:text-mkt-dark-fg'
                 : 'text-mkt-fg-secondary hover:text-mkt-fg'

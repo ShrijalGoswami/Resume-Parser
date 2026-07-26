@@ -4,20 +4,10 @@
  * Authenticated; every call is organization-scoped and RBAC-enforced on the
  * backend. The frontend never trusts its own authorization — the server decides.
  */
-import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import type {
   ApiKey, AuditLog, OrgContext, OrgMember, Organization, Subscription, UsageCounter, Workspace,
 } from '@/types/org';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-const V1 = `${API_BASE_URL}/api/v1`;
-
-async function authHeaders(): Promise<Record<string, string>> {
-  const supabase = getSupabaseBrowserClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) throw new Error('Not authenticated');
-  return { Authorization: `Bearer ${session.access_token}` };
-}
+import { authHeaders, V1 } from './auth-headers';
 
 async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {

@@ -4,20 +4,8 @@
  * Authenticated: attaches the recruiter's Supabase access token. The backend
  * validates that every candidate belongs to the recruiter's campaign.
  */
-import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import type { CandidateComparisonReport } from '@/types/comparison';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-const V1 = `${API_BASE_URL}/api/v1`;
-
-async function authHeaders(): Promise<Record<string, string>> {
-  const supabase = getSupabaseBrowserClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session?.access_token) throw new Error('Not authenticated');
-  return { Authorization: `Bearer ${session.access_token}` };
-}
+import { authHeaders, V1 } from './auth-headers';
 
 export async function compareCandidates(
   campaignId: string,

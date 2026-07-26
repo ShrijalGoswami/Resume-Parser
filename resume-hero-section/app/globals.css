@@ -221,7 +221,14 @@
   --hl-border-strong: #CBD1D0;
   --hl-text-primary: #131817;
   --hl-text-secondary: #545C5A;
-  --hl-text-tertiary: #828B89;
+  /* Darkened from #828B89 to reach WCAG 2.1 AA (4.5:1) for normal-size text.
+     The old value measured 3.43:1 on canvas, 3.22:1 on subtle and 3.00:1 on
+     muted — this token carries captions, timestamps and metadata, so it was the
+     most-read failing text in the product. Now 5.24 / 4.92 / 4.57. Same hue and
+     the same recessive role; only lightness moved. */
+  --hl-text-tertiary: #656C6B;
+  /* Disabled text is intentionally below 4.5:1 — WCAG 1.4.3 exempts inactive
+     controls, and lifting it would make disabled read as enabled. */
   --hl-text-disabled: #AEB5B3;
 
   /* Accent — Iris (§3.2) */
@@ -262,11 +269,15 @@
   /* Semantic (§3.5) */
   --hl-success: #1E7A52;
   --hl-success-bg: #E7F5EE;
-  --hl-warning: #9A6800;
+  /* Nudged from #9A6800: it measured 4.30:1 on its own tint, just short of the
+     4.5:1 AA floor for normal-size text. A 3% darkening reaches 4.52:1 with no
+     perceptible change to the amber. */
+  --hl-warning: #956500;
   --hl-warning-bg: #FBF1DC;
   --hl-danger: #B4443A;
   --hl-danger-bg: #FBEBE8;
-  --hl-info: #2C6BD6;
+  /* Nudged from #2C6BD6 (4.38:1 on its tint) — same reasoning as --hl-warning. */
+  --hl-info: #2B69D2;
   --hl-info-bg: #E8F0FD;
 
   /* Confidence (§3.6) — low is neutral, never red */
@@ -290,15 +301,15 @@
   --hl-radius-lg: 12px;
   --hl-radius-xl: 16px;
 
-  /* Motion (§3.13) */
-  --hl-dur-instant: 90ms;
+  /* Motion (§3.13). Only the steps the product actually animates on are
+     declared — `--hl-dur-instant`, `--hl-dur-rack`, `--hl-ease-emphasized` and
+     `--hl-ease-in` were specified but never referenced by any component, so they
+     were unenforced values pretending to be a scale. Re-add a step when a
+     surface genuinely needs it. */
   --hl-dur-fast: 120ms;
   --hl-dur-base: 180ms;
   --hl-dur-slow: 240ms;
-  --hl-dur-rack: 200ms;
   --hl-ease-out: cubic-bezier(0.2, 0, 0, 1);
-  --hl-ease-emphasized: cubic-bezier(0.2, 0, 0, 0.2);
-  --hl-ease-in: cubic-bezier(0.4, 0, 1, 1);
 
   /* Z-index (§3.14) */
   --hl-z-sticky: 100;
@@ -323,6 +334,44 @@
   --hl-avatar: 1.5rem;        /* 24 */
 }
 
+/* --- Base-token bridge --------------------------------------------------
+   A handful of pre-V3 primitives are shared with the frozen v1.0 app and are
+   written against the base shadcn tokens (--primary, --muted, --card, …) —
+   `components/workspace/charts.tsx` is the one that matters, reused verbatim by
+   the V4 Analytics screen.
+
+   Rather than fork those components (a duplicate to keep in sync forever) or
+   rewrite them (a change the frozen legacy app would inherit), remap the base
+   tokens to their HireLens equivalents *inside* the `.hl` scope. A foreign
+   component dropped into the product surface then resolves V3 colors with no
+   code change, while `:root` — and therefore app/(legacy)/ — is untouched.
+
+   This does NOT relax the isolation contract above: nothing here redefines a
+   token outside `.hl`, and V3 components must still use the `--hl-*` scale
+   directly (they do — zero base-token references under components/hirelens/).
+   ------------------------------------------------------------------------ */
+.hl {
+  --background: var(--hl-bg-canvas);
+  --foreground: var(--hl-text-primary);
+  --card: var(--hl-bg-canvas);
+  --card-foreground: var(--hl-text-primary);
+  --popover: var(--hl-bg-canvas);
+  --popover-foreground: var(--hl-text-primary);
+  --primary: var(--hl-accent-solid);
+  --primary-foreground: #FFFFFF;
+  --secondary: var(--hl-bg-subtle);
+  --secondary-foreground: var(--hl-text-primary);
+  --muted: var(--hl-bg-muted);
+  --muted-foreground: var(--hl-text-tertiary);
+  --accent: var(--hl-accent-subtle-bg);
+  --accent-foreground: var(--hl-accent-text);
+  --destructive: var(--hl-danger);
+  --destructive-foreground: #FFFFFF;
+  --border: var(--hl-border-default);
+  --input: var(--hl-border-default);
+  --ring: var(--hl-accent-solid);
+}
+
 /* Density — Compact (§2.1) */
 .hl[data-hl-density='compact'] {
   --hl-control-h-sm: 1.5rem;  /* 24 */
@@ -345,10 +394,16 @@
   --hl-border-strong: #38403E;
   --hl-text-primary: #EDF1F0;
   --hl-text-secondary: #A3ACAA;
-  --hl-text-tertiary: #6B7472;
+  /* Lightened from #6B7472 for WCAG 2.1 AA. Was 4.05 / 3.85 / 3.58 on
+     canvas / subtle / muted; now 5.13 / 4.88 / 4.53. */
+  --hl-text-tertiary: #7D8583;
   --hl-text-disabled: #474F4D;
 
-  --hl-accent-solid: #7C7CF0;
+  /* Darkened from #7C7CF0 so white text on a primary button reaches AA in dark
+     mode: it measured 3.50:1, now 4.56:1. Still 4.71:1 against the dark canvas,
+     so focus rings and the active-nav marker stay above the 3:1 non-text
+     contrast floor (WCAG 1.4.11). */
+  --hl-accent-solid: #6B6BCE;
   --hl-accent-hover: #8E8EF5;
   --hl-accent-text: #A9A9F7;
   --hl-accent-subtle-bg: #1E1E3A;
@@ -757,6 +812,22 @@
   .hl *,
   .hl *::before,
   .hl *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Baseline for anything outside the `.hl` and `.mkt` scopes — the Classic
+   surfaces still reachable through the "Classic" nav group animate (spinners,
+   bounce, colour transitions) but belong to neither scope, so the two scoped
+   rules above left them moving for a user who asked the OS for less motion.
+   Scoped rules still win where they apply; this only catches the remainder. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;

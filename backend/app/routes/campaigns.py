@@ -14,7 +14,7 @@ from __future__ import annotations
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 
 from app.core.config import settings
 from app.core.deps import (
@@ -25,7 +25,7 @@ from app.core.deps import (
     NoteRepoDep,
     StorageDep,
 )
-from app.enterprise.deps import OrgIdDep
+from app.enterprise.deps import OrgIdDep, feature_gate
 from app.services.storage_service import object_key
 from app.services.upload_utils import validate_resume_upload, _verify_magic_bytes
 from app.schemas.batch import BatchAnalysisResponse
@@ -107,7 +107,20 @@ async def update_campaign(
 
 
 @router.delete("/{campaign_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_campaign(campaign_id: str, repo: CampaignRepoDep):
+async def delete_campaign(campaign_id: str, repo: CampaignRepoDep, storage: StorageDep):
+    """Permanently delete a campaign, its candidates, and their stored résumés.
+
+    The database cascade covers candidates, analyses, embeddings and upload
+    records. Storage is not part of that cascade, so the résumé binaries have to
+    be removed explicitly — otherwise every deleted campaign left its documents
+    (the most sensitive data in the system) orphaned in the bucket with no row
+    pointing at them, contradicting a confirmation dialog that promises permanent
+    deletion. Objects are removed first: an orphaned row is recoverable, an
+    orphaned file is not findable.
+    """
+    storage.remove_prefix(
+        settings.STORAGE_BUCKET_RESUMES, object_key(repo.recruiter_id, campaign_id)
+    )
     repo.delete(campaign_id)
 
 
@@ -124,8 +137,19 @@ async def bulk_delete_candidates(
     payload: BulkCandidateIds,
     candidates: CandidateRepoDep,
     activity: ActivityRepoDep,
+    storage: StorageDep,
 ):
-    """Delete multiple candidates at once (bulk action)."""
+    """Delete multiple candidates at once (bulk action).
+
+    Their stored résumés go too — same reasoning as deleting a whole campaign:
+    storage is outside the database cascade, so without this the binaries survive
+    as unreferenced orphans no one can reach.
+    """
+    for candidate_id in payload.candidate_ids:
+        storage.remove_prefix(
+            settings.STORAGE_BUCKET_RESUMES,
+            object_key(storage.recruiter_id, campaign_id, candidate_id),
+        )
     deleted = candidates.bulk_delete(campaign_id, payload.candidate_ids)
     activity.record(
         "campaign_updated",
@@ -286,7 +310,13 @@ async def campaign_activity(
 
 
 # ── AI Candidate Comparison (V5 / Sprint 5) ──────────────────────────────────
-@router.post("/{campaign_id}/compare", response_model=CandidateComparisonReport)
+# Gated per-endpoint: this router also serves ungated campaign CRUD, so the
+# `candidate_comparison` capability cannot be enforced at router level.
+@router.post(
+    "/{campaign_id}/compare",
+    response_model=CandidateComparisonReport,
+    dependencies=[Depends(feature_gate("candidate_comparison", action="comparison.generated"))],
+)
 async def compare_candidates(
     campaign_id: str,
     payload: ComparisonRequest,
@@ -341,6 +371,7 @@ async def reindex_campaign_embeddings(
 @router.post(
     "/{campaign_id}/candidates/{candidate_id}/interview",
     response_model=InterviewPack,
+    dependencies=[Depends(feature_gate("interview_intelligence", action="interview.generated"))],
 )
 async def generate_interview(
     campaign_id: str,

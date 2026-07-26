@@ -72,6 +72,61 @@ class StorageService:
             )
         return key
 
+    def remove_prefix(self, bucket: str, prefix: str) -> int:
+        """Delete every object under `prefix`. Returns how many were removed.
+
+        Needed because deleting a campaign previously removed only database rows:
+        the DB cascade cleared candidates, analyses, embeddings and upload
+        records, but the résumé binaries stayed in the bucket forever. They were
+        then unreferenced — no row pointed at them, so nothing in the product
+        could ever find or remove them — while the delete dialog told the user
+        "this permanently deletes the role and its candidates".
+
+        Best-effort by design: a storage failure must not abort the deletion of
+        the records, or a partial failure would leave the campaign undeletable.
+        Failures are logged loudly instead.
+        """
+        if not prefix.startswith(f"{self.recruiter_id}/"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Object prefix must be namespaced under the recruiter id.",
+            )
+
+        def walk(path: str, depth: int = 0) -> list[str]:
+            # Supabase storage is flat with virtual folders; entries with no `id`
+            # are folders. Depth is bounded — keys are recruiter/campaign/candidate/file.
+            if depth > 4:
+                return []
+            try:
+                entries = self._client.storage.from_(bucket).list(path) or []
+            except Exception as exc:  # pragma: no cover
+                logger.warning("Storage list failed (%s/%s): %s", bucket, path, exc)
+                return []
+            found: list[str] = []
+            for entry in entries:
+                name = entry.get("name")
+                if not name:
+                    continue
+                child = f"{path}/{name}" if path else name
+                if entry.get("id") is None:
+                    found.extend(walk(child, depth + 1))
+                else:
+                    found.append(child)
+            return found
+
+        keys = walk(prefix)
+        if not keys:
+            return 0
+        try:
+            self._client.storage.from_(bucket).remove(keys)
+        except Exception as exc:  # pragma: no cover
+            logger.error(
+                "Storage cleanup failed (%s/%s, %d object(s)): %s", bucket, prefix, len(keys), exc
+            )
+            return 0
+        logger.info("Storage cleanup removed %d object(s) under %s/%s", len(keys), bucket, prefix)
+        return len(keys)
+
     def signed_url(self, bucket: str, key: str, ttl: int | None = None) -> str:
         """Create a short-lived signed download URL for a private object."""
         expires = ttl or settings.SIGNED_URL_TTL_SECONDS

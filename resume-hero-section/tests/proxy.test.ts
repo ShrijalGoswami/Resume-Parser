@@ -56,18 +56,55 @@ describe('resolveMiddlewareAction — V4 route protection', () => {
     expect(resolveMiddlewareAction('/auth/login', false)).toEqual({ kind: 'pass' })
   })
 
-  it('preserves legacy behavior unchanged', () => {
-    expect(resolveMiddlewareAction('/dashboard', false)).toEqual({
-      kind: 'redirect',
-      pathname: '/login',
-      withNext: true,
-    })
-    expect(resolveMiddlewareAction('/campaigns/x', false)).toMatchObject({ pathname: '/login' })
-    expect(resolveMiddlewareAction('/dashboard', true)).toEqual({ kind: 'pass' })
+  it('still guards the legacy routes it owns', () => {
+    // Legacy surfaces with no complete V4 replacement — reachable via the
+    // "Classic" nav group, so the legacy guard must still apply.
+    for (const route of ['/insights', '/reports', '/agent', '/knowledge', '/predictions']) {
+      expect(resolveMiddlewareAction(route, false)).toEqual({
+        kind: 'redirect',
+        pathname: '/login',
+        withNext: true,
+      })
+      expect(resolveMiddlewareAction(route, true)).toEqual({ kind: 'pass' })
+    }
     expect(resolveMiddlewareAction('/login', true)).toEqual({
       kind: 'redirect',
       pathname: '/dashboard',
       withNext: false,
     })
+  })
+
+  it('lets migrated legacy routes fall through to their next.config redirect', () => {
+    // /dashboard, /campaigns, /search, /integrations and /admin are redirected to
+    // V4 by next.config. They are deliberately absent from LEGACY_PROTECTED so an
+    // unauthenticated request is not bounced to the legacy /login for a page it
+    // will never render.
+    for (const route of ['/dashboard', '/campaigns/x', '/search', '/integrations', '/admin']) {
+      expect(resolveMiddlewareAction(route, false)).toEqual({ kind: 'pass' })
+    }
+  })
+
+  it('protects the V4 destination of every migrated legacy route', () => {
+    // This is what actually keeps the migrated surfaces private: the legacy path
+    // redirects to V4, and the V4 path is guarded. If a destination ever drops
+    // out of V4_PROTECTED, the old URL becomes an unauthenticated way in.
+    const destinations = ['/home', '/roles', '/talent', '/settings', '/settings/members']
+    for (const route of destinations) {
+      expect(resolveMiddlewareAction(route, false)).toMatchObject({
+        kind: 'redirect',
+        pathname: '/auth/login',
+      })
+    }
+  })
+
+  it('guards the surfaces added after the V4 migration', () => {
+    for (const route of ['/analytics', '/interviews', '/notifications']) {
+      expect(resolveMiddlewareAction(route, false)).toEqual({
+        kind: 'redirect',
+        pathname: '/auth/login',
+        withNext: true,
+      })
+      expect(resolveMiddlewareAction(route, true)).toEqual({ kind: 'pass' })
+    }
   })
 })

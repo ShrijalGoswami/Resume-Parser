@@ -6,7 +6,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 
 # Application version and API version, surfaced by the /health endpoint.
-APP_VERSION = "1.2.0"
+# Reported by /health. Keep in step with the top entry in CHANGELOG.md and the git
+# tag — a version string that lags gives a wrong answer during an incident, which
+# is exactly when it gets read.
+APP_VERSION = "4.3.0"
 API_VERSION = "v1"
 
 
@@ -22,6 +25,11 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: str = "*"
     # Deployment environment label ("development", "staging", "production").
     ENVIRONMENT: str = "development"
+    # Root log level. Default INFO matches the behaviour this was extracted from,
+    # so nothing changes unless it is set. It exists because the level was
+    # hardcoded: during an incident there was no way to turn on DEBUG without a
+    # code change and redeploy, which is the worst possible moment to need one.
+    LOG_LEVEL: str = "INFO"
     # Where uploads are written while being processed. Defaults to the OS temp
     # directory so the app works on read-only/serverless filesystems (Vercel /tmp)
     # as well as Railway/Render. Override with TEMP_UPLOAD_DIR if needed.
@@ -50,6 +58,10 @@ class Settings(BaseSettings):
     NEXT_PUBLIC_SUPABASE_ANON_KEY: str = ""
     # Expected JWT audience for Supabase user tokens.
     SUPABASE_JWT_AUD: str = "authenticated"
+    # How long a fetched JWKS key set stays cached (seconds). Supabase rotates
+    # signing keys rarely; a miss on an unknown `kid` refetches immediately, so
+    # this only bounds how long a *revoked* key could still verify.
+    JWKS_CACHE_SECONDS: int = 600
     # Storage bucket names (overridable, but defaults match migration 0003).
     STORAGE_BUCKET_RESUMES: str = "resumes"
     STORAGE_BUCKET_JD: str = "job-descriptions"
@@ -57,6 +69,14 @@ class Settings(BaseSettings):
     STORAGE_BUCKET_AVATARS: str = "avatars"
     # Lifetime (seconds) for generated signed download URLs.
     SIGNED_URL_TTL_SECONDS: int = 3600
+
+    # Trust `X-Forwarded-For` when deriving the client IP for rate limiting.
+    # Enable ONLY when a proxy that overwrites the header sits in front of the app
+    # (Render, Vercel, an ALB). Behind such a proxy, `request.client.host` is the
+    # proxy's own address for every request, so all traffic shares one rate-limit
+    # bucket and one abusive client can lock out everybody. Left off by default so
+    # a directly-exposed instance cannot be fooled by a spoofed header.
+    TRUST_PROXY_HEADERS: bool = False
 
     # ── AI Foundation Layer (V5 / Sprint 3) ──────────────────────────────────
     # Centralized AI configuration consumed by app.ai.config.AIConfig. Defaults
@@ -220,9 +240,24 @@ class Settings(BaseSettings):
         """
         return bool(
             self.SUPABASE_JWT_SECRET
-            or self.SUPABASE_JWKS_URL
+            or self.jwks_url
             or (self.SUPABASE_URL and self.supabase_anon_key)
         )
+
+    @property
+    def jwks_url(self) -> str:
+        """JWKS endpoint for verifying asymmetric (ES256/RS256) Supabase tokens.
+
+        Derived from SUPABASE_URL when not set explicitly, because every Supabase
+        project exposes it at a fixed path. Without this, projects issuing ES256
+        tokens (the current default) had no local verification path at all and
+        fell back to a network call to Supabase Auth on *every* request.
+        """
+        if self.SUPABASE_JWKS_URL:
+            return self.SUPABASE_JWKS_URL
+        if self.SUPABASE_URL:
+            return f"{self.SUPABASE_URL.rstrip('/')}/auth/v1/.well-known/jwks.json"
+        return ""
 
 
 # Singleton instance of settings

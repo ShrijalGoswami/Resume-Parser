@@ -112,6 +112,17 @@ def build_dashboard_context(overview: dict[str, Any]) -> str:
     if not overview:
         return "### Dashboard Analytics\n(no analytics available yet)"
 
+    # `AnalyticsRepository.overview()` nests the aggregate metrics under an
+    # "overview" sub-object alongside "ai_insights"/"charts". Reading them from
+    # the top level silently yielded None for every metric, so the block rendered
+    # "(no metrics)" and the only candidate figure left in context was the single
+    # "strongest candidate" — the copilot then answered questions like "how many
+    # candidates have been analyzed?" with "only 1", citing Campaign Analytics at
+    # high confidence. Prefer the nested shape, and still accept a flat one.
+    metrics = overview.get("overview")
+    if not isinstance(metrics, dict):
+        metrics = overview
+
     lines: list[str] = []
     for key, label in (
         ("total_campaigns", "Total campaigns"),
@@ -123,8 +134,8 @@ def build_dashboard_context(overview: dict[str, Any]) -> str:
         ("average_ats_score", "Average ATS score"),
         ("high_quality_candidates", "High-quality candidates"),
     ):
-        if overview.get(key) is not None:
-            lines.append(f"- {label}: {overview[key]}")
+        if metrics.get(key) is not None:
+            lines.append(f"- {label}: {metrics[key]}")
 
     block = "### Dashboard Analytics\n" + ("\n".join(lines) or "(no metrics)")
 

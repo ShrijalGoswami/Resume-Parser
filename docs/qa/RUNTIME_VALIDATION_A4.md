@@ -6,7 +6,7 @@
 
 - **Environment:** `development`
 - **Provider:** `groq` · model `llama-3.3-70b-versatile`
-- **Date/time:** 2026-07-24 15:33 UTC
+- **Date/time:** 2026-07-26 16:12 UTC
 - **Totals:** 8 PASS · 0 FAIL · 0 SKIPPED
 - **Overall:** ✅ PASS
 
@@ -17,7 +17,7 @@ _In-process fake providers drive the real orchestrator retry ladder. No network;
 | Check | Result | Detail |
 |---|---|---|
 | Timeout retried up to max_network_retries | ✅ PASS | calls=3 |
-| Backoff is applied between retries (not instant) | ✅ PASS | elapsed=0.125s |
+| Backoff is applied between retries (not instant) | ✅ PASS | elapsed=0.109s |
 | Transient rate-limit retried (1 + max_rate_limit_retries) | ✅ PASS | calls=3 |
 | Quota exhaustion NOT retried (exactly 1 call) | ✅ PASS | calls=1 |
 | Retry-After honored over backoff (waited ~retry_after, not base) | ✅ PASS | elapsed=0.047s, calls=2 |

@@ -72,15 +72,27 @@ app.add_middleware(
 app.include_router(analyze.router, prefix="/api/v1", tags=["Analyze"])
 app.include_router(match.router, prefix="/api/v1", tags=["Match"])
 app.include_router(batch.router, prefix="/api/v1", tags=["Batch"])
-app.include_router(copilot.router, prefix="/api/v1")
+app.include_router(
+    copilot.router, prefix="/api/v1",
+    dependencies=[Depends(feature_gate("ai_copilot", action="copilot.accessed"))],
+)
 app.include_router(export.router, prefix="/api/v1", tags=["Export"])
 # ── V4 persistence layer (additive; requires Supabase config to function) ─────
 app.include_router(campaigns.router, prefix="/api/v1")
 app.include_router(account.router, prefix="/api/v1")
 app.include_router(analytics.router, prefix="/api/v1")
-app.include_router(search.router, prefix="/api/v1")
+app.include_router(
+    search.router, prefix="/api/v1",
+    dependencies=[Depends(feature_gate("semantic_search", action="search.accessed"))],
+)
 app.include_router(admin.router, prefix="/api/v1")
-# ── V6 enterprise: feature-flag gated + audited AI capabilities ───────────────
+# ── Feature-flag gated + audited AI capabilities ──────────────────────────────
+# Every capability in `enterprise/feature_flags.FEATURES` must be enforced
+# somewhere, or its Settings toggle is a control that controls nothing and a
+# lower-plan org keeps a capability its plan does not include. `ai_copilot` and
+# `semantic_search` are gated at the router above; `candidate_comparison` and
+# `interview_intelligence` are gated per-endpoint inside the campaigns router
+# (that router also serves ungated campaign CRUD, so it cannot be gated whole).
 app.include_router(
     reports.router, prefix="/api/v1",
     dependencies=[Depends(feature_gate("executive_reports", action="report.generated"))],
@@ -106,7 +118,14 @@ async def custom_swagger_ui_html():
     )
 
 
-@app.api_route("/health", methods=["GET", "HEAD"], tags=["Health"])
+# GET is the documented health contract. HEAD is registered separately and kept
+# out of the schema: a single handler serving both methods made FastAPI derive an
+# operationId per method from the same function name, colliding ("Duplicate
+# Operation ID health_check_health_get/_head") and emitting an OpenAPI document
+# with non-unique operationIds — enough to break generated clients. Uptime probes
+# that issue HEAD still get a 200 with identical headers and no body.
+@app.head("/health", include_in_schema=False)
+@app.get("/health", tags=["Health"])
 async def health_check():
     """Lightweight operational health check. Never exposes secrets."""
     uptime_seconds = round(time.time() - _START_TIME, 1)

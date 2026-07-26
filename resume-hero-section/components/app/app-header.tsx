@@ -2,16 +2,21 @@
 
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Bot, Brain, Briefcase, Building2, FileBarChart, LayoutDashboard, LineChart, LogOut, PieChart, Plug, Search, Shield, Sparkles } from 'lucide-react';
+import { Bot, Brain, Building2, FileBarChart, LineChart, LogOut, PieChart, Sparkles } from 'lucide-react';
 import { useAuth } from '@/components/auth/auth-provider';
 import { useOrg } from '@/components/org/org-provider';
 import { Button } from '@/components/ui/button';
 
-/** Primary product navigation. Rendered in the sticky header on every authenticated page. */
+/**
+ * Navigation for the remaining Classic (v1.0) surfaces.
+ *
+ * Only routes that still exist are listed. Dashboard, Campaigns, Search,
+ * Integrations and Admin were migrated to V4 — their pages are gone and the
+ * paths now redirect — so linking to them from here advertised surfaces that no
+ * longer render and silently ejected the user into the V4 shell mid-session.
+ * Their V4 equivalents are reached from the V4 rail and Settings instead.
+ */
 const PRIMARY_NAV: { href: string; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/campaigns', label: 'Campaigns', icon: Briefcase },
-  { href: '/search', label: 'Search', icon: Search },
   { href: '/insights', label: 'Insights', icon: PieChart },
   { href: '/reports', label: 'Reports', icon: FileBarChart },
   { href: '/agent', label: 'Agent', icon: Bot },
@@ -21,11 +26,9 @@ const PRIMARY_NAV: { href: string; label: string; icon: React.ComponentType<{ cl
 
 export function AppHeader() {
   const { user, signOut } = useAuth();
-  const { context, workspaces, switchTo, hasPermission } = useOrg();
+  const { context, workspaces, switchTo } = useOrg();
   const router = useRouter();
   const pathname = usePathname();
-  const canAdmin = hasPermission('org.manage') || hasPermission('member.manage') || hasPermission('feature_flag.manage');
-
   function isActive(href: string) {
     return pathname === href || pathname.startsWith(`${href}/`);
   }
@@ -39,7 +42,7 @@ export function AppHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-card/80 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        <Link href="/dashboard" className="flex items-center gap-2">
+        <Link href="/home" className="flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10">
             <Sparkles className="h-4 w-4 text-primary" />
           </span>
@@ -78,16 +81,6 @@ export function AppHeader() {
                 >
                   {workspaces.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
                 </select>
-              )}
-              {canAdmin && (
-                <>
-                  <Button asChild variant="ghost" size="icon-sm" title="Integration Hub">
-                    <Link href="/integrations"><Plug className="h-4 w-4" /></Link>
-                  </Button>
-                  <Button asChild variant="ghost" size="icon-sm" title="Organization admin">
-                    <Link href="/admin"><Shield className="h-4 w-4" /></Link>
-                  </Button>
-                </>
               )}
             </div>
           )}

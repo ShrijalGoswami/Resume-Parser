@@ -48,4 +48,4 @@ The v1.0 Release Candidate audit found **zero release blockers**: no Critical/Hi
 security exposure, tenant isolation enforced at the repository + RLS layers, and
 all 15 core workflows verified end-to-end. Everything above is either a deliberate
 product decision or scheduled scale/infra work — none gates a controlled v1.0
-launch. See [CHANGELOG.md](./CHANGELOG.md) and [ROADMAP.md](./ROADMAP.md).
+launch. See [CHANGELOG.md](../CHANGELOG.md) and [ROADMAP.md](./ROADMAP.md).

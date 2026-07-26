@@ -46,18 +46,15 @@ def require_permission(permission: Permission) -> Callable[..., OrgContext]:
     return _dep
 
 
-def require_feature(feature: str) -> Callable[..., OrgContext]:
-    """Dependency factory: 403 unless `feature` is enabled for the organization."""
-    def _dep(ctx: OrgContextDep) -> OrgContext:
-        if not ctx.feature_enabled(feature):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
-                                detail=f"The '{feature}' capability is not enabled for your organization.")
-        return ctx
-    return _dep
-
-
 def feature_gate(feature: str, *, action: str) -> Callable[..., OrgContext]:
-    """Router-level gate: enforce a feature flag AND record an audit trail entry.
+    """Enforce a feature flag AND record an audit trail entry.
+
+    Usable at router level (`include_router(dependencies=[...])`) or on a single
+    endpoint, which is what routers mixing gated AI with ungated CRUD need.
+
+    A prior `require_feature()` factory did the same enforcement without the audit
+    entry and was never used by any route; it was removed so there is exactly one
+    way to gate a capability and every gated call is auditable.
 
     Setting `current_org_id` (done during context resolution) also makes every AI
     call in the request roll its usage up to the organization automatically.

@@ -6,8 +6,17 @@ services:
     runtime: python
     rootDir: backend
     plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    # Installs the PINNED set, not requirements.txt's open lower bounds. Measured
+    # 2026-07-26: a fresh resolve of requirements.txt picked fastapi 0.140.0 and
+    # groq 1.6.0, while the release was verified against 0.139.2 and 1.5.0 — so a
+    # redeploy of an unchanged commit could ship a different application. The
+    # container image installs from the same file.
+    buildCommand: pip install -r requirements.lock.txt
+    # --proxy-headers makes uvicorn read X-Forwarded-Proto/For from Render's TLS
+    # terminator, so request.url.scheme is https and the client address is the real
+    # caller rather than the proxy. Without it every request shares one rate-limit
+    # bucket and HSTS is never emitted.
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips="*"
     healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION
@@ -18,5 +27,28 @@ services:
         sync: false            # set the real value in the Render dashboard
       - key: ALLOWED_ORIGINS
         sync: false            # e.g. https://your-frontend.vercel.app
+                               # NEVER "*" in production: the AI endpoints are
+                               # unauthenticated and cost money per call.
+      - key: TRUST_PROXY_HEADERS
+        value: "true"          # safe here: Render overwrites X-Forwarded-For
       - key: MAX_FILE_SIZE_MB
         value: "10"
+
+      # ── Supabase ──────────────────────────────────────────────────────────
+      # These were absent from the blueprint, which is a silent failure rather
+      # than a loud one: with no Supabase config the app boots in stateless mode,
+      # /health returns 200, and every authenticated route — sign-in, roles,
+      # candidates, the whole product — is dead. Declaring them with sync:false
+      # makes Render prompt for each value when the blueprint is applied, so the
+      # omission cannot pass unnoticed.
+      - key: SUPABASE_URL
+        sync: false            # https://<ref>.supabase.co
+      - key: SUPABASE_ANON_KEY
+        sync: false            # public anon key — RLS enforced server-side
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false            # bypasses RLS. Server only. Never NEXT_PUBLIC_*.
+
+      # DEBUG | INFO | WARNING | ERROR. Raise during an incident without a code
+      # change; INFO is the default and matches previous behaviour.
+      - key: LOG_LEVEL
+        value: INFO

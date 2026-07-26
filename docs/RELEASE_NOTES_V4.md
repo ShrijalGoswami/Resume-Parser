@@ -51,4 +51,4 @@ the decision.** It coexists with the frozen V1 app until cutover.
 - **Evidence conflicts** (Deep Review), **rich confidence decomposition** (Decision Intelligence), **outcome/regret/90-day** (Ledger) — UI is future-ready/omitted; awaits backend intelligence.
 - **Auth:** 2FA, dedicated SSO handoff screen, accept-invite personalization.
 
-See `PRODUCTION_GAPS.md` for the prioritized remaining work and `ARCHITECTURE_FINAL.md` for the final structure.
+See `PRODUCTION_GAPS.md` for the prioritized remaining work and `ARCHITECTURE.md` for the final structure.

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import contextvars
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -91,10 +92,43 @@ def resolve_org_context(recruiter: CurrentRecruiter) -> OrgContext:
     org_id = rec[0]["organization_id"]
     workspace_id = rec[0].get("active_workspace_id")
 
-    org = _rows(client.table("organizations").select("name,plan,settings").eq("id", org_id).limit(1).execute())
-    member = _rows(client.table("organization_members").select("role").eq("organization_id", org_id).eq("user_id", recruiter.id).limit(1).execute())
-    sub = _rows(client.table("subscriptions").select("plan").eq("organization_id", org_id).limit(1).execute())
-    flags = _rows(client.table("org_feature_flags").select("flag,enabled").eq("organization_id", org_id).execute())
+    # These four reads all depend only on `org_id` and not on each other, but they
+    # were issued sequentially — four round-trips to Supabase on every request that
+    # needs org context, measured at roughly a second of pure waiting. Fanning them
+    # out collapses that to the slowest single query.
+    #
+    # Deliberately concurrency, not caching: authorization state (role, plan,
+    # feature overrides) must never be served stale, so a revoked role or a
+    # disabled capability still takes effect on the very next request.
+    def _fetch_org():
+        return _rows(client.table("organizations").select("name,plan,settings").eq("id", org_id).limit(1).execute())
+
+    def _fetch_member():
+        return _rows(client.table("organization_members").select("role").eq("organization_id", org_id).eq("user_id", recruiter.id).limit(1).execute())
+
+    def _fetch_sub():
+        return _rows(client.table("subscriptions").select("plan").eq("organization_id", org_id).limit(1).execute())
+
+    def _fetch_flags():
+        return _rows(client.table("org_feature_flags").select("flag,enabled").eq("organization_id", org_id).execute())
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        futures = {
+            "org": pool.submit(_fetch_org),
+            "member": pool.submit(_fetch_member),
+            "sub": pool.submit(_fetch_sub),
+            "flags": pool.submit(_fetch_flags),
+        }
+        try:
+            org = futures["org"].result()
+            member = futures["member"].result()
+            sub = futures["sub"].result()
+            flags = futures["flags"].result()
+        except Exception as exc:  # pragma: no cover — same failure mode as before
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Organization lookup failed.",
+            ) from exc
 
     org_row = org[0] if org else {}
     plan = (sub[0].get("plan") if sub else None) or org_row.get("plan") or "free"

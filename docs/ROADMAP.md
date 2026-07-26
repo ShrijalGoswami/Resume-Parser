@@ -1,7 +1,7 @@
 # Roadmap
 
 > Forward-looking product and engineering direction. This is **not** a changelog
-> — completed work lives in [CHANGELOG.md](./CHANGELOG.md) and
+> — completed work lives in [CHANGELOG.md](../CHANGELOG.md) and
 > [sprints/](./sprints/). Here we track vision, phases, and what is
 > **Implemented**, **In Progress**, or **Planned**.
 

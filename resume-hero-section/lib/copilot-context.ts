@@ -7,23 +7,28 @@
  */
 import type { CopilotPageContext } from '@/types/copilot';
 
-/** Routes where the global recruiter copilot is available. */
+/** Routes where the legacy floating recruiter copilot is available. */
 export function isRecruiterRoute(pathname: string): boolean {
-  return (
-    pathname === '/dashboard' ||
-    pathname.startsWith('/campaigns') ||
-    pathname === '/insights' ||
-    pathname === '/search' ||
-    pathname === '/reports' ||
-    pathname === '/agent'
-  );
+  // Only the Classic surfaces that still exist. /dashboard, /campaigns and
+  // /search were migrated to V4 and their pages removed.
+  return pathname === '/insights' || pathname === '/reports' || pathname === '/agent';
 }
 
-/** Derive the grounded page context from a pathname. */
+/**
+ * Derive the grounded page context from a pathname.
+ *
+ * Both the V4 (`/roles/…`) and legacy (`/campaigns/…`) shapes are matched. This
+ * originally recognised only `/campaigns/**`, which meant that once those routes
+ * were migrated to `/roles/**` nothing produced a `candidate` or `campaign`
+ * context any more — the backend's grounded per-candidate copilot was reachable
+ * over the API but had no route in the product that would ask it anything other
+ * than a global question. The legacy patterns are kept so the Classic surfaces
+ * behave unchanged.
+ */
 export function detectPageContext(pathname: string): CopilotPageContext {
-  // /campaigns/[id]/candidates/[candidateId]
+  // /roles/[roleId]/candidates/[candidateId] · /campaigns/[id]/candidates/[candidateId]
   const candidateMatch = pathname.match(
-    /^\/campaigns\/([^/]+)\/candidates\/([^/]+)/,
+    /^\/(?:roles|campaigns)\/([^/]+)\/candidates\/([^/]+)/,
   );
   if (candidateMatch) {
     return {
@@ -33,14 +38,14 @@ export function detectPageContext(pathname: string): CopilotPageContext {
     };
   }
 
-  // /campaigns/[id] (detail), excluding /campaigns/new
-  const campaignMatch = pathname.match(/^\/campaigns\/([^/]+)/);
+  // /roles/[roleId] · /campaigns/[id], excluding the legacy /campaigns/new
+  const campaignMatch = pathname.match(/^\/(?:roles|campaigns)\/([^/]+)/);
   if (campaignMatch && campaignMatch[1] !== 'new') {
     return { type: 'campaign', campaign_id: campaignMatch[1] };
   }
 
-  if (pathname === '/dashboard') return { type: 'dashboard' };
-  if (pathname === '/insights') return { type: 'analytics' };
+  if (pathname === '/home' || pathname === '/dashboard') return { type: 'dashboard' };
+  if (pathname === '/analytics' || pathname === '/insights') return { type: 'analytics' };
 
   return { type: 'global' };
 }

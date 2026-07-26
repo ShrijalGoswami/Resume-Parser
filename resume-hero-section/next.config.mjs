@@ -3,13 +3,23 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // ── Controlled migration: legacy → V4 redirects (TEMPORARY / reversible) ────
-  // Only routes whose V4 replacement is fully complete and production-ready are
-  // redirected. `permanent: false` (307/308-temporary, not browser-cached) so a
-  // redirect can be pulled instantly if a parity gap is found. Partial or planned
-  // replacements are NOT redirected — those legacy routes stay reachable via the
-  // "Classic" nav group until parity is verified and signed off. Nothing here
-  // deletes a legacy page; the redirect only forwards the request.
+  // Container builds only. `standalone` emits a self-contained server bundle so
+  // the runtime image needs no node_modules, which is the difference between a
+  // ~200MB image and a ~1GB one. It is opt-in via the env var rather than always
+  // on so the Vercel production build — the deployed path — is byte-for-byte the
+  // build that was verified for the release. Set NEXT_OUTPUT_STANDALONE=1 in the
+  // Dockerfile; leave it unset everywhere else.
+  output: process.env.NEXT_OUTPUT_STANDALONE === '1' ? 'standalone' : undefined,
+  // ── Legacy → V4 redirects ───────────────────────────────────────────────────
+  // These paths' legacy pages have been removed now that their V4 replacements
+  // are production-ready, so the redirect is what keeps old URLs and bookmarks
+  // working rather than 404ing. Restoring a legacy page means reverting the
+  // commit that deleted it, not just pulling the redirect — `permanent: false`
+  // is kept so nothing is cached in browsers meanwhile.
+  //
+  // Legacy routes with no complete V4 replacement (/insights, /reports, /agent,
+  // /knowledge, /predictions) are NOT redirected and stay reachable through the
+  // "Classic" nav group.
   async redirects() {
     return [
       // Search → Talent (Talent is a superset: semantic search + similar +
@@ -19,6 +29,11 @@ const nextConfig = {
       // Campaigns → Roles (same backend campaign IDs; Role Workspace is a superset
       // of the legacy campaign detail). Static/specific sources first.
       { source: '/campaigns/new', destination: '/roles?new=1', permanent: false },
+      {
+        source: '/campaigns/:id/candidates/:candidateId',
+        destination: '/roles/:id/candidates/:candidateId',
+        permanent: false,
+      },
       { source: '/campaigns/:id/compare', destination: '/roles/:id?compare=1', permanent: false },
       { source: '/campaigns/:id', destination: '/roles/:id', permanent: false },
       { source: '/campaigns', destination: '/roles', permanent: false },

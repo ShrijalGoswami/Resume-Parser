@@ -22,14 +22,26 @@ export function TopBar({ breadcrumbs, title, unreadCount }: TopBarProps) {
 
   return (
     <header className="sticky top-0 z-[var(--hl-z-sticky)] flex h-[52px] shrink-0 items-center gap-3 border-b border-hl-border-subtle bg-hl-canvas px-4">
+      {/*
+        The trail itself is hidden below `sm`, but this spacer keeps `flex-1` so the
+        launcher and account controls stay pinned right at every width.
+
+        Why hide it: at 390px the ⌘K launcher takes 45vw of a ~334px header, leaving
+        ~71px for the crumbs — enough to truncate each one to roughly 12px of
+        unreadable text rather than convey anything. Nothing is lost, because every
+        surface repeats the same label as its in-content `<h1>` a few pixels below
+        and the rail marks the active section.
+      */}
       <div className="min-w-0 flex-1">
-        {breadcrumbs && breadcrumbs.length > 0 ? (
-          <Breadcrumbs items={breadcrumbs} />
-        ) : title ? (
-          // Chrome context label, not the page heading — the page's <h1> is the
-          // in-content PageHeader, so this stays a muted, quiet wayfinding label.
-          <span className="hl-body-medium truncate text-hl-fg-secondary">{title}</span>
-        ) : null}
+        <div className="hidden sm:block">
+          {breadcrumbs && breadcrumbs.length > 0 ? (
+            <Breadcrumbs items={breadcrumbs} />
+          ) : title ? (
+            // Chrome context label, not the page heading — the page's <h1> is the
+            // in-content PageHeader, so this stays a muted, quiet wayfinding label.
+            <span className="hl-body-medium truncate text-hl-fg-secondary">{title}</span>
+          ) : null}
+        </div>
       </div>
 
       <button

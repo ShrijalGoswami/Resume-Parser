@@ -55,6 +55,27 @@ def validate_startup() -> None:
             "(/ats-analysis, /match-analysis) will return 503 until it is set."
         )
 
+    # 3b. Persistence/auth — non-fatal, because a stateless deployment (public
+    # résumé analysis only, no accounts) is a configuration this app deliberately
+    # supports. But in production the far more likely cause is a forgotten env
+    # var, and the symptom is silent: the service returns 200 from /health while
+    # sign-in and every authenticated route are dead. So say so, loudly, at boot.
+    if settings.ENVIRONMENT == "production":
+        missing = []
+        if not settings.is_supabase_configured:
+            missing.append("SUPABASE_URL / SUPABASE_ANON_KEY")
+        if not settings.is_auth_configured:
+            missing.append("SUPABASE_JWT_SECRET or a reachable JWKS URL")
+        if missing:
+            logger.error(
+                "PRODUCTION WITHOUT PERSISTENCE: %s not configured. The service "
+                "will boot and report healthy, but sign-in, roles, candidates and "
+                "every authenticated route are unavailable. If a stateless "
+                "deployment is intended this is expected; otherwise set the "
+                "missing variables and redeploy.",
+                " and ".join(missing),
+            )
+
     # 4. Capability→model routing — FATAL on misconfiguration (unknown model,
     # un-inferable/unregistered provider, missing key, invalid capability).
     from app.ai.gateway.capability_routing import RoutingConfigError, validate_capability_routing

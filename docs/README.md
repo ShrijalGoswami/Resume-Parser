@@ -14,16 +14,21 @@ stateful SaaS platform with recruiter accounts, hiring campaigns, and storage.
 
 | Doc | What's inside |
 |-----|---------------|
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | System layers, request & auth lifecycles, recruiter/candidate flows (Mermaid) |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | **The final V4 architecture — frozen.** System layers, request & auth lifecycles, data lineage, extension points |
+| [../CONTRIBUTING.md](../CONTRIBUTING.md) | What may change under the freeze, the gate, schema-change rules |
 | [DATABASE.md](./DATABASE.md) | Migrations, tables, relationships, indexes, triggers, RLS, storage |
 | [API.md](./API.md) | Every endpoint: method, auth, request, response, errors |
 | [AI_PIPELINE.md](./AI_PIPELINE.md) | Parse → extract → score → LLM → persist; why results are stored |
 | [AI_ARCHITECTURE.md](./AI_ARCHITECTURE.md) | AI Foundation Layer — orchestrator, providers, prompts, context, observability |
 | [SECURITY.md](./SECURITY.md) | Auth, authorization, JWT, RLS, storage, file validation, secrets |
-| [DEPLOYMENT.md](./DEPLOYMENT.md) | Dev/staging/prod, env vars, Vercel, Render, Supabase, DR |
+| [DEPLOYMENT.md](./DEPLOYMENT.md) | Env vars, dependency pinning, deploy steps, CI/CD, containers, health checks, smoke test, rollback |
+| [OPERATIONS.md](./OPERATIONS.md) | Day-2 running: routine tasks, runbooks, incident response, secrets rotation, erasure requests, known limits |
+| [MONITORING.md](./MONITORING.md) | Logging, health, the alert set, latency baselines, and what is *not* instrumented |
+| [DISASTER_RECOVERY.md](./DISASTER_RECOVERY.md) | Backup, verify, restore — each procedure marked VERIFIED or UNVERIFIED |
+| [../RELEASE_CANDIDATE.md](../RELEASE_CANDIDATE.md) | Current release status, remaining issues, accepted debt |
 | [FEATURES.md](./FEATURES.md) | Full feature inventory with status & priority |
 | [ROADMAP.md](./ROADMAP.md) | Vision, phases, priority matrix, cost scaling |
-| [CHANGELOG.md](./CHANGELOG.md) | Semantic version history |
+| [CHANGELOG.md](../CHANGELOG.md) | Semantic version history |
 | [PROJECT_AUDIT.md](./PROJECT_AUDIT.md) | Full project audit: config, DB, auth, AI, readiness, tech-debt backlog |
 | [sprints/](./sprints/) | Per-sprint implementation records |
 | [decisions/](./decisions/) | Architecture Decision Records (ADRs) |
