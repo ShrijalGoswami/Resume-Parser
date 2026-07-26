@@ -1,24 +1,65 @@
 import type { Metadata } from 'next'
-import { fontVariables } from '@/components/hirelens/theme/fonts'
+import { Inter, JetBrains_Mono, Newsreader, Public_Sans } from 'next/font/google'
 
 /**
- * Marketing route group — the public, standalone landing experience. Isolated
- * from the authenticated `.hl` product: it mounts NO app shell, NO providers,
- * NO auth gating, and its own dark/editorial `mkt-*` palette (never the product's
- * Optical Clarity tokens). Coexistence path is /welcome; it becomes / at cutover
- * with a routing change only — links are hash anchors or shared root-relative
- * routes, never hardcoded to /welcome.
+ * Marketing (public site) layout.
+ *
+ * Owns the font stack and the `.mkt` style scope for the public marketing
+ * surface. Kept separate from `(hirelens)` and `(legacy)` so the public site's
+ * palette and typography can never leak into the product shell.
+ *
+ * The four families below are the ones the HireLens V4 Stitch marketing frames
+ * load: Newsreader (display/headline), Inter (body), Public Sans (labels) and
+ * JetBrains Mono (data/meta). Weights match the frames' Google Fonts requests.
  */
+
+// Newsreader is loaded as a VARIABLE font with the optical-size axis, not as
+// static weights. Stitch requests `Newsreader:opsz,wght@6..72,…`, so with
+// `font-optical-sizing: auto` the 120px hero headline renders Newsreader's
+// display cut. Pinning `weight` here would ship static instances locked to the
+// text optical size, which renders the headline ~4% narrower and lighter than
+// the approved frame.
+const newsreader = Newsreader({
+  subsets: ['latin'],
+  style: ['normal', 'italic'],
+  axes: ['opsz'],
+  variable: '--font-newsreader',
+  display: 'swap',
+})
+
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600'],
+  variable: '--font-inter',
+  display: 'swap',
+})
+
+const publicSans = Public_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  variable: '--font-public-sans',
+  display: 'swap',
+})
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['300', '400', '500'],
+  variable: '--font-jetbrains',
+  display: 'swap',
+})
+
 export const metadata: Metadata = {
-  title: 'HireLens — Bring every hire into focus',
+  title: 'HireLens — Precision Systems',
   description:
-    'HireLens reads the whole pile, brings the few who matter into focus, and tells you what you’d regret — so your best judgment reaches every candidate, not just the top of the stack.',
+    'HireLens reads the whole pile, brings the few who matter into focus, and tells you what you’d regret — so your best judgment reaches everyone, not just the top of the stack.',
 }
 
-export default function MarketingLayout({ children }: { children: React.ReactNode }) {
+export default function MarketingLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <div
-      className={`${fontVariables} min-h-dvh bg-mkt-paper font-[family-name:var(--font-inter)] text-mkt-fg antialiased`}
+      className={`mkt ${newsreader.variable} ${inter.variable} ${publicSans.variable} ${jetbrainsMono.variable}`}
     >
       {children}
     </div>

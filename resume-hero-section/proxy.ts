@@ -1,30 +1,18 @@
 /**
  * Next.js proxy (formerly `middleware.ts`) — refreshes the Supabase session
- * cookie on every request and guards protected routes. Unauthenticated users
- * hitting /dashboard, /campaigns, etc. are redirected to /login; authenticated
- * users hitting /login are sent to /dashboard.
+ * cookie on every request and guards protected routes. The routing DECISION is a
+ * pure function (`resolveMiddlewareAction` in lib/auth-routing) so the security
+ * logic is unit-tested in isolation; this file only wires it to Supabase + Next.
  *
+ * Legacy protected routes → /login; V4 (hirelens) protected routes → /auth/login.
  * If Supabase env vars are absent (stateless mode), this is a no-op so the
  * existing public app keeps working.
  */
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { resolveMiddlewareAction } from '@/lib/auth-routing';
 
 type CookieToSet = { name: string; value: string; options?: CookieOptions };
-
-const PROTECTED_PREFIXES = [
-  '/dashboard',
-  '/campaigns',
-  '/insights',
-  '/search',
-  '/reports',
-  '/agent',
-  '/knowledge',
-  '/predictions',
-  '/integrations',
-  '/admin',
-];
-const AUTH_ROUTES = ['/login', '/signup'];
 
 export async function proxy(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -56,20 +44,13 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
-  const isProtected = PROTECTED_PREFIXES.some((p) => path.startsWith(p));
-  const isAuthRoute = AUTH_ROUTES.some((p) => path.startsWith(p));
+  const action = resolveMiddlewareAction(path, Boolean(user));
 
-  if (isProtected && !user) {
+  if (action.kind === 'redirect') {
     const redirect = request.nextUrl.clone();
-    redirect.pathname = '/login';
-    redirect.searchParams.set('next', path);
-    return NextResponse.redirect(redirect);
-  }
-
-  if (isAuthRoute && user) {
-    const redirect = request.nextUrl.clone();
-    redirect.pathname = '/dashboard';
+    redirect.pathname = action.pathname;
     redirect.search = '';
+    if (action.withNext) redirect.searchParams.set('next', path);
     return NextResponse.redirect(redirect);
   }
 

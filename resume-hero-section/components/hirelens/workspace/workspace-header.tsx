@@ -1,8 +1,15 @@
 'use client'
 
-import { Plus } from 'lucide-react'
+import { Plus, MoreHorizontal, Pencil, Archive, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '../ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '../ui/dropdown-menu'
 import { PageHeader } from '../shell/page-header'
 import { LensSwitcher } from './lens-switcher'
 import type { Campaign } from '@/types/campaign'
@@ -26,6 +33,9 @@ export interface WorkspaceHeaderProps {
   candidateCount: number
   stageCount: number
   onAddCandidates: () => void
+  onEditRole: () => void
+  onArchiveRole: () => void
+  onDeleteRole: () => void
 }
 
 export function WorkspaceHeader({
@@ -33,6 +43,9 @@ export function WorkspaceHeader({
   candidateCount,
   stageCount,
   onAddCandidates,
+  onEditRole,
+  onArchiveRole,
+  onDeleteRole,
 }: WorkspaceHeaderProps) {
   return (
     <header className="sticky top-0 z-[var(--hl-z-sticky)] border-b border-hl-border-subtle bg-hl-canvas px-6 py-4">
@@ -60,9 +73,35 @@ export function WorkspaceHeader({
           </span>
         }
         actions={
-          <Button variant="primary" onClick={onAddCandidates}>
-            <Plus /> Add candidates
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="primary" onClick={onAddCandidates}>
+              <Plus /> Add candidates
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="secondary" size="icon" aria-label="Role actions">
+                  <MoreHorizontal />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuItem onSelect={() => onEditRole()}>
+                  <Pencil /> Edit role
+                </DropdownMenuItem>
+                {campaign.status !== 'archived' ? (
+                  <DropdownMenuItem onSelect={() => onArchiveRole()}>
+                    <Archive /> Archive role
+                  </DropdownMenuItem>
+                ) : null}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={() => onDeleteRole()}
+                  className="text-[color:var(--hl-danger)] focus:bg-[color:var(--hl-danger-bg)] focus:text-[color:var(--hl-danger)] [&_svg]:text-[color:var(--hl-danger)]"
+                >
+                  <Trash2 /> Delete permanently
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         }
       >
         <LensSwitcher />

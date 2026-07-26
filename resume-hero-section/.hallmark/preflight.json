@@ -1,0 +1,35 @@
+{
+  "date": "2026-07-25",
+  "project": "HireLens V4 (resume-hero-section)",
+  "locked_system": {
+    "detected": true,
+    "note": "No design.md at root, but this project ships an equivalent locked system. Treated as design.md per SKILL.md Step 0 signal 0 — it overrides genre/theme/type/motion picks.",
+    "sources": [
+      "docs/HIRELENS_V3_DESIGN_BIBLE.md (647 lines) — identity, tokens, motion, a11y, dataviz",
+      "docs/VISUAL_DESIGN_SYSTEM_FOUNDATIONS.md (1216 lines)",
+      "docs/VISUAL_DESIGN_SYSTEM_COMPONENTS.md (1799 lines)",
+      "docs/HIRELENS_V3_UX_SPEC.md — frozen structural contract (wins on structure/behaviour)",
+      "app/globals.css .hl token block — the implemented tier"
+    ]
+  },
+  "signals": {
+    "font_stack": "Inter (UI) + Fraunces (editorial display, optical-size serif) + JetBrains Mono (data) via next/font — components/hirelens/theme/fonts.ts:1",
+    "palette": "OKLCH-adjacent hex custom properties under .hl scope — app/globals.css:213. Ink & Glass neutrals, single Iris accent, Prism (violet->cyan) reserved for AI only",
+    "motion": "framer-motion 12 installed (package.json:30); .hl motion tokens --hl-dur-instant/fast/base/slow/rack + 3 named easings — app/globals.css:294",
+    "spacing": "density-switchable scale, .hl[data-hl-density='compact'] — app/globals.css:327",
+    "framework": "Next.js 16.2.6 app router + React 19 + Tailwind v4 (package.json:32)"
+  },
+  "preserve": [
+    "font stack (Inter/Fraunces/JetBrains Mono)",
+    "Ink & Glass palette + single Iris accent + Prism-for-AI-only rule",
+    "density scale and .hl token tier",
+    "motion tokens and easings",
+    "AppShell chrome (left rail, top bar, breadcrumbs) — Bible Part V"
+  ],
+  "introduce": [
+    "8-state discipline on every new interactive element",
+    "dataviz per Bible 3.12 (no chart component exists yet)",
+    "slop-test gates + pre-emit self-critique on each new screen"
+  ],
+  "scope_note": "Authenticated product screens inside a fixed AppShell. Hallmark page-scope apparatus (macrostructure / nav archetype / footer archetype / hero enrichment) does NOT apply — the shell, nav and screen layout are owned by the frozen UX Spec. Universal disciplines apply in full."
+}

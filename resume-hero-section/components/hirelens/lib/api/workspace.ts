@@ -1,8 +1,12 @@
 'use client'
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import {
   getCampaign,
+  listCampaigns,
+  createCampaign,
+  updateCampaign,
+  deleteCampaign,
   listCandidates,
   updateCandidateStage,
   bulkDeleteCandidates,
@@ -11,7 +15,12 @@ import {
 import { compareCandidates } from '@/services/comparison-api'
 import { searchTalent } from '@/services/search-api'
 import { toRow, type CandidateRow } from '@/lib/candidate'
-import type { PipelineStage } from '@/types/campaign'
+import type {
+  PipelineStage,
+  Campaign,
+  CampaignCreateInput,
+  CampaignUpdateInput,
+} from '@/types/campaign'
 
 /**
  * Role Workspace data hooks — React Query over the shared @/services/* (reused
@@ -83,4 +92,71 @@ export function useSearchIntoRole(roleId: string) {
   return useMutation({
     mutationFn: (query: string) => searchTalent(query, { campaignId: roleId }),
   })
+}
+
+// ── Role lifecycle (create / edit / delete) ──────────────────────────────────
+// The Role Workspace is the single source of truth. Every role mutation must
+// refresh the roles list, Home's active roles, the workspace detail, and its
+// candidates — a stale detail is what would keep the JD upload-gate locked.
+
+/** Role LIST key. Shares the `['hl','campaigns']` prefix with Home's useActiveRoles. */
+export const roleListKey = (status?: string) => ['hl', 'campaigns', status ?? 'all'] as const
+
+/** The exact set of queries a role mutation must invalidate. Pure — unit-tested. */
+export function roleInvalidationKeys(roleId?: string): unknown[][] {
+  const keys: unknown[][] = [['hl', 'campaigns']] // all role lists + Home active roles (prefix)
+  if (roleId) {
+    keys.push([...roleKeys.campaign(roleId)])
+    keys.push([...roleKeys.candidates(roleId)])
+  }
+  return keys
+}
+
+export function invalidateRoleQueries(queryClient: QueryClient, roleId?: string): void {
+  for (const queryKey of roleInvalidationKeys(roleId)) {
+    queryClient.invalidateQueries({ queryKey })
+  }
+}
+
+// Mutation configs — extracted (pure) so the create/update/delete + invalidation
+// logic is unit-testable without React (tests/role-mutations.test.ts).
+export function createRoleMutation(queryClient: QueryClient) {
+  return {
+    mutationFn: (input: CampaignCreateInput) => createCampaign(input),
+    onSuccess: (campaign: Campaign) => invalidateRoleQueries(queryClient, campaign.id),
+  }
+}
+
+export function updateRoleMutation(queryClient: QueryClient, roleId: string) {
+  return {
+    mutationFn: (patch: CampaignUpdateInput) => updateCampaign(roleId, patch),
+    onSuccess: () => invalidateRoleQueries(queryClient, roleId),
+  }
+}
+
+export function deleteRoleMutation(queryClient: QueryClient) {
+  return {
+    mutationFn: (roleId: string) => deleteCampaign(roleId),
+    onSuccess: (_data: void, roleId: string) => invalidateRoleQueries(queryClient, roleId),
+  }
+}
+
+/** All roles for the /roles list (optionally filtered by status). */
+export function useRoles(status?: string) {
+  return useQuery({ queryKey: roleListKey(status), queryFn: () => listCampaigns(status) })
+}
+
+export function useCreateRole() {
+  const queryClient = useQueryClient()
+  return useMutation(createRoleMutation(queryClient))
+}
+
+export function useUpdateRole(roleId: string) {
+  const queryClient = useQueryClient()
+  return useMutation(updateRoleMutation(queryClient, roleId))
+}
+
+export function useDeleteRole() {
+  const queryClient = useQueryClient()
+  return useMutation(deleteRoleMutation(queryClient))
 }

@@ -113,9 +113,15 @@ export function OverviewTab({
         <div className="flex items-center gap-2 rounded-hl-md border border-hl-border p-2">
           <FileText className="size-4 shrink-0 text-hl-fg-tertiary" aria-hidden />
           <span className="hl-small flex-1 truncate">{candidate.resume_filename}</span>
-          <Button size="sm" variant="secondary" onClick={downloadResume} loading={resume.isFetching}>
-            <Download /> Résumé
-          </Button>
+          {/* Only offer the download when the binary is actually stored (resume_path).
+              Until résumé storage ships (A3) this stays an honest info row, never a 404. */}
+          {candidate.resume_path ? (
+            <Button size="sm" variant="secondary" onClick={downloadResume} loading={resume.isFetching}>
+              <Download /> Résumé
+            </Button>
+          ) : (
+            <span className="hl-caption shrink-0 text-hl-fg-tertiary">Not stored for download</span>
+          )}
         </div>
       ) : null}
     </div>

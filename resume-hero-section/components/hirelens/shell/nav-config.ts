@@ -6,14 +6,11 @@ import {
   BookText,
   GraduationCap,
   Settings,
-  LayoutDashboard,
   BarChart3,
   FileText,
   Bot,
   Library,
   TrendingUp,
-  Plug,
-  Shield,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -102,17 +99,12 @@ export const navGroups: NavGroup[] = [
   // partial one), so they stay visibly reachable here rather than being hidden —
   // "no feature inaccessible before its replacement is production-ready." Each is
   // removed from this group only when its replacement reaches parity + a redirect
-  // goes live (see the Migration Matrix). Search & Campaigns are absent because
-  // they already redirect to Talent & Roles.
+  // goes live (see the Migration Matrix). Absent because they already redirect
+  // to a live V4 replacement: Search → Talent, Campaigns → Roles, Integrations →
+  // Settings ▸ Integrations, Admin → Settings ▸ Members, Dashboard → Inbox.
   {
     label: 'Classic',
     items: [
-      {
-        label: 'Dashboard',
-        href: '/dashboard',
-        icon: LayoutDashboard,
-        isActive: (p) => p.startsWith('/dashboard'),
-      },
       {
         label: 'Insights',
         href: '/insights',
@@ -142,18 +134,6 @@ export const navGroups: NavGroup[] = [
         href: '/predictions',
         icon: TrendingUp,
         isActive: (p) => p.startsWith('/predictions'),
-      },
-      {
-        label: 'Integrations',
-        href: '/integrations',
-        icon: Plug,
-        isActive: (p) => p.startsWith('/integrations'),
-      },
-      {
-        label: 'Admin',
-        href: '/admin',
-        icon: Shield,
-        isActive: (p) => p.startsWith('/admin'),
       },
     ],
   },

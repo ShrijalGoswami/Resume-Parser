@@ -1,17 +1,46 @@
+import Link from 'next/link'
+
 /**
- * Marketing footer — deliberately minimal and honest. Legal links (Privacy /
- * Terms / Security) are intentionally omitted until those pages exist rather
- * than pointing at dead routes.
+ * Footer — Stitch frame 5 (`hirelens_marketing_the_conclusion_frame_5`).
+ *
+ * The composed homepage ends on frame 5, so it takes frame 5's footer: the
+ * italic Newsreader wordmark stacked over the copyright on the left, and a
+ * four-link nav on the right. 48px side padding, 64px vertical, max-w-7xl.
  */
+
+const FOOTER_LINKS = [
+  { label: 'Terms', href: '#terms' },
+  { label: 'Privacy', href: '#privacy' },
+  { label: 'Security', href: '#security' },
+  { label: 'Contact', href: '#contact' },
+]
+
 export function MarketingFooter() {
-  const year = new Date().getFullYear()
   return (
-    <footer className="border-t border-mkt-border-subtle bg-mkt-paper">
-      <div className="mx-auto flex max-w-6xl flex-col gap-3 px-6 py-10 sm:flex-row sm:items-baseline sm:justify-between">
-        <span className="font-[family-name:var(--font-fraunces)] text-lg text-mkt-fg">HireLens</span>
-        <p className="font-hl-mono text-[11px] uppercase tracking-widest text-mkt-fg-subtle">
-          © {year} HireLens · Precision in recruitment
-        </p>
+    <footer className="w-full border-t border-mkt-subtle bg-mkt-canvas">
+      <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-between px-12 py-16 md:flex-row">
+        <div className="mb-8 md:mb-0">
+          <Link
+            href="/"
+            className="mb-2 block font-mkt-display text-xl italic text-mkt-fg"
+          >
+            HireLens
+          </Link>
+          <p className="font-mkt-body text-xs tracking-wide text-mkt-fg-secondary">
+            © 2024 HireLens Inc. Precision in Recruitment.
+          </p>
+        </div>
+        <nav className="flex gap-8">
+          {FOOTER_LINKS.map((link) => (
+            <a
+              key={link.label}
+              href={link.href}
+              className="font-mkt-body text-xs tracking-wide text-mkt-fg-tertiary transition-colors hover:text-mkt-fg"
+            >
+              {link.label}
+            </a>
+          ))}
+        </nav>
       </div>
     </footer>
   )

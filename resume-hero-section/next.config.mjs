@@ -22,6 +22,21 @@ const nextConfig = {
       { source: '/campaigns/:id/compare', destination: '/roles/:id?compare=1', permanent: false },
       { source: '/campaigns/:id', destination: '/roles/:id', permanent: false },
       { source: '/campaigns', destination: '/roles', permanent: false },
+
+      // Integrations → Settings ▸ Integrations. The V4 Settings surface already
+      // ships the full Integration Hub section (providers, connections, health,
+      // automation rules), so the legacy page has a complete replacement.
+      { source: '/integrations', destination: '/settings/integrations', permanent: false },
+
+      // Admin → Settings ▸ Members & roles. Everything the legacy Admin page
+      // covered now lives in V4 Settings under the Organization group: members
+      // & roles, workspaces, billing, API keys, feature flags, usage & audit.
+      { source: '/admin', destination: '/settings/members', permanent: false },
+
+      // Dashboard → Inbox. The legacy dashboard was a campaign list plus
+      // navigation tiles; campaigns are Roles (already redirected above) and the
+      // V4 landing surface is the Decision Inbox.
+      { source: '/dashboard', destination: '/home', permanent: false },
     ]
   },
 }

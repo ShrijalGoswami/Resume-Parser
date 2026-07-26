@@ -443,22 +443,84 @@
   --color-hl-editorial-border: var(--hl-editorial-border);
   --color-hl-editorial-surface: var(--hl-editorial-surface);
 
-  /* Marketing site palette — isolated public surface (used only under the
-     (marketing) route group); intentionally NOT applied to the .hl product. */
-  --color-mkt-ink: #0b0d0d;
-  --color-mkt-ink-raised: #131817;
-  --color-mkt-ink-fg: #edf1f0;
-  --color-mkt-ink-muted: #9aa3a1;
-  --color-mkt-ink-border: #232a29;
-  --color-mkt-paper: #fcfdfc;
-  --color-mkt-paper-raised: #f4f6f5;
-  --color-mkt-fg: #131817;
-  --color-mkt-fg-muted: #545c5a;
-  --color-mkt-fg-subtle: #828b89;
-  --color-mkt-border: #dce1e0;
-  --color-mkt-border-subtle: #e9edec;
-  --color-mkt-iris: #5b5bd6;
-  --color-mkt-iris-text: #4a4ac0;
+  /* ---------------------------------------------------------------------
+     Marketing site palette — isolated public surface (used only under the
+     (marketing) route group); intentionally NOT applied to the .hl product.
+
+     SOURCE OF TRUTH: the HireLens V4 Stitch marketing frames 1-5
+     (design/stitch_hirelens_v4/hirelens_marketing_*). Every value is
+     transcribed verbatim from those frames' `tailwind.config` blocks. Do not
+     "improve" these — a mismatch here is a mismatch against the design.
+
+     These map onto the raw `--mkt-*` properties declared on `.mkt` below,
+     mirroring how the `.hl` product tokens are wired. The indirection matters:
+     `@theme inline` substitutes values into generated utilities but does NOT
+     emit the custom properties, so anything that needs to read a token with a
+     plain `var()` (the `.mkt` base rule, ::selection) must go through the raw
+     property, not the `--color-mkt-*` alias.
+     --------------------------------------------------------------------- */
+
+  /* Light surfaces (frames 2-5) */
+  --color-mkt-canvas: var(--mkt-canvas);
+  --color-mkt-subtle: var(--mkt-subtle);
+  --color-mkt-muted: var(--mkt-muted);
+  --color-mkt-inset: var(--mkt-inset);
+  --color-mkt-border-subtle: var(--mkt-border-subtle);
+  --color-mkt-border: var(--mkt-border);
+  --color-mkt-border-strong: var(--mkt-border-strong);
+
+  /* Light text */
+  --color-mkt-fg: var(--mkt-fg);
+  --color-mkt-fg-secondary: var(--mkt-fg-secondary);
+  --color-mkt-fg-tertiary: var(--mkt-fg-tertiary);
+
+  /* Accent + AI */
+  --color-mkt-accent: var(--mkt-accent);
+  --color-mkt-accent-text: var(--mkt-accent-text);
+  --color-mkt-accent-bg: var(--mkt-accent-bg);
+  --color-mkt-ai-bg: var(--mkt-ai-bg);
+
+  /* Prism spectrum (violet -> blue -> cyan) */
+  --color-mkt-prism-violet: var(--mkt-prism-violet);
+  --color-mkt-prism-blue: var(--mkt-prism-blue);
+  --color-mkt-prism-cyan: var(--mkt-prism-cyan);
+
+  /* Focus / score band */
+  --color-mkt-focus-high: var(--mkt-focus-high);
+  --color-mkt-focus-sharp: var(--mkt-focus-sharp);
+  --color-mkt-focus-legible: var(--mkt-focus-legible);
+  --color-mkt-focus-soft: var(--mkt-focus-soft);
+  --color-mkt-focus-out: var(--mkt-focus-out);
+  --color-mkt-success: var(--mkt-success);
+
+  /* Ink (deep dark sections — frames 4-5) */
+  --color-mkt-ink: var(--mkt-ink);
+
+  /* Frame 1 dark shell (hero + compression preview) */
+  --color-mkt-dark-bg: var(--mkt-dark-bg);
+  --color-mkt-dark-fg: var(--mkt-dark-fg);
+  --color-mkt-dark-fg-variant: var(--mkt-dark-fg-variant);
+  --color-mkt-dark-surface-variant: var(--mkt-dark-surface-variant);
+  --color-mkt-dark-outline: var(--mkt-dark-outline);
+  --color-mkt-dark-outline-variant: var(--mkt-dark-outline-variant);
+  --color-mkt-dark-primary: var(--mkt-dark-primary);
+  --color-mkt-primary-container: var(--mkt-primary-container);
+  --color-mkt-inverse-primary: var(--mkt-inverse-primary);
+  --color-mkt-inverse-surface: var(--mkt-inverse-surface);
+  --color-mkt-tertiary-container: var(--mkt-tertiary-container);
+
+  /* Radius. The app's base theme overrides Tailwind's radius scale
+     (shadcn-style: lg=12px, xl=16px), which does NOT match Stitch. The
+     marketing frames use Tailwind's stock values, so the public site gets its
+     own scale rather than inheriting the product's. */
+  --radius-mkt-lg: var(--mkt-radius-lg);
+  --radius-mkt-xl: var(--mkt-radius-xl);
+
+  /* Marketing type families */
+  --font-mkt-display: var(--mkt-font-display);
+  --font-mkt-body: var(--mkt-font-body);
+  --font-mkt-label: var(--mkt-font-label);
+  --font-mkt-mono: var(--mkt-font-mono);
 
   /* Score */
   --color-hl-score-infocus: var(--hl-score-infocus);
@@ -699,5 +761,308 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+
+
+
+
+/* ==========================================================================
+   HireLens V4 Marketing — surface scope + Stitch primitives
+
+   Everything below is scoped under `.mkt` (applied by the (marketing) route
+   group layout) so the public site cannot leak into the `.hl` product shell.
+
+   Primitives are transcribed from the Stitch frames' <style> blocks. Frame 1
+   (the dark hero) uses a *single-hue iris* hairline with a glow; frames 2–5
+   use the *three-stop prism* hairline. They are deliberately different
+   classes — do not collapse them into one.
+   ========================================================================== */
+
+/* Raw marketing tokens. Declared on the scope element (not :root) so the
+   public site cannot tint the `.hl` product, and as real custom properties so
+   both the `--color-mkt-*` theme aliases and plain `var()` reads resolve. */
+.mkt {
+  /* Light surfaces (frames 2-5) */
+  --mkt-canvas: #fcfdfc;
+  --mkt-subtle: #f4f6f5;
+  --mkt-muted: #ebeeed;
+  --mkt-inset: #e1e5e4;
+  --mkt-border-subtle: #e9edec;
+  --mkt-border: #dce1e0;
+  --mkt-border-strong: #cbd1d0;
+
+  /* Light text */
+  --mkt-fg: #131817;
+  --mkt-fg-secondary: #545c5a;
+  --mkt-fg-tertiary: #828b89;
+
+  /* Accent + AI */
+  --mkt-accent: #5b5bd6;
+  --mkt-accent-text: #4a4ac0;
+  --mkt-accent-bg: #eeeefb;
+  --mkt-ai-bg: #f6f8fd;
+
+  /* Prism spectrum */
+  --mkt-prism-violet: #6e5cf0;
+  --mkt-prism-blue: #4c8fe0;
+  --mkt-prism-cyan: #2fb8c6;
+
+  /* Focus / score band */
+  --mkt-focus-high: #0c7c86;
+  --mkt-focus-sharp: #2e9e86;
+  --mkt-focus-legible: #b78514;
+  --mkt-focus-soft: #c6702e;
+  --mkt-focus-out: #b4463c;
+  --mkt-success: #1e7a52;
+
+  /* Ink — frames 4-5 use the deeper of the two inks */
+  --mkt-ink: #0b0d0d;
+
+  /* Frame 1 dark shell. Frame 2's "Stakes" band shares --mkt-dark-bg (#121414),
+     which is deliberately lighter than --mkt-ink. */
+  --mkt-dark-bg: #121414;
+  --mkt-dark-fg: #e2e2e2;
+  --mkt-dark-fg-variant: #c7c4d6;
+  --mkt-dark-surface-variant: #333535;
+  --mkt-dark-outline: #918f9f;
+  --mkt-dark-outline-variant: #464553;
+  --mkt-dark-primary: #c1c1ff;
+  --mkt-primary-container: #5b5bd6;
+  --mkt-inverse-primary: #4e4ec9;
+  --mkt-inverse-surface: #e2e2e2;
+  --mkt-tertiary-container: #a35700;
+
+  /* Radius — Stitch frames: DEFAULT 4px, lg 8px, xl 12px */
+  --mkt-radius-lg: 0.5rem;
+  --mkt-radius-xl: 0.75rem;
+
+  /* Type families — Newsreader (display), Inter (body), Public Sans (label),
+     JetBrains Mono (data). Loaded by the (marketing) route-group layout. */
+  --mkt-font-display: var(--font-newsreader), Georgia, 'Times New Roman', serif;
+  --mkt-font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --mkt-font-label: var(--font-public-sans), ui-sans-serif, system-ui, sans-serif;
+  --mkt-font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@layer base {
+  /* The theme provider is mounted at the app root and, with `enableColorScheme`,
+     writes `color-scheme` onto <html> from the OS preference. The public site is
+     a light-only design, so it pins the scheme back — both for the page itself
+     (scrollbars, native controls) and for the document when a marketing page is
+     what is mounted. Without this the marketing surface inherits dark native
+     chrome on a dark-preference machine.
+
+     `!important` is required, not lazy: next-themes writes `color-scheme` as an
+     INLINE style on <html>, which a stylesheet rule cannot otherwise outrank. */
+  html:has(.mkt) {
+    color-scheme: light !important;
+  }
+
+  .mkt {
+    color-scheme: light;
+    background-color: var(--mkt-canvas);
+    color: var(--mkt-fg);
+    font-family: var(--mkt-font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  .mkt ::selection {
+    background-color: var(--mkt-accent-bg);
+    color: var(--mkt-accent-text);
+  }
+  .mkt :focus-visible {
+    outline: 2px solid var(--mkt-accent);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+}
+
+@layer components {
+  /* JetBrains Mono ships programming ligatures (calt), which turn sequences
+     like `->` into a single arrow glyph. The frames' mono stacks have none, so
+     the marketing copy must render the characters as authored. Width-neutral
+     in a monospace face, so this shows up only as the wrong glyph. */
+  .mkt .font-mkt-mono {
+    font-variant-ligatures: none;
+    font-feature-settings: 'calt' 0, 'liga' 0;
+  }
+
+  /* --- Prism hairlines (frames 2–5): violet → blue → cyan ---------------- */
+  .mkt-prism-hairline {
+    background: linear-gradient(to right, #6e5cf0, #4c8fe0, #2fb8c6);
+  }
+
+  /* Vertical prism edge drawn as a pseudo-element so it can hug a rounded
+     panel's left side without owning the element's own border (frames 3–5). */
+  .mkt-prism-edge-left {
+    position: relative;
+  }
+  .mkt-prism-edge-left::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 1px;
+    background: linear-gradient(to bottom, #6e5cf0, #4c8fe0, #2fb8c6);
+  }
+
+  /* Frame 3 memo card: prism rule along the bottom of the header block. */
+  .mkt-prism-edge-bottom {
+    position: relative;
+  }
+  .mkt-prism-edge-bottom::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(to right, #6e5cf0, #4c8fe0, #2fb8c6);
+    opacity: 0.8;
+  }
+
+  /* Frame 4: prism as text fill, and as a top border-image. */
+  .mkt-prism-text {
+    background: linear-gradient(to right, #6e5cf0, #4c8fe0, #2fb8c6);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+  .mkt-prism-border-top {
+    border-top: 1px solid transparent;
+    border-image: linear-gradient(to right, #6e5cf0, #4c8fe0, #2fb8c6) 1;
+  }
+
+  /* Frame 4's left prism edge is a real border-image, not the pseudo-element
+     used by frames 3/5 — it occupies 1px of layout, which insets the panel's
+     content. Kept as a separate class so each frame keeps its own behaviour. */
+  .mkt-prism-border-left {
+    border-left: 1px solid transparent;
+    border-image: linear-gradient(to bottom, #6e5cf0, #4c8fe0, #2fb8c6) 1;
+  }
+
+  /* --- Frame 1 iris hairlines (single hue + glow) ----------------------- */
+  .mkt-iris-hairline {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      rgba(91, 91, 214, 0.2) 0%,
+      rgba(91, 91, 214, 1) 50%,
+      rgba(91, 91, 214, 0.2) 100%
+    );
+    box-shadow: 0 0 10px rgba(91, 91, 214, 0.5);
+  }
+  .mkt-iris-hairline-vertical {
+    width: 1px;
+    background: linear-gradient(
+      180deg,
+      rgba(91, 91, 214, 0.2) 0%,
+      rgba(91, 91, 214, 1) 50%,
+      rgba(91, 91, 214, 0.2) 100%
+    );
+    box-shadow: 0 0 10px rgba(91, 91, 214, 0.5);
+  }
+
+  /* Frame 1 floating candidate card. */
+  .mkt-glass-panel {
+    background: rgba(18, 20, 20, 0.8);
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* --- Frame 4 breathing aurora ---------------------------------------- */
+  .mkt-aurora {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 50% 50%, #6e5cf0 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, #4c8fe0 0%, transparent 40%),
+      radial-gradient(circle at 20% 80%, #2fb8c6 0%, transparent 40%);
+    opacity: 0.05;
+    filter: blur(80px);
+    animation: mkt-breath-aurora 12s ease-in-out infinite;
+  }
+
+  /* --- Frame 1 entrance ------------------------------------------------- */
+  .mkt-fade-in-up {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: mkt-fade-in-up 1s ease-out forwards;
+  }
+  .mkt-delay-100 { animation-delay: 100ms; }
+  .mkt-delay-200 { animation-delay: 200ms; }
+  .mkt-delay-300 { animation-delay: 300ms; }
+}
+
+@keyframes mkt-breath-aurora {
+  0%, 100% { opacity: 0.04; transform: scale(1); }
+  50% { opacity: 0.08; transform: scale(1.05); }
+}
+
+@keyframes mkt-fade-in-up {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mkt *,
+  .mkt *::before,
+  .mkt *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .mkt .mkt-fade-in-up {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Material Symbols Outlined.
+
+   Self-hosted rather than linked from fonts.googleapis.com on purpose: Google's
+   stylesheet ships `.material-symbols-outlined { font-size: 24px }` unlayered,
+   and unlayered declarations beat Tailwind v4's layered utilities — so every
+   `text-sm` / `text-xl` on an icon was being silently overridden to 24px. Owning
+   the @font-face lets the size utilities work and drops a render-blocking
+   third-party request from the public page.
+
+   Axis settings are transcribed from the Stitch frames' <style> block. */
+@font-face {
+  font-family: 'Material Symbols Outlined';
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: swap;
+  src: url('/fonts/material-symbols-outlined.woff2') format('woff2');
+}
+
+@layer components {
+  .mkt .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal;
+    font-style: normal;
+    /* Material's own default. Lives in the components layer so any `text-*`
+       utility on the icon still wins — which is what the frames rely on. */
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
   }
 }

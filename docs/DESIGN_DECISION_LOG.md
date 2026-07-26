@@ -435,6 +435,7 @@ Every record ever created, current status, one line each. **The register is neve
 | [DDL-GOV-002](#ddl-gov-002--the-design-review-checklist-is-authoritative-and-frozen) | The Design Review Checklist is authoritative and Frozen | GOV | **Accepted** | 2026-07-25 |
 | [DDL-GOV-003](#ddl-gov-003--governance-changes-require-a-formal-amendment) | Governance changes require a formal amendment | GOV | **Accepted** | 2026-07-25 |
 | [DDL-GOV-004](#ddl-gov-004--five-blocking-gates-override-the-scoring-model) | Five blocking gates override the scoring model | GOV | **Accepted** | 2026-07-25 |
+| [DDL-GOV-005](#ddl-gov-005--structure-first-prompting-for-stitch) | Structure-first prompting for Stitch | GOV | **Accepted** | 2026-07-25 |
 | [DDL-AIX-001](#ddl-aix-001--calibrated-confidence-with-an-under-trust-default) | Calibrated confidence, with an under-trust default | AIX | **Accepted** | 2026-07-25 |
 | [DDL-VIS-001](#ddl-vis-001--border-first-near-monochrome-surface-language) | Border-first, near-monochrome surface language | VIS | **Accepted** | 2026-07-25 |
 | [DDL-ENG-001](#ddl-eng-001--rename-the-repository-from-resume-parser) | Rename the repository from `Resume-Parser` | ENG | **Proposed** | 2026-07-25 |
@@ -446,8 +447,16 @@ Every record ever created, current status, one line each. **The register is neve
 | [DDL-VIS-007](#ddl-vis-007--no-candidate-photography-on-assessment-surfaces) | No candidate photography on assessment surfaces | VIS | **Accepted** | 2026-07-25 |
 | [DDL-VIS-008](#ddl-vis-008--toasts-restricted-to-asynchronous-completion) | Toasts restricted to asynchronous completion | VIS | **Accepted** | 2026-07-25 |
 | [DDL-VIS-009](#ddl-vis-009--table-and-data-grid-are-distinct-components) | Table and Data Grid are distinct components | VIS | **Accepted** | 2026-07-25 |
+| [DDL-VIS-010](#ddl-vis-010--narrow-container-added-between-reading-and-working) | Narrow container added between Reading and Working | VIS | **Accepted** | 2026-07-25 |
 | [DDL-MKT-001](#ddl-mkt-001--homepage-narrative-arc-nine-scenes-across-five-movements) | Homepage narrative arc: nine scenes across five movements | MKT | **Proposed** | 2026-07-25 |
 | [DDL-MKT-002](#ddl-mkt-002--thinking-is-shown-through-structure-not-animation) | Thinking is shown through structure, not animation | MKT | **Proposed** | 2026-07-25 |
+| [DDL-MKT-003](#ddl-mkt-003--scene-05-evidence-trail--three-column-case-file-pattern) | Scene 05 evidence trail — three-column case file pattern | MKT | **Accepted** | 2026-07-25 |
+| [DDL-MKT-004](#ddl-mkt-004--scene-06-limits--exhibit-then-grouped-commitments) | Scene 06 limits — exhibit then grouped commitments | MKT | **Accepted** | 2026-07-25 |
+| [DDL-MKT-005](#ddl-mkt-005--skeleton-v1-pacing-observations-held-as-hypotheses) | Skeleton v1 pacing observations held as hypotheses | MKT | **Accepted** | 2026-07-25 |
+| [DDL-MKT-006](#ddl-mkt-006--scene-07-the-record--retrieval-framed-decision-register) | Scene 07 the record — retrieval-framed decision register | MKT | **Accepted** | 2026-07-25 |
+| [DDL-MKT-007](#ddl-mkt-007--scenes-0809-the-closing-act) | Scenes 08–09 the closing act | MKT | **Accepted** | 2026-07-25 |
+| [DDL-MKT-008](#ddl-mkt-008--scene-05-fixtures-frozen-as-single-source-of-truth) | Scene 05 fixtures frozen as single source of truth | MKT | **Accepted** | 2026-07-25 |
+| [DDL-MKT-009](#ddl-mkt-009--the-homepage-is-rebuilt-as-a-faithful-composition-of-the-stitch-v4-marketing-frames) | The homepage is rebuilt as a faithful composition of the Stitch V4 marketing frames | MKT | **Proposed** | 2026-07-25 |
 
 ---
 
@@ -930,6 +939,73 @@ A gate blocks work in a case the team judges was correct to ship — file a GAP 
 
 **Amendment History**
 2026-07-25 · Design Ops · Record created. Gate evaluation ordered before scoring to close the weighted-offset contradiction.
+
+---
+
+## DDL-GOV-005 — Structure-first prompting for Stitch
+
+**Status:** Accepted
+**Date:** 2026-07-25
+**Owner:** Design Ops · co-owner: Design Owner
+
+**Decision Summary**
+When generating complex interfaces with Stitch: specify structural layout explicitly, keep semantic content minimal, and never combine layout generation with heavy narrative generation. **Generate structure first; populate content later.**
+
+**Context**
+Established from direct observation across two rounds of homepage exploration on 2026-07-25.
+
+Round one asked Stitch for four complete nine-scene homepages. All four truncated — none produced more than four of nine sections, and each jumped from an early section straight to the footer. The evidence trail, the limits turn, the decision record and the trust section were absent from every one.
+
+Round two, scene level, asked for four structural directions for a single scene. Three of the four failed to apply the design system entirely and returned unstyled HTML. The one that rendered — direction C — was the only prompt describing a **symmetrical** structure with explicit row-for-row alignment. The three failures all described **asymmetric multi-panel layouts with margin apparatus** in prose.
+
+Round three re-ran the approved concept with one variable changed: prompt shape. Same concept, same design system, same constraints, roughly half the words, and an explicit column grid stated as percentages instead of panels described in prose. **It rendered correctly on the first attempt.**
+
+**Problem Statement**
+What prompt structure reliably produces usable output from Stitch for interfaces of real complexity?
+
+**Alternatives Considered**
+
+1. **Single comprehensive prompt** — full structure, copy and narrative in one pass.
+2. **Retry and iterate** — same prompt shape, repeated attempts until one succeeds.
+3. **Reduce ambition** — design simpler layouts that generate reliably.
+4. **Structure first, content second** — explicit grid, minimal semantics, copy supplied afterwards.
+
+**Why Alternatives Were Rejected**
+
+1. **Comprehensive prompt** — empirically fails. Three separate failure modes were observed: narrative truncation, design-system non-application, and copy invention. All three correlate with semantic load rather than with layout difficulty.
+2. **Retry** — rejected as expensive and non-diagnostic. Nothing in the three failed renders suggested randomness; the failures tracked prompt shape consistently.
+3. **Reduce ambition** — rejected outright. Letting a tool's limitation determine the design is the tail wagging the dog, and the asymmetric three-panel layout is the correct answer for the scene regardless of what generates easily.
+4. **Structure first** — accepted. It isolates the variable the tool actually struggles with.
+
+**Final Decision**
+As summarized. Concretely: state the grid explicitly, in percentages or named columns, rather than describing panels in prose. Cap semantic content at labels and short statements. Supply long-form copy at implementation, never in the generation prompt. Where a scene needs both, run two passes.
+
+**Expected Benefits**
+First-attempt renders instead of retry cycles. A cleaner separation between structural decisions, which belong to design review, and copy, which belongs to the Marketing Owner and to the claim boundaries in `DDL-POS-003`.
+
+**Trade-offs**
+Two passes where a team would prefer one, and a generation output that looks less finished because it carries placeholder rather than final copy. Accepted: a beautiful render carrying invented copy is worse than a plain render carrying correct structure, because the invented copy is the part that breaches governance.
+
+**Risks**
+The rule is read as "keep prompts short" and structural specificity is lost along with the semantic load — the opposite of the finding. Structure-first means *more* structural detail, not less prompt. Second risk: invented copy passes review because the render is otherwise good, which silently promotes a generation defect into an approved fixture. Observed in round three and caught; will recur.
+
+**Consequences**
+Every Stitch prompt states its grid explicitly. Long-form copy is never supplied to Stitch. Generated copy is treated as placeholder by default and is replaced from approved fixtures at implementation — never accepted because it reads well. Applies to Scenes 06 through 09 and to all future exploration.
+
+**Related Decisions**
+Related: `DDL-MKT-001`, `DDL-POS-003`.
+
+**Related Governance Documents**
+*Derives from:* Checklist §14 J1 (statistically likely layout), §14 J2 (requirements satisfied literally), §14 J4 (confident invention), §14 J5 (polish without resolution); Creative Brief, "How to brief Stitch". *Enforced by:* Checklist Appendix C.
+
+**Related Product Areas**
+All Stitch exploration · homepage scenes 06–09 · future marketing surfaces · design-tool workflow.
+
+**Review Trigger**
+A materially more capable version of Stitch, or a reproducible case where a semantically dense prompt renders correctly on first attempt at comparable complexity. **Not a trigger:** a single lucky render.
+
+**Amendment History**
+2026-07-25 · Design Ops · Record created and accepted at the Product Owner's instruction, from three rounds of observed generation behaviour.
 
 ---
 
@@ -1615,6 +1691,72 @@ Evidence that the two have diverged visually, or a surface that genuinely needs 
 
 ---
 
+## DDL-VIS-010 — Narrow container added between Reading and Working
+
+**Status:** Accepted
+**Date:** 2026-07-25
+**Owner:** Design Owner · co-owner: Engineering Owner
+
+**Decision Summary**
+A fourth named container, **Narrow (1000px)**, is added between Reading (680px) and Working (1280px). It is a **system refinement to be folded into the next amendment of Book I Ch. 2** — not an implementation exception.
+
+**Context**
+Surfaced during Engineering Phase 2, Scene 08. Book I Ch. 2 names three containers: Reading 680, Working 1120–1440 (optimum 1280), Field fluid. Three frozen scene specs call for widths in the 940–1000 band: Scene 06 at 1000px, Scene 07 at 940px, Scene 08 at 1000px. **All three fall below Working's 1120 floor and above Reading's maximum.**
+
+Neither frozen document is wrong. Book I's three containers were derived from the product's panel system; the scene widths were derived from composition. The gap is between them, and it only became visible when something was built.
+
+**Problem Statement**
+What is the correct response when a frozen scene specification requires a container width the frozen container system does not name?
+
+**Alternatives Considered**
+
+1. **Hard-code the pixel value** in each scene.
+2. **Round to Working (1280px)** and treat the scene specs as approximate.
+3. **Round to Reading (680px)** and let the scenes run narrower than specified.
+4. **Add a fourth container token**, applied consistently.
+
+**Why Alternatives Were Rejected**
+
+1. **Hard-code** — prohibited. Book II Ch. 1 admits no raw values, and Checklist §12.2 is explicit: a token gap is a system gap to be fixed by adding the token, never tolerated as a mismatch. One hard-coded value is trivial; four hundred are a rewrite, and nobody can point to when it happened.
+2. **Round up to Working** — rejected. It would silently widen three scenes past their approved composition, and Scene 06's commitments table in particular was frozen with a specific measure after a recorded length problem.
+3. **Round down to Reading** — rejected for the same reason in the other direction: Scene 08's two-by-two grid and Scene 06's two-column table do not work at prose measure.
+4. **Fourth container** — accepted, and deliberately **not** as a local exception.
+
+**Final Decision**
+`--container-hp-narrow: 1000px`, exposed as the `narrow` option on the Container primitive alongside reading, working and field. Applied to Scenes 06, 07 and 08.
+
+**Recorded as a system refinement.** The next amendment of Book I Ch. 2 should name four containers rather than three. Until that amendment, the token exists and is used; it is not an outstanding deviation.
+
+**Expected Benefits**
+Closes a real gap between two frozen documents rather than papering over it per-scene. Three scenes share one token, so the measure stays consistent and changeable in one place.
+
+**Trade-offs**
+A fourth container is one more thing to learn and one more decision at authoring time. Book I chose three deliberately — more containers means more opportunity to pick the wrong one. Accepted because the alternative was three scenes each hard-coding a value, which is worse on every axis.
+
+**Risks**
+Container proliferation: a fifth is now easier to justify than the fourth was. **Mitigation: Narrow is the last addition without an explicit Book I amendment.** Any further container requires the amendment first, not after.
+
+**Consequences**
+Book I Ch. 2 requires amendment at its next revision to name four containers. Scenes 06, 07, 08 consume `narrow`. The three original container widths were converted from arbitrary values to generated utilities in the same change — behaviourally identical, and it removes the last arbitrary-value usage from the container primitive.
+
+**Related Decisions**
+Depends on `DDL-VIS-006` (three-tier token architecture). Related: `DDL-MKT-004`, `DDL-MKT-006`, `DDL-MKT-007`.
+
+**Related Governance Documents**
+*Derives from:* Book I Ch. 2 (containers), Ch. 15 (a token gap is a system gap). *Enforced by:* Checklist §12.2. **Requires amendment of:** Book I Ch. 2.
+
+**Related Product Areas**
+Design token layer · Container primitive · Homepage Scenes 06, 07, 08.
+
+**Review Trigger**
+The next amendment of Book I, at which point Ch. 2 names four containers and this record is discharged. **Or** a request for a fifth container, which requires the amendment first.
+
+**Amendment History**
+2026-07-25 · Engineering Owner · Gap discovered implementing Scene 08; token added as the governed response under Checklist §12.2 and reported rather than absorbed.
+2026-07-25 · Product Owner · **Accepted** as a system refinement, explicitly not as an implementation exception.
+
+---
+
 ## DDL-MKT-001 — Homepage narrative arc: nine scenes across five movements
 
 **Status:** Proposed
@@ -1739,6 +1881,390 @@ Book III concluding that a fourth motion moment carries information the layout c
 
 ---
 
+## DDL-MKT-003 — Scene 05 evidence trail — three-column case file pattern
+
+**Status:** Accepted
+**Date:** 2026-07-25
+**Owner:** Design Owner · co-owner: Marketing Owner
+
+**Decision Summary**
+Homepage Scene 05 uses a three-column case file pattern at 22 / 52 / 26: a conclusion navigator, the source document shown in situ, and an evidence inspector. **Structure is frozen; content is deferred to implementation.**
+
+**Context**
+Established through four structural explorations and two render passes on 2026-07-25. Scene 05 is the storyboard's load-bearing scene — the point at which the reader personally verifies that a conclusion resolves to the sentence that produced it (Bible Ch. 2, differentiator 1).
+
+**Problem Statement**
+What structure proves traceability rather than asserting it?
+
+**Alternatives Considered**
+
+1. **Institutional evidence** — three stacked exhibits, each a quotation with a provenance note in the margin.
+2. **Interactive investigation** — a selectable list of conclusions with the evidence for the selected one opened in a tab strip.
+3. **Comparative resolution** — the same candidate at two evidence levels side by side.
+4. **Case file** — a source rail, the document itself with a highlighted passage and margin reference, and an inspector showing what was drawn from it.
+
+**Why Alternatives Were Rejected**
+
+1. **Stacked exhibits** — the quotations float, detached from the documents they came from. A floating quotation is indistinguishable from a fabricated one, which is the provenance-theatre failure at Checklist §14 F4. It is also entirely passive, where the storyboard makes this the most interactive scene on the page.
+2. **Interactive investigation** — right interaction model, same floating-excerpt defect. Strictly dominated by option 4, which has the same source rail and selection state plus a real document.
+3. **Comparative resolution** — **the best-executed artefact of the round and the wrong scene.** It demonstrates evidence accumulation, not provenance: nothing traverses from claim to source, and read is never distinguished from inferred. Reassigned to Scene 02, where it is stronger than anything the earlier round produced.
+4. **Case file** — accepted. The only option that shows the passage **in situ**, with real surrounding paragraphs above and below it.
+
+**Final Decision**
+Frozen implementation baseline: three columns at 22 / 52 / 26 with 1px hairline separation; a five-row conclusion navigator with a neutral selected state (solid left edge bar, faint field, no shadow); the source document shown in place with a highlighted passage and a margin reference numeral; a six-field evidence inspector (passage reference, source, location, evidence type, verification state, dimension); a provenance note; a "report this as wrong" action; and neutral rendering of unsupported conclusions.
+
+**Expected Benefits**
+Provenance theatre is defeated structurally rather than by assertion — a reader who sees the surrounding paragraphs knows the quotation was not assembled for the demo. Satisfies §8.1 one-step traceability and §8.13 extraction-versus-inference at the pixel level.
+
+**Trade-offs**
+Three columns is the most demanding layout on the homepage and the least forgiving at narrow viewports. It also requires genuine document fixtures rather than excerpt strings, which is more work to prepare and to keep synthetic.
+
+**Risks**
+The two calm-absence states — "reference check — not received" in the rail and "not supported by this document" in the inspector — are the scene's costliest elements and the most likely to be "improved" into warnings during implementation (§14 F2, §8.15). Second risk: the margin numeral's tie to the inspector is currently asserted rather than shown, and will be dropped if not specified.
+
+**Consequences**
+Implementation tasks, not design questions: replace generated document text with approved fixtures; add a second highlighted passage; strengthen the margin-reference-to-inspector connection; verify bottom-anchored inspector actions. The scene is subject to **Gate 2** in full despite being a marketing surface, because it renders model output to a user.
+
+**Related Decisions**
+Depends on `DDL-MKT-001`, `DDL-AIX-001`, `DDL-VIS-004`. Related: `DDL-GOV-005`, `DDL-VIS-007`.
+
+**Related Governance Documents**
+*Derives from:* Homepage Storyboard, Scene 05; Bible Ch. 2, Ch. 14. *Enforced by:* Checklist §8.1, §8.13, §8.15 (**Gate 2**); Book I Ch. 2, Ch. 10.
+
+**Related Product Areas**
+Homepage Scene 05 · marketing fixtures · evidence panel pattern (Book II A-04) · candidate review surfaces.
+
+**Review Trigger**
+Implementation uncovers a structural problem the pattern cannot absorb. **Not a trigger:** content, copy, or fixture changes, which are explicitly deferred.
+
+**Amendment History**
+2026-07-25 · Design Owner · Structure frozen at the Product Owner's approval. Content explicitly not frozen — generated document text was invented by the tool against instruction and must not become the fixture by default.
+
+---
+
+## DDL-MKT-004 — Scene 06 limits — exhibit then grouped commitments
+
+**Status:** Accepted
+**Date:** 2026-07-25
+**Owner:** Marketing Owner · co-owner: Design Owner
+
+**Decision Summary**
+Homepage Scene 06 is composed of three parts: a four-dimension evidence exhibit showing one gap in position, a single commitments table split into two labelled groups (three refusals, five limitations, each paired with its operational consequence), and a closing statement. **Structure and copy are both frozen.**
+
+**Context**
+Established through four structural explorations and one execution pass on 2026-07-25. Scene 06 is the storyboard's turn — the point at which the page deliberately breaks its own momentum to state limits, and the beat that makes Scenes 03 to 05 credible retroactively.
+
+Unlike Scene 05, the copy here **is** frozen: it carries Gate 3 claim boundaries, and boundary language is not a fixture to be supplied later.
+
+**Problem Statement**
+What structure presents limitations as commitments rather than as caveats, while carrying the claim boundaries this scene is responsible for?
+
+**Alternatives Considered**
+
+1. **Declarative ledger** — eight numbered statements in a single column.
+2. **Absence in position** — a dimension table with one row showing a gap, plus three commitment lines.
+3. **Two taxonomies** — refusals and limitations as two side-by-side columns.
+4. **Limit and consequence** — a two-column table pairing each limit with what we do about it.
+5. **Composite** — option 2 as an opening exhibit, then option 4's structure carrying option 1's refusal content, grouped by option 3's distinction.
+
+**Why Alternatives Were Rejected**
+
+1. **Declarative ledger** — conflates two different things under one heading. Rows one to four are refusals; rows five to seven are limitations. Presenting them identically under "what we will not do" tells the reader we are *choosing* not to see an unrecorded conversation. A claim defect the layout makes invisible. Eight near-identical declaratives also read as terms of service.
+2. **Absence in position** — the only direction that demonstrates rather than asserts, and the storyboard's literal metaphor. But it carries one limit type only and none of the Gate 3 refusals. Retained as the opening exhibit rather than rejected.
+3. **Two taxonomies** — the sharpest thinking in the round: *"the left column is a choice. the right column is a limit."* That distinction answers the question a legal or security reviewer actually asks. But it states limits without consequences, and its two-column form broke alignment when left-column rows wrapped. **The insight was kept; the layout was not.**
+4. **Limit and consequence** — strongest structure and best copy, missing the Gate 3 refusals.
+5. **Composite** — accepted. The only arrangement in which the reader sees the gap, learns the difference between a choice and a ceiling, and reads every limit beside what we do about it.
+
+**Final Decision**
+Frozen baseline: centred container at 1000px. Part 1 — a four-row, three-column exhibit (30/45/25) with one dimension showing "Nothing on file" at identical weight to the others. Part 2 — a two-column table (42/58) with a vertical hairline and header labels "The limit" and "What we do", containing two peer-labelled groups of exactly three and exactly five rows. Part 3 — the closing statement, verbatim: *"None of these are things we intend to fix. They are the shape of honest work."*
+
+**Expected Benefits**
+Converts caveats into commitments mechanically — the reader cannot encounter a limitation without encountering the behaviour it produces. Row 2.3 restates Scene 05 as a commitment, locking the two scenes together so the turn reads as the argument's hinge rather than a detour. Carries all three Gate 3 boundaries in a form that explains their operational consequence rather than merely asserting them.
+
+**Trade-offs**
+Eight rows plus two group labels is a lot of vertical space for a scene the storyboard budgets at roughly 25 seconds. The execution pass rendered at 4354px, more than twice Scene 05's height, and the monotony risk identified before the render did materialise. Accepted because the alternative — cutting rows — would mean dropping either a claim boundary or a limitation, and neither is discretionary.
+
+**Risks**
+The neutral rendering of "Nothing on file" and the equal weight of the two columns are the scene's most fragile properties and the most likely to be adjusted during implementation. Second risk: at reduced padding the two group labels may begin to read as a heading hierarchy rather than as peers, which would reintroduce the ledger's category confusion.
+
+**Consequences**
+Implementation tasks, not design questions: tighten Part 2 row padding to roughly 60% of current section height; close the gap before the closing statement so it lands as conclusion; verify group labels remain peers at reduced padding. If the table still flattens at reduced height, the refusal group moves out as its own three-row block above the table. **Copy may not be altered without Marketing Owner approval** — it carries Gate 3 boundaries.
+
+**Related Decisions**
+Depends on `DDL-MKT-001`, `DDL-POS-003`, `DDL-GOV-005`. Related: `DDL-MKT-003`, `DDL-VIS-007`, `DDL-AIX-001`.
+
+**Related Governance Documents**
+*Derives from:* Homepage Storyboard, Scene 06; Bible Ch. 2, Ch. 14. *Enforced by:* Checklist §10.7 (**Gate 3**), §8.3, §8.15; Book I Ch. 5, Ch. 14.
+
+**Related Product Areas**
+Homepage Scene 06 · claim boundary language · trust surfaces · sales enablement.
+
+**Review Trigger**
+A change to the claim boundaries in Bible Ch. 2, which would require the three refusal rows to be rewritten. **Not a trigger:** a judgement that the section is long, which is a spacing task already recorded.
+
+**Amendment History**
+2026-07-25 · Marketing Owner · Structure and copy frozen at the Product Owner's approval, following a faithful execution pass. Sentence-case drift introduced in earlier generation prompts identified and corrected in this pass — all-lowercase is not sentence case and was never sanctioned by Book I Ch. 5.
+
+---
+
+## DDL-MKT-005 — Skeleton v1 pacing observations held as hypotheses
+
+**Status:** Accepted
+**Date:** 2026-07-25
+**Owner:** Marketing Owner
+
+**Decision Summary**
+Pacing observations from Homepage Skeleton v1 are recorded as **hypotheses to be tested at V2 assembly**, not as defects to be fixed now. Scenes 01–04 are not revisited, and the roadmap continues to Scene 07.
+
+**Context**
+Homepage Skeleton v1 was assembled on 2026-07-25 from two frozen scenes (05, 06), four provisional bands (01–04), and three reserved placeholders. It surfaced several pacing observations, and the reviewing Creative Director recommended redirecting the next pass to Scenes 01–04 rather than proceeding to 07.
+
+**Problem Statement**
+Should pacing observations drawn from a page that is two-thirds unbuilt drive design work now, or be held until the page is complete?
+
+**Alternatives Considered**
+
+1. **Treat the observations as defects** and redesign Scenes 01–04 immediately.
+2. **Hold them as hypotheses** and continue the roadmap to Scene 07.
+3. **Partially act** — fix only the observations resting on rendered evidence rather than estimate.
+
+**Why Alternatives Were Rejected**
+
+1. **Redesign now** — rejected by the Product Owner on the grounds that Scenes 01–04 are still incomplete explorations, and optimising them against an unfinished page risks tuning to a shape that does not yet exist. Four of the nine scenes were absent from the skeleton entirely; the pacing they will produce is unknown.
+2. **Hold as hypotheses** — accepted.
+3. **Partial action** — rejected as the worst of both. Only two of the observations rest on rendered heights, and acting on those in isolation would tune the relationship between Scenes 05 and 06 without knowing what sits either side of them.
+
+**Final Decision**
+The following are recorded as **hypotheses**, to be tested against evidence at V2 assembly once all nine scenes are designed and frozen:
+
+- **H1.** Scenes 03 and 04 are visually near-identical at page scale — both dense row stacks — so the resolution beat may read as repetition rather than as change. *(Rests on round-one concepts, not on a built scene.)*
+- **H2.** Scene 06 is 2.1× the height of Scene 05, and roughly 1.27× after the tightening already recorded in `DDL-MKT-004`. The turn may therefore out-weigh the peak, inverting the storyboard's intended hierarchy. *(Rests on rendered heights — the strongest-evidenced hypothesis.)*
+- **H3.** Scene 01 may be proportionally too short for a hero whose job is a held moment. *(Rests on estimate only.)*
+- **H4.** The 02 → 03 transition may not answer the question Scene 02 raises. *(Rests on narrative reading, not on built scenes.)*
+- **H5.** Interaction is concentrated entirely in the first half; the second half is read-only and also the densest. *(Correct per storyboard intent; flagged as a fatigue risk to confirm.)*
+- **H6.** The 05 → 06 transition may strengthen if Scene 06's opening exhibit contracts in width after the page's widest moment. *(Spacing hypothesis.)*
+
+**Expected Benefits**
+Prevents four scenes being designed against pacing constraints derived from placeholder estimates. Preserves the observations so they are not lost, and gives V2 a written list to test rather than a fresh review from nothing.
+
+**Trade-offs**
+If any hypothesis is correct, the correction is more expensive at V2 than it would be now, because more scenes will depend on the affected geometry. H2 in particular touches a frozen scene. Accepted deliberately: the cost of a late correction is smaller than the cost of tuning an unbuilt page to imagined proportions.
+
+**Risks**
+Hypotheses accumulate and are never tested — the standard failure of deferred findings. Mitigated by V2 assembly being an explicit roadmap step with these six items as its agenda. Second risk: by V2, enough work depends on Scene 06's geometry that H2 becomes politically expensive to act on.
+
+**Consequences**
+Scenes 01–04 are not revisited. `DDL-MKT-004`'s tightening target stands unchanged; the Creative Director's proposed revision to 1600–1800px is **not** adopted, per the standing rule that frozen scenes change only when the completed homepage demonstrates a genuine structural conflict. Work proceeds to Scene 07. **V2 assembly must test all six hypotheses explicitly and record the outcome of each.**
+
+**Related Decisions**
+Related: `DDL-MKT-001`, `DDL-MKT-003`, `DDL-MKT-004`, `DDL-GOV-005`.
+
+**Related Governance Documents**
+*Derives from:* Homepage Storyboard (scroll journey map, emotional curve, motion density map). *Enforced by:* Checklist §17 (evidence classes) — the hypotheses are Class 8 reasoned argument except H2, which is Class 3.
+
+**Related Product Areas**
+Homepage assembly · Scenes 01–06 · V2 editorial review.
+
+**Review Trigger**
+V2 assembly, once all nine scenes are designed and frozen. **Each hypothesis is confirmed or discharged in writing at that point.**
+
+**Amendment History**
+2026-07-25 · Marketing Owner · Recorded at the Product Owner's decision, which overrode the Creative Director's recommendation to redirect to Scenes 01–04. The reasoning — that pacing cannot be evaluated against a two-thirds-unbuilt page — is accepted and recorded here rather than re-argued.
+
+---
+
+## DDL-MKT-006 — Scene 07 the record — retrieval-framed decision register
+
+**Status:** Accepted
+**Date:** 2026-07-25
+**Owner:** Marketing Owner · co-owner: Design Owner
+
+**Decision Summary**
+Homepage Scene 07 is a single thirteen-row decision register, framed above by one question in the recruiter's voice and closed below by one sentence. **Structure frozen. Copy frozen except for four values shortened during the corrective render, which require confirmation at implementation.**
+
+**Context**
+Established through three structural explorations and two render passes on 2026-07-25. Scene 07 is the storyboard's arrival — the point at which the metaphor closes and the reader receives the artifact the product produces.
+
+**Problem Statement**
+What structure hands the reader a decision record as an object, in a scene whose job is the page's exhale?
+
+**Alternatives Considered**
+
+1. **The document** — single column, header block, three labelled sections with numbered sub-rows.
+2. **The ledger entry** — one compact two-column register, audit-like.
+3. **The record and its retrieval** — the register shown twice, October and April, with the recruiter's question between.
+4. **Composite** — option 2's register, framed by option 3's question and closing line, without the duplication.
+
+**Why Alternatives Were Rejected**
+
+1. **The document** — renders as a form rather than a record. 2908px to carry thirteen lines, and numbered sub-rows produce a list of one under the final section, which reads as an error.
+2. **The ledger entry** — strongest structure, weakest framing. It hands over the artifact without saying why the artifact matters.
+3. **The record and its retrieval** — the best idea generated for this scene and the worst economy. Seven rows followed by eight near-identical rows costs 3048px and reads at page scale as the same table twice — intentional repetition that presents as a rendering fault. **More fundamentally, the duplication proves something that does not need proving:** record permanence is a property, not a differentiating claim. The scene's actual claim is that the output is a defensible decision rather than a score, and that is demonstrated by the register's content, not by showing it twice.
+4. **Composite** — accepted.
+
+**Final Decision**
+Frozen baseline: centred container at 940px. One line of small grey text — *"April. Someone asks: why did we choose Vance over the other three?"* — then a hairline. A thirteen-row table at 32/68 with a vertical hairline, horizontal hairlines between every row, compact rows, and every label on a single line. Then a hairline, the closing line *"Nothing was reconstructed. The record was already written."*, and one plain text link.
+
+**Must be built as a real table with paired cells per row.** The first render failed because the two columns were emitted as independent stacks; a wrapped value desynchronised label from value for the final four rows.
+
+**Expected Benefits**
+Hands the reader an artifact rather than a description of one. `Record status | Closed. Not editable.` carries permanence as a field, which is more economical than either prose or demonstration. The question frames the register as an answer to a real recruiter concern rather than as a display.
+
+**Trade-offs**
+Loses Direction C's demonstration of permanence. Accepted: the demonstration cost 50% more height for a claim the scene does not need to make, in the one scene whose job is to be quiet.
+
+**Risks**
+**The label/value desynchronisation will recur if the register is rebuilt as two flex columns rather than as paired table rows.** The first render inverted the `Not known at the time` value — a §8.15 statement rendered as its own opposite. This is recorded as a known failure mode, not a one-off. Second risk: the four shortened copy values are treated as approved rather than as artefacts of a structural fix.
+
+**Consequences**
+Implementation must pair each label and value in a single row. Four copy values were shortened during the corrective pass to prevent wrapping — `Bar applied`, `Reasoning 1`, `Reasoning 2`, `Not known at the time` — and **each must be confirmed or reverted against the approved wording at implementation.** Scene 07's content extent sits below Scene 05's, which keeps hypothesis H2 (`DDL-MKT-005`) from worsening.
+
+**Related Decisions**
+Depends on `DDL-MKT-001`, `DDL-GOV-005`. Related: `DDL-MKT-003`, `DDL-MKT-004`, `DDL-MKT-005`.
+
+**Related Governance Documents**
+*Derives from:* Homepage Storyboard, Scene 07; Bible Ch. 2 (differentiator 3, decision continuity), Ch. 7 (the metaphor closing). *Enforced by:* Checklist §8.15, §14 C5; Book I Ch. 5.
+
+**Related Product Areas**
+Homepage Scene 07 · decision record pattern · Book II D-08 score presentation · candidate review surfaces.
+
+**Review Trigger**
+V2 assembly, where Scene 07's role as the page's exhale is tested against the scenes either side of it. **Not a trigger:** a request to reinstate the retrieval duplication, which was considered and rejected on economy.
+
+**Amendment History**
+2026-07-25 · Marketing Owner · Structure frozen following a corrective render. The first execution pass failed on a structural defect that inverted a governance statement; the failure and its cause are recorded above so the rebuild does not repeat it.
+
+---
+
+## DDL-MKT-007 — Scenes 08–09 the closing act
+
+**Status:** Accepted
+**Date:** 2026-07-25
+**Owner:** Marketing Owner · co-owner: Design Owner
+
+**Decision Summary**
+Scenes 08 and 09 are designed and frozen as one continuous closing act. **Scene 08** is a four-block prose grid plus a five-row specifics table, carrying organisational trust without enterprise-marketing devices. **Scene 09** is an editorial close of three short paragraphs that returns to Scene 01's opening sentence, followed by one primary action. Structure and copy both frozen.
+
+**Context**
+Designed together on 2026-07-25 with one Scene 08 treatment and three Scene 09 endings.
+
+The brief for Scene 08 asked that trust emerge from product philosophy rather than enterprise marketing, and listed themes — transparency, explainability, auditability, human decision ownership, honest limitations. **Those themes are already carried by Scenes 05 and 06**, and building Scene 08 on them would reproduce hypothesis H1 at the level of meaning: two scenes making the same argument. The storyboard's Scene 08 is Movement IV — organisational trust — and Checklist §9.2 sets its test: can the reader defend us to someone else without us present? Nothing else on the page does that job.
+
+**Problem Statement**
+What closes the page: how does trust get stated without becoming enterprise marketing, and what ending makes the call to action feel inevitable rather than transactional?
+
+**Alternatives Considered**
+
+*Scene 08:* product-philosophy themes as briefed, versus organisational specifics in a product-philosophy register.
+*Scene 09:* **A** quiet confidence — *"That is the whole product."* **B** invitation — *"Bring one open role… no integration required to start."* **C** editorial close — three paragraphs returning to the opening sentence.
+
+**Why Alternatives Were Rejected**
+
+*Scene 08 as briefed* — rejected as duplication. The themes listed are Scenes 05 and 06. Resolved by keeping Movement IV's substance and dropping the costume: no logos, badges, shields, padlocks, seals or compliance marks, and concrete values rather than adjectives (§9.3).
+
+*Ending A* — restates a claim the page has already made. It summarises where it should resolve, and is the only ending that adds nothing.
+
+*Ending B* — the most concrete reduction of next-step cost, which is what Movement V asks for. Rejected on two counts: a second action dilutes the single-primary rule, and *"we will show you what the evidence says"* promises the evidence will say something, which sits adjacent to §10.7.
+
+*Ending C* — accepted. **The only ending that closes the argument rather than ending the page.**
+
+**Final Decision**
+Scene 08: centred 1000px container, a small grey lead line, a two-by-two prose grid on hairlines with headings *Your data*, *What the system may decide*, *What is auditable*, *Where a person is required*, then a five-row specifics table with concrete values for residency, retention, model training, access and export.
+
+Scene 09: separated by a large gap and a hairline. Three short paragraphs at reading size on a 620px measure — the first reproducing Scene 01's opening sentence verbatim, the second conceding that software will not change the difficulty, the third naming what does change. One dark button, *"See it on your own roles"*. No secondary link, no urgency, no countdown, no newsletter field.
+
+**Expected Benefits**
+Scene 08 gives a champion something they can repeat accurately in a security or legal review (§9.2). Scene 09's loop closure is the mechanism that makes the CTA inevitable: the reader recognises their own opening problem returned to them, altered. Its second paragraph — *"no software will make it otherwise"* — is a voluntary constraint at the exact moment competitors over-promise, which is Bible Ch. 14's engine deployed where it costs most.
+
+**Trade-offs**
+Ending C is the longest of the three; the reader passes three paragraphs before the action. Accepted: the paragraphs are the resolution, not a preamble to it. Scene 09 also forgoes ending B's concrete next-step reduction, which measurably lowers friction. That line belongs on the destination page — **a logistics reassurance placed after "you will be able to say why" would deflate the close**, and it was deliberately not grafted in.
+
+**Risks**
+Scene 08's specifics table will be read as a compliance section and attract badges, seals or logos during implementation. The absence of those devices is the decision, not an omission. Second risk: Scene 09's second paragraph will be read as underselling and softened — *"no software will make it otherwise"* is the most likely sentence on the page to be edited out, and it is the one carrying the most trust.
+
+**Consequences**
+Scene 08 carries the only organisational-trust content on the page; if it is cut or thinned, §9.2 is unmet and no other scene covers it. Scene 09's first paragraph is bound to Scene 01's opening sentence — **if Scene 01's copy changes, Scene 09 must change with it**, or the loop breaks silently. One primary action, no secondary.
+
+**Related Decisions**
+Depends on `DDL-MKT-001`, `DDL-POS-003`, `DDL-GOV-005`. Related: `DDL-MKT-004`, `DDL-MKT-005`, `DDL-MKT-006`.
+
+**Related Governance Documents**
+*Derives from:* Homepage Storyboard, Scenes 08–09; Bible Ch. 4 (Movements IV and V), Ch. 14. *Enforced by:* Checklist §9.2, §9.3, §9.7, §10.7 (**Gate 3**), §10.9.
+
+**Related Product Areas**
+Homepage Scenes 08–09 · trust and security messaging · sales enablement · destination page after the primary action.
+
+**Review Trigger**
+A change to Scene 01's opening sentence, which breaks the loop closure. **Or** a security or legal review that the specifics table fails to answer, which would mean §9.2 is unmet.
+
+**Amendment History**
+2026-07-25 · Marketing Owner · Both scenes frozen. Scene 08's brief conflicted with the frozen storyboard and with Scene 06; resolved by keeping Movement IV's substance in the requested register, reported rather than silently reconciled.
+
+---
+
+## DDL-MKT-008 — Scene 05 fixtures frozen as single source of truth
+
+**Status:** Accepted
+**Date:** 2026-07-25
+**Owner:** Marketing Owner · co-owner: Design Ops
+
+**Decision Summary**
+`FIXTURES_SCENE_05.md` **v1.0.0** is frozen as the single source of truth for Scene 05. It carries a Fixture Stability Contract (§12) defining twenty-one invariants that may not change without a major version increment and Marketing Owner approval.
+
+**Context**
+Scene 05 was blocked on fixtures. Implementation Package §8 required a take-home document with two citable passages, a conclusion set, a dimension set and a decision register — none of which existed. Generated content from the exploration passes was explicitly **not** the fixture (`DDL-MKT-003`, `DDL-MKT-006`).
+
+Scenes 06 and 07 were implemented before the fixture existed, and their frozen copy already asserts specific counts: *three passages across two documents*, *four passages across three documents*, *referenced three times, never stated directly*, *nothing on file*. **Those numbers only reconcile because the fixture says what it says.**
+
+**Problem Statement**
+How is fixture content governed once two frozen scenes depend on its internal relationships?
+
+**Alternatives Considered**
+
+1. **Treat fixtures as content** — editable freely, like marketing copy.
+2. **Treat fixtures as code** — versioned in the implementation module, changed by engineering.
+3. **Freeze with an explicit stability contract** naming which relationships are load-bearing.
+
+**Why Alternatives Were Rejected**
+
+1. **Content** — rejected. A fixture edit is a **cross-scene change**, not a tweak. Editing "three passages" to "four" silently falsifies a Gate 3 register two scenes away, and nothing in the build would catch it. The failure is invisible precisely because each edit looks local.
+2. **Code** — rejected. It would put Gate 3 copy behind an engineering change and make the reconciliation invisible to the Marketing Owner, who is accountable for the claim boundaries the counts support.
+3. **Frozen with a stability contract** — accepted. It distinguishes prose that may improve freely from relationships that may not move.
+
+**Final Decision**
+Frozen at v1.0.0. §12 defines three tiers: patch (prose, no invariant touched), minor (additive only), major (**any** invariant changes — a governance event requiring re-approval of Scene 06 and Scene 07 registers).
+
+Twenty-one invariants across identity and chronology, sources, passages and citation, counts, conclusions, disagreement, and character of the data. §12.3 sets precedence: **where the fixture and a frozen scene register disagree, the register wins and the fixture is corrected** — the sole exception being the take-home text itself, which exists nowhere else.
+
+**Expected Benefits**
+Makes a class of silent breakage impossible to introduce accidentally. A contributor improving prose can do so freely; one changing a count now hits an explicit gate. The §10 consistency check gives twelve reconciling rows that must be re-run on every edit.
+
+**Trade-offs**
+Editing fixtures is now heavier than editing content, which will feel disproportionate to whoever first wants to change a number. Accepted: the alternative is a page whose internal truth degrades one reasonable edit at a time, with no failing test to catch it.
+
+**Risks**
+The contract is treated as advisory and a count is edited without the increment — the exact failure it exists to prevent, now merely documented rather than enforced. **Mitigation: Scene 05's test suite asserts the counts, so a fixture edit that breaks reconciliation fails the build.** Second risk: the fixture drifts from the implementation module derived from it. Mitigation: the module cites this document and its version.
+
+**Consequences**
+Scene 05 implementation uses this document as its **only** content source — no invented copy, no abbreviation, no simplification. Any invariant change requires re-verification of Scenes 05, 06 and 07 and re-approval of two Gate 3 registers. The deliberate near-miss in §20 (~40k hypothetical against ~35k actual) is an invariant: a fixture where every figure aligned would read as fabricated.
+
+**Related Decisions**
+Depends on `DDL-MKT-003`, `DDL-MKT-004`, `DDL-MKT-006`. Related: `DDL-MKT-007`.
+
+**Related Governance Documents**
+*Derives from:* Implementation Package §8; Book I Ch. 10 (real data). *Enforced by:* Checklist §14 C3 (demo data), §8.1, §8.13, §8.15 (**Gate 2**), §10.7 (**Gate 3**).
+
+**Related Product Areas**
+Homepage Scene 05 · Scenes 06 and 07 registers · marketing fixture policy · future scene fixtures.
+
+**Review Trigger**
+Any proposed change to a §12.2 invariant. **Or** a second scene requiring its own fixture set, at which point this contract becomes the template rather than a one-off.
+
+**Amendment History**
+2026-07-25 · Design Ops · Fixture authored and frozen at v1.0.0 with the Stability Contract added at the Product Owner's instruction.
+
+---
+
 # Version History
 
 | Version | Date | Status | Summary |
@@ -1772,6 +2298,64 @@ Format drift also arrives the same way every governance failure does: one record
 ### Why the records stay Active
 
 A frozen decision log would be a contradiction. Governance documents are frozen because their job is to hold still; this document's job is to accumulate. Freezing the container and leaving the contents open is what lets both be true.
+
+
+---
+
+## DDL-MKT-009 — The homepage is rebuilt as a faithful composition of the Stitch V4 marketing frames
+
+**Status:** Proposed
+**Date:** 2026-07-25
+**Owner:** Marketing Owner
+
+**Decision Summary**
+The production homepage at `/` is rebuilt as a direct, verified reproduction of the five approved HireLens V4 Stitch marketing frames, replacing the nine-scene narrative homepage.
+
+**Context**
+The homepage shipped as v1.0.0 on 2026-07-25 was built from the nine-scene storyboard recorded in DDL-MKT-001 through DDL-MKT-008. Separately, the HireLens V4 Stitch project contains five approved marketing frames (`hirelens_marketing_hero_frame_1` through `..._the_conclusion_frame_5`), each exported as both `code.html` and a rendered `screen.png`. These two artefacts describe materially different pages: different copy, different section order, different palette, and a different type system (Newsreader/Inter/Public Sans/JetBrains Mono versus the shipped Fraunces-based stack). Only the shipped implementation existed in code; the Stitch frames had never been implemented.
+
+**Problem Statement**
+When the shipped homepage and the approved Stitch V4 frames disagree, which is the source of truth for what `/` renders?
+
+**Alternatives Considered**
+1. *Keep the nine-scene homepage.* It is implemented, tested, released, and governed by eight Accepted records.
+2. *Reconcile the two — keep the nine-scene structure, restyle it toward Stitch.* Preserves the narrative work while moving the surface closer to the approved visual direction.
+3. *Rebuild from the Stitch frames.* Treat the frames as the design and reproduce them, discarding the nine-scene implementation.
+
+**Why Alternatives Were Rejected**
+1. Rejected because it leaves the approved V4 design unimplemented indefinitely, and leaves two contradictory descriptions of the same surface both nominally in force.
+2. Rejected because the two do not differ only in styling. They differ in copy, section count, section order, and narrative arc; restyling one into the other would produce a third artefact matching neither, which is the specific failure mode a design source of truth exists to prevent.
+3. Selected. The frames are the later and more complete artefact, they carry rendered reference images that make fidelity checkable, and reproducing them removes the contradiction rather than managing it.
+
+**Final Decision**
+`/` is served from `app/(marketing)/` and composes the five frames in order: frame 1 (hero, compression preview), frame 2 (social proof, the stakes, philosophy, ATS contrast), frame 3 (decision pipeline, triage, deep review, decide), frame 4 (regret analysis, AI tenets, enterprise trust), frame 5 (customer story, pricing, FAQ, closing). Each frame's own tailwind config is transcribed into `--mkt-*` tokens scoped to `.mkt`; per-frame values that differ between frames (container width, ink shade, type scale) are preserved per frame rather than harmonised. The nine-scene implementation and its tokens are removed.
+
+**Expected Benefits**
+One description of the homepage rather than two. Fidelity becomes checkable against a rendered artefact instead of argued. The public surface stops inheriting product-shell tokens that were never designed for it.
+
+**Trade-offs**
+The nine-scene narrative work — including the evidence-trail, limits, and record scenes recorded in DDL-MKT-003, -004, -006 and -007 — is removed from the shipped page. That work was Accepted on its own merits and is not being discarded because it was judged weak; it is being discarded because it describes a different page. Homepage v1.0.0 is superseded roughly the same day it released.
+
+**Risks**
+The Stitch frames may themselves be intermediate rather than final; if so this replaces a considered narrative with a draft. Detection: the Marketing Owner confirms the five frames are the approved V4 marketing set before this record moves to Accepted. A second risk is that the frames were authored as five independent screens and were never composed, so page-level continuity (a single nav, a single footer, one continuous scroll) is not something any frame specifies.
+
+**Consequences**
+DDL-MKT-001 through DDL-MKT-008 describe a page that no longer exists and require review under §7.5 once this record is resolved. The frozen Homepage v1.0.0 release is superseded and its governance status needs restating. `docs/HOMEPAGE_STORYBOARD.md`, `docs/HOMEPAGE_RELEASE.md`, and the untracked `tests/homepage-scene-0*.test.tsx` files refer to the removed implementation. The marketing surface now owns its own radius, type, and color scales, which must not be folded back into the product tokens.
+
+**Related Decisions**
+Would supersede DDL-MKT-001 (nine-scene arc) and DDL-MKT-002 (thinking shown through structure). Requires review of DDL-MKT-003, -004, -005, -006, -007, -008 as dependents. Constrained by DDL-VIS-006 (three-tier token architecture) — the `--mkt-*` scale is a fourth, deliberately isolated tier for the public surface and may require that record to be revisited.
+
+**Related Governance Documents**
+Marketing Design Bible — would require amendment (it encodes the nine-scene arc). Design Review Checklist — derives from. DDL-GOV-005 (structure-first prompting for Stitch) — derives from.
+
+**Related Product Areas**
+Public marketing homepage (`/`), marketing nav and footer, `app/(marketing)` route group, `.mkt` token scope in `app/globals.css`.
+
+**Review Trigger**
+Any new Stitch marketing frame is approved, or the Marketing Owner determines the five V4 frames are no longer the approved marketing design.
+
+**Amendment History**
+2026-07-25 · Claude · Record created as Proposed. Implementation completed and verified against all five frames; status left Proposed because only the owner may accept (§5).
 
 ---
 

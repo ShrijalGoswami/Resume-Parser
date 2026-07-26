@@ -2,7 +2,6 @@
 
 import * as React from 'react'
 import { cn } from '@/lib/utils'
-import { ThemeProvider } from '../theme/theme-provider'
 import { DensityProvider, useDensity } from '../lib/density'
 import { AnnouncerProvider } from '../lib/use-announcer'
 import { TooltipProvider } from '../ui/tooltip'
@@ -32,7 +31,15 @@ function HireLensRoot({
   )
 }
 
-/** Full V3 provider stack, mounted once by the (hirelens) layout. */
+/**
+ * Full V3 provider stack, mounted by the `(hirelens)` and `auth` layouts.
+ *
+ * ThemeProvider is deliberately NOT in this stack — it lives in the root
+ * layout. This stack is mounted per route group, so anything here re-mounts
+ * when navigating between `/auth/*` and the app; next-themes emits a `<script>`
+ * that must only ever be rendered on the server. `useTheme()` still works
+ * everywhere because the root provider is an ancestor of both groups.
+ */
 export function HireLensProviders({
   fontClassName,
   children,
@@ -42,19 +49,17 @@ export function HireLensProviders({
 }) {
   return (
     <ApiProvider>
-      <ThemeProvider>
-        <DensityProvider>
-          <AnnouncerProvider>
-            <TooltipProvider>
-              <CommandRegistryProvider>
-                <ShellProvider>
-                  <HireLensRoot fontClassName={fontClassName}>{children}</HireLensRoot>
-                </ShellProvider>
-              </CommandRegistryProvider>
-            </TooltipProvider>
-          </AnnouncerProvider>
-        </DensityProvider>
-      </ThemeProvider>
+      <DensityProvider>
+        <AnnouncerProvider>
+          <TooltipProvider>
+            <CommandRegistryProvider>
+              <ShellProvider>
+                <HireLensRoot fontClassName={fontClassName}>{children}</HireLensRoot>
+              </ShellProvider>
+            </CommandRegistryProvider>
+          </TooltipProvider>
+        </AnnouncerProvider>
+      </DensityProvider>
     </ApiProvider>
   )
 }
