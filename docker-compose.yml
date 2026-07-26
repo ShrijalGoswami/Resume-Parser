@@ -1,0 +1,55 @@
+# Local/self-hosted HireLens stack.
+#
+# Postgres, Auth and Storage stay on Supabase — they are not containerised here.
+# Running a local Supabase would mean a different auth issuer, different JWKS and
+# different RLS state from production, which is exactly the divergence that makes
+# a "works in compose" result meaningless. Point this at a real Supabase project
+# (use a *staging* one, never production).
+#
+#   cp .env.docker.example .env.docker   # fill in the values
+#   docker compose --env-file .env.docker up --build
+#
+# Then: frontend http://localhost:3000 · API http://localhost:8000/health
+
+services:
+  api:
+    build:
+      context: ./backend
+    image: hirelens-api:local
+    ports:
+      - "8000:8000"
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-staging}
+      # Must list the browser-visible frontend origin. "*" aborts startup when
+      # ENVIRONMENT=production.
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000}
+      # No proxy in front of this container, so the header must not be trusted —
+      # otherwise any caller can spoof its way into a fresh rate-limit bucket.
+      TRUST_PROXY_HEADERS: "false"
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./resume-hero-section
+      args:
+        # Build-time, not runtime — these are inlined into the client bundle.
+        # NEXT_PUBLIC_API_URL is resolved by the BROWSER, so it must be the
+        # host-published URL (localhost:8000), never the compose service name
+        # (http://api:8000), which only resolves inside the network.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+        NEXT_PUBLIC_SUPABASE_URL: ${SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+    image: hirelens-web:local
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        # Waits for /health, not just for the process to exist, so the first
+        # page load does not race the API's config validation.
+        condition: service_healthy
+    restart: unless-stopped

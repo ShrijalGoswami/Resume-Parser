@@ -1,0 +1,69 @@
+# Exact dependency set HireLens is VERIFIED against — generated with `pip freeze`
+# from the environment in which the Release Candidate gates passed.
+#
+# Why this file exists: `requirements.txt` declares open lower bounds
+# (`fastapi>=0.100.0`), so two installs on different days produce different
+# applications. Measured on 2026-07-26 — a clean resolve of requirements.txt
+# selected fastapi 0.140.0 and groq 1.6.0, while every gate in the RC ran against
+# fastapi 0.139.2 and groq 1.5.0. Unbounded ranges also mean a future rebuild can
+# pull a major release with no code change at all.
+#
+# Both deployment paths install from THIS file (backend/Dockerfile and
+# render.yaml) so the container and the Render service are the same application
+# that was tested. `requirements.txt` stays the human-readable declaration of
+# intent — edit that, then regenerate here:
+#
+#   pip install -r requirements.txt --upgrade
+#   python -m tests.test_ai_gateway   # ...and the rest of the suite
+#   pip freeze > requirements.lock.txt
+#
+# Never hand-edit a version here without re-running the suite.
+annotated-doc==0.0.4
+annotated-types==0.7.0
+anyio==4.14.2
+certifi==2026.6.17
+cffi==2.1.0
+charset-normalizer==3.4.9
+click==8.4.2
+colorama==0.4.6
+cryptography==49.0.0
+deprecation==2.1.0
+distro==1.9.0
+fastapi==0.139.2
+groq==1.5.0
+h11==0.16.0
+h2==4.3.0
+hpack==4.2.0
+httpcore==1.0.9
+httpx==0.28.1
+hyperframe==6.1.0
+idna==3.18
+lxml==6.1.1
+multidict==6.7.1
+packaging==26.2
+pillow==12.3.0
+postgrest==2.31.0
+propcache==0.5.2
+pycparser==3.0
+pydantic==2.13.4
+pydantic-settings==2.14.2
+pydantic_core==2.46.4
+PyJWT==2.13.0
+pymupdf==1.28.0
+python-docx==1.2.0
+python-dotenv==1.2.2
+python-multipart==0.0.32
+realtime==2.31.0
+reportlab==5.0.0
+sniffio==1.3.1
+starlette==1.3.1
+storage3==2.31.0
+StrEnum==0.4.15
+supabase==2.31.0
+supabase-auth==2.31.0
+supabase-functions==2.31.0
+typing-inspection==0.4.2
+typing_extensions==4.16.0
+uvicorn==0.51.0
+websockets==15.0.1
+yarl==1.24.5

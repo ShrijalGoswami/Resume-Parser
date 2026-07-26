@@ -1,0 +1,210 @@
+# Continuous integration — the gate every change must pass.
+#
+# These are the same five frontend checks and the same backend suites that were
+# run by hand for the Release Candidate. Putting them here is the point: a gate
+# that depends on someone remembering to run it is not a gate.
+#
+# Deliberately NOT here:
+#   * Deployment. Vercel and Render deploy from their own Git integrations; a
+#     second deploy path would race them and make "what is live" ambiguous. What
+#     keeps a bad commit off main is branch protection requiring these jobs.
+#   * The three destructive/live suites (tenant isolation, decision ledger, e2e
+#     workflow) and the DR drill. They create and delete real Supabase rows, so
+#     they need a dedicated staging project and credentials — running them against
+#     a shared project from CI would let one PR's teardown delete another's data.
+#     They live in release-gate.yml and run on demand against staging.
+
+name: CI
+
+on:
+  push:
+    branches: [main, manus-ui-v1]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  # A newer push makes an in-flight run irrelevant; cancel it rather than pay for it.
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend — typecheck · lint · test · build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: resume-hero-section
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.2.2
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24.15.0'
+          cache: pnpm
+          cache-dependency-path: resume-hero-section/pnpm-lock.yaml
+
+      # --frozen-lockfile turns a stale lockfile into a build failure instead of
+      # a silently different dependency tree than the one that was tested.
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck (strict)
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      # 111 tests. Includes contrast.test.ts, which pins the WCAG AA token floors,
+      # and the auth-routing tests that pin which routes are protected — both are
+      # things a plausible-looking change can silently undo.
+      - name: Unit tests
+        run: pnpm test
+
+      # NEXT_PUBLIC_* are inlined at build time. CI builds with placeholders
+      # because the build must not depend on production secrets; the real values
+      # are injected by Vercel for the deployed build. Placeholders are enough to
+      # prove the build compiles — they are never used to make a network call here.
+      - name: Production build
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+          NEXT_TELEMETRY_DISABLED: '1'
+
+      # The container image's runtime stage serves .next/standalone. If a config
+      # change stops that being emitted, the Dockerfile breaks and nothing else
+      # notices — the Vercel build would still be green.
+      - name: Standalone output builds (container path)
+        run: |
+          pnpm build
+          test -f .next/standalone/server.js
+        env:
+          NEXT_OUTPUT_STANDALONE: '1'
+          NEXT_PUBLIC_API_URL: http://localhost:8000
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+          NEXT_TELEMETRY_DISABLED: '1'
+
+  backend:
+    name: Backend — import · suites
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          # Matches runtime.txt, render.yaml and the Dockerfile. Drift here means
+          # CI is testing a different interpreter than production runs.
+          python-version: '3.11.9'
+          cache: pip
+          cache-dependency-path: backend/requirements.lock.txt
+
+      # The lock, not requirements.txt — CI must test the exact set that deploys.
+      - run: pip install -r requirements.lock.txt
+
+      # Also the first real check that the pinned set installs on Linux, which is
+      # the one thing that cannot be verified on a Windows dev machine.
+      - name: App imports and startup validates
+        run: |
+          python -c "import app.main; print('import ok')"
+          ENVIRONMENT=production ALLOWED_ORIGINS=https://example.test \
+            python -c "from app.core.startup import validate_startup; validate_startup()"
+
+      # Standalone scripts, not pytest — each returns a non-zero exit on failure.
+      # Listed explicitly rather than globbed so adding a suite is a deliberate
+      # act and a destructive suite cannot be swept in by accident.
+      - name: AI gateway
+        run: python -m tests.test_ai_gateway
+      - name: AI reliability
+        run: python -m tests.test_ai_reliability
+      - name: Provider contract
+        run: python -m tests.test_provider_contract
+      - name: Experience-years extraction
+        run: python -m tests.test_experience_years
+      - name: Prompt-injection defences
+        run: python -m tests.test_prompt_injection
+      - name: Transport security & rate-limit keying
+        run: python -m tests.test_security_headers_and_limits
+      - name: Feature-flag enforcement
+        run: python -m tests.test_feature_flag_enforcement
+      - name: Copilot dashboard context
+        run: python -m tests.test_copilot_dashboard_context
+      - name: Production logging & monitoring contract
+        run: python -m tests.test_production_logging
+      - name: Deployment configuration
+        run: python -m tests.test_deployment_config
+
+  containers:
+    name: Containers — images build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # This job exists because the images could not be built on the machine they
+      # were authored on (no Docker daemon). Until it has run green, treat the
+      # container path as unverified — see docs/DEPLOYMENT.md §5.
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build API image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: false
+          load: true
+          tags: hirelens-api:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: API container serves /health
+        run: |
+          docker run -d --name api -p 8000:8000 \
+            -e ENVIRONMENT=staging \
+            -e ALLOWED_ORIGINS=http://localhost:3000 \
+            hirelens-api:ci
+          # Poll rather than sleep — a fixed sleep either flakes or wastes time.
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8000/health > /tmp/health.json; then break; fi
+            sleep 2
+          done
+          cat /tmp/health.json
+          # Boots with no Supabase config, so persistence is expected to be
+          # not_configured here. What must hold is that it answers at all.
+          grep -q '"status":"healthy"' /tmp/health.json
+          docker logs api
+          docker rm -f api
+
+      - name: Build web image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./resume-hero-section
+          push: false
+          load: true
+          tags: hirelens-web:ci
+          build-args: |
+            NEXT_PUBLIC_API_URL=http://localhost:8000
+            NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder-anon-key
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Web container serves the landing page
+        run: |
+          docker run -d --name web -p 3000:3000 hirelens-web:ci
+          for i in $(seq 1 30); do
+            if curl -fsS -o /dev/null http://localhost:3000/; then break; fi
+            sleep 2
+          done
+          # Asset serving is the failure mode worth checking: `standalone` does not
+          # trace .next/static or public/, so a missing COPY yields a 200 page with
+          # every stylesheet 404ing — which a plain page check would call green.
+          curl -fsS -o /dev/null -w 'landing %{http_code}\n' http://localhost:3000/
+          curl -fsS -o /dev/null -w 'public asset %{http_code}\n' http://localhost:3000/icon.svg
+          docker logs web
+          docker rm -f web

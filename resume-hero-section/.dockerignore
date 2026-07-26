@@ -1,0 +1,25 @@
+# node_modules is reinstalled from the lockfile in the deps stage — copying the
+# host's would defeat the point and can smuggle in platform-specific binaries.
+node_modules
+.next
+storybook-static
+out
+
+# Secrets. .env.local holds real keys; NEXT_PUBLIC_* must come in as build args.
+.env
+.env.*
+!.env.example
+
+.git
+.vercel
+.DS_Store
+*.log
+coverage
+.stitch-inspect
+
+# v0 sandbox internals — never part of a build.
+__v0_runtime_loader.js
+__v0_devtools.tsx
+__v0_jsx-dev-runtime.ts
+.v0-trash
+.snowflake

@@ -1,0 +1,117 @@
+# Release gate — the checks that need a real database, run on demand.
+#
+# These are separate from CI for one reason: they create and delete real Supabase
+# rows, users and storage objects. Running them on every pull request against a
+# shared project would let one run's teardown delete another run's fixtures, and
+# a flaky failure would then look like a product bug. So they run deliberately,
+# against a dedicated STAGING project, before a release is promoted.
+#
+# This workflow does not deploy. Vercel and Render deploy from their own Git
+# integrations; a second deploy path would race them and make "what is live"
+# ambiguous. This is the evidence you gather before letting them.
+#
+# Required repository secrets (staging project ONLY — see docs/OPERATIONS.md):
+#   STAGING_SUPABASE_URL
+#   STAGING_SUPABASE_ANON_KEY
+#   STAGING_SUPABASE_SERVICE_ROLE_KEY
+#   STAGING_GROQ_API_KEY
+#
+# If a secret is absent the run stops with a clear message rather than silently
+# skipping — a green tick on a gate that never executed is worse than a red one.
+
+name: Release gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_dr_drill:
+        description: 'Also run the disaster-recovery drill (creates and deletes real data)'
+        type: boolean
+        default: true
+
+concurrency:
+  # Never two at once: both suites assume they own the staging project's fixtures.
+  group: release-gate
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    name: Destructive suites against staging
+    runs-on: ubuntu-latest
+    environment: staging
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      ENVIRONMENT: staging
+      ALLOWED_ORIGINS: http://localhost:3000
+      SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+      GROQ_API_KEY: ${{ secrets.STAGING_GROQ_API_KEY }}
+      HL_ALLOW_DESTRUCTIVE_TESTS: '1'
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11.9'
+          cache: pip
+          cache-dependency-path: backend/requirements.lock.txt
+
+      - run: pip install -r requirements.lock.txt
+
+      - name: Refuse to run without staging credentials
+        run: |
+          missing=
+          for v in SUPABASE_URL SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY; do
+            eval "val=\$$v"
+            [ -n "$val" ] || missing="$missing $v"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing staging secrets:$missing — see docs/OPERATIONS.md"
+            exit 1
+          fi
+          echo "staging credentials present"
+
+      # Guard against the worst mistake this workflow could make. The suites below
+      # delete rows; pointing them at the production project would delete customer
+      # data. Fail if the target looks like production.
+      - name: Confirm the target is not production
+        env:
+          PROD_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        run: |
+          if [ -n "$PROD_SUPABASE_URL" ] && [ "$SUPABASE_URL" = "$PROD_SUPABASE_URL" ]; then
+            echo "::error::STAGING_SUPABASE_URL equals the production URL. Refusing."
+            exit 1
+          fi
+          echo "target project is distinct from production"
+
+      # The authoritative answer to "can one tenant see another's data". Runs first
+      # because if it fails nothing else about the release matters.
+      - name: Tenant isolation (25 checks)
+        run: python -m tests.test_tenant_isolation
+
+      - name: Decision ledger immutability
+        run: python -m tests.test_decision_ledger
+
+      - name: Résumé binary storage
+        run: python -m tests.test_resume_storage
+
+      - name: End-to-end recruiter workflow
+        run: python -m tests.test_e2e_workflow
+
+      # Backup and restore are only real if they have been rehearsed recently. The
+      # drill creates throwaway data, deletes it through the real deletion path,
+      # restores it, asserts byte-level parity, and cleans up after itself.
+      - name: Disaster-recovery drill
+        if: ${{ inputs.run_dr_drill }}
+        run: python -m scripts.dr_drill
+
+      # Whatever happened above, do not leave fixtures behind in staging — a failed
+      # run is exactly when teardown gets skipped and the next run inherits junk.
+      - name: Report residue
+        if: always()
+        run: |
+          python -m scripts.backup_restore backup /tmp/gate-snapshot || true
+          echo "Snapshot taken for inspection; review before re-running the gate."
