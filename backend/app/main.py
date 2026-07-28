@@ -97,10 +97,12 @@ app.include_router(
     reports.router, prefix="/api/v1",
     dependencies=[Depends(feature_gate("executive_reports", action="report.generated"))],
 )
-app.include_router(
-    agent.router, prefix="/api/v1",
-    dependencies=[Depends(feature_gate("autonomous_agent", action="agent.accessed"))],
-)
+# `autonomous_agent` is gated PER-ENDPOINT inside the agent router, not here. The
+# router-level gate also covered `GET /agent/recommendations`, which is the Decision
+# Ledger's only data source — so the Ledger returned 403 and rendered an error for
+# every free- and professional-plan org, and a downgrade would have made an org's
+# permanent decision record unreadable. See the module docstring in routes/agent.py.
+app.include_router(agent.router, prefix="/api/v1")
 app.include_router(org.router, prefix="/api/v1")
 app.include_router(integrations.router, prefix="/api/v1")
 app.include_router(knowledge.router, prefix="/api/v1")

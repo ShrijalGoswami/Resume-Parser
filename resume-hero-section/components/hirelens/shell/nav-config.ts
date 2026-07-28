@@ -8,10 +8,6 @@ import {
   GraduationCap,
   Settings,
   BarChart3,
-  FileText,
-  Bot,
-  Library,
-  TrendingUp,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -109,49 +105,17 @@ export const navGroups: NavGroup[] = [
       },
     ],
   },
-  // ── Classic (legacy) — MIGRATION BRIDGE, temporary ──────────────────────────
-  // These legacy features have NO fully-complete V4 replacement yet (or only a
-  // partial one), so they stay visibly reachable here rather than being hidden —
-  // "no feature inaccessible before its replacement is production-ready." Each is
-  // removed from this group only when its replacement reaches parity + a redirect
-  // goes live (see the Migration Matrix). Absent because they already redirect
-  // to a live V4 replacement: Search → Talent, Campaigns → Roles, Integrations →
-  // Settings ▸ Integrations, Admin → Settings ▸ Members, Dashboard → Inbox.
-  {
-    label: 'Classic',
-    items: [
-      {
-        label: 'Insights',
-        href: '/insights',
-        icon: BarChart3,
-        isActive: (p) => p.startsWith('/insights'),
-      },
-      {
-        label: 'Reports',
-        href: '/reports',
-        icon: FileText,
-        isActive: (p) => p.startsWith('/reports'),
-      },
-      {
-        label: 'Agent',
-        href: '/agent',
-        icon: Bot,
-        isActive: (p) => p.startsWith('/agent'),
-      },
-      {
-        label: 'Knowledge',
-        href: '/knowledge',
-        icon: Library,
-        isActive: (p) => p.startsWith('/knowledge'),
-      },
-      {
-        label: 'Predictions',
-        href: '/predictions',
-        icon: TrendingUp,
-        isActive: (p) => p.startsWith('/predictions'),
-      },
-    ],
-  },
+  // The "Classic" group is gone. It was a migration bridge holding Insights,
+  // Reports, Agent, Knowledge and Predictions visible while V4 replacements were
+  // built — "no feature inaccessible before its replacement is production-ready."
+  // Intelligence (Ask · Analytics · Ledger · Learning) is now the single source of
+  // truth for those capabilities, so the bridge and its five legacy pages were
+  // removed rather than left as a second, diverging way to reach the same work.
+  //
+  // The other legacy routes were retired earlier by redirecting to their V4
+  // replacements, which is why they never appeared here: Search → Talent,
+  // Campaigns → Roles, Integrations → Settings ▸ Integrations, Admin →
+  // Settings ▸ Members, Dashboard → Inbox.
 ]
 
 export const settingsNav: NavItem = {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { detectPageContext, isRecruiterRoute, contextLabel } from '../lib/copilot-context'
+import { detectPageContext } from '../lib/copilot-context'
 
 /**
  * The copilot's grounding context is derived from the route. This mapping was
@@ -45,8 +45,12 @@ describe('detectPageContext — V4 routes', () => {
   })
 })
 
-describe('detectPageContext — legacy routes still behave', () => {
-  it('keeps the Classic shapes working', () => {
+describe('detectPageContext — retired legacy path shapes', () => {
+  // The /campaigns/** shapes are still matched. Those URLs redirect to /roles/**
+  // in next.config rather than 404ing, and the detector runs on the pathname the
+  // client sees, so dropping these patterns would silently un-ground a bookmarked
+  // link during the redirect hop.
+  it('keeps the redirected campaign shapes working', () => {
     expect(detectPageContext('/campaigns/c-1/candidates/x-2')).toEqual({
       type: 'candidate',
       campaign_id: 'c-1',
@@ -57,32 +61,17 @@ describe('detectPageContext — legacy routes still behave', () => {
       campaign_id: 'c-1',
     })
     expect(detectPageContext('/dashboard')).toEqual({ type: 'dashboard' })
-    expect(detectPageContext('/insights')).toEqual({ type: 'analytics' })
   })
 
   it('does not treat /campaigns/new as a campaign', () => {
     expect(detectPageContext('/campaigns/new')).toEqual({ type: 'global' })
   })
-})
 
-describe('isRecruiterRoute', () => {
-  it('lists only Classic surfaces that still exist', () => {
-    for (const route of ['/insights', '/reports', '/agent']) {
-      expect(isRecruiterRoute(route)).toBe(true)
+  it('treats the removed Classic routes as ungrounded', () => {
+    // /insights used to map to `analytics`. The page is gone and there is no
+    // redirect, so the route can only be a 404 — it must not claim a context.
+    for (const route of ['/insights', '/reports', '/agent', '/knowledge', '/predictions']) {
+      expect(detectPageContext(route)).toEqual({ type: 'global' })
     }
-    // Migrated to V4; their legacy pages were removed.
-    for (const route of ['/dashboard', '/campaigns', '/campaigns/x', '/search']) {
-      expect(isRecruiterRoute(route)).toBe(false)
-    }
-  })
-})
-
-describe('contextLabel', () => {
-  it('names every context the detector can return', () => {
-    expect(contextLabel({ type: 'candidate' })).toBe('This candidate')
-    expect(contextLabel({ type: 'campaign' })).toBe('This campaign')
-    expect(contextLabel({ type: 'dashboard' })).toBe("Today's activity")
-    expect(contextLabel({ type: 'analytics' })).toBe('Analytics')
-    expect(contextLabel({ type: 'global' })).toBe('General')
   })
 })

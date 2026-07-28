@@ -56,22 +56,26 @@ describe('resolveMiddlewareAction — V4 route protection', () => {
     expect(resolveMiddlewareAction('/auth/login', false)).toEqual({ kind: 'pass' })
   })
 
-  it('still guards the legacy routes it owns', () => {
-    // Legacy surfaces with no complete V4 replacement — reachable via the
-    // "Classic" nav group, so the legacy guard must still apply.
+  it('no longer guards the removed Classic routes', () => {
+    // /insights, /reports, /agent, /knowledge and /predictions were the "Classic"
+    // group and have been deleted. The proxy must NOT bounce them to the legacy
+    // /login: doing so would send a visitor to a sign-in page in order to reach a
+    // route that no longer exists, so the honest outcome is a plain 404.
     for (const route of ['/insights', '/reports', '/agent', '/knowledge', '/predictions']) {
-      expect(resolveMiddlewareAction(route, false)).toEqual({
-        kind: 'redirect',
-        pathname: '/login',
-        withNext: true,
-      })
+      expect(resolveMiddlewareAction(route, false)).toEqual({ kind: 'pass' })
       expect(resolveMiddlewareAction(route, true)).toEqual({ kind: 'pass' })
     }
+  })
+
+  it('still bounces a signed-in user off the legacy sign-in page', () => {
+    // /login is the one legacy surface left, and /dashboard redirects to /home
+    // via next.config.
     expect(resolveMiddlewareAction('/login', true)).toEqual({
       kind: 'redirect',
       pathname: '/dashboard',
       withNext: false,
     })
+    expect(resolveMiddlewareAction('/login', false)).toEqual({ kind: 'pass' })
   })
 
   it('lets migrated legacy routes fall through to their next.config redirect', () => {

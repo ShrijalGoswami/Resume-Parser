@@ -3,7 +3,14 @@
 import Link from 'next/link'
 import { ArrowUpRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { Drawer, DrawerContent, DrawerHeader, DrawerBody } from '../ui/drawer'
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerBody,
+  DrawerTitle,
+  DrawerDescription,
+} from '../ui/drawer'
 import { ConfidenceChip } from '../decision-intelligence/confidence-chip'
 import { decisionMeta, decisionLatency, recordLabel, fmtDate, fmtTime, decidedAt } from './ledger-meta'
 import type { Recommendation } from '@/types/agent'
@@ -40,8 +47,16 @@ export function LedgerRecordDrawer({
 
             <DrawerBody className="flex flex-col gap-8">
               <div>
-                <h2 className="hl-display-md text-hl-fg">{rec.candidate_name ?? rec.title}</h2>
-                <p className="mt-2 flex flex-wrap items-center gap-2 text-hl-fg-secondary">
+                {/* `asChild` so this is BOTH the visible heading and the dialog's
+                    accessible name — the record drawer was the only one of the six
+                    drawers with no Radix Title, so a screen reader announced it as
+                    an unnamed dialog. Using the existing h2 rather than adding an
+                    sr-only duplicate keeps one heading and one name. */}
+                <DrawerTitle asChild>
+                  <h2 className="hl-display-md text-hl-fg">{rec.candidate_name ?? rec.title}</h2>
+                </DrawerTitle>
+                <DrawerDescription asChild>
+                  <p className="mt-2 flex flex-wrap items-center gap-2 text-hl-fg-secondary">
                   <span
                     className={cn(
                       'hl-caption inline-flex items-center gap-1.5 rounded-hl-sm px-2 py-0.5',
@@ -54,8 +69,11 @@ export function LedgerRecordDrawer({
                   >
                     {decision?.label}
                   </span>
-                  {rec.campaign_title ? <span className="hl-small">· {rec.campaign_title}</span> : null}
-                </p>
+                    {rec.campaign_title ? (
+                      <span className="hl-small">· {rec.campaign_title}</span>
+                    ) : null}
+                  </p>
+                </DrawerDescription>
               </div>
 
               <section className="flex flex-col gap-2">

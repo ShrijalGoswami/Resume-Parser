@@ -6,7 +6,7 @@
 
 - **Environment:** `development`
 - **Provider:** `groq` · model `llama-3.3-70b-versatile`
-- **Date/time:** 2026-07-26 16:12 UTC
+- **Date/time:** 2026-07-26 19:20 UTC
 - **Totals:** 8 PASS · 0 FAIL · 0 SKIPPED
 - **Overall:** ✅ PASS
 
@@ -20,9 +20,9 @@ _In-process fake providers drive the real orchestrator retry ladder. No network;
 | Backoff is applied between retries (not instant) | ✅ PASS | elapsed=0.109s |
 | Transient rate-limit retried (1 + max_rate_limit_retries) | ✅ PASS | calls=3 |
 | Quota exhaustion NOT retried (exactly 1 call) | ✅ PASS | calls=1 |
-| Retry-After honored over backoff (waited ~retry_after, not base) | ✅ PASS | elapsed=0.047s, calls=2 |
+| Retry-After honored over backoff (waited ~retry_after, not base) | ✅ PASS | elapsed=0.046s, calls=2 |
 | Recovers after transient failures (success on 3rd attempt) | ✅ PASS | calls=3 |
-| Total added latency bounded by the delay cap | ✅ PASS | elapsed=0.156s (cap=100ms × 2 waits) |
+| Total added latency bounded by the delay cap | ✅ PASS | elapsed=0.110s (cap=100ms × 2 waits) |
 
 ## 3. Live Provider Validation — real Groq smoke
 

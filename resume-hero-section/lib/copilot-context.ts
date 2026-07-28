@@ -7,12 +7,12 @@
  */
 import type { CopilotPageContext } from '@/types/copilot';
 
-/** Routes where the legacy floating recruiter copilot is available. */
-export function isRecruiterRoute(pathname: string): boolean {
-  // Only the Classic surfaces that still exist. /dashboard, /campaigns and
-  // /search were migrated to V4 and their pages removed.
-  return pathname === '/insights' || pathname === '/reports' || pathname === '/agent';
-}
+// `isRecruiterRoute()` lived here and gated the legacy floating copilot to
+// /insights, /reports and /agent. Those pages are gone, so it could never again
+// return true and the copilot it gated has been removed with it.
+//
+// `detectPageContext` below is NOT legacy — the V4 Ask surface
+// (`components/hirelens/ask/ask-thread.tsx`) grounds its questions with it.
 
 /**
  * Derive the grounded page context from a pathname.
@@ -45,32 +45,15 @@ export function detectPageContext(pathname: string): CopilotPageContext {
   }
 
   if (pathname === '/home' || pathname === '/dashboard') return { type: 'dashboard' };
-  if (pathname === '/analytics' || pathname === '/insights') return { type: 'analytics' };
+  // `/insights` was mapped here too. That page has been removed and has no
+  // redirect, so the path can only 404 — claiming an analytics context for it
+  // would ground a question against a surface the user is not looking at.
+  if (pathname === '/analytics') return { type: 'analytics' };
 
   return { type: 'global' };
 }
 
-/** A short human label for the current context (shown in the panel header). */
-export function contextLabel(ctx: CopilotPageContext): string {
-  switch (ctx.type) {
-    case 'candidate':
-      return 'This candidate';
-    case 'campaign':
-      return 'This campaign';
-    case 'dashboard':
-      return "Today's activity";
-    case 'analytics':
-      return 'Analytics';
-    default:
-      return 'General';
-  }
-}
-
-/** True when two contexts point at the same grounded entity. */
-export function sameContext(a: CopilotPageContext, b: CopilotPageContext): boolean {
-  return (
-    a.type === b.type &&
-    (a.campaign_id ?? null) === (b.campaign_id ?? null) &&
-    (a.candidate_id ?? null) === (b.candidate_id ?? null)
-  );
-}
+// `contextLabel()` rendered the panel header of the removed floating copilot and
+// has no other caller. `sameContext()` had no caller even before this change.
+// Both are gone; `detectPageContext` above is the only export this module still
+// needs to provide.

@@ -9,11 +9,30 @@ Autonomous Recruiting Agent routes (V5 / Sprint 9).
 Authenticated + recruiter-scoped (RLS). The agent only writes its own
 recommendations and NEVER modifies production candidate/campaign data — human
 approval is required and execution is deferred to a future sprint.
+
+**Feature gating is per-endpoint, deliberately.** `autonomous_agent` gates the two
+endpoints that actually exercise the capability — running a scan and describing the
+workflow catalogue. Reading recommendations and recording a human decision on one
+are NOT gated:
+
+* `GET /recommendations` is the only data source for the Decision Ledger, which is
+  documented as the permanent, immutable record of decisions already made. Gating
+  it made the Ledger return 403 and render an error for every free- and
+  professional-plan org, and it would make a downgraded customer's audit history
+  unreadable. An audit trail you cannot read is not an audit trail.
+* `PATCH /recommendations/{id}` must stay reachable for the same reason. A
+  recommendation can only exist if a scan ran on a plan that allowed it; gating the
+  decision would leave those items permanently un-resolvable in the Inbox after a
+  downgrade.
+
+Neither exception leaks the capability: with the flag off no scan can run, so no
+recommendations exist and the read correctly returns `[]` — the Ledger's designed
+empty state rather than an error.
 """
 
 import logging
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 from fastapi.concurrency import run_in_threadpool
 
 from app.ai.agent import WORKFLOWS, available_tools
@@ -27,7 +46,7 @@ from app.schemas.agent import (
 from app.services.agent_service import (
     list_recommendations, run_agent_scan, update_recommendation_status,
 )
-from app.enterprise.deps import OrgContextDep
+from app.enterprise.deps import OrgContextDep, feature_gate
 from app.integrations import IntegrationEvent
 from app.services.integration_service import safe_emit_event
 from app.knowledge.service import safe_ingest as knowledge_ingest
@@ -36,7 +55,14 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/agent", tags=["Agent"])
 
 
-@router.post("/scan", response_model=AgentScanResponse, status_code=status.HTTP_200_OK)
+@router.post(
+    "/scan",
+    response_model=AgentScanResponse,
+    status_code=status.HTTP_200_OK,
+    # Running the agent IS the gated capability: it costs LLM calls and writes new
+    # recommendations. This is where the plan boundary belongs.
+    dependencies=[Depends(feature_gate("autonomous_agent", action="agent.scan"))],
+)
 async def scan(
     payload: AgentScanRequest,
     agent_repo: AgentRepoDep,
@@ -80,7 +106,10 @@ async def update_recommendation(rec_id: str, payload: RecommendationUpdate, agen
     return rec
 
 
-@router.get("/workflows")
+@router.get(
+    "/workflows",
+    dependencies=[Depends(feature_gate("autonomous_agent", action="agent.accessed"))],
+)
 async def workflows(_: AgentRepoDep):
     """The agent's registered workflows and tools (metadata; no secrets)."""
     return {"workflows": list(WORKFLOWS), "tools": available_tools()}

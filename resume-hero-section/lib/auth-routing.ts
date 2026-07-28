@@ -8,23 +8,20 @@
  *   - V4 (hirelens):   protected → /auth/login; authed users bounced to /home.
  */
 
-// Legacy app (frozen) — behavior preserved for the routes it still owns:
-// /insights, /reports, /agent, /knowledge and /predictions, reachable through the
-// V4 rail's "Classic" group.
+// The legacy app no longer owns any protected page. `LEGACY_PROTECTED` used to
+// list /insights, /reports, /agent, /knowledge and /predictions — the "Classic"
+// nav group — and those five pages have been removed now that Intelligence
+// (Ask · Analytics · Ledger · Learning) covers the same ground. The constant and
+// its guard branch went with them rather than being left as an empty array that
+// reads like a live control.
 //
-// Migrated routes are deliberately NOT listed here. /campaigns, /search,
-// /integrations, /admin and /dashboard are redirected to V4 by
-// `next.config.mjs` and their page files have been deleted; their V4
-// destinations are themselves in V4_PROTECTED, so an unauthenticated request
-// lands on `/auth/login` (the V4 sign-in) rather than being bounced to the
-// legacy `/login` for a page that no longer exists.
-export const LEGACY_PROTECTED = [
-  '/insights',
-  '/reports',
-  '/agent',
-  '/knowledge',
-  '/predictions',
-]
+// The earlier legacy routes were never listed here either: /campaigns, /search,
+// /integrations, /admin and /dashboard are redirected to V4 by `next.config.mjs`
+// and their V4 destinations are themselves in V4_PROTECTED, so an unauthenticated
+// request lands on `/auth/login` rather than the legacy `/login`.
+//
+// `/login` itself still exists and still bounces an already-signed-in user, which
+// is why this list remains.
 export const LEGACY_AUTH_ROUTES = ['/login', '/signup']
 
 // V4 (hirelens) authenticated product surfaces.
@@ -72,10 +69,7 @@ export function resolveMiddlewareAction(
     return { kind: 'redirect', pathname: '/home', withNext: false }
   }
 
-  // Legacy (behavior preserved)
-  if (matchLoose(LEGACY_PROTECTED) && !isAuthenticated) {
-    return { kind: 'redirect', pathname: '/login', withNext: true }
-  }
+  // Legacy — only the sign-in surface is left to handle.
   if (matchLoose(LEGACY_AUTH_ROUTES) && isAuthenticated) {
     return { kind: 'redirect', pathname: '/dashboard', withNext: false }
   }

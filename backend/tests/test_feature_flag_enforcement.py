@@ -91,6 +91,64 @@ def test_every_feature_flag_is_enforced_somewhere() -> list[str]:
     return failures
 
 
+# Endpoints that must NEVER carry a feature gate, and why. A gate here is not a
+# harmless extra check — it turns a working page into an error page.
+UNGATEABLE: list[tuple[str, str, str]] = [
+    (
+        "/api/v1/agent/recommendations",
+        "GET",
+        "the Decision Ledger's only data source. A router-level `autonomous_agent` "
+        "gate made /ledger return 403 and render an error for every free- and "
+        "professional-plan org, and would make a downgraded customer's permanent "
+        "decision record unreadable. An audit trail you cannot read is not one.",
+    ),
+    (
+        "/api/v1/agent/recommendations/{rec_id}",
+        "PATCH",
+        "recording a human decision on a recommendation that already exists. "
+        "Gating it would leave those items permanently un-resolvable in the Inbox "
+        "after a plan downgrade.",
+    ),
+]
+
+
+def test_audit_and_decision_endpoints_are_never_gated() -> list[str]:
+    """
+    The regression this pins is a real one: `autonomous_agent` was attached to the
+    whole agent router, which swept in the Ledger read.
+
+    Gating these leaks nothing. With the flag off no scan can run, so no
+    recommendations exist and the read returns `[]` — the Ledger's designed empty
+    state instead of an error.
+    """
+    gated = _gated_features_by_path()
+    failures = []
+    for path, method, why in UNGATEABLE:
+        feats = gated.get(path)
+        if feats:
+            failures.append(
+                f"{method} {path} is gated on {sorted(feats)} — it must not be: {why}"
+            )
+    return failures
+
+
+def test_running_the_agent_stays_gated() -> list[str]:
+    """The other half: ungating the read must not ungate the capability itself.
+
+    Running a scan costs LLM calls and creates recommendations, so that is where
+    the plan boundary belongs.
+    """
+    gated = _gated_features_by_path()
+    failures = []
+    for path in ("/api/v1/agent/scan", "/api/v1/agent/workflows"):
+        if "autonomous_agent" not in gated.get(path, set()):
+            failures.append(
+                f"{path} is no longer gated on 'autonomous_agent' — a free-plan org "
+                f"can run the autonomous agent"
+            )
+    return failures
+
+
 def test_no_gate_references_an_unknown_feature() -> list[str]:
     """A typo'd gate name would 403 forever — `resolve()` returns False for an
     unknown feature, so it can never be enabled from Settings."""
@@ -128,6 +186,8 @@ def test_lower_plans_do_not_silently_get_gated_capabilities() -> list[str]:
 def main() -> int:
     checks = [
         test_every_feature_flag_is_enforced_somewhere,
+        test_audit_and_decision_endpoints_are_never_gated,
+        test_running_the_agent_stays_gated,
         test_no_gate_references_an_unknown_feature,
         test_plan_defaults_only_reference_known_features,
         test_lower_plans_do_not_silently_get_gated_capabilities,

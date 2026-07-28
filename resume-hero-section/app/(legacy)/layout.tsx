@@ -3,8 +3,6 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import { Toaster } from '@/components/ui/toaster'
 import { AuthProvider } from '@/components/auth/auth-provider'
 import { OrgProvider } from '@/components/org/org-provider'
-import { CopilotProvider } from '@/components/copilot/copilot-provider'
-import { RecruiterCopilot } from '@/components/copilot/recruiter-copilot'
 
 // Loaded for their side effect (font preload), matching the original root layout.
 const _geist = Geist({ subsets: ['latin'] })
@@ -24,13 +22,13 @@ export default function LegacyLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <div className="font-sans antialiased bg-[#FAFAFA] min-h-screen">
+      {/* The floating RecruiterCopilot and its provider were mounted here. They
+          were only ever available on /insights, /reports and /agent, so removing
+          those pages left the panel permanently hidden — `isRecruiterRoute` could
+          no longer return true for any route. This group now serves only /login.
+          The V4 Ask surface is the AI entry point. */}
       <AuthProvider>
-        <OrgProvider>
-          <CopilotProvider>
-            {children}
-            <RecruiterCopilot />
-          </CopilotProvider>
-        </OrgProvider>
+        <OrgProvider>{children}</OrgProvider>
         <Toaster />
       </AuthProvider>
     </div>
