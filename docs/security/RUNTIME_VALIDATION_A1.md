@@ -2,7 +2,7 @@
 
 > **Generated** by `backend/tests/test_tenant_isolation.py`. Do not edit by hand — re-run the suite.
 
-- **Run at:** 2026-07-26 14:48 UTC
+- **Run at:** 2026-07-29 04:20 UTC
 - **Environment:** `development`
 - **Backend target:** `http://localhost:8000`
 - **Supabase project:** `vmqhigckfkedkwfkvnij.supabase.co`
