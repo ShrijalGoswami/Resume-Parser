@@ -32,21 +32,37 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center gap-4 px-6 py-16 text-center',
+        'flex flex-col items-center justify-center gap-5 px-6 py-20 text-center',
         className,
       )}
       {...props}
     >
+      {/* The icon sits on a raised plate inside an ambient halo — a faint
+          instrument grid dissolving into a prism bloom. An empty screen is
+          the product's first impression as often as not; it should read as
+          composed, not as an absence. */}
       {Icon ? (
-        <Icon className="size-6 text-hl-fg-tertiary" strokeWidth={1.5} aria-hidden />
+        <span
+          className="hl-empty-halo grid size-16 place-items-center rounded-hl-xl border border-hl-border bg-hl-canvas text-hl-accent-text shadow-[var(--hl-shadow-sm)]"
+          aria-hidden
+        >
+          <Icon className="size-7" strokeWidth={1.5} />
+        </span>
       ) : null}
-      <div className="flex max-w-md flex-col gap-1.5">
-        <h2 className={variant === 'first-run' ? 'hl-display' : 'hl-h2'}>{title}</h2>
-        {description ? <p className="hl-body text-hl-fg-secondary">{description}</p> : null}
+      <div className="flex max-w-lg flex-col gap-2.5">
+        {/* An empty screen has the reader's whole attention and nothing to
+            compete with. It should be the focal point of the page, not an
+            apology in the middle of it — so the title takes a page-heading
+            step and the explanation takes the lead body step. */}
+        <h2 className={variant === 'first-run' ? 'hl-display' : 'hl-h1'}>{title}</h2>
+        {description ? (
+          <p className="hl-body-lg text-hl-fg-secondary">{description}</p>
+        ) : null}
       </div>
       {children}
       {action || secondaryAction ? (
-        <div className="flex items-center gap-2">
+        // The CTA is the point of the state — give it the large control size.
+        <div className="mt-1 flex items-center gap-3 [&_button]:h-hl-control-lg [&_button]:px-5 [&_a]:h-hl-control-lg">
           {action}
           {secondaryAction}
         </div>

@@ -30,7 +30,7 @@ export function RoleCard({ campaign }: { campaign: Campaign }) {
         <div className="min-w-0">
           <h3 className="hl-h3 truncate">{campaign.title}</h3>
           {subtitle ? (
-            <p className="hl-small truncate text-hl-fg-secondary">{subtitle}</p>
+            <p className="hl-body truncate text-hl-fg-secondary">{subtitle}</p>
           ) : null}
         </div>
         <span

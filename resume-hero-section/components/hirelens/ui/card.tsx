@@ -9,11 +9,18 @@ import { cn } from '@/lib/utils'
 const cardVariants = cva('rounded-hl-lg text-hl-fg', {
   variants: {
     variant: {
-      default: 'border border-hl-border bg-hl-canvas shadow-[var(--hl-shadow-xs)]',
+      // `hl-surface` supplies the raised plane and the lit top edge; the
+      // border is the hairline that keeps it crisp on light backgrounds.
+      default: 'hl-surface border border-hl-border',
+      // Interactive cards travel 2px and gain a real elevation step, so the
+      // hover reads as the card lifting rather than as a colour change.
       interactive:
-        'cursor-pointer border border-hl-border bg-hl-canvas shadow-[var(--hl-shadow-xs)] transition-[box-shadow,border-color,transform] duration-[var(--hl-dur-fast)] hover:-translate-y-px hover:border-hl-border-strong hover:shadow-[var(--hl-shadow-sm)]',
-      ai: 'hl-prism-border shadow-[var(--hl-shadow-xs)] [--hl-prism-fill:var(--hl-ai-surface)]',
-      approval: 'hl-prism-border shadow-[var(--hl-shadow-xs)] [--hl-prism-fill:var(--hl-ai-surface)]',
+        'hl-surface group cursor-pointer border border-hl-border transition-[box-shadow,border-color,transform] duration-[var(--hl-dur-base)] ease-[var(--hl-ease-out)] hover:-translate-y-0.5 hover:border-hl-border-strong hover:shadow-[var(--hl-shadow-md)] active:translate-y-0 active:shadow-[var(--hl-shadow-sm)]',
+      // A card that is already lifted — used for the one panel on a screen
+      // that should read as floating above the rest.
+      elevated: 'hl-surface border border-hl-border shadow-[var(--hl-shadow-md)]',
+      ai: 'hl-prism-border shadow-[var(--hl-shadow-sm)] [--hl-prism-fill:var(--hl-ai-surface)]',
+      approval: 'hl-prism-border shadow-[var(--hl-shadow-sm)] [--hl-prism-fill:var(--hl-ai-surface)]',
     },
   },
   defaultVariants: { variant: 'default' },

@@ -15,7 +15,10 @@ export function Section({
 }) {
   return (
     <section className={compact ? 'flex flex-col gap-2' : 'flex flex-col gap-3'}>
-      <h2 className={compact ? 'hl-caption uppercase tracking-wide text-hl-fg-tertiary' : 'hl-h3 text-hl-fg'}>
+      {/* `hl-label` already owns the uppercase + tracking, so a compact section
+          heading can no longer drift from the table headers and field labels
+          that use the same step elsewhere. */}
+      <h2 className={compact ? 'hl-label text-hl-fg-tertiary' : 'hl-h3 text-hl-fg'}>
         {title}
       </h2>
       {children}
@@ -41,10 +44,10 @@ export function SkillChips({ label, skills, tone }: { label: string; skills: str
   if (skills.length === 0) return null
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="hl-caption text-hl-fg-tertiary">{label}</span>
+      <span className="hl-label text-hl-fg-tertiary">{label}</span>
       <div className="flex flex-wrap gap-1.5">
         {skills.map((skill) => (
-          <span key={skill} className={`rounded-hl-sm px-2 py-0.5 font-hl-mono text-[11px] ${tone}`}>
+          <span key={skill} className={`rounded-hl-sm px-2 py-0.5 hl-caption font-hl-mono ${tone}`}>
             {skill}
           </span>
         ))}

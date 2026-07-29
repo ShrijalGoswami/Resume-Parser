@@ -56,13 +56,13 @@ export function AskNav({
   }
 
   return (
-    <div className="flex h-full flex-col gap-4 p-3">
+    <div className="flex h-full flex-col gap-5 p-4">
       <Button variant="secondary" size="sm" onClick={onNewThread} className="justify-start">
         <Plus /> New thread
       </Button>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <p className="hl-caption px-1 pb-1 text-hl-fg-tertiary">Threads</p>
+        <p className="hl-label px-1 pb-2 text-hl-fg-tertiary">Threads</p>
         {conversationsLoading ? (
           <div className="flex flex-col gap-1.5">
             {[0, 1, 2].map((index) => (
@@ -70,7 +70,7 @@ export function AskNav({
             ))}
           </div>
         ) : conversations.length === 0 ? (
-          <p className="hl-caption px-1 py-2 text-hl-fg-tertiary">
+          <p className="hl-body px-1 py-2 text-hl-fg-tertiary">
             No threads yet — ask a question to start one.
           </p>
         ) : (
@@ -86,7 +86,7 @@ export function AskNav({
                     onKeyDown={onThreadKeyDown}
                     aria-current={active ? 'page' : undefined}
                     className={cn(
-                      'hl-small w-full truncate rounded-hl-md px-2 py-1.5 text-left outline-none transition-colors',
+                      'hl-ui w-full truncate rounded-hl-md px-2.5 py-2 text-left outline-none transition-colors',
                       active
                         ? 'bg-hl-accent-subtle text-hl-accent-fg'
                         : 'text-hl-fg-secondary hover:bg-hl-subtle hover:text-hl-fg',
@@ -119,13 +119,13 @@ export function AskNav({
 
       {suggestions.length > 0 ? (
         <div className="flex flex-col gap-1.5 border-t border-hl-border-subtle pt-3">
-          <p className="hl-caption px-1 text-hl-fg-tertiary">Suggested</p>
+          <p className="hl-label px-1 pb-1 text-hl-fg-tertiary">Suggested</p>
           {suggestions.map((suggestion) => (
             <button
               key={suggestion}
               type="button"
               onClick={() => onPickSuggestion(suggestion)}
-              className="hl-caption flex items-start gap-1.5 rounded-hl-md px-2 py-1.5 text-left text-hl-fg-secondary outline-none transition-colors hover:bg-hl-subtle hover:text-hl-fg"
+              className="hl-small flex items-start gap-2 rounded-hl-md px-2.5 py-2 text-left text-hl-fg-secondary outline-none transition-colors hover:bg-hl-subtle hover:text-hl-fg"
             >
               <Sparkles className="mt-0.5 size-3 shrink-0 text-hl-prism-mid" aria-hidden />
               {suggestion}
@@ -156,7 +156,7 @@ function NavRow({
       onClick={onClick}
       aria-current={active ? 'page' : undefined}
       className={cn(
-        'hl-small flex items-center gap-2 rounded-hl-md px-2 py-1.5 text-left outline-none transition-colors',
+        'hl-ui flex items-center gap-2.5 rounded-hl-md px-2.5 py-2 text-left outline-none transition-colors',
         active
           ? 'bg-hl-accent-subtle text-hl-accent-fg'
           : 'text-hl-fg-secondary hover:bg-hl-subtle hover:text-hl-fg',

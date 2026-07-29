@@ -49,14 +49,19 @@ export function TopBar({ breadcrumbs, title, unreadCount }: TopBarProps) {
         onClick={() => setCommandOpen(true)}
         aria-label="Search or ask HireLens"
         aria-keyshortcuts="Meta+K Control+K"
-        className="group inline-flex h-8 w-64 max-w-[45vw] items-center gap-2 rounded-hl-md border border-hl-border-subtle bg-hl-subtle px-3 text-left outline-none transition-colors hover:border-hl-border hover:bg-hl-muted"
+        // Search is the shell's most-used affordance — it gets a real control
+        // height, a full-size icon, and a placeholder at body size rather than
+        // the caption it was.
+        className="hl-prism-focus group inline-flex h-hl-control-md w-80 max-w-[45vw] items-center gap-2.5 rounded-hl-md border border-hl-border bg-hl-subtle px-3.5 text-left outline-none transition-[background-color,border-color,box-shadow] duration-[var(--hl-dur-base)] ease-[var(--hl-ease-out)] hover:border-hl-border-strong hover:bg-hl-canvas hover:shadow-[var(--hl-shadow-sm)]"
       >
-        {/* Prism sparkle marks this as the AI-aware entry point (§3.3). */}
+        {/* Prism sparkle marks this as the AI-aware entry point (§3.3). It
+            saturates on hover, so the AI signature responds to intent rather
+            than sitting at full strength permanently. */}
         <Sparkles
-          className="size-4 shrink-0 text-hl-prism-mid opacity-80 transition-opacity group-hover:opacity-100"
+          className="size-hl-icon-md shrink-0 text-hl-prism-mid opacity-70 transition-[opacity,transform] duration-[var(--hl-dur-base)] ease-[var(--hl-ease-out)] group-hover:scale-110 group-hover:opacity-100"
           aria-hidden
         />
-        <span className="hl-small flex-1 truncate text-hl-fg-tertiary">
+        <span className="hl-body flex-1 truncate text-hl-fg-tertiary">
           Search or ask HireLens&hellip;
         </span>
         <Kbd className="hidden shrink-0 sm:inline-flex">⌘K</Kbd>

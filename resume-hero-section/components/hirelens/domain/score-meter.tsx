@@ -50,7 +50,7 @@ export function ScoreMeter({ score, showLabel = true, className }: ScoreMeterPro
         ))}
         <div className={cn('h-full rounded-full', fillFor[band.key])} style={{ width: `${value}%` }} />
       </div>
-      <span className={cn('hl-mono text-[13px]', textFor[band.key])}>{value}</span>
+      <span className={cn('hl-mono', textFor[band.key])}>{value}</span>
       {showLabel ? <span className="hl-caption text-hl-fg-tertiary">{band.label}</span> : null}
     </div>
   )

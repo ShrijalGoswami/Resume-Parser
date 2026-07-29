@@ -13,6 +13,8 @@ import { useRoles } from '../lib/api/workspace'
 import { LoadingScreen } from '../states/loading'
 import { EmptyState } from '../states/empty-state'
 import { ErrorState } from '../states/error-state'
+import { PERMS, hasPerm } from '../settings/permissions'
+import { useOrgContext } from '../lib/api/settings'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { RoleFormDialog } from './role-form-dialog'
@@ -36,7 +38,7 @@ const STATUS_TONE: Record<CampaignStatus, string> = {
 
 function Notice({ title, showSignIn }: { title: string; showSignIn?: boolean }) {
   return (
-    <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-6 py-24 text-center">
+    <div className="mx-auto flex max-w-xl flex-col items-center gap-5 px-6 py-24 text-center">
       <h1 className="hl-display-md">{title}</h1>
       {showSignIn ? (
         <Button variant="primary" asChild>
@@ -58,13 +60,13 @@ function RoleCard({ role }: { role: Campaign }) {
       <div className="flex items-start justify-between gap-3">
         <span className="hl-body-medium min-w-0 truncate text-hl-fg">{role.title}</span>
         <span
-          className={cn('shrink-0 font-hl-mono text-[10px] uppercase tracking-widest', STATUS_TONE[role.status])}
+          className={cn('shrink-0 hl-label-sm font-hl-mono', STATUS_TONE[role.status])}
         >
           {role.status}
         </span>
       </div>
       {subtitle ? <span className="hl-small truncate text-hl-fg-secondary">{subtitle}</span> : null}
-      <span className="mt-1 flex items-center gap-1.5 font-hl-mono text-[11px] tabular-nums text-hl-fg-tertiary">
+      <span className="mt-1 flex items-center gap-1.5 hl-caption font-hl-mono tabular-nums text-hl-fg-tertiary">
         <Users className="size-3.5" aria-hidden />
         {count} candidate{count === 1 ? '' : 's'}
       </span>
@@ -104,6 +106,8 @@ function AuthedRoles({ initialNew }: { initialNew: boolean }) {
   const profile = useProfile()
   const roles = useRoles()
 
+  const ctx = useOrgContext()
+  const canManage = hasPerm(ctx.data?.permissions, PERMS.CAMPAIGN_MANAGE)
   const [createOpen, setCreateOpen] = React.useState(initialNew)
   const [status, setStatus] = React.useState<'all' | CampaignStatus>('active')
   const [search, setSearch] = React.useState('')
@@ -131,12 +135,18 @@ function AuthedRoles({ initialNew }: { initialNew: boolean }) {
       <EmptyState
         variant="first-run"
         icon={Plus}
-        title="Create your first role"
-        description="A role holds one job description and the candidates ranked against it."
+        title={canManage ? 'Create your first role' : 'No roles yet'}
+        description={
+          canManage
+            ? 'A role holds one job description and the candidates ranked against it.'
+            : 'Roles will appear here once someone on your team creates one. Your role does not include creating roles.'
+        }
         action={
-          <Button variant="primary" onClick={() => setCreateOpen(true)}>
-            <Plus /> New role
-          </Button>
+          canManage ? (
+            <Button variant="primary" onClick={() => setCreateOpen(true)}>
+              <Plus /> New role
+            </Button>
+          ) : null
         }
       />
     )
@@ -160,14 +170,16 @@ function AuthedRoles({ initialNew }: { initialNew: boolean }) {
 
   return (
     <AppShell breadcrumbs={ROLES_CRUMBS} account={account}>
-      <div className="mx-auto w-full max-w-5xl px-6 pb-16 pt-8">
+      <div className="mx-auto w-full max-w-[1440px] px-8 pb-16 pt-8">
         <PageHeader
           title="Roles"
           description="Every open role and its candidate pipeline."
           actions={
-            <Button variant="primary" onClick={() => setCreateOpen(true)}>
-              <Plus /> New role
-            </Button>
+            canManage ? (
+              <Button variant="primary" onClick={() => setCreateOpen(true)}>
+                <Plus /> New role
+              </Button>
+            ) : null
           }
         >
           {total > 0 ? (

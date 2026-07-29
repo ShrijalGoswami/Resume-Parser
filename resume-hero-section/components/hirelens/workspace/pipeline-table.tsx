@@ -65,7 +65,7 @@ export function PipelineTable({
     >
       <table className="w-full border-collapse text-left">
         <thead className="sticky top-0 z-10 bg-hl-subtle">
-          <tr className="hl-caption text-hl-fg-tertiary">
+          <tr className="hl-label text-hl-fg-tertiary">
             <th className="w-9 px-3 py-2">
               <input
                 type="checkbox"
@@ -98,7 +98,7 @@ export function PipelineTable({
                 data-index={item.index}
                 ref={virtualizer.measureElement}
                 className={cn(
-                  'hl-small border-t border-hl-border-subtle',
+                  'hl-body border-t border-hl-border-subtle',
                   selected.has(row.id) ? 'bg-hl-accent-subtle' : 'hover:bg-hl-subtle',
                 )}
               >

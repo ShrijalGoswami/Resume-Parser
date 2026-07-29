@@ -71,7 +71,7 @@ export function ResetForm() {
           onChange={(event) => setConfirm(event.target.value)}
         />
         {error ? (
-          <p className="hl-small text-[color:var(--hl-danger)]" role="alert">
+          <p className="hl-body text-[color:var(--hl-danger)]" role="alert">
             {error}
           </p>
         ) : null}
@@ -79,7 +79,7 @@ export function ResetForm() {
           Save &amp; sign in
         </Button>
       </form>
-      <p className="hl-small text-hl-fg-tertiary">You&rsquo;ll be signed in on this device.</p>
+      <p className="hl-body text-hl-fg-tertiary">You&rsquo;ll be signed in on this device.</p>
     </div>
   )
 }

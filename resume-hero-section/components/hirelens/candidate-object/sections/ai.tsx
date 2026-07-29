@@ -33,7 +33,7 @@ export function CandidateVerdict({
       reasoning={model.verdictReasoning || undefined}
       actions={actions}
     >
-      <p className="flex items-center gap-1.5 font-hl-mono text-[10px] uppercase tracking-widest text-hl-fg-tertiary">
+      <p className="flex items-center gap-1.5 hl-label-sm font-hl-mono text-hl-fg-tertiary">
         <Sparkles className="size-3.5 text-hl-prism-mid" aria-hidden />
         The verdict
       </p>

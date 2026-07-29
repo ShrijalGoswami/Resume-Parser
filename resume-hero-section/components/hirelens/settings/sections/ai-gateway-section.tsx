@@ -96,7 +96,7 @@ function UsagePanel() {
       </div>
       {providers.length > 0 ? (
         <Card className="flex flex-col gap-2 p-4">
-          <p className="hl-small font-medium text-hl-fg">By provider</p>
+          <p className="hl-body font-medium text-hl-fg">By provider</p>
           {providers.map(([name, counter]) => {
             const requests = counter.requests ?? 0
             return (
@@ -230,7 +230,7 @@ function Providers({ config }: { config: AiConfig }) {
           return (
             <div key={provider.name} className="flex flex-wrap items-center gap-3 p-3">
               <div className="min-w-0 flex-1">
-                <p className="hl-small font-medium text-hl-fg">{provider.display_name}</p>
+                <p className="hl-body font-medium text-hl-fg">{provider.display_name}</p>
                 <p className="hl-caption text-hl-fg-tertiary">
                   {provider.capabilities.length} capabilities · {provider.context_window.toLocaleString()} ctx
                 </p>

@@ -34,7 +34,7 @@ function BarList({ items, total }: { items: { label: string; value: number }[]; 
             <div className="h-2 flex-1 overflow-hidden rounded-full bg-hl-muted">
               <div className="h-full rounded-full bg-hl-accent" style={{ width: `${pct}%` }} />
             </div>
-            <span className="hl-mono w-8 text-right text-[13px]">{item.value}</span>
+            <span className="hl-mono w-9 text-right">{item.value}</span>
           </div>
         )
       })}

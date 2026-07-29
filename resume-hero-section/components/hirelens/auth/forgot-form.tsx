@@ -45,11 +45,11 @@ export function ForgotForm() {
     return (
       <div className="flex flex-col gap-4">
         <h1 className="hl-display-md">Check your inbox.</h1>
-        <p className="hl-small text-hl-fg-secondary" role="status">
+        <p className="hl-body text-hl-fg-secondary" role="status">
           If an account exists for {email}, we sent a link to reset your password. Open it on this
           device to continue.
         </p>
-        <p className="hl-small text-hl-fg-tertiary">
+        <p className="hl-body text-hl-fg-tertiary">
           <Link href="/auth/login" className="text-hl-accent-fg outline-none hover:underline">
             Back to sign in
           </Link>
@@ -73,7 +73,7 @@ export function ForgotForm() {
           onChange={(event) => setEmail(event.target.value)}
         />
         {error ? (
-          <p className="hl-small text-[color:var(--hl-danger)]" role="alert">
+          <p className="hl-body text-[color:var(--hl-danger)]" role="alert">
             {error}
           </p>
         ) : null}
@@ -82,7 +82,7 @@ export function ForgotForm() {
           <ArrowRight />
         </Button>
       </form>
-      <p className="hl-small text-hl-fg-tertiary">
+      <p className="hl-body text-hl-fg-tertiary">
         Remembered it?{' '}
         <Link href="/auth/login" className="text-hl-accent-fg outline-none hover:underline">
           Sign in

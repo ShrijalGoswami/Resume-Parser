@@ -24,7 +24,7 @@ function Example({ size }: { size?: 'candidate' | 'wide' }) {
         <DrawerHeader>
           <div>
             <DrawerTitle>Aarav Sharma</DrawerTitle>
-            <p className="hl-small text-hl-fg-secondary">Senior Backend Engineer</p>
+            <p className="hl-body text-hl-fg-secondary">Senior Backend Engineer</p>
           </div>
         </DrawerHeader>
         <DrawerBody>

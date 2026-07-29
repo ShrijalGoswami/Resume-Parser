@@ -10,7 +10,7 @@ import type { CopilotStructuredResponse } from '@/types/copilot'
 export function UserTurn({ content }: { content: string }) {
   return (
     <div className="flex justify-end">
-      <div className="hl-body max-w-[85%] rounded-hl-lg bg-hl-subtle px-3.5 py-2 text-hl-fg">
+      <div className="hl-body max-w-[85%] rounded-hl-lg bg-hl-subtle px-4 py-3 text-hl-fg">
         {content}
       </div>
     </div>
@@ -36,7 +36,7 @@ function AnswerList({ label, items }: { label: string; items: string[] }) {
   if (items.length === 0) return null
   return (
     <div className="mt-2">
-      <p className="hl-caption text-hl-fg-tertiary">{label}</p>
+      <p className="hl-label text-hl-fg-tertiary">{label}</p>
       <ul className="mt-1 flex flex-col gap-0.5">
         {items.map((item, index) => (
           <li key={index} className="hl-small flex gap-1.5 text-hl-fg-secondary">
@@ -86,13 +86,13 @@ export function AssistantTurn({
       }
     >
       {response.degraded ? (
-        <p className="hl-small mb-2 text-hl-fg-tertiary">
+        <p className="hl-body mb-2 text-hl-fg-tertiary">
           Answered with limited context — some sources were unavailable.
         </p>
       ) : null}
       <p>{response.answer}</p>
       {response.summary && response.summary !== response.answer ? (
-        <p className="hl-small mt-2 text-hl-fg-secondary">{response.summary}</p>
+        <p className="hl-body mt-2 text-hl-fg-secondary">{response.summary}</p>
       ) : null}
       <AnswerList label="Strengths" items={response.strengths} />
       <AnswerList label="Watch-outs" items={response.weaknesses} />

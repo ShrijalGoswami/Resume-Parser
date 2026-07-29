@@ -35,7 +35,7 @@ export function Notifications({ unreadCount: unreadOverride }: { unreadCount?: n
         <button
           type="button"
           aria-label={count > 0 ? `Notifications, ${count} unread` : 'Notifications'}
-          className="relative inline-flex size-8 items-center justify-center rounded-hl-md text-hl-fg-secondary outline-none transition-colors hover:bg-hl-subtle hover:text-hl-fg"
+          className="relative inline-flex size-hl-control-md items-center justify-center rounded-hl-md text-hl-fg-secondary outline-none transition-colors hover:bg-hl-subtle hover:text-hl-fg"
         >
           <Bell className="size-[18px]" />
           {count > 0 ? (
@@ -67,7 +67,7 @@ export function Notifications({ unreadCount: unreadOverride }: { unreadCount?: n
           </div>
         ) : visible.length === 0 ? (
           <div className="px-4 py-10 text-center">
-            <p className="hl-small text-hl-fg-tertiary">No notifications yet.</p>
+            <p className="hl-body text-hl-fg-tertiary">No notifications yet.</p>
           </div>
         ) : (
           <ul className="max-h-80 overflow-y-auto">

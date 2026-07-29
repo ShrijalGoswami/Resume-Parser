@@ -37,7 +37,7 @@ function CenteredNotice({
   action?: React.ReactNode
 }) {
   return (
-    <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-6 py-24 text-center">
+    <div className="mx-auto flex max-w-xl flex-col items-center gap-5 px-6 py-24 text-center">
       <h1 className="hl-display-md">{title}</h1>
       <p className="hl-body text-hl-fg-secondary">{description}</p>
       {action}
@@ -45,7 +45,7 @@ function CenteredNotice({
   )
 }
 
-const SHELL = 'mx-auto flex w-full max-w-[820px] flex-col gap-10 px-6 pb-24 pt-8'
+const SHELL = 'mx-auto flex w-full max-w-[1100px] flex-col gap-10 px-8 pb-24 pt-8'
 
 /** Skeletons (never spinners) matching the Inbox layout. */
 function InboxSkeleton() {

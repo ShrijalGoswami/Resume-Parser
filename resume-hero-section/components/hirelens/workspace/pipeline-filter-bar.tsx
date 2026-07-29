@@ -17,7 +17,7 @@ export interface PipelineFilters {
 }
 
 const selectClass =
-  'hl-small h-8 rounded-hl-md border border-hl-border bg-hl-canvas px-2 text-hl-fg outline-none focus-visible:border-hl-accent'
+  'hl-ui h-hl-control-md rounded-hl-md border border-hl-border bg-hl-canvas px-2.5 text-hl-fg outline-none focus-visible:border-hl-accent'
 
 export interface PipelineFilterBarProps {
   filters: PipelineFilters

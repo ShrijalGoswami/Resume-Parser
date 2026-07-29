@@ -22,7 +22,7 @@ export const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
         <div className="flex items-baseline justify-between gap-2">
           <label
             htmlFor={fieldId}
-            className="font-hl-mono text-[11px] uppercase tracking-wide text-hl-fg-tertiary"
+            className="hl-label font-hl-mono text-hl-fg-tertiary"
           >
             {label}
           </label>
@@ -32,7 +32,7 @@ export const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
           ref={ref}
           id={fieldId}
           className={cn(
-            'hl-body h-9 w-full rounded-none border-0 border-b border-hl-border bg-transparent px-0 text-hl-fg outline-none transition-[border-color] duration-[var(--hl-dur-fast)] placeholder:text-hl-fg-tertiary focus-visible:border-hl-accent',
+            'hl-body h-hl-input w-full rounded-none border-0 border-b border-hl-border bg-transparent px-0 text-hl-fg outline-none transition-[border-color] duration-[var(--hl-dur-fast)] placeholder:text-hl-fg-tertiary focus-visible:border-hl-accent',
             className,
           )}
           {...props}

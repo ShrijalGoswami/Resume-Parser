@@ -23,7 +23,7 @@ export function WorkspaceSwitcher({
 
   const tile = (
     <span
-      className="flex size-8 shrink-0 items-center justify-center rounded-hl-md border border-hl-border-strong bg-hl-canvas text-sm font-medium text-hl-fg font-[family-name:var(--font-hl-mono)]"
+      className="flex size-hl-control-md shrink-0 items-center justify-center rounded-hl-md border border-hl-border-strong bg-hl-canvas hl-body-medium text-hl-fg font-[family-name:var(--font-hl-mono)]"
       aria-hidden
     >
       {initial}
@@ -43,10 +43,10 @@ export function WorkspaceSwitcher({
       <span className="flex min-w-0 items-center gap-2.5">
         {tile}
         <span className="flex min-w-0 flex-col text-left">
-          <span className="truncate text-sm font-medium leading-tight text-hl-fg">
+          <span className="truncate hl-body-medium text-hl-fg">
             {workspaceName}
           </span>
-          <span className="truncate text-[10px] uppercase leading-tight tracking-wider text-hl-fg-secondary font-[family-name:var(--font-hl-mono)]">
+          <span className="truncate hl-label text-hl-fg-secondary font-[family-name:var(--font-hl-mono)]">
             {role}
           </span>
         </span>

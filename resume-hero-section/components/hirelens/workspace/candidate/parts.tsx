@@ -46,7 +46,7 @@ export function FactorBars({ factors }: { factors: { label: string; value: numbe
             <div className="h-2 flex-1 overflow-hidden rounded-full bg-hl-muted">
               <div className="h-full rounded-full bg-hl-accent" style={{ width: `${pct}%` }} />
             </div>
-            <span className="hl-mono w-8 text-right text-[13px]">{pct}</span>
+            <span className="hl-mono w-9 text-right">{pct}</span>
           </div>
         )
       })}
@@ -55,5 +55,5 @@ export function FactorBars({ factors }: { factors: { label: string; value: numbe
 }
 
 export function EmptyHint({ text }: { text: string }) {
-  return <p className="hl-small py-8 text-center text-hl-fg-tertiary">{text}</p>
+  return <p className="hl-body py-8 text-center text-hl-fg-tertiary">{text}</p>
 }

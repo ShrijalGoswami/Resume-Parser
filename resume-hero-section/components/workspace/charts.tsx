@@ -26,10 +26,10 @@ export function ChartCard({
   return (
     <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm">
       <div className="mb-4">
-        <h3 className="text-sm font-medium text-foreground">{title}</h3>
-        {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+        <h3 className="hl-h3 text-foreground">{title}</h3>
+        {subtitle && <p className="hl-caption text-muted-foreground">{subtitle}</p>}
       </div>
-      {empty ? <p className="py-6 text-center text-sm text-muted-foreground">No data yet</p> : children}
+      {empty ? <p className="py-8 text-center hl-body text-muted-foreground">No data yet</p> : children}
     </div>
   );
 }
@@ -45,16 +45,16 @@ export function BarList({
   emptyLabel?: string;
 }) {
   const max = Math.max(1, ...data.map((d) => d.value));
-  if (data.length === 0) return <p className="py-4 text-center text-sm text-muted-foreground">{emptyLabel}</p>;
+  if (data.length === 0) return <p className="py-6 text-center hl-body text-muted-foreground">{emptyLabel}</p>;
   return (
     <ul className="space-y-2.5" role="list">
       {data.map((d) => (
-        <li key={d.label} className="grid grid-cols-[7rem_1fr_2rem] items-center gap-2 text-sm" title={`${d.label}: ${d.value}`}>
+        <li key={d.label} className="grid grid-cols-[7rem_1fr_2rem] items-center gap-2 hl-body" title={`${d.label}: ${d.value}`}>
           <span className="truncate text-muted-foreground" title={d.label}>{d.label}</span>
           <span className={cn('h-2.5 overflow-hidden rounded-full', TRACK)} role="img" aria-label={`${d.label}: ${d.value}`}>
             <span className={cn('block h-full rounded-full', colorClass)} style={{ width: `${(d.value / max) * 100}%` }} />
           </span>
-          <span className="text-right font-medium tabular-nums text-foreground">{d.value}</span>
+          <span className="hl-body-medium text-right hl-num text-foreground">{d.value}</span>
         </li>
       ))}
     </ul>
@@ -65,19 +65,19 @@ export function BarList({
 export function Histogram({ data }: { data: { range: string; count: number }[] }) {
   const max = Math.max(1, ...data.map((d) => d.count));
   const total = data.reduce((s, d) => s + d.count, 0);
-  if (total === 0) return <p className="py-4 text-center text-sm text-muted-foreground">No scores yet</p>;
+  if (total === 0) return <p className="py-6 text-center hl-body text-muted-foreground">No scores yet</p>;
   return (
     <div className="flex items-end justify-between gap-2" style={{ height: 140 }}>
       {data.map((d) => (
         <div key={d.range} className="flex flex-1 flex-col items-center justify-end gap-1" title={`${d.range}: ${d.count}`}>
-          <span className="text-xs font-medium tabular-nums text-foreground">{d.count || ''}</span>
+          <span className="hl-caption hl-num text-foreground">{d.count || ""}</span>
           <div
             className={cn('w-full rounded-t bg-primary', d.count === 0 && 'bg-muted')}
             style={{ height: `${Math.max(2, (d.count / max) * 100)}%`, minHeight: 2 }}
             role="img"
             aria-label={`${d.range}: ${d.count}`}
           />
-          <span className="text-[10px] text-muted-foreground">{d.range}</span>
+          <span className="hl-label-sm text-muted-foreground">{d.range}</span>
         </div>
       ))}
     </div>
@@ -88,11 +88,11 @@ export function Histogram({ data }: { data: { range: string; count: number }[] }
 export function Funnel({ data }: { data: { stage: string; count: number }[] }) {
   const max = Math.max(1, ...data.map((d) => d.count));
   const total = data.reduce((s, d) => s + d.count, 0);
-  if (total === 0) return <p className="py-4 text-center text-sm text-muted-foreground">No candidates yet</p>;
+  if (total === 0) return <p className="py-6 text-center hl-body text-muted-foreground">No candidates yet</p>;
   return (
     <ul className="space-y-1.5" role="list">
       {data.map((d) => (
-        <li key={d.stage} className="grid grid-cols-[6rem_1fr_2rem] items-center gap-2 text-sm" title={`${d.stage}: ${d.count}`}>
+        <li key={d.stage} className="grid grid-cols-[6rem_1fr_2rem] items-center gap-2 hl-body" title={`${d.stage}: ${d.count}`}>
           <span className="truncate capitalize text-muted-foreground">{d.stage}</span>
           <span className="h-5 overflow-hidden rounded-md bg-muted">
             <span
@@ -100,7 +100,7 @@ export function Funnel({ data }: { data: { stage: string; count: number }[] }) {
               style={{ width: `${Math.max(2, (d.count / max) * 100)}%` }}
             />
           </span>
-          <span className="text-right font-medium tabular-nums text-foreground">{d.count}</span>
+          <span className="hl-body-medium text-right hl-num text-foreground">{d.count}</span>
         </li>
       ))}
     </ul>
@@ -112,7 +112,7 @@ export function StatusBar({ data }: { data: { label: string; count: number }[] }
   const total = data.reduce((s, d) => s + d.count, 0);
   const colorFor = (label: string) =>
     label.toLowerCase().includes('await') ? 'bg-amber-500' : 'bg-emerald-500';
-  if (total === 0) return <p className="py-4 text-center text-sm text-muted-foreground">No candidates yet</p>;
+  if (total === 0) return <p className="py-6 text-center hl-body text-muted-foreground">No candidates yet</p>;
   return (
     <div>
       <div className="flex h-3 overflow-hidden rounded-full bg-muted" role="img" aria-label="Candidate status breakdown">
@@ -125,12 +125,12 @@ export function StatusBar({ data }: { data: { label: string; count: number }[] }
           />
         ))}
       </div>
-      <ul className="mt-3 flex flex-wrap gap-4 text-sm">
+      <ul className="mt-3 flex flex-wrap gap-4 hl-body">
         {data.map((d) => (
           <li key={d.label} className="flex items-center gap-1.5">
             <span className={cn('h-2.5 w-2.5 rounded-full', colorFor(d.label))} />
             <span className="text-muted-foreground">{d.label}</span>
-            <span className="font-medium tabular-nums text-foreground">{d.count}</span>
+            <span className="hl-body-medium hl-num text-foreground">{d.count}</span>
           </li>
         ))}
       </ul>
@@ -141,7 +141,7 @@ export function StatusBar({ data }: { data: { label: string; count: number }[] }
 /** Upload trend — sparkline-style bars over time (single hue, magnitude). */
 export function TrendBars({ data }: { data: { date: string; count: number }[] }) {
   const max = Math.max(1, ...data.map((d) => d.count));
-  if (data.length === 0) return <p className="py-4 text-center text-sm text-muted-foreground">No uploads yet</p>;
+  if (data.length === 0) return <p className="py-6 text-center hl-body text-muted-foreground">No uploads yet</p>;
   const recent = data.slice(-30);
   return (
     <div className="flex items-end gap-1" style={{ height: 100 }}>

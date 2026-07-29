@@ -27,7 +27,7 @@ function DecisionCell({ rec }: { rec: Recommendation }) {
 
 /** Ledger cells breathe more than the DS default — permanence over density. */
 const LEDGER_CELL = 'py-4 align-top'
-const LEDGER_HEADER = 'py-3 font-hl-mono text-[10px] uppercase tracking-widest'
+const LEDGER_HEADER = 'py-3 hl-label font-hl-mono'
 
 const columns: DataTableColumn<Recommendation>[] = [
   {
@@ -38,7 +38,7 @@ const columns: DataTableColumn<Recommendation>[] = [
     render: (rec) => {
       const stamp = decidedAt(rec)
       return (
-        <span className="font-hl-mono text-[11px] tabular-nums text-hl-fg-secondary">
+        <span className="hl-caption font-hl-mono tabular-nums text-hl-fg-secondary">
           {fmtDate(stamp)}
           <span className="text-hl-fg-tertiary"> · {fmtTime(stamp)}</span>
         </span>

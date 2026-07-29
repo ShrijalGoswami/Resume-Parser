@@ -6,26 +6,35 @@ import { Spinner } from './spinner'
 
 /**
  * Button (Design Bible §4.1). Variants: primary / secondary / ghost / danger /
- * ai (prism gradient border + ✨). Sizes track the density scale
+ * ai (prism gradient border + ✨). Sizes track the shared control scale
  * (--hl-control-h-*). Focus ring is inherited from the global `.hl` rule.
  */
 const buttonVariants = cva(
-  'hl-body-medium relative inline-flex select-none items-center justify-center gap-1.5 whitespace-nowrap rounded-hl-md outline-none transition-[color,background-color,border-color,filter] duration-[var(--hl-dur-fast)] disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0',
+  // Label sits at `hl-ui` (15/530) and icons at the token size, so a
+  // button reads as something you press rather than as a link that happens to
+  // have a border.
+  'hl-ui relative inline-flex select-none items-center justify-center gap-2 whitespace-nowrap rounded-hl-md outline-none transition-[color,background-color,border-color,filter] duration-[var(--hl-dur-fast)] disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-hl-icon-sm [&_svg]:shrink-0',
   {
     variants: {
       variant: {
-        primary: 'bg-hl-accent text-white hover:bg-hl-accent-hover active:scale-[0.98]',
-        secondary: 'border border-hl-border bg-hl-canvas text-hl-fg hover:bg-hl-subtle',
+        // Primary carries weight as well as fill — it should be the single
+        // heaviest thing on the screen it lives on.
+        primary:
+          'bg-hl-accent font-semibold text-white shadow-[var(--hl-shadow-xs)] hover:bg-hl-accent-hover active:scale-[0.98]',
+        // Secondary must stay elegant without disappearing: a real border and
+        // full-strength foreground, not a tinted ghost.
+        secondary:
+          'border border-hl-border-strong bg-hl-canvas text-hl-fg hover:border-hl-border-strong hover:bg-hl-subtle',
         ghost: 'text-hl-fg-secondary hover:bg-hl-subtle hover:text-hl-fg',
         danger:
-          'bg-[color:var(--hl-danger)] text-white hover:brightness-95 active:scale-[0.98]',
+          'bg-[color:var(--hl-danger)] font-semibold text-white hover:brightness-95 active:scale-[0.98]',
         ai: 'hl-prism-border text-hl-fg hover:brightness-[0.97]',
       },
       size: {
-        sm: 'h-[var(--hl-control-h-sm)] px-2.5 text-[13px]',
-        md: 'h-[var(--hl-control-h-md)] px-3',
-        lg: 'h-[var(--hl-control-h-lg)] px-4',
-        icon: 'h-[var(--hl-control-h-md)] w-[var(--hl-control-h-md)] px-0',
+        sm: 'h-hl-control-sm px-3',
+        md: 'h-hl-control-md px-3.5',
+        lg: 'h-hl-control-lg px-5',
+        icon: 'h-hl-control-md w-hl-control-md px-0',
       },
     },
     defaultVariants: { variant: 'secondary', size: 'md' },

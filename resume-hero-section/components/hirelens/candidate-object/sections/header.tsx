@@ -20,19 +20,25 @@ export function CandidateHeader({ model, dense }: { model: CandidateModel; dense
     <div className="flex items-start gap-3">
       <span
         aria-hidden
-        className="grid size-10 shrink-0 place-items-center rounded-full bg-hl-subtle font-hl-mono text-[13px] text-hl-fg-secondary"
+        className="grid size-10 shrink-0 place-items-center rounded-full bg-hl-subtle hl-mono text-hl-fg-secondary"
       >
         {initials(model.name) || '—'}
       </span>
       <div className="min-w-0 flex-1">
-        <h1 className={dense ? 'hl-h2 truncate' : 'hl-display-md'}>{model.name}</h1>
-        <div className="mt-1 flex flex-wrap items-center gap-2">
+        {/* The name is the object. In the drawer — where recruiters spend most
+            of their time — it takes `hl-h1` (24px) rather than the section
+            step, so it reads as the subject of the panel and everything under
+            it reads as attributes of that subject. */}
+        <h1 className={dense ? 'hl-h1 truncate' : 'hl-display-md'}>{model.name}</h1>
+        <div className="mt-1.5 flex flex-wrap items-center gap-2">
           {model.matchCategory ? (
             <Badge variant="outline" className="capitalize">
               {model.matchCategory}
             </Badge>
           ) : null}
-          <span className="hl-caption capitalize text-hl-fg-tertiary">Stage · {model.stage}</span>
+          <span className="hl-small capitalize text-hl-fg-tertiary">
+            Stage · {model.stage}
+          </span>
         </div>
       </div>
     </div>

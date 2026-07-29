@@ -150,7 +150,7 @@ function AuthedNotifications() {
 
   return (
     <AppShell breadcrumbs={NOTIFICATION_CRUMBS} account={account}>
-      <div className="mx-auto flex w-full max-w-3xl flex-col px-6 pb-16 pt-10">
+      <div className="mx-auto flex w-full max-w-[1100px] flex-col px-8 pb-16 pt-10">
         <PageHeader
           title="Notifications"
           description={

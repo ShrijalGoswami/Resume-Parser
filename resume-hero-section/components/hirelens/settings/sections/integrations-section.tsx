@@ -135,7 +135,7 @@ function ProviderCard({
     <Card className="flex flex-col gap-2 p-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="hl-small font-medium text-hl-fg">{provider.display_name}</p>
+          <p className="hl-body font-medium text-hl-fg">{provider.display_name}</p>
           <p className="hl-caption capitalize text-hl-fg-tertiary">{provider.category}</p>
         </div>
         {connection ? (
@@ -237,7 +237,7 @@ function AutomationRules({ canManage }: { canManage: boolean }) {
           {(rules.data ?? []).map((rule) => (
             <div key={rule.id} className="flex flex-wrap items-center gap-3 p-3">
               <div className="min-w-0 flex-1">
-                <p className="hl-small font-medium text-hl-fg">{rule.name}</p>
+                <p className="hl-body font-medium text-hl-fg">{rule.name}</p>
                 <p className="hl-caption text-hl-fg-tertiary">
                   On {humanize(rule.trigger_event)} · {rule.steps.length}{' '}
                   {rule.steps.length === 1 ? 'step' : 'steps'}

@@ -10,7 +10,7 @@ export function Kbd({
   return (
     <kbd
       className={cn(
-        'hl-mono inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-hl-sm border border-hl-border bg-hl-subtle px-1.5 text-[11px] leading-none text-hl-fg-secondary',
+        'hl-label-sm inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-hl-sm border border-hl-border bg-hl-subtle px-1.5 font-hl-mono text-hl-fg-secondary',
         className,
       )}
       {...props}

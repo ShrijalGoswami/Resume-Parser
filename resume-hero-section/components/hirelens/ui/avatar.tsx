@@ -22,7 +22,7 @@ function getHue(seed: string): number {
 export interface AvatarProps extends React.HTMLAttributes<HTMLSpanElement> {
   name: string
   src?: string
-  /** Pixel size; defaults to the density-driven --hl-avatar. */
+  /** Pixel size; defaults to the token --hl-avatar. */
   size?: number
   /** Stable seed for the fallback color (defaults to name). */
   seed?: string

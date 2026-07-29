@@ -89,7 +89,7 @@ function ApiKeysManager() {
           {(keys.data ?? []).map((key) => (
             <div key={key.id} className="flex flex-wrap items-center gap-3 p-3">
               <div className="min-w-0 flex-1">
-                <p className="hl-small font-medium text-hl-fg">{key.name}</p>
+                <p className="hl-body font-medium text-hl-fg">{key.name}</p>
                 <p className="hl-mono text-hl-fg-tertiary">{key.prefix}…</p>
               </div>
               <Badge variant="outline" className="capitalize">

@@ -66,7 +66,7 @@ export function WorkspacesSection() {
             return (
               <Card key={workspace.id} className="flex flex-wrap items-center gap-3 p-3">
                 <div className="min-w-0 flex-1">
-                  <p className="hl-small font-medium text-hl-fg">{workspace.name}</p>
+                  <p className="hl-body font-medium text-hl-fg">{workspace.name}</p>
                   {workspace.description ? (
                     <p className="hl-caption text-hl-fg-secondary">{workspace.description}</p>
                   ) : null}

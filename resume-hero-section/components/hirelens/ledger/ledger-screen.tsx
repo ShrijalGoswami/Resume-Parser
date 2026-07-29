@@ -21,7 +21,7 @@ const PAGE_SIZE = 12
 
 function Notice({ title, showSignIn }: { title: string; showSignIn?: boolean }) {
   return (
-    <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-6 py-24 text-center">
+    <div className="mx-auto flex max-w-xl flex-col items-center gap-5 px-6 py-24 text-center">
       <h1 className="hl-display-md">{title}</h1>
       {showSignIn ? (
         <Button variant="primary" asChild>
@@ -110,7 +110,7 @@ function AuthedLedger() {
       <div className="flex flex-col gap-4">
         <LedgerTable rows={pageRows} onOpen={setSelected} />
         <div className="flex items-center justify-between">
-          <p className="hl-small text-hl-fg-tertiary">
+          <p className="hl-body text-hl-fg-tertiary">
             Showing <span className="font-hl-mono tabular-nums">{rangeStart}–{rangeEnd}</span> of{' '}
             <span className="font-hl-mono tabular-nums">{resolved.length}</span> records
           </p>
@@ -141,10 +141,10 @@ function AuthedLedger() {
 
   return (
     <AppShell breadcrumbs={LEDGER_CRUMBS} account={account}>
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 pb-16 pt-10">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-8 px-8 pb-16 pt-10">
         <header className="flex flex-col gap-3">
           {oldest ? (
-            <p className="font-hl-mono text-[11px] uppercase tracking-widest text-hl-fg-tertiary">
+            <p className="hl-label-sm font-hl-mono text-hl-fg-tertiary">
               {fmtDate(oldest)} — {fmtDate(newest)}
             </p>
           ) : null}

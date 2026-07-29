@@ -28,7 +28,7 @@ export function Spinner({ label }: { label?: string }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 py-20 text-muted-foreground" role="status">
       <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      {label && <span className="text-sm">{label}</span>}
+      {label && <span className="hl-body">{label}</span>}
     </div>
   );
 }
@@ -40,7 +40,7 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
       className="flex flex-col items-center gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-8 text-center"
     >
       <AlertCircle className="h-6 w-6 text-destructive" />
-      <p className="text-sm text-destructive">{message}</p>
+      <p className="hl-body text-destructive">{message}</p>
       {onRetry && (
         <Button variant="outline" size="sm" onClick={onRetry}>
           <RotateCw className="mr-1.5 h-4 w-4" /> Retry
@@ -69,7 +69,7 @@ export function FeatureLockedState({
       </span>
       <div>
         <p className="font-medium text-foreground">{feature} is unavailable for your current plan</p>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-1 hl-body text-muted-foreground">
           {description ?? 'Upgrade your plan or ask an organization admin to enable this feature to unlock it.'}
         </p>
       </div>
@@ -105,7 +105,7 @@ export function EmptyState({
       </span>
       <div>
         <p className="font-medium text-foreground">{title}</p>
-        {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
+        {description && <p className="mt-1 hl-body text-muted-foreground">{description}</p>}
       </div>
       {action}
     </div>

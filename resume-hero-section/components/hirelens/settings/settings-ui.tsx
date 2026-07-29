@@ -73,7 +73,7 @@ export function DeferredNote({ title, children }: { title: string; children?: Re
     <div className="flex items-start gap-2.5 rounded-hl-md border border-hl-border-subtle bg-hl-subtle p-3">
       <Clock className="mt-0.5 size-4 shrink-0 text-hl-fg-tertiary" aria-hidden />
       <div className="min-w-0">
-        <p className="hl-small font-medium text-hl-fg">{title}</p>
+        <p className="hl-body font-medium text-hl-fg">{title}</p>
         {children ? <p className="hl-caption mt-0.5 text-hl-fg-secondary">{children}</p> : null}
       </div>
     </div>

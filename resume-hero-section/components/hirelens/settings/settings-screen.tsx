@@ -64,7 +64,7 @@ export function SettingsScreen({ section }: { section: string }) {
   if (!session) {
     return (
       <AppShell breadcrumbs={[{ label: 'Settings' }]}>
-        <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-6 py-24 text-center">
+        <div className="mx-auto flex max-w-xl flex-col items-center gap-5 px-6 py-24 text-center">
           <h1 className="hl-display-md">Sign in to continue</h1>
           <Button variant="primary" asChild>
             <Link href="/auth/login">Sign in</Link>
@@ -95,14 +95,14 @@ function AuthedSettings({ section }: { section: string }) {
           <nav aria-label="Settings sections" className="flex flex-col gap-4">
             {GROUPS.map((group) => (
               <div key={group} className="flex flex-col gap-0.5">
-                <p className="hl-caption px-2 pb-1 text-hl-fg-tertiary">{group}</p>
+                <p className="hl-label px-2 pb-1.5 text-hl-fg-tertiary">{group}</p>
                 {SECTIONS.filter((item) => item.group === group).map((item) => (
                   <Link
                     key={item.id}
                     href={`/settings/${item.id}`}
                     aria-current={item.id === active.id ? 'page' : undefined}
                     className={cn(
-                      'hl-small rounded-hl-md px-2 py-1.5 outline-none transition-colors',
+                      'hl-ui rounded-hl-md px-2.5 py-2 outline-none transition-colors',
                       item.id === active.id
                         ? 'bg-hl-accent-subtle text-hl-accent-fg'
                         : 'text-hl-fg-secondary hover:bg-hl-subtle hover:text-hl-fg',
@@ -139,7 +139,7 @@ function AuthedSettings({ section }: { section: string }) {
             </select>
           </div>
 
-          <div className="mx-auto max-w-[800px] px-4 py-6 lg:px-8">{active.render()}</div>
+          <div className="mx-auto max-w-[980px] px-6 py-8 lg:px-10">{active.render()}</div>
         </div>
       </div>
     </AppShell>

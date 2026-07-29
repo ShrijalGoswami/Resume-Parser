@@ -21,7 +21,7 @@ export function RiskRow({ forecast, onAsk }: RiskRowProps) {
       <div className="min-w-0 flex-1">
         <p className="hl-body-medium truncate">{forecast.target || forecast.type}</p>
         {forecast.summary ? (
-          <p className="hl-small truncate text-hl-fg-secondary">{forecast.summary}</p>
+          <p className="hl-body truncate text-hl-fg-secondary">{forecast.summary}</p>
         ) : null}
       </div>
       <ConfidencePill value={forecast.confidence} className="hidden sm:inline-flex" />

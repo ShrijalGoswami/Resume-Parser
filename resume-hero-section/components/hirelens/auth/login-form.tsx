@@ -127,7 +127,7 @@ export function LoginForm() {
     return (
       <div className="flex flex-col gap-4">
         <h1 className="hl-display-md">Check your inbox.</h1>
-        <p className="hl-small text-hl-fg-secondary" role="status">
+        <p className="hl-body text-hl-fg-secondary" role="status">
           If an account exists for {email}, we sent a sign-in link. Open it on this device to
           continue.
         </p>
@@ -146,7 +146,7 @@ export function LoginForm() {
   }
 
   const errorLine = error ? (
-    <p className="hl-small text-[color:var(--hl-danger)]" role="alert">
+    <p className="hl-body text-[color:var(--hl-danger)]" role="alert">
       {error}
     </p>
   ) : null
@@ -156,7 +156,7 @@ export function LoginForm() {
       <h1 className="hl-display-md">Welcome back.</h1>
 
       {linkError ? (
-        <p className="-mt-4 hl-small text-hl-fg-secondary" role="status">
+        <p className="-mt-4 hl-body text-hl-fg-secondary" role="status">
           That link was invalid or has expired. Please sign in below.
         </p>
       ) : null}
@@ -179,14 +179,14 @@ export function LoginForm() {
               Continue
               <ArrowRight />
             </Button>
-            <p className="font-hl-mono text-[11px] text-hl-fg-tertiary">
+            <p className="hl-caption font-hl-mono text-hl-fg-tertiary">
               We&rsquo;ll check if your team uses SSO.
             </p>
           </form>
 
           <div className="flex items-center gap-4" aria-hidden>
             <span className="h-px flex-1 bg-hl-border-subtle" />
-            <span className="font-hl-mono text-[11px] uppercase tracking-widest text-hl-fg-tertiary">
+            <span className="hl-label-sm font-hl-mono text-hl-fg-tertiary">
               or
             </span>
             <span className="h-px flex-1 bg-hl-border-subtle" />
@@ -262,7 +262,7 @@ export function LoginForm() {
       )}
 
       <div className="border-t border-hl-border-subtle pt-6">
-        <p className="hl-small text-hl-fg-secondary">
+        <p className="hl-body text-hl-fg-secondary">
           New to HireLens?{' '}
           <Link href="/auth/signup" className="font-medium text-hl-accent-fg outline-none hover:underline">
             Create an account

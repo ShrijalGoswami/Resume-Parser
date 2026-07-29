@@ -16,7 +16,7 @@ export function ConfidencePanel({ signals }: { signals: RecommendationSignal[] }
     <section className="rounded-hl-xl border border-hl-border p-5">
       <div className="flex items-center justify-between">
         <h3 className="hl-h3 text-hl-fg">Hiring signals</h3>
-        <span className="font-hl-mono text-[10px] uppercase tracking-widest text-hl-fg-tertiary">
+        <span className="hl-label-sm font-hl-mono text-hl-fg-tertiary">
           {signals.length} scored
         </span>
       </div>
@@ -27,7 +27,7 @@ export function ConfidencePanel({ signals }: { signals: RecommendationSignal[] }
             <div key={signal.label} className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
                 <span className="hl-small text-hl-fg">{signal.label}</span>
-                <span className={cn('font-hl-mono text-xs tabular-nums', band.text)}>
+                <span className={cn('hl-mono', band.text)}>
                   {signal.score}
                 </span>
               </div>

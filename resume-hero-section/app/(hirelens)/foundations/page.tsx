@@ -94,7 +94,7 @@ export default function FoundationsPage() {
           <h1 className="hl-display mt-1">Design system foundations</h1>
           <p className="hl-body mt-2 max-w-xl text-hl-fg-secondary">
             A living reference for every P0 primitive, state, and token. Toggle
-            theme and density from the account menu to verify both modes.
+            theme from the account menu to verify both modes.
           </p>
         </header>
 

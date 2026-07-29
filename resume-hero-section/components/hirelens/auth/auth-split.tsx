@@ -18,7 +18,7 @@ export function AuthSplit({ children }: { children: React.ReactNode }) {
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-[380px] py-10">{children}</div>
         </div>
-        <p className="font-hl-mono text-[11px] tracking-wide text-hl-fg-tertiary">
+        <p className="hl-caption font-hl-mono tracking-wide text-hl-fg-tertiary">
           SOC 2 Type II · SSO · your data stays yours.
         </p>
       </div>

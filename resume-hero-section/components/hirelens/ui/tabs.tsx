@@ -42,7 +42,7 @@ export const TabsTrigger = React.forwardRef<
     <TabsPrimitive.Trigger
       ref={ref}
       className={cn(
-        'hl-body-medium inline-flex items-center gap-1.5 whitespace-nowrap text-hl-fg-secondary outline-none transition-[color,background-color,border-color] duration-[var(--hl-dur-fast)] disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4',
+        'hl-ui inline-flex items-center gap-2 whitespace-nowrap text-hl-fg-secondary outline-none transition-[color,background-color,border-color] duration-[var(--hl-dur-fast)] disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4',
         variant === 'segmented'
           ? 'rounded-hl-sm px-3 py-1 data-[state=active]:bg-hl-canvas data-[state=active]:text-hl-accent-fg data-[state=active]:shadow-[var(--hl-shadow-xs)]'
           : 'border-b-2 border-transparent pb-2 data-[state=active]:border-hl-accent data-[state=active]:text-hl-fg',

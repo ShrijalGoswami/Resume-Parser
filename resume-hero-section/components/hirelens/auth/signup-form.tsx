@@ -80,12 +80,12 @@ export function SignupForm() {
     return (
       <div className="flex flex-col gap-4">
         <h1 className="hl-display-md">Check your inbox.</h1>
-        <p className="hl-small text-hl-fg-secondary" role="status">
+        <p className="hl-body text-hl-fg-secondary" role="status">
           We sent a confirmation link to {email}. Open it on this device to finish creating your
           account.
         </p>
         {resent ? (
-          <p className="hl-small text-hl-fg-tertiary" role="status">
+          <p className="hl-body text-hl-fg-tertiary" role="status">
             Sent again. Check your inbox.
           </p>
         ) : (
@@ -98,7 +98,7 @@ export function SignupForm() {
             {resendLoading ? 'Resending…' : 'Resend confirmation link'}
           </button>
         )}
-        <p className="hl-small text-hl-fg-tertiary">
+        <p className="hl-body text-hl-fg-tertiary">
           Already confirmed?{' '}
           <Link href="/auth/login" className="text-hl-accent-fg outline-none hover:underline">
             Sign in
@@ -141,7 +141,7 @@ export function SignupForm() {
           onChange={(event) => setPassword(event.target.value)}
         />
         {error ? (
-          <p className="hl-small text-[color:var(--hl-danger)]" role="alert">
+          <p className="hl-body text-[color:var(--hl-danger)]" role="alert">
             {error}
           </p>
         ) : null}
@@ -149,11 +149,11 @@ export function SignupForm() {
           Create account
           <ArrowRight />
         </Button>
-        <p className="font-hl-mono text-[11px] leading-relaxed text-hl-fg-tertiary">
+        <p className="hl-caption font-hl-mono leading-relaxed text-hl-fg-tertiary">
           By continuing you agree to the Terms &amp; Privacy Policy.
         </p>
       </form>
-      <p className="hl-small text-hl-fg-tertiary">
+      <p className="hl-body text-hl-fg-tertiary">
         Already have an account?{' '}
         <Link href="/auth/login" className="text-hl-accent-fg outline-none hover:underline">
           Sign in

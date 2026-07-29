@@ -181,7 +181,7 @@ export function AddCandidatesDialog({
                 {phaseLabel}
               </div>
             ) : null}
-            {error ? <p className="hl-small text-hl-danger">{error}</p> : null}
+            {error ? <p className="hl-body text-hl-danger">{error}</p> : null}
           </div>
         )}
 

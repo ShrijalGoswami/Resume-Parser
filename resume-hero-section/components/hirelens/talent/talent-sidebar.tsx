@@ -68,7 +68,7 @@ function Row({
 }
 
 function Hint({ text }: { text: string }) {
-  return <p className="hl-caption px-2 py-1 text-hl-fg-tertiary">{text}</p>
+  return <p className="hl-label px-2 py-1.5 text-hl-fg-tertiary">{text}</p>
 }
 
 export interface TalentSidebarProps {

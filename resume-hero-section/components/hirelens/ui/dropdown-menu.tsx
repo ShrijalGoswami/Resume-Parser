@@ -36,7 +36,7 @@ export const DropdownMenuItem = React.forwardRef<
   <DropdownMenuPrimitive.Item
     ref={ref}
     className={cn(
-      'hl-body relative flex cursor-pointer select-none items-center gap-2 rounded-hl-sm px-2 py-1.5 outline-none transition-colors',
+      'hl-ui relative flex cursor-pointer select-none items-center gap-2.5 rounded-hl-sm px-2.5 py-2 outline-none transition-colors',
       'focus:bg-hl-subtle data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:size-4 [&_svg]:text-hl-fg-tertiary',
       inset && 'pl-8',
       className,
@@ -54,7 +54,7 @@ export const DropdownMenuCheckboxItem = React.forwardRef<
     ref={ref}
     checked={checked}
     className={cn(
-      'hl-body relative flex cursor-pointer select-none items-center gap-2 rounded-hl-sm py-1.5 pl-8 pr-2 outline-none transition-colors',
+      'hl-ui relative flex cursor-pointer select-none items-center gap-2.5 rounded-hl-sm py-2 pl-9 pr-2.5 outline-none transition-colors',
       'focus:bg-hl-subtle data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
       className,
     )}
@@ -76,7 +76,7 @@ export const DropdownMenuLabel = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DropdownMenuPrimitive.Label
     ref={ref}
-    className={cn('hl-caption px-2 py-1.5 text-hl-fg-tertiary', className)}
+    className={cn('hl-label px-2 py-1.5 text-hl-fg-tertiary', className)}
     {...props}
   />
 ))
@@ -100,7 +100,7 @@ export function DropdownMenuShortcut({
 }: React.HTMLAttributes<HTMLSpanElement>) {
   return (
     <span
-      className={cn('hl-mono ml-auto text-[11px] text-hl-fg-tertiary', className)}
+      className={cn('hl-label-sm ml-auto font-hl-mono text-hl-fg-tertiary', className)}
       {...props}
     />
   )

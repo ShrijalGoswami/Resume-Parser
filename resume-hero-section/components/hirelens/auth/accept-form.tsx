@@ -55,7 +55,7 @@ export function AcceptInviteForm() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="hl-display-md">You’re invited.</h1>
-      <p className="hl-small text-hl-fg-secondary">
+      <p className="hl-body text-hl-fg-secondary">
         Set your name and a password to join your team on HireLens.
       </p>
       <form onSubmit={onSubmit} className="flex flex-col gap-5">
@@ -89,7 +89,7 @@ export function AcceptInviteForm() {
           onChange={(event) => setConfirm(event.target.value)}
         />
         {error ? (
-          <p className="hl-small text-[color:var(--hl-danger)]" role="alert">
+          <p className="hl-body text-[color:var(--hl-danger)]" role="alert">
             {error}
           </p>
         ) : null}
@@ -97,7 +97,7 @@ export function AcceptInviteForm() {
           Join HireLens
         </Button>
       </form>
-      <p className="hl-small text-hl-fg-tertiary">
+      <p className="hl-body text-hl-fg-tertiary">
         Already have an account?{' '}
         <Link href="/auth/login" className="text-hl-accent-fg outline-none hover:underline">
           Sign in

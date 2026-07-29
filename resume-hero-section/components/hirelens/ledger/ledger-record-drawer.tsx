@@ -17,7 +17,7 @@ import type { Recommendation } from '@/types/agent'
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="font-hl-mono text-[10px] uppercase tracking-widest text-hl-fg-tertiary">
+    <p className="hl-label-sm font-hl-mono text-hl-fg-tertiary">
       {children}
     </p>
   )
@@ -40,7 +40,7 @@ export function LedgerRecordDrawer({
         {rec ? (
           <>
             <DrawerHeader>
-              <span className="font-hl-mono text-[11px] uppercase tracking-wider text-hl-fg-tertiary">
+              <span className="hl-label-sm font-hl-mono text-hl-fg-tertiary">
                 {recordLabel(rec)} · {fmtDate(stamp)} · {fmtTime(stamp)}
               </span>
             </DrawerHeader>
@@ -99,7 +99,7 @@ export function LedgerRecordDrawer({
                 <div className="mt-3 flex flex-col gap-3">
                   {rec.recommended_action ? (
                     <div>
-                      <p className="hl-caption text-hl-fg-tertiary">Recommendation</p>
+                      <p className="hl-label text-hl-fg-tertiary">Recommendation</p>
                       <p className="hl-body-medium text-hl-fg">{rec.recommended_action}</p>
                     </div>
                   ) : null}
@@ -124,7 +124,7 @@ export function LedgerRecordDrawer({
 
               <section className="flex flex-col gap-2">
                 <SectionLabel>Audit trail</SectionLabel>
-                <dl className="flex flex-col gap-1.5 font-hl-mono text-[11px] text-hl-fg-secondary">
+                <dl className="flex flex-col gap-1.5 hl-caption font-hl-mono text-hl-fg-secondary">
                   <div className="flex justify-between gap-4">
                     <dt className="text-hl-fg-tertiary">Recorded</dt>
                     <dd className="tabular-nums">

@@ -4,7 +4,7 @@ import { HireLensProviders } from '@/components/hirelens/shell/providers'
 
 /**
  * HireLens V3 route-group layout. Nested inside the minimal root layout, it owns
- * the entire V3 experience: fonts, theme/density, shared providers, and the
+ * the entire V3 experience: fonts, theme, shared providers, and the
  * `.hl` scope root. The frozen v1.0 app under app/(legacy)/ is unaffected.
  */
 export const metadata: Metadata = {

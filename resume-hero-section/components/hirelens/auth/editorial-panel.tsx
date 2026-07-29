@@ -35,7 +35,7 @@ export function EditorialPanel() {
               <Inbox className="size-[18px]" strokeWidth={1.8} aria-hidden />
               <span className="hl-body-medium">Decision Inbox</span>
             </div>
-            <span className="font-hl-mono text-[11px] text-hl-editorial-muted">8:30 AM EST</span>
+            <span className="hl-caption font-hl-mono text-hl-editorial-muted">8:30 AM EST</span>
           </div>
 
           <p className="hl-body mt-5 text-hl-editorial-fg">Three decisions need you this morning.</p>
@@ -56,9 +56,9 @@ export function EditorialPanel() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-3">
                     <span className="hl-body-medium text-hl-editorial-fg">Start focus run</span>
-                    <span className="font-hl-mono text-[11px] text-hl-score-sharp">FIT 88</span>
+                    <span className="hl-caption font-hl-mono text-hl-score-sharp">FIT 88</span>
                   </div>
-                  <p className="hl-small mt-1 line-clamp-2 text-hl-editorial-muted">
+                  <p className="hl-body mt-1 line-clamp-2 text-hl-editorial-muted">
                     Review top 3 engineering candidates for the Principal role. AI has summarized
                     technical assessments.
                   </p>
@@ -73,9 +73,9 @@ export function EditorialPanel() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-3">
                     <span className="hl-body-medium text-hl-editorial-fg">Sarah Jenkins</span>
-                    <span className="font-hl-mono text-[11px] text-hl-score-legible">FIT 65</span>
+                    <span className="hl-caption font-hl-mono text-hl-score-legible">FIT 65</span>
                   </div>
-                  <p className="hl-small mt-1 text-hl-editorial-muted">
+                  <p className="hl-body mt-1 text-hl-editorial-muted">
                     Pending your approval for final round interview scheduling.
                   </p>
                 </div>

@@ -24,7 +24,7 @@ const INTERVIEW_CRUMBS = [{ label: 'Interviews' }]
 
 function Notice({ title, showSignIn }: { title: string; showSignIn?: boolean }) {
   return (
-    <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-6 py-24 text-center">
+    <div className="mx-auto flex max-w-xl flex-col items-center gap-5 px-6 py-24 text-center">
       <h1 className="hl-display-md">{title}</h1>
       {showSignIn ? (
         <Button variant="primary" asChild>
@@ -152,7 +152,7 @@ function AuthedInterviews({ initial }: { initial?: { role?: string; candidate?: 
 
   return (
     <AppShell breadcrumbs={INTERVIEW_CRUMBS} account={account}>
-      <div className="mx-auto flex w-full max-w-6xl flex-col px-6 pb-16 pt-10">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col px-8 pb-16 pt-10">
         <PageHeader
           title="Interviews"
           description="Prepare a grounded interview from a candidate's own evidence."

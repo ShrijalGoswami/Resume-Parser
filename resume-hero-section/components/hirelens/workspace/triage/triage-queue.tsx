@@ -21,7 +21,7 @@ function ScoreReadout({ score }: { score: number | null }) {
   const band = focusBand(score)
   return (
     <div className="flex items-center gap-2.5">
-      <span className="w-7 text-right font-hl-mono text-sm tabular-nums text-hl-fg">
+      <span className="w-7 text-right hl-body-medium font-hl-mono hl-num text-hl-fg">
         {score ?? '—'}
       </span>
       <span className="hidden h-1.5 w-20 overflow-hidden rounded-full bg-hl-muted sm:block">
@@ -30,7 +30,7 @@ function ScoreReadout({ score }: { score: number | null }) {
           style={{ width: `${Math.max(0, Math.min(100, score ?? 0))}%` }}
         />
       </span>
-      <span className={cn('hidden font-hl-mono text-[10px] uppercase tracking-wider md:inline', band.text)}>
+      <span className={cn('hidden hl-label-sm font-hl-mono md:inline', band.text)}>
         {band.label}
       </span>
     </div>
@@ -80,14 +80,14 @@ function QueueRow({
                 className="group flex items-center gap-1 rounded-hl-sm px-2 py-1 text-hl-fg-secondary outline-none transition-colors hover:bg-hl-muted hover:text-hl-fg"
               >
                 <span className="hl-small">{a.label}</span>
-                <span className="font-hl-mono text-[10px] text-hl-fg-tertiary">({a.key})</span>
+                <span className="hl-caption font-hl-mono text-hl-fg-tertiary">({a.key})</span>
               </button>
             ))}
           </div>
         ) : (
-          <p className="hl-small flex items-center gap-2 truncate text-hl-fg-secondary">
+          <p className="hl-body flex items-center gap-2 truncate text-hl-fg-secondary">
             {uncertain ? (
-              <span className="shrink-0 rounded-hl-sm bg-hl-muted px-1.5 py-0.5 font-hl-mono text-[10px] uppercase tracking-wide text-hl-fg-tertiary">
+              <span className="shrink-0 rounded-hl-sm bg-hl-muted px-1.5 py-0.5 hl-label-sm font-hl-mono text-hl-fg-tertiary">
                 AI unsure
               </span>
             ) : null}
@@ -119,7 +119,7 @@ export function TriageQueue({ rows, focusedIndex, onFocusRow, onAction }: Triage
         className="flex w-full items-center justify-between gap-2 bg-hl-subtle px-4 py-3 outline-none"
         aria-expanded={open}
       >
-        <span className="flex items-center gap-2 font-hl-mono text-[11px] uppercase tracking-widest text-hl-fg">
+        <span className="flex items-center gap-2 hl-label-sm font-hl-mono text-hl-fg">
           <span className="size-1.5 rounded-full bg-hl-accent" aria-hidden />
           Needs you
           <span className="text-hl-fg-tertiary">· {rows.length} remaining</span>

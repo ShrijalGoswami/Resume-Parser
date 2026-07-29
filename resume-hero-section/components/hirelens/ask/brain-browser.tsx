@@ -39,7 +39,7 @@ export function BrainBrowser({ onAskInThread }: { onAskInThread: (query: string)
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="mx-auto flex max-w-[800px] flex-col gap-5 px-4 py-6">
+      <div className="mx-auto flex max-w-[880px] flex-col gap-6 px-6 py-8">
         <PageHeader
           title="Org brain"
           description="Your organization’s hiring memory — accumulated automatically, used by every answer."
@@ -72,7 +72,7 @@ export function BrainBrowser({ onAskInThread }: { onAskInThread: (query: string)
         {hits !== null ? (
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <p className="hl-small text-hl-fg-secondary">
+              <p className="hl-body text-hl-fg-secondary">
                 {hits.length} relevant {hits.length === 1 ? 'memory' : 'memories'} · explainable
                 ranking
               </p>
@@ -166,7 +166,7 @@ function FilterChip({
 function MemoryCard({ memory, why }: { memory: MemoryItem; why?: string[] }) {
   return (
     <div className="rounded-hl-md border border-hl-border-subtle bg-hl-canvas p-3">
-      <p className="hl-small text-hl-fg">{memory.value_text}</p>
+      <p className="hl-body text-hl-fg">{memory.value_text}</p>
       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
         <Badge variant="neutral" className="capitalize">
           {memory.source || 'unknown'}

@@ -64,7 +64,7 @@ export function Toaster() {
                 </ToastPrimitive.Title>
               ) : null}
               {item.description ? (
-                <ToastPrimitive.Description className="hl-small text-hl-fg-secondary">
+                <ToastPrimitive.Description className="hl-body text-hl-fg-secondary">
                   {item.description}
                 </ToastPrimitive.Description>
               ) : null}

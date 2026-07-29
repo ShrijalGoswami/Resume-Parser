@@ -34,7 +34,7 @@ export function ComparePanel({ open, count, result, onRetry, onClose }: CompareP
         <DrawerHeader>
           <div>
             <DrawerTitle>Compare {count} candidates</DrawerTitle>
-            <p className="hl-small text-hl-fg-secondary">
+            <p className="hl-body text-hl-fg-secondary">
               AI side-by-side, grounded in each résumé.
             </p>
           </div>
@@ -45,7 +45,7 @@ export function ComparePanel({ open, count, result, onRetry, onClose }: CompareP
               <span className="hl-prism-border flex size-9 items-center justify-center rounded-full [--hl-prism-fill:var(--hl-ai-surface)]">
                 <Sparkles className="size-4 animate-pulse text-hl-prism-mid" aria-hidden />
               </span>
-              <p className="hl-small text-hl-fg-secondary">Comparing candidates…</p>
+              <p className="hl-body text-hl-fg-secondary">Comparing candidates…</p>
             </div>
           ) : result.isError ? (
             <ErrorState

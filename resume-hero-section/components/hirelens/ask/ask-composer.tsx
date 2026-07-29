@@ -39,7 +39,10 @@ export function AskComposer({
   }
 
   return (
-    <div className="flex items-end gap-2 rounded-hl-lg border border-hl-border bg-hl-canvas p-2 focus-within:border-hl-accent">
+    // The composer is the product's AI surface. It sits on a raised plane and
+    // resolves a prism edge on focus — the gradient appears in response to
+    // intent rather than sitting there as permanent decoration.
+    <div className="hl-prism-focus hl-surface flex items-end gap-2 rounded-hl-lg border border-hl-border p-2 shadow-[var(--hl-shadow-sm)] transition-shadow duration-[var(--hl-dur-base)] ease-[var(--hl-ease-out)] focus-within:shadow-[var(--hl-shadow-md)]">
       <Textarea
         ref={inputRef}
         value={draft}
@@ -49,7 +52,7 @@ export function AskComposer({
         placeholder={placeholder ?? 'Ask anything about your hiring…'}
         aria-label="Ask anything about your hiring"
         aria-keyshortcuts="/"
-        className="min-h-0 resize-none border-0 bg-transparent px-1.5 py-1.5 focus-visible:border-0"
+        className="min-h-0 resize-none border-0 bg-transparent px-2 py-2.5 focus-visible:border-0"
       />
       <Button
         variant="ai"

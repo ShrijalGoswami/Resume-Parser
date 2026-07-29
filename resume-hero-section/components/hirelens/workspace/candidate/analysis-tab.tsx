@@ -13,7 +13,7 @@ function ComponentBars({ components }: { components: ScoreComponent[] }) {
             <div className="h-2 flex-1 overflow-hidden rounded-full bg-hl-muted">
               <div className="h-full rounded-full bg-hl-accent" style={{ width: `${pct}%` }} />
             </div>
-            <span className="hl-mono w-16 text-right text-[13px]">
+            <span className="hl-mono w-16 text-right">
               {Math.round(component.earned)}/{Math.round(component.max)}
             </span>
           </div>
@@ -164,7 +164,7 @@ export function AnalysisTab({ result }: { result: CandidateResult | null }) {
         <Section title="Experience">
           <ExperienceTimeline items={resume.experience} />
           {result.experience_relevance ? (
-            <p className="hl-small mt-2 text-hl-fg-secondary">{result.experience_relevance}</p>
+            <p className="hl-body mt-2 text-hl-fg-secondary">{result.experience_relevance}</p>
           ) : null}
         </Section>
       ) : null}

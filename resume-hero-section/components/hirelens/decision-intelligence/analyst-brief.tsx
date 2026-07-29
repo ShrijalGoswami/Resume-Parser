@@ -36,7 +36,7 @@ function Chips({ items }: { items: string[] }) {
       {items.map((item) => (
         <span
           key={item}
-          className="rounded-hl-sm border border-hl-border bg-hl-canvas px-2 py-0.5 font-hl-mono text-[11px] text-hl-fg-secondary"
+          className="rounded-hl-sm border border-hl-border bg-hl-canvas px-2 py-0.5 hl-caption font-hl-mono text-hl-fg-secondary"
         >
           {item}
         </span>
@@ -64,7 +64,7 @@ export function AnalystBrief({
 
   return (
     <section className="hl-prism-edge rounded-hl-lg border border-hl-ai-border bg-hl-ai-surface p-5">
-      <p className="mb-3 flex items-center gap-1.5 font-hl-mono text-[10px] uppercase tracking-widest text-hl-fg-tertiary">
+      <p className="mb-3 flex items-center gap-1.5 hl-label-sm font-hl-mono text-hl-fg-tertiary">
         <Sparkles className="size-3.5 text-hl-prism-mid" aria-hidden />
         Analyst brief
       </p>

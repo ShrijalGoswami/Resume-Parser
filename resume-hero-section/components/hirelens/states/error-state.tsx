@@ -52,7 +52,7 @@ export function ErrorState({
         <div className="flex-1">
           <p className="hl-body-medium">{title ?? "This didn't load"}</p>
           {description ? (
-            <p className="hl-small text-hl-fg-secondary">{description}</p>
+            <p className="hl-body text-hl-fg-secondary">{description}</p>
           ) : null}
         </div>
         {onRetry ? (

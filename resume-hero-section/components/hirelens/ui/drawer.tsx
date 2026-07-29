@@ -94,7 +94,7 @@ export const DrawerDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn('hl-small text-hl-fg-secondary', className)}
+    className={cn('hl-body text-hl-fg-secondary', className)}
     {...props}
   />
 ))

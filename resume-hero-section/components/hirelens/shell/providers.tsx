@@ -2,7 +2,6 @@
 
 import * as React from 'react'
 import { cn } from '@/lib/utils'
-import { DensityProvider, useDensity } from '../lib/density'
 import { AnnouncerProvider } from '../lib/use-announcer'
 import { TooltipProvider } from '../ui/tooltip'
 import { Toaster } from '../ui/toast'
@@ -11,9 +10,9 @@ import { ApiProvider } from '../lib/api/query-client'
 import { ShellProvider } from './shell-context'
 
 /**
- * The `.hl` scope root. Carries the font variables and reflects the density
- * preference onto `data-hl-density`, which drives the density scale in
- * globals.css. Toaster mounts here so toasts resolve V3 tokens.
+ * The `.hl` scope root. Carries the font variables and the `.hl` scope that
+ * every product token resolves against. Toaster mounts here so toasts resolve
+ * V3 tokens.
  */
 function HireLensRoot({
   fontClassName,
@@ -22,9 +21,8 @@ function HireLensRoot({
   fontClassName: string
   children: React.ReactNode
 }) {
-  const { density } = useDensity()
   return (
-    <div className={cn('hl min-h-dvh', fontClassName)} data-hl-density={density}>
+    <div className={cn('hl min-h-dvh', fontClassName)}>
       {children}
       <Toaster />
     </div>
@@ -49,17 +47,15 @@ export function HireLensProviders({
 }) {
   return (
     <ApiProvider>
-      <DensityProvider>
-        <AnnouncerProvider>
-          <TooltipProvider>
-            <CommandRegistryProvider>
-              <ShellProvider>
-                <HireLensRoot fontClassName={fontClassName}>{children}</HireLensRoot>
-              </ShellProvider>
-            </CommandRegistryProvider>
-          </TooltipProvider>
-        </AnnouncerProvider>
-      </DensityProvider>
+      <AnnouncerProvider>
+        <TooltipProvider>
+          <CommandRegistryProvider>
+            <ShellProvider>
+              <HireLensRoot fontClassName={fontClassName}>{children}</HireLensRoot>
+            </ShellProvider>
+          </CommandRegistryProvider>
+        </TooltipProvider>
+      </AnnouncerProvider>
     </ApiProvider>
   )
 }

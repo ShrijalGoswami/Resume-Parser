@@ -108,9 +108,9 @@ export function AskThread({
   return (
     <div className="flex h-full flex-col">
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-[800px] px-4 py-6">
+        <div className="mx-auto max-w-[880px] px-6 py-8">
           {threadId && messages.isLoading ? (
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-6">
               {[0, 1, 2].map((index) => (
                 <Skeleton key={index} className="h-24" />
               ))}
@@ -124,7 +124,7 @@ export function AskThread({
           ) : !hasConversation ? (
             <LandingHero onPick={send} />
           ) : (
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-6">
               {turns.map((turn, index) => (
                 <Turn
                   key={turn.id}
@@ -154,8 +154,8 @@ export function AskThread({
         </div>
       </div>
 
-      <div className="border-t border-hl-border-subtle bg-hl-canvas p-4">
-        <div className="mx-auto max-w-[800px]">
+      <div className="border-t border-hl-border-subtle bg-hl-canvas p-5">
+        <div className="mx-auto max-w-[880px]">
           <AskComposer
             draft={draft}
             onDraftChange={setDraft}
@@ -165,7 +165,7 @@ export function AskThread({
             placeholder={hasConversation ? 'Ask a follow-up…' : 'Ask anything about your hiring…'}
             inputRef={inputRef}
           />
-          <p className="hl-caption mt-1.5 text-hl-fg-tertiary">
+          <p className="hl-caption mt-2 text-hl-fg-tertiary">
             Enter to send · Shift+Enter for a new line · ⌘↵ new thread
           </p>
         </div>
@@ -192,7 +192,7 @@ function Turn({
       {turn.structured ? (
         <AssistantTurn response={turn.structured} onFollowup={onFollowup} />
       ) : (
-        <div className="hl-prism-edge rounded-r-[var(--hl-radius-lg)] bg-hl-ai-surface p-4">
+        <div className="hl-prism-edge rounded-r-[var(--hl-radius-lg)] bg-hl-ai-surface p-5">
           <p className="hl-body text-hl-fg">{turn.content}</p>
         </div>
       )}
@@ -204,24 +204,28 @@ function Turn({
 function LandingHero({ onPick }: { onPick: (prompt: string) => void }) {
   return (
     <EmptyState
+      className="hl-ai-glow"
       icon={Sparkles}
       title="Ask anything about your hiring"
       description="One place for what you’ve learned, what’s true now, and what happens next."
     >
-      <div className="grid w-full max-w-xl gap-2 sm:grid-cols-2">
+      {/* Suggested prompts are the primary call to action on an empty Ask
+          screen — they are what the user actually clicks, so they get real
+          cards with body-size prompt text, not a grid of captions. */}
+      <div className="grid w-full max-w-3xl gap-3 sm:grid-cols-2">
         {ASK_EXAMPLES.map((example) => (
           <button
             key={example.prompt}
             type="button"
             onClick={() => onPick(example.prompt)}
-            className="flex flex-col gap-1 rounded-hl-md border border-hl-border bg-hl-canvas px-3 py-2 text-left outline-none transition-colors hover:border-hl-border-strong"
+            className="flex flex-col gap-1.5 rounded-hl-lg border border-hl-border bg-hl-canvas px-4 py-3.5 text-left outline-none transition-colors hover:border-hl-border-strong hover:bg-hl-subtle"
           >
-            <span className="hl-caption text-hl-prism-mid">{example.mode}</span>
-            <span className="hl-small text-hl-fg-secondary">{example.prompt}</span>
+            <span className="hl-label text-hl-prism-mid">{example.mode}</span>
+            <span className="hl-body text-hl-fg">{example.prompt}</span>
           </button>
         ))}
       </div>
-      <p className="hl-small text-hl-fg-tertiary">
+      <p className="hl-body text-hl-fg-tertiary">
         The more you use HireLens, the smarter this gets.
       </p>
     </EmptyState>

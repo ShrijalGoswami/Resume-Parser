@@ -94,7 +94,7 @@ export function ScenarioSimulator({
         </div>
 
         <div>
-          <p className="hl-caption mb-1.5 text-hl-fg-tertiary">Levers</p>
+          <p className="hl-label mb-2 text-hl-fg-tertiary">Levers</p>
           <div className="grid gap-2 sm:grid-cols-2">
             {Object.entries(scenarios).map(([lever, description]) => (
               <label key={lever} className="flex items-center gap-2">
@@ -159,14 +159,14 @@ function SimulationResult({ result }: { result: SimResult }) {
 
       <div className="grid gap-2 sm:grid-cols-2">
         <div className="rounded-hl-md border border-hl-border-subtle bg-hl-canvas p-3">
-          <p className="hl-caption text-hl-fg-tertiary">Baseline</p>
+          <p className="hl-label text-hl-fg-tertiary">Baseline</p>
           <p className="hl-h2">{formatForecastValue(result.baseline)}</p>
-          <p className="hl-small text-hl-fg-secondary">{result.baseline.summary}</p>
+          <p className="hl-body text-hl-fg-secondary">{result.baseline.summary}</p>
         </div>
         <div className="rounded-hl-md border border-hl-border bg-hl-ai-surface p-3">
-          <p className="hl-caption text-hl-fg-tertiary">With scenario</p>
+          <p className="hl-label text-hl-fg-tertiary">With scenario</p>
           <p className="hl-h2">{formatForecastValue(result.scenario)}</p>
-          <p className="hl-small text-hl-fg-secondary">{result.scenario.summary}</p>
+          <p className="hl-body text-hl-fg-secondary">{result.scenario.summary}</p>
         </div>
       </div>
 

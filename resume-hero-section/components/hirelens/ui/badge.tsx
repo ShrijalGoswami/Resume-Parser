@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
  * rely on color alone. Score badges are handled by ScoreMeter, not here.
  */
 const badgeVariants = cva(
-  'hl-caption inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 [&_svg]:size-3',
+  'hl-badge inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 [&_svg]:size-3',
   {
     variants: {
       variant: {

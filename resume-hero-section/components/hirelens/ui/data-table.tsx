@@ -94,7 +94,11 @@ export interface DataTableProps<T> {
   className?: string
 }
 
-const CELL_X = 'px-3'
+/* Cell rhythm. Row *height* is the `h-hl-row` token, so cells only own the
+   horizontal gutter; `py-2` is the floor
+   that keeps a two-line cell from touching its neighbours. 44px with 14px text
+   is the band Linear, Attio and the Stripe Dashboard all sit in. */
+const CELL_X = 'px-4'
 
 function compare(a: string | number, b: string | number): number {
   if (typeof a === 'number' && typeof b === 'number') return a - b
@@ -218,16 +222,16 @@ export function DataTable<T>({
   return (
     <div
       className={cn(
-        'overflow-hidden rounded-hl-lg border border-hl-border bg-hl-canvas',
+        'hl-surface overflow-hidden rounded-hl-lg border border-hl-border',
         className,
       )}
     >
       {showToolbar ? (
-        <div className="flex flex-wrap items-center gap-2 border-b border-hl-border-subtle p-2">
+        <div className="flex flex-wrap items-center gap-2.5 border-b border-hl-border-subtle p-2.5">
           {searchable ? (
-            <div className="relative min-w-[10rem] max-w-xs flex-1">
+            <div className="relative min-w-[14rem] max-w-sm flex-1">
               <Search
-                className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-hl-fg-tertiary"
+                className="pointer-events-none absolute left-3 top-1/2 size-hl-icon-sm -translate-y-1/2 text-hl-fg-tertiary"
                 aria-hidden
               />
               <Input
@@ -239,7 +243,7 @@ export function DataTable<T>({
                 }}
                 placeholder={searchPlaceholder}
                 aria-label={searchPlaceholder}
-                className="pl-8"
+                className="pl-10"
               />
             </div>
           ) : null}
@@ -264,11 +268,16 @@ export function DataTable<T>({
         </div>
       ) : rows.length === 0 ? (
         (empty ?? (
-          <p className="hl-body px-3 py-12 text-center text-hl-fg-tertiary">Nothing here yet.</p>
+          // An empty state is the one place the product has the reader's whole
+          // attention — `hl-body-lg` so it reads as a considered message
+          // rather than as a caption apologising for itself.
+          <p className="hl-body-lg px-4 py-14 text-center text-hl-fg-secondary">
+            Nothing here yet.
+          </p>
         ))
       ) : sorted.length === 0 ? (
-        <div className="px-3 py-12 text-center">
-          <p className="hl-body text-hl-fg-secondary">
+        <div className="px-4 py-14 text-center">
+          <p className="hl-body-lg text-hl-fg-secondary">
             No results{query ? ` for “${query}”` : ''}.
           </p>
           {query ? (
@@ -301,7 +310,7 @@ export function DataTable<T>({
                       checked={allVisibleSelected}
                       onChange={toggleAllVisible}
                       aria-label="Select all rows on this page"
-                      className="size-3.5 accent-[var(--hl-accent-solid)]"
+                      className="size-hl-icon-sm accent-[var(--hl-accent-solid)]"
                     />
                   </th>
                 ) : null}
@@ -316,7 +325,11 @@ export function DataTable<T>({
                         isSorted ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined
                       }
                       className={cn(
-                        'hl-caption py-2 font-medium whitespace-nowrap text-hl-fg-tertiary',
+                        // `hl-label`: 12px/560/uppercase with tracking. A table
+                        // header has to read as a different *kind* of thing
+                        // from the data under it — casing and tracking do that
+                        // at a smaller size than weight alone could.
+                        'hl-label py-2.5 whitespace-nowrap text-hl-fg-tertiary',
                         CELL_X,
                         column.align === 'right' && 'text-right',
                         column.className,
@@ -373,7 +386,9 @@ export function DataTable<T>({
                     aria-label={clickable ? getRowLabel?.(row) : undefined}
                     data-selected={isSelected || undefined}
                     className={cn(
-                      'hl-small border-b border-hl-border-subtle transition-colors last:border-b-0',
+                      // Rows carry the dense step (14px) at a token row height —
+                      // one step under body, which is where Linear/Attio/Stripe sit.
+                      'hl-small hl-row-hover h-hl-row border-b border-hl-border-subtle last:border-b-0',
                       isSelected ? 'bg-hl-accent-subtle' : 'hover:bg-hl-subtle',
                       clickable && 'cursor-pointer outline-none',
                     )}
@@ -388,7 +403,7 @@ export function DataTable<T>({
                           checked={isSelected}
                           onChange={() => toggleRow(id)}
                           aria-label={getRowLabel ? `Select ${getRowLabel(row)}` : `Select row ${id}`}
-                          className="size-3.5 accent-[var(--hl-accent-solid)]"
+                          className="size-hl-icon-sm accent-[var(--hl-accent-solid)]"
                         />
                       </td>
                     ) : null}
@@ -398,7 +413,10 @@ export function DataTable<T>({
                         className={cn(
                           'py-2 align-middle',
                           CELL_X,
-                          column.align === 'right' && 'text-right',
+                          // Right-aligned columns are numeric by convention;
+                          // tabular figures stop the column from shimmying as
+                          // values change.
+                          column.align === 'right' && 'hl-num text-right',
                           column.className,
                         )}
                       >

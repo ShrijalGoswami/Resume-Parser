@@ -5,7 +5,7 @@ import { Input } from '../ui/input'
 import type { SearchFilters } from '@/types/search'
 
 const selectClass =
-  'hl-small h-8 rounded-hl-md border border-hl-border bg-hl-canvas px-2 text-hl-fg outline-none focus-visible:border-hl-accent'
+  'hl-ui h-hl-control-md rounded-hl-md border border-hl-border bg-hl-canvas px-2.5 text-hl-fg outline-none focus-visible:border-hl-accent'
 
 /**
  * Location commits on blur / Enter (not per-keystroke) so a text edit doesn't
@@ -25,7 +25,7 @@ function LocationInput({ initial, onCommit }: { initial: string; onCommit: (valu
       }}
       placeholder="Location"
       aria-label="Location"
-      className="h-8 w-36"
+      className="w-40"
     />
   )
 }

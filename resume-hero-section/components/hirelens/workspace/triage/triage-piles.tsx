@@ -39,7 +39,7 @@ function Pile({
         </span>
         <span className="hl-small text-hl-fg-secondary">{basis}</span>
         {near > 0 ? (
-          <span className="flex items-center gap-1 rounded-hl-sm bg-hl-score-soft/10 px-1.5 py-0.5 font-hl-mono text-[10px] uppercase tracking-wide text-hl-score-soft">
+          <span className="flex items-center gap-1 rounded-hl-sm bg-hl-score-soft/10 px-1.5 py-0.5 hl-label-sm font-hl-mono text-hl-score-soft">
             <TriangleAlert className="size-3" aria-hidden />
             {near} near the line
           </span>

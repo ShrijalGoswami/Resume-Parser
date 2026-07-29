@@ -13,10 +13,9 @@ import {
   DropdownMenuSeparator,
 } from '../ui/dropdown-menu'
 import { ThemeToggle } from '../theme/theme-toggle'
-import { DensityToggle } from '../theme/density-toggle'
 
 /**
- * Account menu (Design Bible §5.6). Identity, theme + density controls, settings,
+ * Account menu (Design Bible §5.6). Identity, theme control, settings,
  * sign out. Name/email render when provided (wired to the auth source later).
  */
 export interface AccountMenuProps {
@@ -68,10 +67,6 @@ export function AccountMenu({
         <div className="flex items-center justify-between px-2 py-1.5">
           <span className="hl-small text-hl-fg-secondary">Theme</span>
           <ThemeToggle />
-        </div>
-        <div className="flex items-center justify-between px-2 py-1.5">
-          <span className="hl-small text-hl-fg-secondary">Density</span>
-          <DensityToggle />
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>

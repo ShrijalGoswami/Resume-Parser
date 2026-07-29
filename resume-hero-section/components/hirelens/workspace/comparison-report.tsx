@@ -34,7 +34,7 @@ export function ComparisonReport({ report }: { report: CandidateComparisonReport
         <p className="hl-body-medium">Best fit: {summary.best_candidate_name}</p>
         {summary.summary ? <p className="mt-1 text-hl-fg-secondary">{summary.summary}</p> : null}
         {summary.runner_up_name ? (
-          <p className="hl-small mt-1 text-hl-fg-tertiary">Runner-up: {summary.runner_up_name}</p>
+          <p className="hl-body mt-1 text-hl-fg-tertiary">Runner-up: {summary.runner_up_name}</p>
         ) : null}
       </AIAnswer>
 

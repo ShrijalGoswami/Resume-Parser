@@ -15,7 +15,7 @@ export const Default: Story = {
         <CardDescription>Resting surface with a hairline border.</CardDescription>
       </CardHeader>
       <CardContent>
-        <p className="hl-small text-hl-fg-secondary">Content region.</p>
+        <p className="hl-body text-hl-fg-secondary">Content region.</p>
       </CardContent>
     </Card>
   ),

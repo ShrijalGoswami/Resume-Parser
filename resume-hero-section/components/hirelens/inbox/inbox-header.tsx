@@ -4,6 +4,8 @@ import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Plus, Upload, Search } from 'lucide-react'
+import { PERMS, hasPerm } from '../settings/permissions'
+import { useOrgContext } from '../lib/api/settings'
 import { Button } from '../ui/button'
 
 function greeting(): string {
@@ -27,6 +29,9 @@ function todayLabel(): string {
  * to the existing Talent discovery surface; it does not build its own index.
  */
 export function InboxHeader({ name, org }: { name?: string; org?: string }) {
+  const ctx = useOrgContext()
+  const canManage = hasPerm(ctx.data?.permissions, PERMS.CAMPAIGN_MANAGE)
+  const canUpload = hasPerm(ctx.data?.permissions, PERMS.CANDIDATE_MANAGE)
   const router = useRouter()
   const [query, setQuery] = React.useState('')
 
@@ -49,22 +54,29 @@ export function InboxHeader({ name, org }: { name?: string; org?: string }) {
             {greeting()}
             {first ? `, ${first}` : ''}
           </h1>
-          <p className="hl-small text-hl-fg-tertiary">
+          <p className="hl-body text-hl-fg-tertiary">
             {org ? `${org} · ` : ''}
             {todayLabel()}
           </p>
         </div>
+        {/* Both actions are permission-gated. The server enforces the same
+            two permissions independently — hiding them here only spares the
+            user a button that would answer 403. */}
         <div className="flex items-center gap-2">
-          <Button variant="primary" asChild>
-            <Link href="/roles?new=1">
-              <Plus aria-hidden /> New role
-            </Link>
-          </Button>
-          <Button variant="secondary" asChild>
-            <Link href="/roles">
-              <Upload aria-hidden /> Upload candidates
-            </Link>
-          </Button>
+          {canManage ? (
+            <Button variant="primary" asChild>
+              <Link href="/roles?new=1">
+                <Plus aria-hidden /> New role
+              </Link>
+            </Button>
+          ) : null}
+          {canUpload ? (
+            <Button variant="secondary" asChild>
+              <Link href="/roles">
+                <Upload aria-hidden /> Upload candidates
+              </Link>
+            </Button>
+          ) : null}
         </div>
       </div>
 

@@ -54,16 +54,16 @@ function SampleRow({
       <Avatar name={row.name} size={32} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="font-hl-mono text-[10px] uppercase tracking-widest text-hl-fg-tertiary">
+          <span className="hl-label-sm font-hl-mono text-hl-fg-tertiary">
             {label}
           </span>
-          <span className={cn('font-hl-mono text-xs tabular-nums', band.text)}>
+          <span className={cn('hl-mono', band.text)}>
             {row.overallScore ?? '—'}
           </span>
         </div>
         <p className="hl-body-medium mt-0.5 truncate text-hl-fg">{row.name}</p>
         {row.summary || row.recommendationText ? (
-          <p className="hl-small mt-0.5 line-clamp-2 text-hl-fg-secondary">
+          <p className="hl-body mt-0.5 line-clamp-2 text-hl-fg-secondary">
             {row.summary || row.recommendationText}
           </p>
         ) : null}
@@ -167,16 +167,16 @@ export function BulkConfirmDrawer({
           <section className="hl-prism-edge rounded-hl-lg border border-hl-ai-border bg-hl-ai-surface p-4">
             <div className="flex flex-col gap-3">
               <div>
-                <p className="font-hl-mono text-[10px] uppercase tracking-widest text-hl-fg-tertiary">
+                <p className="hl-label-sm font-hl-mono text-hl-fg-tertiary">
                   Shared basis
                 </p>
-                <p className="hl-small mt-1 text-hl-fg-secondary">{basis}</p>
+                <p className="hl-body mt-1 text-hl-fg-secondary">{basis}</p>
               </div>
               <div>
-                <p className="font-hl-mono text-[10px] uppercase tracking-widest text-hl-fg-tertiary">
+                <p className="hl-label-sm font-hl-mono text-hl-fg-tertiary">
                   Guardrails
                 </p>
-                <p className="hl-small mt-1 text-hl-fg-secondary">
+                <p className="hl-body mt-1 text-hl-fg-secondary">
                   None on the wrong side of the fit line · {edgeCases.length} near the line, pulled
                   out below for your read.
                 </p>
@@ -207,7 +207,7 @@ export function BulkConfirmDrawer({
             <section className="flex flex-col gap-3">
               <h3 className="hl-h3 flex items-center gap-2 text-hl-fg">
                 Held for your read
-                <span className="font-hl-mono text-xs tabular-nums text-hl-fg-tertiary">
+                <span className="hl-mono text-hl-fg-tertiary">
                   {edgeCases.filter((r) => held.has(r.id)).length} of {rows.length}
                 </span>
               </h3>
@@ -223,12 +223,12 @@ export function BulkConfirmDrawer({
                       <div className="min-w-0 flex-1">
                         <p className="hl-body-medium truncate text-hl-fg">
                           {row.name}{' '}
-                          <span className={cn('font-hl-mono text-xs tabular-nums', band.text)}>
+                          <span className={cn('hl-mono', band.text)}>
                             fit {row.overallScore ?? '—'}
                           </span>
                         </p>
                         {row.summary ? (
-                          <p className="hl-small mt-0.5 line-clamp-1 text-hl-fg-secondary">
+                          <p className="hl-body mt-0.5 line-clamp-1 text-hl-fg-secondary">
                             {row.summary}
                           </p>
                         ) : null}
@@ -263,7 +263,7 @@ export function BulkConfirmDrawer({
           ) : null}
 
           {/* Truthful impact */}
-          <section className="flex items-center gap-2 border-t border-hl-border-subtle pt-4 font-hl-mono text-[11px] text-hl-fg-tertiary">
+          <section className="flex items-center gap-2 border-t border-hl-border-subtle pt-4 hl-caption font-hl-mono text-hl-fg-tertiary">
             <Sparkles className="size-3.5 text-hl-prism-mid" aria-hidden />
             <span className="tabular-nums">
               {includedCount} → {targetLabel}

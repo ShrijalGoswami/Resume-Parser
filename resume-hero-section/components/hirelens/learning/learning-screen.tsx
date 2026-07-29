@@ -12,7 +12,7 @@ const LEARNING_CRUMBS = [{ label: 'Learning' }]
 
 function Notice({ title, showSignIn }: { title: string; showSignIn?: boolean }) {
   return (
-    <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-6 py-24 text-center">
+    <div className="mx-auto flex max-w-xl flex-col items-center gap-5 px-6 py-24 text-center">
       <h1 className="hl-display-md">{title}</h1>
       {showSignIn ? (
         <Button variant="primary" asChild>
@@ -73,7 +73,7 @@ function DeferredLearning() {
         >
           <GraduationCap className="size-6" strokeWidth={1.6} />
         </span>
-        <p className="font-hl-mono text-[11px] uppercase tracking-widest text-hl-fg-tertiary">
+        <p className="hl-label-sm font-hl-mono text-hl-fg-tertiary">
           Learning · A future release
         </p>
         <h1 className="hl-display-md text-hl-fg">Calibrated to your outcomes — once they exist.</h1>
@@ -81,7 +81,7 @@ function DeferredLearning() {
           Learning will show what HireLens calibrates from your team&rsquo;s real hiring outcomes —
           quality-of-hire, ranking accuracy, and where the model adapts to your decisions.
         </p>
-        <p className="hl-small max-w-lg text-hl-fg-tertiary">
+        <p className="hl-body max-w-lg text-hl-fg-tertiary">
           It depends on organizational hiring outcomes and post-decision feedback, which
           aren&rsquo;t captured yet. When that platform capability lands, this surface becomes
           available — and nothing here is estimated until it does.

@@ -7,7 +7,7 @@ const CHANGE_EVENT = 'hl-persisted-state-change'
 /**
  * localStorage-backed state via useSyncExternalStore — SSR-safe (server renders
  * the fallback, no hydration mismatch) and synced across tabs. Used for
- * persisted UI preferences (density, nav collapse).
+ * persisted UI preferences (nav collapse).
  */
 export function usePersistedState<T extends string>(
   key: string,
