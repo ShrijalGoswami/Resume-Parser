@@ -61,6 +61,14 @@ export default function MarketingLayout({
     <div
       className={`mkt ${newsreader.variable} ${inter.variable} ${publicSans.variable} ${jetbrainsMono.variable}`}
     >
+      {/* The scroll-reveal styles start at `opacity: 0` and are cleared by
+          JavaScript. Without this, a visitor with scripting disabled — or any
+          visit where the bundle fails to execute — gets a blank page rather
+          than an unanimated one. The page's content must never be contingent
+          on JS running. See the safety contract in components/marketing/motion.tsx. */}
+      <noscript>
+        <style>{`.mkt-reveal,.mkt-resolve{opacity:1!important;transform:none!important}.mkt-meter-fill{transform:scaleX(1)!important}`}</style>
+      </noscript>
       {children}
     </div>
   )

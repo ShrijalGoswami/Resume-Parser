@@ -26,7 +26,7 @@ export function MarketingFooter() {
           >
             HireLens
           </Link>
-          <p className="font-mkt-body text-xs tracking-wide text-mkt-fg-secondary">
+          <p className="mkt-body-sm tracking-wide text-mkt-fg-secondary">
             © 2024 HireLens Inc. Precision in Recruitment.
           </p>
         </div>
@@ -39,7 +39,7 @@ export function MarketingFooter() {
               // tall — well under the 24px WCAG 2.5.8 minimum and awkward to tap
               // on a phone. The negative margin keeps the footer's visual rhythm
               // identical while the touch target grows to 28px.
-              className="-my-1.5 py-1.5 font-mkt-body text-xs tracking-wide text-mkt-fg-tertiary transition-colors hover:text-mkt-fg"
+              className="-my-1.5 py-1.5 mkt-body-sm tracking-wide text-mkt-fg-tertiary transition-colors hover:text-mkt-fg"
             >
               {link.label}
             </a>

@@ -1,3 +1,7 @@
+'use client'
+
+import { Reveal } from './motion'
+
 /**
  * Frame 4 — `hirelens_marketing_the_regret_climax_frame_4`.
  *
@@ -9,7 +13,46 @@
  * ink (#0B0D0D) rather than frame 2's #121414.
  */
 
-const TRUST_MARKS = ['SOC 2 Type II', 'SSO / SAML', 'Audit trail', 'Data residency']
+/** Trust marks, each with the thing it actually guarantees. A bare row of
+ *  badges asks for faith; the second line is what makes it a claim. */
+const TRUST_MARKS = [
+  { mark: 'SOC 2 Type II', detail: 'Audited annually, report on request' },
+  { mark: 'SSO / SAML', detail: 'Okta, Entra, Google Workspace' },
+  { mark: 'Audit trail', detail: 'Every decision, immutable, exportable' },
+  { mark: 'Data residency', detail: 'US, EU, or your own region' },
+]
+
+/** The two candidates, compared on the dimensions that decide the role rather
+ *  than on a single composite score. The divergence column is the point: it
+ *  names where the two genuinely differ, which is where regret lives. */
+const COMPARISON = [
+  { dimension: 'Domain depth', sarah: 91, marcus: 64, favours: 'Sarah' },
+  { dimension: 'Systems scale', sarah: 68, marcus: 93, favours: 'Marcus' },
+  { dimension: 'Team leadership', sarah: 74, marcus: 86, favours: 'Marcus' },
+  { dimension: 'GTM motion', sarah: 88, marcus: 41, favours: 'Sarah' },
+]
+
+/** The symmetrical question, asked in both directions. */
+const REGRET_BOTH_WAYS = [
+  {
+    choice: 'If you pick Marcus',
+    cost: 'Slower time-to-market in Q3 — nobody left who has run early-stage GTM.',
+    tone: 'text-mkt-focus-soft',
+  },
+  {
+    choice: 'If you pick Sarah',
+    cost: 'Re-architecture slips a quarter — the scale experience is not in the room.',
+    tone: 'text-mkt-focus-legible',
+  },
+]
+
+/** Micro-proofs for the three tenets — each row gets the product detail that
+ *  makes its claim checkable rather than a heading and a sentence alone. */
+const TENET_PROOF = [
+  '17 spans cited on this candidate',
+  '52 Soft — shown, not rounded up',
+  'Reversible · logged · attributable',
+]
 
 export function Frame04Regret() {
   return (
@@ -21,7 +64,7 @@ export function Frame04Regret() {
         <div className="mkt-aurora" />
 
         <div className="relative z-10 mx-auto max-w-[1280px]">
-          <div className="mx-auto mb-24 max-w-4xl text-center">
+          <Reveal className="mx-auto mb-16 max-w-4xl text-center">
             <h2 className="mb-8 font-mkt-display text-4xl leading-tight font-light tracking-tight text-white md:text-6xl md:leading-none lg:text-7xl">
               Every tool tells you who&rsquo;s strongest.
               <br />
@@ -30,75 +73,106 @@ export function Frame04Regret() {
             <p className="font-mkt-display text-xl italic text-mkt-fg-tertiary">
               The question no other tool asks.
             </p>
-          </div>
+          </Reveal>
 
           {/* Product frame */}
-          <div className="mx-auto flex max-w-5xl flex-col overflow-hidden rounded-mkt-xl border border-mkt-border bg-mkt-canvas text-mkt-fg shadow-sm">
-            <div className="mkt-prism-border-top h-0 w-full" />
+          <Reveal delay={100}>
+            <div className="mx-auto flex max-w-5xl flex-col overflow-hidden rounded-mkt-xl border border-mkt-border bg-mkt-canvas text-mkt-fg shadow-[0_24px_60px_rgba(0,0,0,0.35)]">
+              <div className="mkt-prism-border-top h-0 w-full" />
 
-            <div className="flex items-center justify-between border-b border-mkt-border-subtle bg-mkt-subtle/50 px-8 py-6">
-              <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-mkt-fg-secondary">
-                  compare_arrows
-                </span>
-                <h3 className="text-sm font-medium tracking-wide">
-                  Regret Analysis: Sarah vs Marcus
-                </h3>
-              </div>
-              <span className="material-symbols-outlined text-sm text-mkt-fg-tertiary">
-                more_horiz
-              </span>
-            </div>
-
-            <div className="flex flex-col gap-8 p-8 md:flex-row">
-              {/* Strengths alignment */}
-              <div className="flex-1 space-y-6">
-                <div>
-                  <h4 className="mb-3 font-mkt-label text-xs uppercase tracking-wider text-mkt-fg-secondary">
-                    Strengths Alignment
-                  </h4>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between rounded-[0.375rem] border border-mkt-border-subtle bg-mkt-muted/30 p-3">
-                      <span className="text-sm font-medium">Sarah</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mkt-mono text-xs text-mkt-focus-sharp">
-                          82 Sharp
-                        </span>
-                        <div className="h-1 w-16 overflow-hidden rounded-full bg-mkt-border-subtle">
-                          <div className="h-full w-[82%] bg-mkt-focus-sharp" />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between rounded-[0.375rem] border border-mkt-border-subtle bg-mkt-muted/30 p-3">
-                      <span className="text-sm font-medium">Marcus</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mkt-mono text-xs text-mkt-focus-high">
-                          88 Focus
-                        </span>
-                        <div className="h-1 w-16 overflow-hidden rounded-full bg-mkt-border-subtle">
-                          <div className="h-full w-[88%] bg-mkt-focus-high" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+              <div className="flex items-center justify-between border-b border-mkt-border-subtle bg-mkt-subtle/50 px-6 py-5 md:px-8">
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-mkt-fg-secondary">
+                    compare_arrows
+                  </span>
+                  <h3 className="text-base font-medium tracking-wide">
+                    Regret Analysis: Sarah vs Marcus
+                  </h3>
                 </div>
+                <span className="mkt-data text-mkt-fg-tertiary">
+                  Role 884-A · 28 evidence spans
+                </span>
               </div>
 
-              <div className="hidden w-px bg-mkt-border-subtle md:block" />
+              <div className="flex flex-col gap-8 p-6 md:flex-row md:p-8">
+                {/* Strengths alignment — read across the row, not down a
+                    column: each dimension shows both candidates against each
+                    other, and which way it leans. */}
+                <div className="flex-1 space-y-4">
+                  <div className="flex items-baseline justify-between">
+                    <h4 className="mkt-label text-mkt-fg-secondary">
+                      Strengths Alignment
+                    </h4>
+                    <span className="mkt-data text-mkt-fg-tertiary">
+                      Sarah 82 Sharp · Marcus 88 Focus
+                    </span>
+                  </div>
 
-              {/* Opportunity cost */}
-              <div className="flex-1 space-y-6">
-                <div>
-                  <h4 className="mb-3 font-mkt-label text-xs uppercase tracking-wider text-mkt-fg-secondary">
+                  <ul className="space-y-3">
+                    {COMPARISON.map((row, i) => (
+                      <li key={row.dimension}>
+                        <div className="mb-1.5 flex items-baseline justify-between mkt-data">
+                          <span className="text-mkt-fg-secondary">
+                            {row.dimension}
+                          </span>
+                          <span
+                            className={
+                              row.favours === 'Sarah'
+                                ? 'text-mkt-focus-sharp'
+                                : 'text-mkt-focus-high'
+                            }
+                          >
+                            {row.favours} +{Math.abs(row.sarah - row.marcus)}
+                          </span>
+                        </div>
+
+                        {/* Two stacked hairline meters: the gap between them
+                            is the divergence, visible without arithmetic. */}
+                        <div className="space-y-1">
+                          {(
+                            [
+                              ['Sarah', row.sarah, 'bg-mkt-focus-sharp'],
+                              ['Marcus', row.marcus, 'bg-mkt-focus-high'],
+                            ] as const
+                          ).map(([who, score, tone], j) => (
+                            <div key={who} className="flex items-center gap-2">
+                              <span className="w-12 shrink-0 mkt-data text-mkt-fg-tertiary">
+                                {who}
+                              </span>
+                              <span className="h-1 flex-1 overflow-hidden rounded-full bg-mkt-border-subtle">
+                                <span
+                                  className={`mkt-meter-fill block h-full rounded-full ${tone}`}
+                                  style={{
+                                    width: `${score}%`,
+                                    ['--mkt-reveal-delay' as string]: `${i * 120 + j * 60}ms`,
+                                  }}
+                                />
+                              </span>
+                              <span className="w-6 shrink-0 text-right mkt-data text-mkt-fg">
+                                {score}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="hidden w-px bg-mkt-border-subtle md:block" />
+
+                {/* Opportunity cost */}
+                <div className="flex-1 space-y-4">
+                  <h4 className="mkt-label text-mkt-fg-secondary">
                     Opportunity Cost
                   </h4>
                   <div className="mkt-prism-border-left rounded-r-[0.375rem] bg-mkt-ai-bg p-4">
-                    <p className="mb-3 text-sm leading-relaxed text-mkt-fg-secondary">
+                    <p className="mb-3 mkt-body-sm text-mkt-fg-secondary">
                       Selecting Marcus sacrifices Sarah&rsquo;s deep domain
                       expertise in early-stage GTM motion. The cost is slower
                       time-to-market in Q3.
                     </p>
-                    <div className="flex items-center gap-2 text-xs text-mkt-fg-tertiary">
+                    <div className="flex items-center gap-2 mkt-body-sm text-mkt-fg-tertiary">
                       <span className="material-symbols-outlined text-[16px]">
                         info
                       </span>
@@ -108,10 +182,39 @@ export function Frame04Regret() {
                       </span>
                     </div>
                   </div>
+
+                  {/* The question asked symmetrically. Regret only means
+                      something if it is priced in both directions. */}
+                  <ul className="space-y-2">
+                    {REGRET_BOTH_WAYS.map((option) => (
+                      <li
+                        key={option.choice}
+                        className="rounded-[0.375rem] border border-mkt-border-subtle bg-mkt-muted/30 p-3"
+                      >
+                        <span
+                          className={`mkt-label ${option.tone}`}
+                        >
+                          {option.choice}
+                        </span>
+                        <p className="mt-1 mkt-body-sm leading-relaxed text-mkt-fg-secondary">
+                          {option.cost}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
+
+              {/* Audit strip — the decision does not end at the memo. */}
+              <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-mkt-border-subtle bg-mkt-subtle/40 px-6 py-3 mkt-data text-mkt-fg-tertiary md:px-8">
+                <span className="inline-flex items-center gap-2">
+                  <span className="mkt-live-dot h-1 w-1 rounded-full bg-mkt-success" />
+                  Comparison written to the ledger · 14:02 · K. Osei
+                </span>
+                <span>Reversible for 30 days · exportable · attributable</span>
+              </div>
             </div>
-          </div>
+          </Reveal>
         </div>
       </section>
 
@@ -120,18 +223,18 @@ export function Frame04Regret() {
       {/* ---------------------------------------------------------------- */}
       <section className="border-b border-mkt-border-subtle bg-mkt-canvas px-4 py-32">
         <div className="mx-auto max-w-[1280px]">
-          <div className="mx-auto mb-20 max-w-3xl text-center">
+          <Reveal className="mx-auto mb-16 max-w-3xl text-center">
             <h2 className="font-mkt-display text-4xl leading-tight font-light text-mkt-fg md:text-5xl md:leading-none">
               Not a chatbot bolted onto an ATS.
               <br />
               Intelligence built into the decision.
             </h2>
-          </div>
+          </Reveal>
 
           <div className="mx-auto flex max-w-4xl flex-col">
             {/* Tenet 1 — the prism mark */}
-            <div className="flex flex-col items-start gap-6 border-t border-mkt-border-subtle py-8 md:flex-row md:items-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-mkt-lg border border-mkt-border bg-mkt-canvas shadow-sm">
+            <Reveal className="group flex flex-col items-start gap-6 border-t border-mkt-border-subtle py-7 md:flex-row md:items-center">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-mkt-lg border border-mkt-border bg-mkt-canvas shadow-sm transition-shadow duration-300 group-hover:shadow-md">
                 <span className="material-symbols-outlined mkt-prism-text">
                   auto_awesome
                 </span>
@@ -144,11 +247,18 @@ export function Frame04Regret() {
                   Every claim opens to its source. No hallucinated summaries.
                 </p>
               </div>
-            </div>
+              {/* The proof, in the product's own notation. */}
+              <span className="shrink-0 rounded-[0.25rem] border border-mkt-border-subtle bg-mkt-subtle px-2.5 py-1 mkt-data text-mkt-fg-tertiary">
+                {TENET_PROOF[0]}
+              </span>
+            </Reveal>
 
             {/* Tenet 2 — the source chip */}
-            <div className="flex flex-col items-start gap-6 border-t border-mkt-border-subtle py-8 md:flex-row md:items-center">
-              <div className="mkt-prism-border-left flex items-center gap-2 rounded-[0.375rem] bg-mkt-ai-bg px-3 py-1.5 text-xs font-medium text-mkt-fg-secondary">
+            <Reveal
+              delay={80}
+              className="group flex flex-col items-start gap-6 border-t border-mkt-border-subtle py-7 md:flex-row md:items-center"
+            >
+              <div className="mkt-prism-border-left flex shrink-0 items-center gap-2 rounded-[0.375rem] bg-mkt-ai-bg px-3 py-2 mkt-body-sm font-medium text-mkt-fg-secondary">
                 Source
                 <span className="material-symbols-outlined text-[14px]">
                   arrow_outward
@@ -163,11 +273,20 @@ export function Frame04Regret() {
                   certainty.
                 </p>
               </div>
-            </div>
+              <span className="flex shrink-0 items-center gap-2 rounded-[0.25rem] border border-mkt-border-subtle bg-mkt-subtle px-2.5 py-1 mkt-data text-mkt-focus-soft">
+                <span className="h-1 w-10 overflow-hidden rounded-full bg-mkt-border">
+                  <span className="mkt-meter-fill block h-full w-[52%] rounded-full bg-mkt-focus-soft" />
+                </span>
+                {TENET_PROOF[1]}
+              </span>
+            </Reveal>
 
             {/* Tenet 3 — the bare hairline */}
-            <div className="flex flex-col items-start gap-6 border-t border-mkt-border-subtle py-8 md:flex-row md:items-center">
-              <div className="mkt-prism-hairline h-px w-12" />
+            <Reveal
+              delay={160}
+              className="group flex flex-col items-start gap-6 border-t border-b border-mkt-border-subtle py-7 md:flex-row md:items-center"
+            >
+              <div className="mkt-prism-hairline h-px w-12 shrink-0" />
               <div className="flex-1">
                 <h3 className="mb-1 text-lg font-medium text-mkt-fg">
                   You decide, always
@@ -177,7 +296,16 @@ export function Frame04Regret() {
                   reversible and logged.
                 </p>
               </div>
-            </div>
+              <span className="flex shrink-0 items-center gap-1.5 rounded-[0.25rem] border border-mkt-border-subtle bg-mkt-subtle px-2.5 py-1 mkt-data text-mkt-fg-tertiary">
+                <span
+                  className="material-symbols-outlined text-[13px] text-mkt-success"
+                  aria-hidden="true"
+                >
+                  history
+                </span>
+                {TENET_PROOF[2]}
+              </span>
+            </Reveal>
           </div>
         </div>
       </section>
@@ -187,20 +315,28 @@ export function Frame04Regret() {
       {/* ---------------------------------------------------------------- */}
       <section id="security" className="bg-mkt-canvas px-4 py-24">
         <div className="mx-auto max-w-[1280px] text-center">
-          <h2 className="mb-12 font-mkt-display text-2xl text-mkt-fg-secondary md:text-3xl">
-            Built for teams that can&rsquo;t afford to be wrong — or to leak.
-          </h2>
-          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 font-mkt-label text-sm uppercase tracking-widest text-mkt-fg-tertiary">
-            {TRUST_MARKS.map((mark, i) => (
-              <span key={mark} className="contents">
-                {i > 0 && (
-                  <span className="h-1 w-1 rounded-full bg-mkt-border-strong" />
-                )}
-                <span>{mark}</span>
-              </span>
+          <Reveal>
+            <h2 className="mb-12 font-mkt-display text-2xl text-mkt-fg-secondary md:text-3xl">
+              Built for teams that can&rsquo;t afford to be wrong — or to leak.
+            </h2>
+          </Reveal>
+
+          {/* Each mark carries what it actually guarantees, so the strip is a
+              set of commitments rather than a row of badges. */}
+          <dl className="mx-auto grid max-w-4xl grid-cols-2 gap-px overflow-hidden rounded-mkt-lg border border-mkt-border-subtle bg-mkt-border-subtle md:grid-cols-4">
+            {TRUST_MARKS.map((item, i) => (
+              <Reveal key={item.mark} delay={i * 70} className="bg-mkt-canvas p-5 text-left">
+                <dt className="font-mkt-label text-base font-medium text-mkt-fg">
+                  {item.mark}
+                </dt>
+                <dd className="mt-1.5 mkt-data leading-relaxed text-mkt-fg-tertiary">
+                  {item.detail}
+                </dd>
+              </Reveal>
             ))}
-          </div>
-          <div className="mt-8 flex items-center justify-center gap-2 font-mkt-mono text-xs text-mkt-fg-tertiary">
+          </dl>
+
+          <div className="mt-8 flex items-center justify-center gap-2 mkt-data text-mkt-fg-tertiary">
             <span className="h-px w-4 bg-mkt-border-strong" />
             Your data trains only your own calibration.
             <span className="h-px w-4 bg-mkt-border-strong" />
