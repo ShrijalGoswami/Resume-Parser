@@ -29,6 +29,7 @@ from app.core.config import settings
 from app.schemas.batch import RankingWeights, BatchAnalysisResponse
 from app.services.upload_utils import save_upload_to_temp
 from app.services.batch_service import process_batch
+from app.enterprise.deps import RequireAiUse
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -45,7 +46,7 @@ def _parse_weights(raw: str | None) -> RankingWeights:
         return RankingWeights()
 
 
-@router.post("/batch-analysis", status_code=status.HTTP_200_OK, response_model=BatchAnalysisResponse)
+@router.post("/batch-analysis", status_code=status.HTTP_200_OK, response_model=BatchAnalysisResponse, dependencies=[RequireAiUse])
 async def batch_analysis(
     job_description: str = Form(...),
     files: list[UploadFile] = File(...),

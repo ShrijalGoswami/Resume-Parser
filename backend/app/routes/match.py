@@ -22,12 +22,13 @@ from app.services.resume_service import ResumeService
 from app.services.upload_utils import save_upload_to_temp
 from app.parser.exceptions import ParserError
 from app.llm.match_analyzer import analyze_match
+from app.enterprise.deps import RequireAiUse
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/match-analysis", status_code=status.HTTP_200_OK)
+@router.post("/match-analysis", status_code=status.HTTP_200_OK, dependencies=[RequireAiUse])
 async def match_analysis(
     job_description: str = Form(...),
     file: UploadFile = File(...),

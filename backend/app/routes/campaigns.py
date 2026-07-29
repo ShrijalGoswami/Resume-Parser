@@ -25,7 +25,16 @@ from app.core.deps import (
     NoteRepoDep,
     StorageDep,
 )
-from app.enterprise.deps import OrgIdDep, feature_gate
+from app.enterprise.deps import (
+    OrgIdDep,
+    RequireAiUse,
+    RequireCampaignDelete,
+    RequireCampaignManage,
+    RequireCampaignView,
+    RequireCandidateManage,
+    RequireCandidateView,
+    feature_gate,
+)
 from app.services.storage_service import object_key
 from app.services.upload_utils import validate_resume_upload, _verify_magic_bytes
 from app.schemas.batch import BatchAnalysisResponse
@@ -52,7 +61,7 @@ router = APIRouter(prefix="/campaigns", tags=["Campaigns"])
 
 
 # ── Campaign CRUD ────────────────────────────────────────────────────────────
-@router.post("", response_model=Campaign, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=Campaign, status_code=status.HTTP_201_CREATED, dependencies=[RequireCampaignManage])
 async def create_campaign(
     payload: CampaignCreate, repo: CampaignRepoDep, activity: ActivityRepoDep
 ):
@@ -64,7 +73,7 @@ async def create_campaign(
     return campaign
 
 
-@router.get("", response_model=list[Campaign])
+@router.get("", response_model=list[Campaign], dependencies=[RequireCampaignView])
 async def list_campaigns(
     repo: CampaignRepoDep,
     status_filter: Optional[str] = Query(default=None, alias="status"),
@@ -82,7 +91,7 @@ async def list_campaigns(
     return campaigns
 
 
-@router.get("/{campaign_id}", response_model=Campaign)
+@router.get("/{campaign_id}", response_model=Campaign, dependencies=[RequireCampaignView])
 async def get_campaign(campaign_id: str, repo: CampaignRepoDep):
     campaign = repo.get(campaign_id)
     stats = repo.stats_for_recruiter().get(campaign_id, {})
@@ -94,7 +103,7 @@ async def get_campaign(campaign_id: str, repo: CampaignRepoDep):
     return campaign
 
 
-@router.patch("/{campaign_id}", response_model=Campaign)
+@router.patch("/{campaign_id}", response_model=Campaign, dependencies=[RequireCampaignManage])
 async def update_campaign(
     campaign_id: str, payload: CampaignUpdate, repo: CampaignRepoDep, activity: ActivityRepoDep
 ):
@@ -106,7 +115,7 @@ async def update_campaign(
     return campaign
 
 
-@router.delete("/{campaign_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{campaign_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[RequireCampaignDelete])
 async def delete_campaign(campaign_id: str, repo: CampaignRepoDep, storage: StorageDep):
     """Permanently delete a campaign, its candidates, and their stored résumés.
 
@@ -125,13 +134,13 @@ async def delete_campaign(campaign_id: str, repo: CampaignRepoDep, storage: Stor
 
 
 # ── Candidates within a campaign ─────────────────────────────────────────────
-@router.get("/{campaign_id}/candidates", response_model=list[Candidate])
+@router.get("/{campaign_id}/candidates", response_model=list[Candidate], dependencies=[RequireCandidateView])
 async def list_candidates(campaign_id: str, repo: CandidateRepoDep):
     # Two queries total (candidates + latest-analysis view) — no N+1.
     return repo.list_for_campaign_with_analysis(campaign_id)
 
 
-@router.post("/{campaign_id}/candidates/bulk-delete")
+@router.post("/{campaign_id}/candidates/bulk-delete", dependencies=[RequireCandidateManage])
 async def bulk_delete_candidates(
     campaign_id: str,
     payload: BulkCandidateIds,
@@ -160,14 +169,14 @@ async def bulk_delete_candidates(
     return {"deleted": deleted}
 
 
-@router.get("/{campaign_id}/candidates/{candidate_id}", response_model=Candidate)
+@router.get("/{campaign_id}/candidates/{candidate_id}", response_model=Candidate, dependencies=[RequireCandidateView])
 async def get_candidate(campaign_id: str, candidate_id: str, repo: CandidateRepoDep):
     candidate = repo.get(candidate_id)
     candidate.latest_analysis = repo.latest_analysis(candidate_id)
     return candidate
 
 
-@router.patch("/{campaign_id}/candidates/{candidate_id}/stage", response_model=Candidate)
+@router.patch("/{campaign_id}/candidates/{candidate_id}/stage", response_model=Candidate, dependencies=[RequireCandidateManage])
 async def update_candidate_stage(
     campaign_id: str,
     candidate_id: str,
@@ -188,8 +197,7 @@ async def update_candidate_stage(
 # ── Notes ────────────────────────────────────────────────────────────────────
 @router.post(
     "/{campaign_id}/candidates/{candidate_id}/notes",
-    response_model=RecruiterNote, status_code=status.HTTP_201_CREATED,
-)
+    response_model=RecruiterNote, status_code=status.HTTP_201_CREATED, dependencies=[RequireCandidateManage])
 async def create_note(
     campaign_id: str, candidate_id: str, payload: NoteCreate,
     repo: NoteRepoDep, activity: ActivityRepoDep,
@@ -204,21 +212,19 @@ async def create_note(
 
 @router.get(
     "/{campaign_id}/candidates/{candidate_id}/notes",
-    response_model=list[RecruiterNote],
-)
+    response_model=list[RecruiterNote], dependencies=[RequireCandidateView])
 async def list_notes(campaign_id: str, candidate_id: str, repo: NoteRepoDep):
     return repo.list_for_candidate(candidate_id)
 
 
 @router.delete(
     "/{campaign_id}/candidates/{candidate_id}/notes/{note_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-)
+    status_code=status.HTTP_204_NO_CONTENT, dependencies=[RequireCandidateManage])
 async def delete_note(campaign_id: str, candidate_id: str, note_id: str, repo: NoteRepoDep):
     repo.delete(note_id)
 
 
-@router.get("/{campaign_id}/candidates/{candidate_id}/activity")
+@router.get("/{campaign_id}/candidates/{candidate_id}/activity", dependencies=[RequireCandidateView])
 async def candidate_activity(
     campaign_id: str,
     candidate_id: str,
@@ -232,8 +238,7 @@ async def candidate_activity(
 # ── Persistence: store a completed batch analysis ────────────────────────────
 @router.post(
     "/{campaign_id}/persist-batch",
-    response_model=list[Candidate], status_code=status.HTTP_201_CREATED,
-)
+    response_model=list[Candidate], status_code=status.HTTP_201_CREATED, dependencies=[RequireCandidateManage])
 async def persist_batch(
     campaign_id: str,
     batch: BatchAnalysisResponse,
@@ -258,7 +263,7 @@ _CONTENT_TYPES = {
 }
 
 
-@router.post("/{campaign_id}/candidates/{candidate_id}/resume", response_model=Candidate)
+@router.post("/{campaign_id}/candidates/{candidate_id}/resume", response_model=Candidate, dependencies=[RequireCandidateManage])
 async def upload_candidate_resume(
     campaign_id: str,
     candidate_id: str,
@@ -289,7 +294,7 @@ async def upload_candidate_resume(
     return candidate
 
 
-@router.get("/{campaign_id}/candidates/{candidate_id}/resume-url")
+@router.get("/{campaign_id}/candidates/{candidate_id}/resume-url", dependencies=[RequireCandidateView])
 async def get_resume_signed_url(
     campaign_id: str, candidate_id: str, candidates: CandidateRepoDep, storage: StorageDep
 ):
@@ -302,7 +307,7 @@ async def get_resume_signed_url(
 
 
 # ── Activity timeline ────────────────────────────────────────────────────────
-@router.get("/{campaign_id}/activity")
+@router.get("/{campaign_id}/activity", dependencies=[RequireCampaignView])
 async def campaign_activity(
     campaign_id: str, activity: ActivityRepoDep, limit: int = Query(default=50, le=200)
 ):
@@ -315,7 +320,7 @@ async def campaign_activity(
 @router.post(
     "/{campaign_id}/compare",
     response_model=CandidateComparisonReport,
-    dependencies=[Depends(feature_gate("candidate_comparison", action="comparison.generated"))],
+    dependencies=[RequireAiUse, Depends(feature_gate("candidate_comparison", action="comparison.generated"))],
 )
 async def compare_candidates(
     campaign_id: str,
@@ -349,7 +354,7 @@ async def compare_candidates(
 
 
 # ── Semantic search: (re)build candidate embeddings for a campaign ───────────
-@router.post("/{campaign_id}/embeddings/reindex")
+@router.post("/{campaign_id}/embeddings/reindex", dependencies=[RequireAiUse])
 async def reindex_campaign_embeddings(
     campaign_id: str,
     candidate_repo: CandidateRepoDep,
@@ -371,7 +376,7 @@ async def reindex_campaign_embeddings(
 @router.post(
     "/{campaign_id}/candidates/{candidate_id}/interview",
     response_model=InterviewPack,
-    dependencies=[Depends(feature_gate("interview_intelligence", action="interview.generated"))],
+    dependencies=[RequireAiUse, Depends(feature_gate("interview_intelligence", action="interview.generated"))],
 )
 async def generate_interview(
     campaign_id: str,

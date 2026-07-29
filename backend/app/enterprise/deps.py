@@ -74,6 +74,29 @@ def feature_gate(feature: str, *, action: str) -> Callable[..., OrgContext]:
     return _dep
 
 
+# ── Ready-made permission gates ──────────────────────────────────────────────
+# Applied through a route decorator's `dependencies=[...]`, which enforces the
+# permission without touching the handler's signature or body. Prefer these to
+# re-deriving `Depends(require_permission(...))` per call site, so the product
+# permissions actually in use stay greppable from one place.
+#
+# Added 28 Jul 2026 after an RBAC audit: the policy engine was correct but only
+# wired to the org-administration surface. 19 of 103 endpoints enforced a
+# permission, and the entire product surface — campaigns, candidates, notes,
+# AI, analytics, export, prediction, search — accepted any authenticated caller
+# regardless of role. Roles were observable only in Settings, which is exactly
+# why they looked cosmetic.
+RequireCampaignView = Depends(require_permission(Permission.CAMPAIGN_VIEW))
+RequireCampaignManage = Depends(require_permission(Permission.CAMPAIGN_MANAGE))
+RequireCampaignDelete = Depends(require_permission(Permission.CAMPAIGN_DELETE))
+RequireCandidateView = Depends(require_permission(Permission.CANDIDATE_VIEW))
+RequireCandidateManage = Depends(require_permission(Permission.CANDIDATE_MANAGE))
+RequireAiUse = Depends(require_permission(Permission.AI_USE))
+RequireAgentManage = Depends(require_permission(Permission.AGENT_MANAGE))
+RequireUsageView = Depends(require_permission(Permission.USAGE_VIEW))
+RequireExport = Depends(require_permission(Permission.EXPORT))
+
+
 # Repo dependencies (org-scoped; used after authorization).
 def get_org_repo(ctx: OrgContextDep) -> OrgRepository:
     return OrgRepository(ctx.organization_id)

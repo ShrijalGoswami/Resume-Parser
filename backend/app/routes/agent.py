@@ -50,6 +50,7 @@ from app.enterprise.deps import OrgContextDep, feature_gate
 from app.integrations import IntegrationEvent
 from app.services.integration_service import safe_emit_event
 from app.knowledge.service import safe_ingest as knowledge_ingest
+from app.enterprise.deps import RequireAgentManage, RequireCandidateView
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/agent", tags=["Agent"])
@@ -61,7 +62,7 @@ router = APIRouter(prefix="/agent", tags=["Agent"])
     status_code=status.HTTP_200_OK,
     # Running the agent IS the gated capability: it costs LLM calls and writes new
     # recommendations. This is where the plan boundary belongs.
-    dependencies=[Depends(feature_gate("autonomous_agent", action="agent.scan"))],
+    dependencies=[RequireAgentManage, Depends(feature_gate("autonomous_agent", action="agent.scan"))],
 )
 async def scan(
     payload: AgentScanRequest,
@@ -82,12 +83,12 @@ async def scan(
     )
 
 
-@router.get("/recommendations", response_model=list[Recommendation])
+@router.get("/recommendations", response_model=list[Recommendation], dependencies=[RequireCandidateView])
 async def recommendations(agent_repo: AgentRepoDep, status: str | None = None):
     return await run_in_threadpool(list_recommendations, agent_repo=agent_repo, status=status)
 
 
-@router.patch("/recommendations/{rec_id}", response_model=Recommendation)
+@router.patch("/recommendations/{rec_id}", response_model=Recommendation, dependencies=[RequireAgentManage])
 async def update_recommendation(rec_id: str, payload: RecommendationUpdate, agent_repo: AgentRepoDep, ctx: OrgContextDep):
     rec = await run_in_threadpool(
         update_recommendation_status, agent_repo=agent_repo, rec_id=rec_id, status=payload.status.value,
@@ -108,7 +109,7 @@ async def update_recommendation(rec_id: str, payload: RecommendationUpdate, agen
 
 @router.get(
     "/workflows",
-    dependencies=[Depends(feature_gate("autonomous_agent", action="agent.accessed"))],
+    dependencies=[RequireCandidateView, Depends(feature_gate("autonomous_agent", action="agent.accessed"))],
 )
 async def workflows(_: AgentRepoDep):
     """The agent's registered workflows and tools (metadata; no secrets)."""

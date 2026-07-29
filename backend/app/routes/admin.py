@@ -23,7 +23,7 @@ from app.ai.utils.errors import AIConfigError
 from app.core.config import settings
 from app.core.deps import RecruiterDep
 from app.enterprise.context import OrgContext
-from app.enterprise.deps import require_permission
+from app.enterprise.deps import require_permission, RequireUsageView
 from app.enterprise.rbac import Permission
 from app.enterprise.repositories import AuditRepository
 from fastapi import Depends
@@ -42,9 +42,16 @@ async def get_ai_config(_: RecruiterDep):
     return config_snapshot()
 
 
-@router.get("/usage")
+@router.get("/usage", dependencies=[RequireUsageView])
 async def get_ai_usage(_: RecruiterDep):
-    """Usage, estimated cost, retries, fallbacks, and cache stats."""
+    """Usage, estimated cost, retries, fallbacks, and cache stats.
+
+    `usage.view`, matching `/org/usage`. This is organization spend; it was
+    readable by every authenticated member — including `viewer` — while the
+    equivalent counters in Settings denied a recruiter. Same data, same gate
+    (confirmed 29 Jul). `/config` and `/health` stay authenticated-only: they
+    carry provider names, capability flags and health counters, no spend.
+    """
     return usage_tracker.snapshot()
 
 

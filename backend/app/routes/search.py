@@ -16,12 +16,13 @@ from fastapi.concurrency import run_in_threadpool
 from app.core.deps import CandidateRepoDep, EmbeddingRepoDep
 from app.schemas.search import SimilarSearchRequest, TalentSearchRequest, TalentSearchResponse
 from app.services.talent_search import search_similar, search_talent
+from app.enterprise.deps import RequireCandidateView
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/search", tags=["Search"])
 
 
-@router.post("/talent", response_model=TalentSearchResponse, status_code=status.HTTP_200_OK)
+@router.post("/talent", response_model=TalentSearchResponse, status_code=status.HTTP_200_OK, dependencies=[RequireCandidateView])
 async def talent_search(
     payload: TalentSearchRequest,
     candidate_repo: CandidateRepoDep,
@@ -38,7 +39,7 @@ async def talent_search(
     )
 
 
-@router.post("/similar", response_model=TalentSearchResponse)
+@router.post("/similar", response_model=TalentSearchResponse, dependencies=[RequireCandidateView])
 async def similar_search(
     payload: SimilarSearchRequest,
     candidate_repo: CandidateRepoDep,

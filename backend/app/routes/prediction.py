@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field
 from app.core.deps import ActivityRepoDep, AnalyticsRepoDep, CampaignRepoDep
 from app.enterprise.deps import OrgContextDep
 from app.services import prediction_service as svc
+from app.enterprise.deps import RequireAiUse
 
 router = APIRouter(prefix="/prediction", tags=["Prediction"])
 
@@ -36,22 +37,22 @@ def _repos(analytics_repo, campaign_repo, activity_repo) -> dict:
     return {"analytics_repo": analytics_repo, "campaign_repo": campaign_repo, "activity_repo": activity_repo}
 
 
-@router.get("/types")
+@router.get("/types", dependencies=[RequireAiUse])
 async def types(_: OrgContextDep):
     return {"forecast_types": svc.forecast_types(), "scenarios": svc.scenarios()}
 
 
-@router.get("/twin")
+@router.get("/twin", dependencies=[RequireAiUse])
 async def twin(ctx: OrgContextDep, analytics_repo: AnalyticsRepoDep, campaign_repo: CampaignRepoDep, activity_repo: ActivityRepoDep):
     return await run_in_threadpool(svc.twin_summary, ctx.organization_id, **_repos(analytics_repo, campaign_repo, activity_repo))
 
 
-@router.get("/forecasts")
+@router.get("/forecasts", dependencies=[RequireAiUse])
 async def forecasts(ctx: OrgContextDep, analytics_repo: AnalyticsRepoDep, campaign_repo: CampaignRepoDep, activity_repo: ActivityRepoDep):
     return await run_in_threadpool(svc.dashboard, ctx.organization_id, **_repos(analytics_repo, campaign_repo, activity_repo))
 
 
-@router.post("/forecast")
+@router.post("/forecast", dependencies=[RequireAiUse])
 async def forecast(payload: ForecastRequest, ctx: OrgContextDep, analytics_repo: AnalyticsRepoDep, campaign_repo: CampaignRepoDep, activity_repo: ActivityRepoDep):
     if payload.forecast_type not in svc.forecast_types():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Unknown forecast '{payload.forecast_type}'.")
@@ -60,7 +61,7 @@ async def forecast(payload: ForecastRequest, ctx: OrgContextDep, analytics_repo:
         record=True, **_repos(analytics_repo, campaign_repo, activity_repo), **payload.params)
 
 
-@router.post("/simulate")
+@router.post("/simulate", dependencies=[RequireAiUse])
 async def simulate(payload: SimulateRequest, ctx: OrgContextDep, analytics_repo: AnalyticsRepoDep, campaign_repo: CampaignRepoDep, activity_repo: ActivityRepoDep):
     if payload.forecast_type not in svc.forecast_types():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Unknown forecast '{payload.forecast_type}'.")
@@ -69,6 +70,6 @@ async def simulate(payload: SimulateRequest, ctx: OrgContextDep, analytics_repo:
         **_repos(analytics_repo, campaign_repo, activity_repo), **payload.params)
 
 
-@router.get("/history")
+@router.get("/history", dependencies=[RequireAiUse])
 async def history(ctx: OrgContextDep):
     return await run_in_threadpool(svc.history, ctx.organization_id)

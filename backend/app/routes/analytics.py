@@ -10,11 +10,12 @@ from __future__ import annotations
 from fastapi import APIRouter, Query
 
 from app.core.deps import AnalyticsRepoDep
+from app.enterprise.deps import RequireUsageView
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
 
-@router.get("/overview")
+@router.get("/overview", dependencies=[RequireUsageView])
 async def analytics_overview(
     repo: AnalyticsRepoDep,
     threshold: int = Query(default=80, ge=0, le=100, description="High-quality match-score threshold"),

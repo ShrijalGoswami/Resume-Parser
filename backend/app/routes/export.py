@@ -20,6 +20,7 @@ from pydantic import BaseModel, Field
 
 from app.schemas.analysis import AnalysisResponse
 from app.services.report_generator import generate_report, generate_match_report
+from app.enterprise.deps import RequireExport
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -52,7 +53,7 @@ def _sanitize_filename(name: str) -> str:
     return safe or "Candidate"
 
 
-@router.post("/export-report", status_code=status.HTTP_200_OK)
+@router.post("/export-report", status_code=status.HTTP_200_OK, dependencies=[RequireExport])
 def export_report(payload: ExportReportRequest):
     """
     Generate a PDF report from the provided analysis data.
@@ -93,7 +94,7 @@ class ExportMatchReportRequest(BaseModel):
     resume_data: ResumeDataPayload = Field(default_factory=ResumeDataPayload)
 
 
-@router.post("/export-match-report", status_code=status.HTTP_200_OK)
+@router.post("/export-match-report", status_code=status.HTTP_200_OK, dependencies=[RequireExport])
 def export_match_report(payload: ExportMatchReportRequest):
     """
     Generate a PDF recruiter match report from the provided match analysis data.

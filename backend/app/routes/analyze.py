@@ -25,12 +25,13 @@ from app.services.resume_service import ResumeService
 from app.services.upload_utils import save_upload_to_temp
 from app.parser.exceptions import ParserError
 from app.llm.analyzer import analyze_resume
+from app.enterprise.deps import RequireAiUse
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/ats-analysis", status_code=status.HTTP_200_OK)
+@router.post("/ats-analysis", status_code=status.HTTP_200_OK, dependencies=[RequireAiUse])
 async def ats_analysis(file: UploadFile = File(...)):
     """
     Stateless ATS analysis pipeline:

@@ -58,6 +58,7 @@ from app.services.copilot_prediction import safe_try_prediction
 from app.services.copilot_report import safe_try_report
 from app.services.copilot_resolver import deterministic_fallback, resolve_context
 from app.services.copilot_search import safe_try_search
+from app.enterprise.deps import RequireAiUse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/copilot", tags=["Copilot"])
@@ -66,7 +67,7 @@ _MAX_MESSAGE_CHARS = 4000
 
 
 # ── Stateless (legacy) ──────────────────────────────────────────────────────
-@router.post("/chat", response_model=CopilotResponse, status_code=status.HTTP_200_OK)
+@router.post("/chat", response_model=CopilotResponse, status_code=status.HTTP_200_OK, dependencies=[RequireAiUse])
 async def copilot_chat(request: CopilotRequest):
     if not request.message or not request.message.strip():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Message cannot be empty.")
@@ -74,7 +75,7 @@ async def copilot_chat(request: CopilotRequest):
     return await run_in_threadpool(answer_question, request)
 
 
-@router.get("/suggestions", response_model=SuggestionsResponse)
+@router.get("/suggestions", response_model=SuggestionsResponse, dependencies=[RequireAiUse])
 async def copilot_suggestions():
     return SuggestionsResponse(
         groups=[SuggestionGroup(category=g["category"], questions=g["questions"]) for g in SUGGESTION_GROUPS]
@@ -104,7 +105,7 @@ def _auto_title(message: str) -> str:
     return (title[:80] + "…") if len(title) > 80 else (title or "New conversation")
 
 
-@router.post("/conversations", response_model=CopilotConversation, status_code=status.HTTP_201_CREATED)
+@router.post("/conversations", response_model=CopilotConversation, status_code=status.HTTP_201_CREATED, dependencies=[RequireAiUse])
 async def create_conversation(payload: ConversationCreateRequest, conv_repo: ConversationRepoDep):
     ctx = payload.context
     return conv_repo.create(
@@ -115,12 +116,12 @@ async def create_conversation(payload: ConversationCreateRequest, conv_repo: Con
     )
 
 
-@router.get("/conversations", response_model=list[CopilotConversation])
+@router.get("/conversations", response_model=list[CopilotConversation], dependencies=[RequireAiUse])
 async def list_conversations(conv_repo: ConversationRepoDep):
     return conv_repo.list_for_recruiter()
 
 
-@router.patch("/conversations/{conversation_id}", response_model=CopilotConversation)
+@router.patch("/conversations/{conversation_id}", response_model=CopilotConversation, dependencies=[RequireAiUse])
 async def rename_conversation(
     conversation_id: str, payload: ConversationRenameRequest, conv_repo: ConversationRepoDep
 ):
@@ -128,19 +129,19 @@ async def rename_conversation(
     return conv_repo.rename(conversation_id, payload.title)
 
 
-@router.delete("/conversations/{conversation_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/conversations/{conversation_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[RequireAiUse])
 async def delete_conversation(conversation_id: str, conv_repo: ConversationRepoDep):
     conv_repo.get(conversation_id)  # 404 if not owned
     conv_repo.delete(conversation_id)
 
 
-@router.get("/conversations/{conversation_id}/messages", response_model=list[ConversationMessagePublic])
+@router.get("/conversations/{conversation_id}/messages", response_model=list[ConversationMessagePublic], dependencies=[RequireAiUse])
 async def list_conversation_messages(conversation_id: str, conv_repo: ConversationRepoDep):
     conv_repo.get(conversation_id)  # 404 if not owned
     return [_to_public(m) for m in conv_repo.list_messages(conversation_id)]
 
 
-@router.post("/conversations/{conversation_id}/messages", response_model=PostMessageResponse)
+@router.post("/conversations/{conversation_id}/messages", response_model=PostMessageResponse, dependencies=[RequireAiUse])
 async def post_conversation_message(
     conversation_id: str,
     payload: PostMessageRequest,
