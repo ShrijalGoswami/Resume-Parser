@@ -484,7 +484,14 @@ or ignore that path.
   `.only(`, `pdb.set_trace`, `FIXME`/`XXX`/`HACK`.
 - **No stray `TODO`s.** Everything provisional is written down here instead.
 - **No build junk tracked** — no `__pycache__`, `.pyc`, `.next/`, `node_modules`,
-  `.log`, `.tmp`.
+  `.log`, `.tmp`. Corrected during the commit pass: `tsconfig.tsbuildinfo` *was*
+  tracked (a TypeScript incremental-build cache that changes on every build).
+  It is now untracked and gitignored.
+- **`next-env.d.ts` churns by design.** Next rewrites its import between
+  `./.next/dev/types/routes.d.ts` and `./.next/types/routes.d.ts` depending on
+  whether you last ran `next dev` or `next build`. It is conventionally
+  committed, so expect it to show as modified after switching between the two —
+  that is not a real change.
 - **7 untracked files, all intentional:** `docs/HANDOFF.md`,
   `docs/security/PERMISSION_MATRIX.md`,
   `components/marketing/compression-engine.tsx`, `components/marketing/motion.tsx`,
