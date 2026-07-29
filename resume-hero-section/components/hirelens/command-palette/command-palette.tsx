@@ -7,6 +7,9 @@ import { Search, Sparkles, CornerDownLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useShell } from '../shell/shell-context'
 import { primaryNav, settingsNav } from '../shell/nav-config'
+import { useCan, PERMS } from '../lib/use-can'
+import { useOrgContext } from '../lib/api/org-context'
+import { hasPerm } from '../settings/permissions'
 import { Kbd } from '../ui/kbd'
 import { useCommandRegistry, type CommandItem, type CommandGroup } from './command-registry'
 
@@ -39,16 +42,24 @@ export function CommandPalette() {
   const [query, setQuery] = React.useState('')
   const [activeIndex, setActiveIndex] = React.useState(0)
 
+  // The palette is a second door onto the same rail, so it honours the same
+  // `perm` field — otherwise hiding Ask from the rail would just move it to ⌘K.
+  const ctx = useOrgContext()
+  const permissions = ctx.data?.permissions
+  const canAsk = useCan(PERMS.AI_USE)
+
   const navItems = React.useMemo<CommandItem[]>(
     () =>
-      [...primaryNav, settingsNav].map((nav) => ({
-        id: `nav:${nav.href}`,
-        group: 'navigate' as const,
-        label: nav.label,
-        icon: nav.icon,
-        perform: () => router.push(nav.href),
-      })),
-    [router],
+      [...primaryNav, settingsNav]
+        .filter((nav) => !nav.perm || !permissions || hasPerm(permissions, nav.perm))
+        .map((nav) => ({
+          id: `nav:${nav.href}`,
+          group: 'navigate' as const,
+          label: nav.label,
+          icon: nav.icon,
+          perform: () => router.push(nav.href),
+        })),
+    [router, permissions],
   )
 
   const trimmed = query.trim()
@@ -57,7 +68,9 @@ export function CommandPalette() {
 
   const results = React.useMemo<CommandItem[]>(() => {
     const base = [...navItems, ...registered].filter((item) => matches(item, query))
-    if (isQuestion) {
+    // Typing a question offers to route it to Ask. Without `ai.use` that lands
+    // on a gate state, so the offer is withdrawn rather than made and broken.
+    if (isQuestion && canAsk) {
       base.push({
         id: 'ask:current',
         group: 'ask',
@@ -67,7 +80,7 @@ export function CommandPalette() {
       })
     }
     return base
-  }, [navItems, registered, query, isQuestion, trimmed, router])
+  }, [navItems, registered, query, isQuestion, trimmed, router, canAsk])
 
   const sections = React.useMemo(
     () =>
@@ -157,13 +170,13 @@ export function CommandPalette() {
             className="max-h-[min(60vh,420px)] overflow-y-auto p-2"
           >
             {flat.length === 0 ? (
-              <p className="hl-small px-3 py-8 text-center text-hl-fg-tertiary">
+              <p className="hl-body px-3 py-8 text-center text-hl-fg-tertiary">
                 No results for &ldquo;{query}&rdquo;.
               </p>
             ) : (
               sections.map((section) => (
                 <div key={section.group} className="mb-1">
-                  <p className="hl-caption px-2 py-1 text-hl-fg-tertiary">
+                  <p className="hl-label px-2 py-1.5 text-hl-fg-tertiary">
                     {groupLabels[section.group]}
                   </p>
                   {section.items.map((item) => {

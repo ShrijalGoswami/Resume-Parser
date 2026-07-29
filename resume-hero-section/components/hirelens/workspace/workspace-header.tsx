@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
 } from '../ui/dropdown-menu'
 import { PageHeader } from '../shell/page-header'
+import { useCan, PERMS } from '../lib/use-can'
 import { LensSwitcher } from './lens-switcher'
 import type { Campaign } from '@/types/campaign'
 
@@ -47,6 +48,15 @@ export function WorkspaceHeader({
   onArchiveRole,
   onDeleteRole,
 }: WorkspaceHeaderProps) {
+  // Three different server gates meet in this one header: uploading candidates
+  // is `candidate.manage`, editing/archiving the role is `campaign.manage`, and
+  // deleting it is `campaign.delete` — the permission split added so a recruiter
+  // can run a role without being able to destroy it.
+  const canUpload = useCan(PERMS.CANDIDATE_MANAGE)
+  const canManageRole = useCan(PERMS.CAMPAIGN_MANAGE)
+  const canDeleteRole = useCan(PERMS.CAMPAIGN_DELETE)
+  const hasRoleActions = canManageRole || canDeleteRole
+
   return (
     <header className="sticky top-0 z-[var(--hl-z-sticky)] border-b border-hl-border-subtle bg-hl-canvas px-6 py-4">
       <PageHeader
@@ -74,33 +84,43 @@ export function WorkspaceHeader({
         }
         actions={
           <div className="flex items-center gap-2">
-            <Button variant="primary" onClick={onAddCandidates}>
-              <Plus /> Add candidates
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="secondary" size="icon" aria-label="Role actions">
-                  <MoreHorizontal />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuItem onSelect={() => onEditRole()}>
-                  <Pencil /> Edit role
-                </DropdownMenuItem>
-                {campaign.status !== 'archived' ? (
-                  <DropdownMenuItem onSelect={() => onArchiveRole()}>
-                    <Archive /> Archive role
-                  </DropdownMenuItem>
-                ) : null}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onSelect={() => onDeleteRole()}
-                  className="text-[color:var(--hl-danger)] focus:bg-[color:var(--hl-danger-bg)] focus:text-[color:var(--hl-danger)] [&_svg]:text-[color:var(--hl-danger)]"
-                >
-                  <Trash2 /> Delete permanently
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {canUpload ? (
+              <Button variant="primary" onClick={onAddCandidates}>
+                <Plus /> Add candidates
+              </Button>
+            ) : null}
+            {hasRoleActions ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" size="icon" aria-label="Role actions">
+                    <MoreHorizontal />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
+                  {canManageRole ? (
+                    <DropdownMenuItem onSelect={() => onEditRole()}>
+                      <Pencil /> Edit role
+                    </DropdownMenuItem>
+                  ) : null}
+                  {canManageRole && campaign.status !== 'archived' ? (
+                    <DropdownMenuItem onSelect={() => onArchiveRole()}>
+                      <Archive /> Archive role
+                    </DropdownMenuItem>
+                  ) : null}
+                  {canDeleteRole ? (
+                    <>
+                      {canManageRole ? <DropdownMenuSeparator /> : null}
+                      <DropdownMenuItem
+                        onSelect={() => onDeleteRole()}
+                        className="text-[color:var(--hl-danger)] focus:bg-[color:var(--hl-danger-bg)] focus:text-[color:var(--hl-danger)] [&_svg]:text-[color:var(--hl-danger)]"
+                      >
+                        <Trash2 /> Delete permanently
+                      </DropdownMenuItem>
+                    </>
+                  ) : null}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
           </div>
         }
       >

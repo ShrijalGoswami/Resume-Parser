@@ -10,6 +10,7 @@ import {
   BarChart3,
   type LucideIcon,
 } from 'lucide-react'
+import { PERMS, type PermissionKey } from '../settings/permissions'
 
 /**
  * Primary navigation (Stitch RC-1 "Instrument Rail" · UX Spec §2 · Design Bible
@@ -31,6 +32,18 @@ export interface NavItem {
   isActive: (pathname: string) => boolean
   /** Go-to key-hint revealed on hover (keyboard-forward rail). Chord: `g` then key. */
   shortcut?: string
+  /**
+   * Permission required for the destination to hold anything. Omitted means
+   * every member can reach it — Inbox, Roles, Talent, Interviews and Ledger all
+   * read data gated by `campaign.view` / `candidate.view`, which every role has.
+   *
+   * Only Ask and Analytics carry one, because those two surfaces are *entirely*
+   * one permission: every Ask request is `ai.use`, and `/analytics` is a single
+   * `usage.view` endpoint. Listing a destination that can only render a gate
+   * state is a promise the rail cannot keep. The route still gates itself — a
+   * hidden rail entry is not access control, and deep links exist.
+   */
+  perm?: PermissionKey
 }
 
 export interface NavGroup {
@@ -81,6 +94,7 @@ export const navGroups: NavGroup[] = [
         icon: Sparkles,
         isActive: (p) => p.startsWith('/ask'),
         shortcut: 'G K',
+        perm: PERMS.AI_USE,
       },
       {
         label: 'Analytics',
@@ -88,6 +102,7 @@ export const navGroups: NavGroup[] = [
         icon: BarChart3,
         isActive: (p) => p.startsWith('/analytics'),
         shortcut: 'G A',
+        perm: PERMS.USAGE_VIEW,
       },
       {
         label: 'Ledger',

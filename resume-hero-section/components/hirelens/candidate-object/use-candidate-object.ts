@@ -4,6 +4,7 @@ import * as React from 'react'
 import { useCampaign, useUpdateStage } from '../lib/api/workspace'
 import { useCandidateDetail, useResumeUrl } from '../lib/api/candidate'
 import { toast } from '../ui/use-toast'
+import { useCan, PERMS } from '../lib/use-can'
 import { buildCandidateModel, type CandidateModel } from './model'
 import type { PipelineStage } from '@/types/campaign'
 
@@ -21,6 +22,8 @@ export interface CandidateObjectController {
   isError: boolean
   refetch: () => void
   pending: boolean
+  /** `candidate.manage`. False makes the decision verbs inert — see below. */
+  canDecide: boolean
   advance: () => void
   hold: () => void
   reject: () => void
@@ -40,10 +43,16 @@ export function useCandidateObject(
   const candidate = detail.data
   const model = React.useMemo(() => buildCandidateModel(roleId, candidate), [roleId, candidate])
   const onDecided = opts?.onDecided
+  const canDecide = useCan(PERMS.CANDIDATE_MANAGE)
 
   const decide = React.useCallback(
     (stage: PipelineStage, verb: string, done: boolean) => {
       if (!candidate) return
+      // Hiding the decision bar is not enough: A / S / R are bound to the window
+      // by `useCandidateShortcuts`, so a read-only member could still fire a
+      // stage move from the keyboard and collect a toast for a request that
+      // 403s. The controller is the single place both paths run through.
+      if (!canDecide) return
       const prev = candidate.stage
       updateStage.mutate({ candidateId, stage })
       toast({
@@ -54,7 +63,7 @@ export function useCandidateObject(
       })
       if (done) onDecided?.()
     },
-    [candidate, candidateId, updateStage, onDecided],
+    [candidate, candidateId, updateStage, onDecided, canDecide],
   )
 
   const advance = React.useCallback(() => decide('interview', 'Advanced', true), [decide])
@@ -82,6 +91,7 @@ export function useCandidateObject(
     isError: detail.isError || (!detail.isLoading && !candidate),
     refetch: () => detail.refetch(),
     pending: updateStage.isPending,
+    canDecide,
     advance,
     hold,
     reject,

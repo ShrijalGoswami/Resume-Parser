@@ -85,6 +85,11 @@ describe('buildCandidateModel — the single normalized shape', () => {
 })
 
 describe('Candidate Object barrel — every required section is exported', () => {
+  // Explicit timeout: this assertion is structural (do the exports exist), but
+  // its runtime is dominated by transforming the barrel's cold module graph,
+  // which now includes the RBAC gate the decision bar and notes section read.
+  // In isolation it lands just under the 5s default and just over it under full
+  // suite load — a wall clock measuring bundler throughput, not correctness.
   it('exports all 13 sections + both compositions', async () => {
     const mod = await import('../components/hirelens/candidate-object')
     const required = [
@@ -96,5 +101,5 @@ describe('Candidate Object barrel — every required section is exported', () =>
     for (const name of required) {
       expect(typeof (mod as Record<string, unknown>)[name]).toBe('function')
     }
-  })
+  }, 30_000)
 })

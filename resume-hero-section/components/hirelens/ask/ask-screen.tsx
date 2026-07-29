@@ -10,6 +10,9 @@ import { useConversations, useAskSuggestions } from '../lib/api/ask'
 import { Button } from '../ui/button'
 import { Drawer, DrawerContent, DrawerTitle } from '../ui/drawer'
 import { LoadingScreen } from '../states/loading'
+import { GateState } from '../states/gate-state'
+import { ErrorState } from '../states/error-state'
+import { usePermissionGate, PERMS } from '../lib/use-can'
 import { AskNav, type AskNavProps } from './ask-sidebar'
 import { AskThread } from './ask-thread'
 import { AgentBacklog } from './agent-backlog'
@@ -52,6 +55,12 @@ function parseSearch(search: string): UiState {
 
 export function AskScreen({ initial }: { initial: AskInitial }) {
   const { session, loading, configured } = useSession()
+  // Every request this screen can make — chat, suggestions, conversations,
+  // agent scan, memory retrieval, simulation — is `ai.use` server-side. The rail
+  // already hides the entry, but `/ask` is a URL, so the route states it too.
+  // Checked here rather than inside `AuthedAsk` because that component's hooks
+  // run the length of its body; the branch belongs where the hooks are two.
+  const gate = usePermissionGate(PERMS.AI_USE)
 
   if (!configured) {
     return (
@@ -70,11 +79,37 @@ export function AskScreen({ initial }: { initial: AskInitial }) {
   if (!session) {
     return (
       <AppShell title="Ask">
-        <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-6 py-24 text-center">
+        <div className="mx-auto flex max-w-xl flex-col items-center gap-5 px-6 py-24 text-center">
           <h1 className="hl-display">Sign in to continue</h1>
           <Button variant="primary" asChild>
             <Link href="/auth/login">Sign in</Link>
           </Button>
+        </div>
+      </AppShell>
+    )
+  }
+  if (gate.state === 'loading') {
+    return (
+      <AppShell title="Ask">
+        <LoadingScreen />
+      </AppShell>
+    )
+  }
+  if (gate.state === 'error') {
+    return (
+      <AppShell title="Ask">
+        <ErrorState variant="route" title="Couldn't check your access" onRetry={gate.retry} />
+      </AppShell>
+    )
+  }
+  if (gate.state === 'denied') {
+    return (
+      <AppShell title="Ask">
+        <div className="mx-auto w-full max-w-xl px-6 py-24">
+          <GateState
+            reason="permission"
+            title="Ask needs AI access. Your role can read roles and candidates, but not run AI on them."
+          />
         </div>
       </AppShell>
     )
@@ -198,7 +233,7 @@ function AuthedAsk({ initial }: { initial: AskInitial }) {
   return (
     <AppShell title="Ask" account={account}>
       <div className="flex h-full">
-        <aside className="hidden w-60 shrink-0 border-r border-hl-border-subtle lg:block">
+        <aside className="hidden w-72 shrink-0 border-r border-hl-border-subtle lg:block">
           <AskNav {...navProps} />
         </aside>
 

@@ -8,6 +8,7 @@ import { useSession } from '../lib/api/use-session'
 import { useProfile } from '../lib/api/hooks'
 import { useCompareCandidates } from '../lib/api/workspace'
 import { useTalentSearch, useSimilarCandidates, type SimilarSeed } from '../lib/api/talent'
+import { useCan, PERMS } from '../lib/use-can'
 import { useSearchHistory, useSavedSearches, type CollectionItem, type SavedTalentSearch } from '../lib/talent-store'
 import { TalentSidebar } from './talent-sidebar'
 import { TalentFilters } from './talent-filters'
@@ -69,7 +70,7 @@ export function TalentScreen({ initial }: { initial: TalentInitial }) {
   if (!session) {
     return (
       <AppShell breadcrumbs={[{ label: 'Talent' }]}>
-        <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-6 py-24 text-center">
+        <div className="mx-auto flex max-w-xl flex-col items-center gap-5 px-6 py-24 text-center">
           <h1 className="hl-display-md">Sign in to continue</h1>
           <Button variant="primary" asChild>
             <Link href="/auth/login">Sign in</Link>
@@ -116,6 +117,7 @@ function AuthedTalent({ initial }: { initial: TalentInitial }) {
     return campaigns.size === 1 ? ([...campaigns][0] ?? null) : null
   }, [selectedResults])
   const compare = useCompareCandidates(sharedCampaignId ?? '')
+  const canUseAi = useCan(PERMS.AI_USE)
 
   const runSearch = (nextQuery: string, nextFilters: SearchFilters) => {
     setSimilarSeed(null)
@@ -241,7 +243,7 @@ function AuthedTalent({ initial }: { initial: TalentInitial }) {
 
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="px-4 pt-6">
-            <div className="mx-auto max-w-3xl">
+            <div className="mx-auto max-w-[1100px]">
               <PageHeader
                 title="Talent"
                 description="Search your entire candidate pool in plain language."
@@ -250,7 +252,7 @@ function AuthedTalent({ initial }: { initial: TalentInitial }) {
             </div>
           </div>
           <div className="sticky top-0 z-10 border-b border-hl-border-subtle bg-hl-canvas p-4">
-            <div className="mx-auto flex max-w-3xl flex-col gap-3">
+            <div className="mx-auto flex max-w-[1100px] flex-col gap-3">
               <div className="flex items-center gap-2 rounded-hl-lg border border-hl-border bg-hl-canvas px-3 focus-within:border-hl-accent">
                 <Search className="size-5 shrink-0 text-hl-fg-tertiary" aria-hidden />
                 <input
@@ -289,12 +291,16 @@ function AuthedTalent({ initial }: { initial: TalentInitial }) {
 
           {selected.size > 0 && !viewCollectionId ? (
             <div className="border-b border-hl-border-subtle bg-hl-subtle px-4 py-2">
-              <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-2">
+              <div className="mx-auto flex max-w-[1100px] flex-wrap items-center gap-2">
                 <span className="hl-body-medium">{selected.size} selected</span>
                 <span className="h-4 w-px bg-hl-border" aria-hidden />
-                <Button size="sm" variant="secondary" onClick={runCompare} disabled={!canCompare}>
-                  <GitCompare /> Compare
-                </Button>
+                {/* Comparison is an AI capability (`POST …/compare` is `ai.use`);
+                    search and collections are reads a viewer keeps. */}
+                {canUseAi ? (
+                  <Button size="sm" variant="secondary" onClick={runCompare} disabled={!canCompare}>
+                    <GitCompare /> Compare
+                  </Button>
+                ) : null}
                 <Button
                   size="sm"
                   variant="secondary"
@@ -302,7 +308,7 @@ function AuthedTalent({ initial }: { initial: TalentInitial }) {
                 >
                   <FolderPlus /> Save to collection
                 </Button>
-                {!canCompare && selected.size >= 2 ? (
+                {canUseAi && !canCompare && selected.size >= 2 ? (
                   <span className="hl-caption text-hl-fg-tertiary">
                     Compare needs 2–5 candidates from the same role
                   </span>
@@ -320,7 +326,7 @@ function AuthedTalent({ initial }: { initial: TalentInitial }) {
           ) : null}
 
           <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto p-4">
-            <div className="mx-auto max-w-3xl">
+            <div className="mx-auto max-w-[1100px]">
               {viewCollectionId ? (
                 <CollectionView
                   collectionId={viewCollectionId}
@@ -388,7 +394,7 @@ function AuthedTalent({ initial }: { initial: TalentInitial }) {
                     {similarSeed ? (
                       <>
                         <Sparkles className="size-4 text-hl-prism-mid" aria-hidden />
-                        <p className="hl-small text-hl-fg-secondary">
+                        <p className="hl-body text-hl-fg-secondary">
                           Similar to <span className="text-hl-fg">{similarSeed.name}</span> ·{' '}
                           {results.length} found
                         </p>
@@ -397,7 +403,7 @@ function AuthedTalent({ initial }: { initial: TalentInitial }) {
                         </Button>
                       </>
                     ) : (
-                      <p className="hl-small text-hl-fg-secondary">
+                      <p className="hl-body text-hl-fg-secondary">
                         Found {active.data?.count ?? results.length} candidates · strongest first
                       </p>
                     )}

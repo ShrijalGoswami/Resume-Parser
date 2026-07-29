@@ -17,6 +17,7 @@ import { Button } from '../ui/button'
 import { Kbd } from '../ui/kbd'
 import { toast } from '../ui/use-toast'
 import { focusBand } from '../lib/focus-scale'
+import { useCan, PERMS } from '../lib/use-can'
 import { ConfidenceChip } from './confidence-chip'
 import { AnalystBrief } from './analyst-brief'
 import { ConfidencePanel } from './confidence-panel'
@@ -140,6 +141,7 @@ function MemoLayout({
 }) {
   const router = useRouter()
   const update = useUpdateRecommendation()
+  const canDecide = useCan(PERMS.AGENT_MANAGE)
 
   const signals = signalsFromResult(result)
   const fit = result?.overall_score ?? null
@@ -148,6 +150,10 @@ function MemoLayout({
 
   const resolve = React.useCallback(
     (status: 'approved' | 'dismissed', verb: string) => {
+      // Approve / Override write the recommendation (`agent.manage`). Guarded
+      // here as well as in the header because ⏎ is bound to approve by an effect
+      // that runs whether or not the buttons rendered.
+      if (!canDecide) return
       update.mutate({ id: rec.id, status })
       toast({
         title: `${verb} ${rec.title}`,
@@ -155,7 +161,7 @@ function MemoLayout({
       })
       router.back()
     },
-    [rec.id, rec.title, router, update],
+    [rec.id, rec.title, router, update, canDecide],
   )
 
   const approve = React.useCallback(() => resolve('approved', 'Approved'), [resolve])
@@ -183,7 +189,7 @@ function MemoLayout({
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-6 pb-16 pt-10">
         <header className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
           <div className="min-w-0">
-            <p className="font-hl-mono text-[10px] uppercase tracking-widest text-hl-fg-tertiary">
+            <p className="hl-label-sm font-hl-mono text-hl-fg-tertiary">
               Decision brief · {roleTitle}
             </p>
             <h1 className="hl-display-md mt-1 text-hl-fg">{rec.title}</h1>
@@ -196,14 +202,16 @@ function MemoLayout({
               ) : null}
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <Button variant="primary" onClick={approve} loading={update.isPending}>
-              Approve <Kbd className="ml-1">⏎</Kbd>
-            </Button>
-            <Button variant="ghost" onClick={override} disabled={update.isPending}>
-              Override
-            </Button>
-          </div>
+          {canDecide ? (
+            <div className="flex shrink-0 items-center gap-2">
+              <Button variant="primary" onClick={approve} loading={update.isPending}>
+                Approve <Kbd className="ml-1">⏎</Kbd>
+              </Button>
+              <Button variant="ghost" onClick={override} disabled={update.isPending}>
+                Override
+              </Button>
+            </div>
+          ) : null}
         </header>
 
         <AnalystBrief rec={rec} signals={signals} watchouts={watchouts} />

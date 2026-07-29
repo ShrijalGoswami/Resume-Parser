@@ -7,12 +7,18 @@ import { Button } from '../../ui/button'
 import { Skeleton } from '../../ui/skeleton'
 import { EmptyHint } from './parts'
 import { relativeTime } from '../../lib/format'
+import { useCan, PERMS } from '../../lib/use-can'
 
-/** Notes tab (UX Spec §7.4) — threaded notes, optimistic-free but instant on refetch. */
+/**
+ * Notes tab (UX Spec §7.4) — threaded notes, optimistic-free but instant on refetch.
+ * Writing and deleting are `candidate.manage`; reading is not. Kept in step with
+ * the Candidate Object's own notes section, which gates identically.
+ */
 export function NotesTab({ roleId, candidateId }: { roleId: string; candidateId: string }) {
   const notes = useCandidateNotes(roleId, candidateId)
   const create = useCreateNote(roleId, candidateId)
   const remove = useDeleteNote(roleId, candidateId)
+  const canManage = useCan(PERMS.CANDIDATE_MANAGE)
   const [draft, setDraft] = React.useState('')
 
   const submit = () => {
@@ -23,6 +29,7 @@ export function NotesTab({ roleId, candidateId }: { roleId: string; candidateId:
 
   return (
     <div className="flex flex-col gap-3">
+      {canManage ? (
       <div className="rounded-hl-lg border border-hl-border bg-hl-canvas p-2 transition-colors focus-within:border-hl-accent">
         <textarea
           value={draft}
@@ -44,6 +51,7 @@ export function NotesTab({ roleId, candidateId }: { roleId: string; candidateId:
           </Button>
         </div>
       </div>
+      ) : null}
 
       {notes.isLoading ? (
         <div className="flex flex-col gap-2">
@@ -61,15 +69,17 @@ export function NotesTab({ roleId, candidateId }: { roleId: string; candidateId:
               className="group rounded-hl-md border border-hl-border-subtle bg-hl-subtle p-3"
             >
               <div className="flex items-start justify-between gap-2">
-                <p className="hl-small whitespace-pre-wrap text-hl-fg">{note.body}</p>
-                <button
-                  type="button"
-                  onClick={() => remove.mutate(note.id)}
-                  aria-label="Delete note"
-                  className="shrink-0 text-hl-fg-tertiary opacity-0 outline-none transition-opacity hover:text-hl-danger focus-visible:opacity-100 group-hover:opacity-100"
-                >
-                  <Trash2 className="size-3.5" />
-                </button>
+                <p className="hl-body whitespace-pre-wrap text-hl-fg">{note.body}</p>
+                {canManage ? (
+                  <button
+                    type="button"
+                    onClick={() => remove.mutate(note.id)}
+                    aria-label="Delete note"
+                    className="shrink-0 text-hl-fg-tertiary opacity-0 outline-none transition-opacity hover:text-hl-danger focus-visible:opacity-100 group-hover:opacity-100"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                ) : null}
               </div>
               {note.created_at ? (
                 <p className="hl-caption mt-1 text-hl-fg-tertiary">{relativeTime(note.created_at)}</p>

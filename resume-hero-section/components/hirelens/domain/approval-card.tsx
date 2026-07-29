@@ -5,6 +5,7 @@ import { Card } from '../ui/card'
 import { Button } from '../ui/button'
 import { ConfidencePill } from './confidence-pill'
 import { relativeTime } from '../lib/format'
+import { useCan, PERMS } from '../lib/use-can'
 import type { Recommendation } from '@/types/agent'
 
 /**
@@ -23,6 +24,11 @@ export interface ApprovalCardProps {
 
 export function ApprovalCard({ recommendation, onApprove, onDismiss, busy }: ApprovalCardProps) {
   const context = recommendation.candidate_name ?? recommendation.campaign_title
+  // Reading a recommendation is `candidate.view`; deciding on one is
+  // `agent.manage` (`PATCH /agent/recommendations/{id}`). Interviewers have AI
+  // access and so reach this card, but the decision is not theirs — they keep
+  // the proposal and lose the verdict.
+  const canDecide = useCan(PERMS.AGENT_MANAGE)
   return (
     <Card variant="approval" className="flex w-full flex-col gap-3 p-4">
       <div className="flex items-start gap-2">
@@ -30,14 +36,14 @@ export function ApprovalCard({ recommendation, onApprove, onDismiss, busy }: App
         <div className="min-w-0 flex-1">
           <h3 className="hl-h3">{recommendation.title}</h3>
           {recommendation.why ? (
-            <p className="hl-small mt-0.5 text-hl-fg-secondary">{recommendation.why}</p>
+            <p className="hl-body mt-0.5 text-hl-fg-secondary">{recommendation.why}</p>
           ) : null}
         </div>
       </div>
 
       {recommendation.recommended_action ? (
         <div className="rounded-hl-md border border-hl-border-subtle bg-hl-canvas px-3 py-2">
-          <p className="hl-small text-hl-fg">{recommendation.recommended_action}</p>
+          <p className="hl-body text-hl-fg">{recommendation.recommended_action}</p>
         </div>
       ) : null}
 
@@ -48,14 +54,16 @@ export function ApprovalCard({ recommendation, onApprove, onDismiss, busy }: App
         <ConfidencePill value={recommendation.confidence} className="ml-auto" />
       </div>
 
-      <div className="flex items-center gap-2">
-        <Button variant="primary" size="sm" onClick={onApprove} loading={busy}>
-          Approve
-        </Button>
-        <Button variant="ghost" size="sm" onClick={onDismiss} disabled={busy}>
-          Dismiss
-        </Button>
-      </div>
+      {canDecide ? (
+        <div className="flex items-center gap-2">
+          <Button variant="primary" size="sm" onClick={onApprove} loading={busy}>
+            Approve
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onDismiss} disabled={busy}>
+            Dismiss
+          </Button>
+        </div>
+      ) : null}
     </Card>
   )
 }

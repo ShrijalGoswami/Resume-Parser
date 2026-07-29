@@ -2,7 +2,6 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  getOrgContext,
   listMembers,
   getRoles,
   inviteMember,
@@ -22,11 +21,11 @@ import {
   updateSubscription,
 } from '@/services/org-api'
 import { updateProfile } from '@/services/campaigns-api'
+import { useOrgContext, orgContextKey } from './org-context'
 import { homeKeys } from './hooks'
 import type {
   ApiKey,
   AuditLog,
-  OrgContext,
   OrgMember,
   Subscription,
   UsageCounter,
@@ -40,7 +39,7 @@ import type { RecruiterProfile } from '@/types/campaign'
  * to avoid offering a control that would 403. Mutations invalidate their list.
  */
 export const settingsKeys = {
-  orgContext: ['hl', 'settings', 'org-context'] as const,
+  orgContext: orgContextKey,
   members: ['hl', 'settings', 'members'] as const,
   roles: ['hl', 'settings', 'roles'] as const,
   workspaces: ['hl', 'settings', 'workspaces'] as const,
@@ -53,9 +52,10 @@ export const settingsKeys = {
 
 // ── Bootstrap / RBAC ──────────────────────────────────────────────────────────
 
-export function useOrgContext() {
-  return useQuery<OrgContext>({ queryKey: settingsKeys.orgContext, queryFn: getOrgContext })
-}
+// Defined in `./org-context` so product surfaces can gate on permissions without
+// importing this module's graph; re-exported here so existing callers are
+// unchanged and the query key stays singular.
+export { useOrgContext, orgContextKey }
 
 // ── Profile ───────────────────────────────────────────────────────────────────
 

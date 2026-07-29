@@ -11,6 +11,8 @@ import { useAnalyticsOverview } from '../lib/api/analytics'
 import { LoadingScreen } from '../states/loading'
 import { EmptyState } from '../states/empty-state'
 import { ErrorState } from '../states/error-state'
+import { GateState } from '../states/gate-state'
+import { usePermissionGate, PERMS } from '../lib/use-can'
 import { Button } from '../ui/button'
 import { Card } from '../ui/card'
 import { DataTable, type DataTableColumn } from '../ui/data-table'
@@ -22,7 +24,7 @@ const ANALYTICS_CRUMBS = [{ label: 'Analytics' }]
 
 function Notice({ title, showSignIn }: { title: string; showSignIn?: boolean }) {
   return (
-    <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-6 py-24 text-center">
+    <div className="mx-auto flex max-w-xl flex-col items-center gap-5 px-6 py-24 text-center">
       <h1 className="hl-display-md">{title}</h1>
       {showSignIn ? (
         <Button variant="primary" asChild>
@@ -45,6 +47,11 @@ function Notice({ title, showSignIn }: { title: string; showSignIn?: boolean }) 
  */
 export function AnalyticsScreen() {
   const { session, loading, configured } = useSession()
+  // The whole screen is one endpoint, `GET /analytics/overview`, gated by
+  // `usage.view`. A recruiter reaching this URL used to get a full page of empty
+  // charts built from a 403; now it says why. Export CSV needs no separate gate —
+  // it serialises the overview already in memory and calls nothing.
+  const gate = usePermissionGate(PERMS.USAGE_VIEW)
 
   if (!configured) {
     return (
@@ -67,6 +74,39 @@ export function AnalyticsScreen() {
       </AppShell>
     )
   }
+  if (gate.state === 'loading') {
+    return (
+      <AppShell breadcrumbs={ANALYTICS_CRUMBS}>
+        <LoadingScreen />
+      </AppShell>
+    )
+  }
+  if (gate.state === 'error') {
+    // Couldn't establish the role — say that, and offer the action that fixes
+    // it. Claiming a permission problem here would be a guess, and a defamatory
+    // one when it lands on an owner.
+    return (
+      <AppShell breadcrumbs={ANALYTICS_CRUMBS}>
+        <ErrorState
+          variant="route"
+          title="Couldn't check your access"
+          onRetry={gate.retry}
+        />
+      </AppShell>
+    )
+  }
+  if (gate.state === 'denied') {
+    return (
+      <AppShell breadcrumbs={ANALYTICS_CRUMBS}>
+        <div className="mx-auto w-full max-w-xl px-6 py-24">
+          <GateState
+            reason="permission"
+            title="Analytics is available to hiring managers, admins, and owners."
+          />
+        </div>
+      </AppShell>
+    )
+  }
   return <AuthedAnalytics />
 }
 
@@ -80,9 +120,13 @@ function Stat({
   note?: string
 }) {
   return (
-    <Card className="flex flex-col gap-1 p-4">
-      <p className="hl-caption text-hl-fg-tertiary">{label}</p>
-      <p className="hl-mono-lg text-hl-fg">{value}</p>
+    // Analytics is a number-first surface: the figure carries the card and the
+    // label supports it. `hl-metric` (40/600) against `hl-label` (13/620
+    // uppercase) puts more than two scale steps between them, which is what
+    // makes a KPI legible across a room rather than merely present.
+    <Card className="flex flex-col gap-2 p-[var(--hl-card-pad)]">
+      <p className="hl-label text-hl-fg-tertiary">{label}</p>
+      <p className="hl-metric text-hl-fg">{value}</p>
       {note ? <p className="hl-caption text-hl-fg-tertiary">{note}</p> : null}
     </Card>
   )
@@ -203,7 +247,7 @@ function AuthedAnalytics() {
     const review = insights.candidates_requiring_review
 
     body = (
-      <div className="flex flex-col gap-6">
+      <div className="hl-stagger flex flex-col gap-6">
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Stat
             label="Active roles"
@@ -307,7 +351,7 @@ function AuthedAnalytics() {
           <section className="flex flex-col gap-3">
             <div className="flex items-baseline justify-between gap-3">
               <h2 className="hl-h2">Awaiting your review</h2>
-              <p className="hl-small text-hl-fg-tertiary">
+              <p className="hl-body text-hl-fg-tertiary">
                 <span className="font-hl-mono tabular-nums">
                   {insights.candidates_requiring_review_count}
                 </span>{' '}
@@ -332,7 +376,7 @@ function AuthedAnalytics() {
 
   return (
     <AppShell breadcrumbs={ANALYTICS_CRUMBS} account={account}>
-      <div className="mx-auto flex w-full max-w-6xl flex-col px-6 pb-16 pt-10">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col px-8 pb-16 pt-10">
         <PageHeader
           title="Analytics"
           description="Pipeline health across every role you run."

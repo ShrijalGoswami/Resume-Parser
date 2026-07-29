@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { Button } from '../ui/button'
 import { relativeTime } from '../lib/format'
+import { useCan, PERMS } from '../lib/use-can'
 import type { Recommendation, ApprovalStatus } from '@/types/agent'
 
 const iconFor: Record<string, LucideIcon> = {
@@ -49,6 +50,11 @@ export function InboxPriorityQueue({
   onOpenCandidate,
   onPrefetchCandidate,
 }: PriorityQueueProps) {
+  // Approve / Dismiss write to the recommendation (`agent.manage`); "Review"
+  // only opens the candidate, which is a read. Roles without agent.manage keep
+  // the queue as a reading list — which is what it is for them.
+  const canDecide = useCan(PERMS.AGENT_MANAGE)
+
   return (
     <section aria-labelledby="inbox-priority-heading" className="flex flex-col gap-3">
       <h2 id="inbox-priority-heading" className="hl-h2 text-hl-fg">
@@ -86,7 +92,7 @@ export function InboxPriorityQueue({
               }
             >
               <span
-                className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-hl-muted ${accentClass(
+                className={`mt-0.5 flex size-hl-control-md shrink-0 items-center justify-center rounded-full bg-hl-muted ${accentClass(
                   rec.severity,
                 )}`}
               >
@@ -101,7 +107,7 @@ export function InboxPriorityQueue({
                   </time>
                 </div>
                 {rec.why ? (
-                  <p className="hl-small text-hl-fg-secondary">{rec.why}</p>
+                  <p className="hl-body text-hl-fg-secondary">{rec.why}</p>
                 ) : null}
 
                 <div className="mt-2 flex items-center gap-2">
@@ -113,7 +119,7 @@ export function InboxPriorityQueue({
                     >
                       Review{rec.candidate_name ? ` ${rec.candidate_name}` : ''}
                     </Button>
-                  ) : (
+                  ) : canDecide ? (
                     <Button
                       size="sm"
                       variant="primary"
@@ -122,15 +128,17 @@ export function InboxPriorityQueue({
                     >
                       {rec.recommended_action || 'Approve'}
                     </Button>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    disabled={busy}
-                    onClick={() => onUpdate(rec.id, 'dismissed')}
-                  >
-                    Dismiss
-                  </Button>
+                  ) : null}
+                  {canDecide ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={busy}
+                      onClick={() => onUpdate(rec.id, 'dismissed')}
+                    >
+                      Dismiss
+                    </Button>
+                  ) : null}
                 </div>
               </div>
             </li>

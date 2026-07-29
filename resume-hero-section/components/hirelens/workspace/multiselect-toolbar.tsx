@@ -18,6 +18,7 @@ import {
   DialogFooter,
   DialogClose,
 } from '../ui/dialog'
+import { useCan, PERMS } from '../lib/use-can'
 import { ALL_STAGES, STAGE_LABELS } from './stages'
 import type { PipelineStage } from '@/types/campaign'
 
@@ -25,6 +26,13 @@ import type { PipelineStage } from '@/types/campaign'
  * Multiselect toolbar (UX Spec §7.2). Appears on selection. Compare requires
  * 2–5. Reject is a soft move to the rejected stage; Remove is destructive and
  * confirmed.
+ *
+ * The two verbs are gated separately because the server gates them separately:
+ * Compare is `ai.use` (`POST …/compare`), while Move / Reject / Remove are
+ * `candidate.manage` (`PATCH …/stage`, `POST …/candidates/bulk-delete`). An
+ * interviewer has AI but no mutations and keeps Compare alone; a viewer has
+ * neither and is left with the count and Clear, which is honest — selection is
+ * still how you read a set, it just no longer leads anywhere they can go.
  */
 export interface MultiselectToolbarProps {
   count: number
@@ -46,38 +54,48 @@ export function MultiselectToolbar({
   onClear,
 }: MultiselectToolbarProps) {
   const [confirmOpen, setConfirmOpen] = React.useState(false)
+  const canUseAi = useCan(PERMS.AI_USE)
+  const canManage = useCan(PERMS.CANDIDATE_MANAGE)
 
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-hl-md border border-hl-border bg-hl-subtle px-3 py-2 shadow-[var(--hl-shadow-xs)]">
       <span className="hl-body-medium">{count} selected</span>
-      <span className="mx-1 h-4 w-px bg-hl-border" aria-hidden />
+      {canUseAi || canManage ? (
+        <span className="mx-1 h-4 w-px bg-hl-border" aria-hidden />
+      ) : null}
 
-      <Button size="sm" variant="secondary" onClick={onCompare} disabled={!canCompare}>
-        <GitCompare /> Compare
-      </Button>
+      {canUseAi ? (
+        <Button size="sm" variant="secondary" onClick={onCompare} disabled={!canCompare}>
+          <GitCompare /> Compare
+        </Button>
+      ) : null}
 
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button size="sm" variant="secondary">
-            Move to <ChevronDown className="size-3.5" />
+      {canManage ? (
+        <>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="secondary">
+                Move to <ChevronDown className="size-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              {ALL_STAGES.map((stage) => (
+                <DropdownMenuItem key={stage} onSelect={() => onMove(stage)}>
+                  {STAGE_LABELS[stage]}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button size="sm" variant="ghost" onClick={onReject}>
+            Reject
           </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          {ALL_STAGES.map((stage) => (
-            <DropdownMenuItem key={stage} onSelect={() => onMove(stage)}>
-              {STAGE_LABELS[stage]}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
 
-      <Button size="sm" variant="ghost" onClick={onReject}>
-        Reject
-      </Button>
-
-      <Button size="sm" variant="ghost" onClick={() => setConfirmOpen(true)}>
-        <Trash2 /> Remove
-      </Button>
+          <Button size="sm" variant="ghost" onClick={() => setConfirmOpen(true)}>
+            <Trash2 /> Remove
+          </Button>
+        </>
+      ) : null}
 
       <span className="mx-1 h-4 w-px bg-hl-border" aria-hidden />
       <Button size="sm" variant="ghost" onClick={onClear} aria-label="Clear selection">

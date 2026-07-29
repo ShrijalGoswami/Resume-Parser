@@ -9,6 +9,8 @@ import { Skeleton } from '../../ui/skeleton'
 import { Card } from '../../ui/card'
 import { EmptyState } from '../../states/empty-state'
 import { ErrorState } from '../../states/error-state'
+import { GateState } from '../../states/gate-state'
+import { usePermissionGate, PERMS } from '../../lib/use-can'
 import { toast } from '../../ui/use-toast'
 import { TriageQueue, type TriageAction } from './triage-queue'
 import { TriagePiles } from './triage-piles'
@@ -42,7 +44,7 @@ function isEditable(target: EventTarget | null): boolean {
 function Stat({ value, label, tone }: { value: number; label: string; tone?: string }) {
   return (
     <div className="flex flex-col">
-      <span className={cn('font-hl-mono text-lg tabular-nums', tone ?? 'text-hl-fg')}>{value}</span>
+      <span className={cn('hl-metric-sm', tone ?? 'text-hl-fg')}>{value}</span>
       <span className="hl-caption uppercase tracking-wider text-hl-fg-tertiary">{label}</span>
     </div>
   )
@@ -56,6 +58,12 @@ export function TriageLens({ roleId }: TriageLensProps) {
   const router = useRouter()
   const { data, isLoading, isError, refetch } = useCandidates(roleId)
   const updateStage = useUpdateStage(roleId)
+  // Triage exists to move candidates between stages — `candidate.manage`, every
+  // action of it. There is no read-only version of this surface worth showing,
+  // so the lens states the gate rather than rendering a queue whose every key
+  // 403s. The switcher hides the tab; this catches the shared `?lens=triage` URL.
+  const gate = usePermissionGate(PERMS.CANDIDATE_MANAGE)
+  const canManage = gate.state === 'allowed'
 
   // "Deeper" is sustained evaluation — it leaves the queue for the full Dossier.
   const openDeepReview = React.useCallback(
@@ -80,6 +88,10 @@ export function TriageLens({ roleId }: TriageLensProps) {
         openDeepReview(row.id)
         return
       }
+      // The keydown listener is registered by an effect that runs even when the
+      // gate state is what rendered, so A / R / S / Z have to be stopped here
+      // rather than only by not drawing the queue.
+      if (!canManage) return
       const stage = ACTION_STAGE[action]
       const prev = row.raw.stage
       updateStage.mutate({ candidateId: row.id, stage })
@@ -95,15 +107,16 @@ export function TriageLens({ roleId }: TriageLensProps) {
         },
       })
     },
-    [openDeepReview, updateStage],
+    [openDeepReview, updateStage, canManage],
   )
 
   const undo = React.useCallback(() => {
+    if (!canManage) return
     const last = undoRef.current.pop()
     if (!last) return
     updateStage.mutate({ candidateId: last.id, stage: last.stage })
     toast({ title: 'Undone' })
-  }, [updateStage])
+  }, [updateStage, canManage])
 
   const onBulkConfirm = React.useCallback(
     (ids: string[]) => {
@@ -161,6 +174,20 @@ export function TriageLens({ roleId }: TriageLensProps) {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [needs, focusedIndex, act, undo])
 
+  // Only claim a permission problem once the context actually said so; a failed
+  // lookup gets a retry, not an accusation (see `usePermissionGate`).
+  if (gate.state === 'error') {
+    return <ErrorState variant="inline" title="Couldn't check your access" onRetry={gate.retry} />
+  }
+  if (gate.state === 'denied') {
+    return (
+      <GateState
+        reason="permission"
+        title="Triage moves candidates between stages, which your role can't do. The Pipeline lens shows the same candidates."
+      />
+    )
+  }
+
   if (isLoading) {
     return (
       <div className="flex flex-col gap-3">
@@ -200,7 +227,7 @@ export function TriageLens({ roleId }: TriageLensProps) {
           <Stat value={needs.length} label="need you" tone="text-hl-accent-fg" />
           <Stat value={done.length} label="done" tone="text-hl-fg-secondary" />
         </div>
-        <p className="hl-small flex items-center gap-2 text-hl-fg-secondary">
+        <p className="hl-body flex items-center gap-2 text-hl-fg-secondary">
           <Sparkles className="size-3.5 text-hl-prism-mid" aria-hidden />
           AI sorted {aiSorted} by fit and recommendation · {needs.length} need your judgment
           {done.length > 0 ? ` · ${done.length} resolved` : ''}.
@@ -240,7 +267,7 @@ export function TriageLens({ roleId }: TriageLensProps) {
       ) : null}
 
       {/* Keyboard legend (Stitch bottom bar) */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-hl-border-subtle pt-4 font-hl-mono text-[10px] uppercase tracking-wide text-hl-fg-tertiary">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-hl-border-subtle pt-4 hl-label-sm font-hl-mono text-hl-fg-tertiary">
         <span>↕ move</span>
         <span>↵ deeper</span>
         <span>A advance</span>

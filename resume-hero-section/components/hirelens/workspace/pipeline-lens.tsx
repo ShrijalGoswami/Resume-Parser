@@ -15,6 +15,7 @@ import {
   type ViewMode,
 } from './pipeline-filter-bar'
 import { MultiselectToolbar } from './multiselect-toolbar'
+import { useCan, PERMS } from '../lib/use-can'
 import { STAGE_LABELS } from './stages'
 import { Skeleton } from '../ui/skeleton'
 import { Button } from '../ui/button'
@@ -71,6 +72,7 @@ export function PipelineLens({
   const { data, isLoading, isError, refetch } = useCandidates(roleId)
   const updateStage = useUpdateStage(roleId)
   const bulkDelete = useBulkDeleteCandidates(roleId)
+  const canManage = useCan(PERMS.CANDIDATE_MANAGE)
 
   const [selected, setSelected] = React.useState<Set<string>>(() => new Set())
   const [view, setView] = React.useState<ViewMode>('table')
@@ -104,13 +106,17 @@ export function PipelineLens({
       } else if (event.key.toLowerCase() === 'v') {
         setView((current) => (current === 'table' ? 'board' : 'table'))
       } else if (event.key.toLowerCase() === 'a') {
+        // Uploading is `candidate.manage`; `/` and `V` are pure view state and
+        // stay available to everyone. Without the check the shortcut would open
+        // an upload dialog whose every request 403s.
+        if (!canManage) return
         event.preventDefault()
         onAddCandidates()
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [onAddCandidates])
+  }, [onAddCandidates, canManage])
 
   const toggle = (id: string) =>
     setSelected((prev) => {
@@ -162,12 +168,18 @@ export function PipelineLens({
         <EmptyState
           variant="first-run"
           icon={Users}
-          title="Add candidates to start"
-          description="Upload résumés and HireLens ranks them against this role."
+          title={canManage ? 'Add candidates to start' : 'No candidates yet'}
+          description={
+            canManage
+              ? 'Upload résumés and HireLens ranks them against this role.'
+              : 'Candidates uploaded to this role will appear here.'
+          }
           action={
-            <Button variant="primary" onClick={onAddCandidates}>
-              <Plus /> Add candidates
-            </Button>
+            canManage ? (
+              <Button variant="primary" onClick={onAddCandidates}>
+                <Plus /> Add candidates
+              </Button>
+            ) : undefined
           }
         />
       </Card>

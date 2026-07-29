@@ -60,9 +60,17 @@ export const postMessage = (id: string, message: string, context: CopilotPageCon
   });
 
 // ── Suggestions (shared with the stateless copilot) ───────────────────────────
+/**
+ * Goes through `apiFetch` for the Bearer token like every other call here.
+ *
+ * It used to call `fetch` bare, which was correct while `/copilot/suggestions`
+ * was public. The RBAC sweep put `dependencies=[RequireAiUse]` on it, and an
+ * unauthenticated request answers 401 for everyone — so Ask silently served its
+ * hardcoded `ASK_EXAMPLES` fallback instead of the real suggestions, looking
+ * like a working screen the whole time. Found by reading the access log during
+ * the manual pass; nothing on screen said anything was wrong.
+ */
 export const fetchCopilotSuggestions = async (): Promise<SuggestionGroup[]> => {
-  const res = await fetch(`${V1}/copilot/suggestions`);
-  if (!res.ok) throw new Error('Failed to load suggestions');
-  const data = await res.json();
+  const data = await apiFetch<{ groups?: SuggestionGroup[] }>('/copilot/suggestions');
   return data.groups ?? [];
 };

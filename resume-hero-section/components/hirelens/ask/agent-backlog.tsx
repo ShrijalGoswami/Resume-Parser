@@ -11,6 +11,7 @@ import { ErrorState } from '../states/error-state'
 import { usePendingRecommendations, useUpdateRecommendation } from '../lib/api/hooks'
 import { useAllRecommendations, useAgentScan, askKeys } from '../lib/api/ask'
 import { relativeTime } from '../lib/format'
+import { useCan, PERMS } from '../lib/use-can'
 import { toast } from '../ui/use-toast'
 import { PageHeader } from '../shell/page-header'
 import type { Recommendation } from '@/types/agent'
@@ -34,6 +35,9 @@ export function AgentBacklog() {
   const all = useAllRecommendations()
   const update = useUpdateRecommendation()
   const scan = useAgentScan()
+  // `POST /agent/scan` is `agent.manage` — the scan writes recommendations, it
+  // is not a read. The cards gate their own approve/dismiss (see ApprovalCard).
+  const canRunScan = useCan(PERMS.AGENT_MANAGE)
 
   const act = (recommendation: Recommendation, status: 'approved' | 'dismissed') => {
     update.mutate({ id: recommendation.id, status })
@@ -54,20 +58,22 @@ export function AgentBacklog() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="mx-auto flex max-w-[800px] flex-col gap-6 px-4 py-6">
+      <div className="mx-auto flex max-w-[880px] flex-col gap-6 px-6 py-8">
         <PageHeader
           title="Agent backlog"
           description="What the agent proposes — you decide. Nothing changes without your approval."
           spacing="none"
           actions={
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => scan.mutate()}
-              loading={scan.isPending}
-            >
-              <RefreshCw /> Run scan
-            </Button>
+            canRunScan ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => scan.mutate()}
+                loading={scan.isPending}
+              >
+                <RefreshCw /> Run scan
+              </Button>
+            ) : undefined
           }
         />
 
@@ -87,11 +93,17 @@ export function AgentBacklog() {
           <EmptyState
             icon={Inbox}
             title="No recommendations yet"
-            description="Recommendations from HireLens appear here after an AI scan of your candidates. Run one any time to check."
+            description={
+              canRunScan
+                ? 'Recommendations from HireLens appear here after an AI scan of your candidates. Run one any time to check.'
+                : 'Recommendations from HireLens appear here after an AI scan of your candidates.'
+            }
             action={
-              <Button variant="primary" onClick={() => scan.mutate()} loading={scan.isPending}>
-                Run a scan
-              </Button>
+              canRunScan ? (
+                <Button variant="primary" onClick={() => scan.mutate()} loading={scan.isPending}>
+                  Run a scan
+                </Button>
+              ) : undefined
             }
           />
         ) : (
@@ -133,7 +145,7 @@ function DecidedRow({ recommendation }: { recommendation: Recommendation }) {
   return (
     <div className="flex items-center gap-3 rounded-hl-md border border-hl-border-subtle bg-hl-canvas px-3 py-2">
       <div className="min-w-0 flex-1">
-        <p className="hl-small truncate text-hl-fg">{recommendation.title}</p>
+        <p className="hl-body truncate text-hl-fg">{recommendation.title}</p>
         <p className="hl-caption text-hl-fg-tertiary">{relativeTime(recommendation.updated_at)}</p>
       </div>
       <ConfidencePill value={recommendation.confidence} />

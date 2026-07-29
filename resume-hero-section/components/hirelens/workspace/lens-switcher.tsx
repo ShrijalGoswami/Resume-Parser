@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { useCan, PERMS } from '../lib/use-can'
 
 /**
  * LensSwitcher (Design Bible §7.1) — segmented, URL-bound via a `?lens=` param.
@@ -23,6 +24,12 @@ export function LensSwitcher() {
   const pathname = usePathname()
   const params = useSearchParams()
   const current = params.get('lens') ?? 'pipeline'
+  // Triage is the one lens that is nothing but mutations — every key in its
+  // queue moves a candidate to another stage. The other five read data that
+  // `campaign.view` / `candidate.view` already cover, so they stay for everyone.
+  // The lens still gates itself; `?lens=triage` is a shareable URL.
+  const canTriage = useCan(PERMS.CANDIDATE_MANAGE)
+  const visible = lenses.filter((lens) => lens.value !== 'triage' || canTriage)
 
   return (
     <div
@@ -30,7 +37,7 @@ export function LensSwitcher() {
       aria-label="Workspace lens"
       className="inline-flex items-center gap-1 rounded-hl-md bg-hl-muted p-1"
     >
-      {lenses.map((lens) => {
+      {visible.map((lens) => {
         const active = current === lens.value
         const href = lens.value === 'pipeline' ? pathname : `${pathname}?lens=${lens.value}`
         return (

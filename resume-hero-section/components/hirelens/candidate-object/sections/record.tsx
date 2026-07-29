@@ -12,6 +12,7 @@ import {
   useDeleteNote,
   useCandidateActivity,
 } from '../../lib/api/candidate'
+import { useCan, PERMS } from '../../lib/use-can'
 import { Section } from './primitives'
 import type { CandidateModel } from '../model'
 
@@ -42,17 +43,25 @@ export function CandidateResume({
           )}
         </div>
       ) : (
-        <p className="hl-small text-hl-fg-tertiary">No résumé on file for this candidate.</p>
+        <p className="hl-body text-hl-fg-tertiary">No résumé on file for this candidate.</p>
       )}
     </Section>
   )
 }
 
-/** CandidateNotes — the record's notes (shared hooks; single renderer). */
+/**
+ * CandidateNotes — the record's notes (shared hooks; single renderer).
+ *
+ * Reading notes is `candidate.view`; writing and deleting them are
+ * `candidate.manage`. An interviewer keeps the full thread and loses the
+ * composer and the row delete — the record stays legible, it just stops being
+ * editable.
+ */
 export function CandidateNotes({ roleId, candidateId }: { roleId: string; candidateId: string }) {
   const notes = useCandidateNotes(roleId, candidateId)
   const create = useCreateNote(roleId, candidateId)
   const remove = useDeleteNote(roleId, candidateId)
+  const canManage = useCan(PERMS.CANDIDATE_MANAGE)
   const [draft, setDraft] = React.useState('')
 
   const submit = () => {
@@ -64,6 +73,7 @@ export function CandidateNotes({ roleId, candidateId }: { roleId: string; candid
   return (
     <Section title="Notes">
       <div className="flex flex-col gap-3">
+        {canManage ? (
         <div className="rounded-hl-lg border border-hl-border bg-hl-canvas p-2 transition-colors focus-within:border-hl-accent">
           <textarea
             value={draft}
@@ -79,6 +89,7 @@ export function CandidateNotes({ roleId, candidateId }: { roleId: string; candid
             </Button>
           </div>
         </div>
+        ) : null}
 
         {notes.isLoading ? (
           <div className="flex flex-col gap-2">
@@ -87,21 +98,23 @@ export function CandidateNotes({ roleId, candidateId }: { roleId: string; candid
             ))}
           </div>
         ) : !notes.data || notes.data.length === 0 ? (
-          <p className="hl-small text-hl-fg-tertiary">No notes yet.</p>
+          <p className="hl-body text-hl-fg-tertiary">No notes yet.</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {notes.data.map((note) => (
               <li key={note.id} className="group rounded-hl-md border border-hl-border-subtle bg-hl-subtle p-3">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="hl-small whitespace-pre-wrap text-hl-fg">{note.body}</p>
-                  <button
-                    type="button"
-                    onClick={() => remove.mutate(note.id)}
-                    aria-label="Delete note"
-                    className="shrink-0 text-hl-fg-tertiary opacity-0 outline-none transition-opacity hover:text-hl-danger focus-visible:opacity-100 group-hover:opacity-100"
-                  >
-                    <Trash2 className="size-3.5" />
-                  </button>
+                  <p className="hl-body whitespace-pre-wrap text-hl-fg">{note.body}</p>
+                  {canManage ? (
+                    <button
+                      type="button"
+                      onClick={() => remove.mutate(note.id)}
+                      aria-label="Delete note"
+                      className="shrink-0 text-hl-fg-tertiary opacity-0 outline-none transition-opacity hover:text-hl-danger focus-visible:opacity-100 group-hover:opacity-100"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  ) : null}
                 </div>
                 {note.created_at ? (
                   <p className="hl-caption mt-1 text-hl-fg-tertiary">{relativeTime(note.created_at)}</p>
@@ -127,7 +140,7 @@ export function CandidateActivity({ roleId, candidateId }: { roleId: string; can
           ))}
         </div>
       ) : !data || data.length === 0 ? (
-        <p className="hl-small text-hl-fg-tertiary">No activity yet for this candidate.</p>
+        <p className="hl-body text-hl-fg-tertiary">No activity yet for this candidate.</p>
       ) : (
         <ul className="divide-y divide-hl-border-subtle">
           {data.map((event) => (
