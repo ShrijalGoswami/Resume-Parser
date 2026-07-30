@@ -111,6 +111,11 @@ Ordered by what actually warrants waking someone.
 | AI fallback / `degraded` result rate | > 5% | The primary provider is unhealthy |
 | Storage object count vs candidate row count | divergence | Orphaned PII: résumés with no candidate row are invisible to the product and undeletable through it |
 | Startup `ERROR` lines | any | Startup validation caught a misconfiguration |
+| **`"org-context read failed"` with `failed_branches=4/4`** | **any occurrence** | The shared Supabase HTTP connection died mid-fan-out. Historically this meant HTTP/2 got re-enabled on the Supabase transport — a 19% failure rate presenting as intermittent 503s. Runbook: OPERATIONS §3.8, analysis: `docs/rca/UPLOAD_503.md` |
+| `"org-context read failed"` with `failed_branches=1/4` | > 1% of org-context resolutions | A single query, RLS policy or table is failing. Read `query=` for which |
+| `"postgrest.auth() failed"` | any occurrence | Clients silently downgraded to the anon key: every RLS-scoped read returns empty. Presents to users as "no organization" or a blank dashboard, **not** as an error |
+| `RemoteProtocolError` / `ConnectionTerminated` anywhere in logs | any occurrence | Should be structurally impossible now. Its return means the transport configuration regressed |
+| `"handshake operation timed out"` | any occurrence | The shared connection pool is not being reused, so every request pays a fresh TLS handshake |
 
 ### The rate-limiter trap
 
@@ -150,20 +155,45 @@ Org-context resolution issues four independent Supabase queries concurrently; in
 the logs their timestamps land in the same millisecond. If they start appearing
 sequentially, the fan-out has regressed.
 
+Every org-context resolution logs `branch_ms=` (per query) and `fan_ms=` (the
+whole fan-out) at DEBUG, and on failure at ERROR. Two shapes worth watching:
+
+- **`fan_ms` ≈ the sum of the branches** rather than ≈ the slowest one — the
+  fan-out is running sequentially.
+- **`fan_ms` rising while `branch_ms` stays flat** — threads are queueing, not
+  Supabase slowing down.
+
+A sustained rise in *all* Supabase-backed latency, with no error-rate change, is
+the signature of the connection pool not being reused (every request paying a
+fresh TCP+TLS handshake). Sharing the pool roughly halved latency across the
+board when it was introduced — 8-way concurrent `/org/context` p50 went 6102 ms →
+1832 ms — so a regression here is large enough to see immediately.
+
 ---
 
 ## 5. Cost
 
-The unauthenticated AI endpoints (`/api/v1/batch-analysis`, `/ats-analysis`,
-`/match-analysis`) are unauthenticated **by design** and cost money per call. They
-are the cost risk, not recruiter traffic. Watch:
+**The AI endpoints are no longer anonymous** (RBAC sweep, 28–29 Jul 2026).
+`/api/v1/batch-analysis`, `/ats-analysis`, `/match-analysis` and `/copilot/*` now
+require a recruiter JWT plus `ai.use`. This section previously described them as
+public, which materially misstated the risk.
 
-- Groq tokens/day against the plan ceiling
-- Request volume on those three paths by client IP
+What that changes: the exposure is no longer *anonymous* spend, so a WAF is no
+longer the primary control. It is now **spend by authenticated members**, which
+is attributable — every AI call rolls up to an organization. The abuse case that
+remains is a compromised or over-permissioned account, not a passer-by.
+
+Watch:
+
+- Groq tokens/day against the plan ceiling (still the hard limit — 100k/day free)
+- Spend per organization, and any single org diverging from its usual profile
+- Request volume on those paths by **recruiter**, not just by client IP
 - 429 rate on those paths (the in-process limiter engaging)
+- `403` rate on AI paths — members repeatedly hitting `ai.use` denials suggests a
+  role assignment that does not match how the team actually works
 
-The real control is a WAF or edge rate limit in front of them. The in-process
-limiter is a safety net.
+An edge rate limit is still worth having, but as defence in depth rather than the
+control that stands between an anonymous caller and the LLM bill.
 
 ---
 

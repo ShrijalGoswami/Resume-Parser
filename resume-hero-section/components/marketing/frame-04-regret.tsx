@@ -65,7 +65,7 @@ export function Frame04Regret() {
 
         <div className="relative z-10 mx-auto max-w-[1280px]">
           <Reveal className="mx-auto mb-16 max-w-4xl text-center">
-            <h2 className="mb-8 font-mkt-display text-4xl leading-tight font-light tracking-tight text-white md:text-6xl md:leading-none lg:text-7xl">
+            <h2 className="mb-8 font-mkt-display text-4xl leading-tight font-light tracking-tight text-white md:text-5xl md:leading-none">
               Every tool tells you who&rsquo;s strongest.
               <br />
               Only HireLens tells you what you&rsquo;d regret.

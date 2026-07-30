@@ -23,7 +23,7 @@ import { Frame05Conclusion } from '@/components/marketing/frame-05-conclusion'
  */
 export default function HomePage() {
   return (
-    <div className="flex min-h-screen flex-col bg-mkt-canvas">
+    <div className="mkt-min-vh flex flex-col bg-mkt-canvas">
       <MarketingNav />
       <main className="flex-grow">
         <Frame01Hero />

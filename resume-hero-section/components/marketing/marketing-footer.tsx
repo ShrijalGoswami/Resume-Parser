@@ -5,7 +5,7 @@ import Link from 'next/link'
  *
  * The composed homepage ends on frame 5, so it takes frame 5's footer: the
  * italic Newsreader wordmark stacked over the copyright on the left, and a
- * four-link nav on the right. 48px side padding, 64px vertical, max-w-7xl.
+ * four-link nav on the right. 48px side padding, 64px vertical, max-w-[1280px].
  */
 
 const FOOTER_LINKS = [
@@ -18,7 +18,7 @@ const FOOTER_LINKS = [
 export function MarketingFooter() {
   return (
     <footer className="w-full border-t border-mkt-subtle bg-mkt-canvas">
-      <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-between px-12 py-16 md:flex-row">
+      <div className="mx-auto flex w-full max-w-[1280px] flex-col items-center justify-between px-12 py-16 md:flex-row">
         <div className="mb-8 md:mb-0">
           <Link
             href="/"

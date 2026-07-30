@@ -54,9 +54,16 @@ export function Frame01Hero() {
           its ink background, so without an isolated stacking context the blend
           would composite against the page's white canvas and wash the hero out
           to grey. */}
+      {/* pt-20 clears the 72px fixed nav and no more. pt-32 was clearing a
+          105px nav *and* fighting `justify-center`, pushing the hero to 132vh
+          so the CTAs sat below the fold on a 639px laptop viewport. Stripe,
+          Linear, Vercel and Cursor all fit hero + social proof inside 100vh. */}
       <section
         id="product"
-        className="relative isolate flex min-h-screen flex-col justify-center overflow-hidden bg-mkt-dark-bg pt-32 pb-16"
+        /* pt-20 (80px) is a floor, not a preference: the nav is fixed at 72px
+           and the hero is `justify-center`, so anything less slides the
+           headline under the bar. Bottom padding carries the reduction. */
+        className="mkt-min-vh relative isolate flex flex-col justify-center overflow-hidden bg-mkt-dark-bg pt-24 pb-16"
       >
         <HeroShader />
 
@@ -64,7 +71,12 @@ export function Frame01Hero() {
           <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-12">
             {/* Content */}
             <div className="flex flex-col gap-8 lg:col-span-8">
-              <h1 className="mkt-fade-in-up font-mkt-display text-[64px] leading-[68px] font-light tracking-[-0.02em] text-mkt-dark-fg md:text-[120px] md:leading-[110px] md:tracking-[-0.04em]">
+              {/* 72/76. Linear and Vercel both cap their hero at 64px; Stripe
+                  runs 38.6. Newsreader at 300 carries less optical mass than a
+                  510-weight sans, so 72 sits level with a 64px Linear headline
+                  rather than above it. At 120px the two authored lines wrapped
+                  to three and the block alone was 330px — 2.6x Linear's. */}
+              <h1 className="mkt-fade-in-up font-mkt-display text-[44px] leading-[48px] font-light tracking-[-0.02em] text-mkt-dark-fg md:text-[72px] md:leading-[76px] md:tracking-[-0.03em]">
                 Your judgment,
                 <br />
                 on every candidate.
@@ -79,7 +91,7 @@ export function Frame01Hero() {
               <div className="mkt-fade-in-up mkt-delay-200 flex flex-wrap items-center gap-6">
                 <Link
                   href="/auth/signup"
-                  className="group flex items-center gap-2 bg-mkt-primary-container px-8 py-4 mkt-data font-medium uppercase tracking-widest text-white transition-colors duration-300 hover:bg-mkt-inverse-primary"
+                  className="group flex items-center gap-2 bg-mkt-primary-container px-7 py-3 mkt-data font-medium uppercase tracking-widest text-white transition-colors duration-300 hover:bg-mkt-inverse-primary"
                 >
                   See it think
                   <span className="material-symbols-outlined text-sm transition-transform group-hover:translate-x-1">
@@ -88,7 +100,7 @@ export function Frame01Hero() {
                 </Link>
                 <a
                   href="#customers"
-                  className="border border-mkt-dark-outline-variant px-8 py-4 mkt-data font-medium uppercase tracking-widest text-mkt-dark-fg transition-colors duration-300 hover:border-mkt-dark-fg"
+                  className="border border-mkt-dark-outline-variant px-7 py-3 mkt-data font-medium uppercase tracking-widest text-mkt-dark-fg transition-colors duration-300 hover:border-mkt-dark-fg"
                 >
                   Book a demo
                 </a>
@@ -174,7 +186,7 @@ export function Frame01Hero() {
       {/* ---------------------------------------------------------------- */}
       {/* COMPRESSION PREVIEW                                               */}
       {/* ---------------------------------------------------------------- */}
-      <section className="relative bg-mkt-inverse-surface py-28 md:py-32">
+      <section className="relative bg-mkt-inverse-surface py-32 md:py-40">
         <div className="mx-auto max-w-[1440px] px-6 md:px-20">
           <Reveal className="mb-14 flex flex-col items-center gap-6 text-center">
             <h2 className="mx-auto max-w-3xl font-mkt-display text-[32px] leading-[40px] text-mkt-dark-bg md:text-[48px] md:leading-[56px]">

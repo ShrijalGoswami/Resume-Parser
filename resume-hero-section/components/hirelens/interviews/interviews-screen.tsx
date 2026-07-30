@@ -4,6 +4,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { ClipboardList } from 'lucide-react'
 import { AppShell } from '../shell'
+import { stageLabel } from '../workspace/stages'
 import { PageHeader } from '../shell/page-header'
 import { useSession } from '../lib/api/use-session'
 import { useProfile, useActiveRoles } from '../lib/api/hooks'
@@ -113,8 +114,12 @@ const candidateColumns: DataTableColumn<CandidateRow>[] = [
     key: 'stage',
     header: 'Stage',
     sortValue: (row) => row.raw.stage,
-    className: 'capitalize',
-    render: (row) => <span className="text-hl-fg-secondary">{row.raw.stage}</span>,
+    // The canonical map, not `capitalize` on the raw enum — six other surfaces
+    // already label stages from here, and CSS casing only happens to work
+    // because every current stage is one word.
+    render: (row) => (
+      <span className="text-hl-fg-secondary">{stageLabel(row.raw.stage)}</span>
+    ),
   },
 ]
 
@@ -136,6 +141,7 @@ function AuthedInterviews({ initial }: { initial?: { role?: string; candidate?: 
   } else if (!roles.data || roles.data.length === 0) {
     body = (
       <EmptyState
+        surface
         icon={ClipboardList}
         title="No active roles"
         description="Open a role and add candidates before preparing an interview."
@@ -152,7 +158,7 @@ function AuthedInterviews({ initial }: { initial?: { role?: string; candidate?: 
 
   return (
     <AppShell breadcrumbs={INTERVIEW_CRUMBS} account={account}>
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col px-8 pb-16 pt-10">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col px-6 pb-12 pt-6">
         <PageHeader
           title="Interviews"
           description="Prepare a grounded interview from a candidate's own evidence."

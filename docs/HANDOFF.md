@@ -198,34 +198,42 @@ callers.** Everything else attaches `authHeaders()`.
 **§3.1 is now verified live** — see §6. `POST /api/v1/batch-analysis -> 200`,
 three candidates analysed, ranked and persisted through the UI.
 
-### 3.4 Résumé binary upload 503s — OPEN, not fixed
+### 3.4 Résumé binary upload 503s — FIXED, verified live
 
-Immediately after a successful batch upload, `POST
-/campaigns/{id}/candidates/{id}/resume` returned **503 in 1.5s**. The candidate
-rows persisted fine (`persist-batch -> 201`, 3 candidates); it is the résumé
-*binary* attach that failed.
+**Full write-up: `docs/rca/UPLOAD_503.md`.** Summary of what it turned out to be,
+since the guesses recorded here were half right and half wrong:
 
-The 503 comes from `resolve_org_context` in `app/enterprise/context.py`, not from
-storage — no Supabase storage call was even attempted. That function fans four
-org reads out across a `ThreadPoolExecutor(max_workers=4)`, sharing **one**
-`get_user_client` instance between the threads, and converts any exception into
-`503 "Organization lookup failed."`.
+The 503 did come from `resolve_org_context`, and the shared client was the
+problem — but **not** because of concurrent *uploads*. The concurrency is inside
+a single request: the four-way fan-out shares one Supabase client, postgrest-py
+builds its httpx client with **`http2=True`**, and httpcore's synchronous HTTP/2
+connection cannot be driven from several threads at once. The threads corrupt the
+connection's stream-ID ordering and HPACK table, Supabase answers `GOAWAY`, and
+all four reads die together. Measured at a **19% failure rate per fan-out** — so
+one request alone was enough, and `test_resume_storage` passing 5/5 in isolation
+was luck (~35% likely), not evidence of a load-only fault.
 
-Two things make this worth attention:
+This was indeed the same root cause as the intermittent `/org/context` 503 in
+§3.3, as suspected.
 
-1. **It is very likely the same root cause as the intermittent `/org/context`
-   503** that produced §3.3. Same function, same failure mode, and it appears
-   under concurrent load — which is exactly when four threads share one
-   PostgREST/httpx client that may not be safe for concurrent use.
-2. **The cause is unlogged.** `raise HTTPException(...) from exc` discards `exc`
-   without logging it, so a 503 leaves no trace of what actually threw. That
-   needs fixing first — otherwise diagnosing this is guesswork.
+Fixed in `app/db/supabase_client.py`: HTTP/2 off, plus one pooled HTTP/1.1
+transport shared process-wide. The fan-out optimisation is untouched — over
+HTTP/1.1 each concurrent request gets its own connection from the pool. Sharing
+the pool is safe because postgrest/storage3 attach `Authorization` per request,
+not to the session; `tests/test_supabase_transport.py` asserts that, and
+`test_tenant_isolation` still passes 25/25.
 
-Note the fan-out is a deliberate optimisation with a good comment explaining why
-it is concurrency and not caching (authorization must never be stale). The
-reasoning is sound; the thread-safety of the shared client is the part to check.
-`test_resume_storage` passes in isolation (5/5), so this is load-dependent, not a
-broken code path.
+Sharing the pool also removed the per-request TCP+TLS handshake churn, which
+**roughly halved latency everywhere** and is the root of the 2.5–8s
+`/org/context` item below (8-way concurrent `/org/context` p50: 6102ms → 1832ms).
+
+Verified with `tests/test_upload_concurrency.py` (gated like the other live
+suites): 208 uploads across sequential, concurrent and sustained phases, **0
+failures**, 0 protocol errors in the server log. Before the fix it failed on
+request #1.
+
+The three swallow points that made this undiagnosable for a session are now
+logged — see §6 of the RCA.
 
 ### 3.3 The route gates accused innocent users — introduced and fixed same session
 
@@ -271,15 +279,15 @@ other tenants' objects, bad-signature and wrong-audience tokens 401.
 
 | Priority | Item |
 |---|---|
-| **High** | **Résumé binary upload 503s under load — §3.4.** Open. Start by logging the swallowed exception in `resolve_org_context`, then check whether the shared Supabase client is safe across the four fan-out threads. Probably also the cause of the intermittent `/org/context` 503. |
-| **High** | **No gate was ever verified closed in a live browser.** Every permission was tested open (full-permission account) and closed by unit test. Needs a second account or a temporary role change to confirm a recruiter really cannot see Analytics, an interviewer really gets no decision bar. |
+| ~~High~~ | ~~**Résumé binary upload 503s under load — §3.4.**~~ **Done.** Root cause was HTTP/2 multiplexing across the fan-out threads on a shared client; see `docs/rca/UPLOAD_503.md`. Also fixed the intermittent `/org/context` 503. |
+| ~~High~~ → Medium | **Server side now proven.** `backend/tests/test_rbac_enforcement.py` drives one throwaway account through **5 roles × 17 probes** against a live backend — **67 pass, 0 fail** (`docs/qa/RUNTIME_VALIDATION_RBAC.md`). A viewer is refused every mutation; an interviewer gets reads and AI but no usage, analytics, audit or mutations; a recruiter is refused delete/invite/workspace/flags/api-keys. Expectations are read from `ROLE_PERMISSIONS`, so the matrix cannot drift from the suite. **Remaining:** the *browser* half — that the control genuinely does not render. Cosmetic risk only now that the server is proven to refuse. |
 | **High** | **`test_decision_ledger` and `test_e2e_workflow` never ran.** Approved, then stopped. |
 | Medium | Ask thread against real data, Ledger, Decision memo, interview generation, Talent search and Compare were never exercised — see §6. |
 | **High** | **145 uncommitted files.** Suggested split now **six** commits: marketing redesign / typography / polish / density removal / backend RBAC / frontend RBAC + API auth fixes. |
 | Medium | 52 of 59 pytest-collected tests assert nothing — §7. |
 | Medium | `admin.py` 1/5 gated — needs review. `account.py` 0/3 is correct (self-service, RLS-scoped). |
 | Medium | Light-mode nav rail gradient is nearly invisible. Fix by deepening `--hl-bg-subtle`, not by strengthening the gradient. |
-| Medium | `/org/context` takes **2.5–8 seconds** and 503s intermittently. Every gated screen now waits on it, so this is on the critical path for perceived performance. The backend makes serial Supabase round-trips per request. |
+| Medium | `/org/context` latency — **much improved, not closed.** The intermittent 503 is fixed and the shared connection pool cut 8-way concurrent p50 from 6102ms to 1832ms (§3.4). Still on the critical path for every gated screen, and latency still degrades under sustained concurrency (~8s → ~15.5s p50 over 10 rounds of 12). Remaining suspects are the serial Supabase round-trips per request and sync `def` dependencies occupying AnyIO worker threads — see §8 of `docs/rca/UPLOAD_503.md`. |
 | Low | DDL-MKT-009 re-filing (see 1.1). |
 | Low | CI grep for `text-\[(9\|10\|11)px\]` and `\bh-[89]\b` in `.hl` components. |
 | Low | `docs/qa/RUNTIME_VALIDATION_*.md` and `docs/security/RUNTIME_VALIDATION_A1.md` were rewritten by the test runs — they are generated artifacts, expect churn in the diff. |

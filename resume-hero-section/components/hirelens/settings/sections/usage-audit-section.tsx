@@ -12,8 +12,13 @@ import { ErrorState } from '../../states/error-state'
 import { relativeTime } from '../../lib/format'
 import type { AuditLog } from '@/types/org'
 
+/* Acronyms stay upper-case: the Resource column was rendering `ai` as "Ai". */
+const CASING: Record<string, string> = { ai: 'AI', api: 'API', ats: 'ATS', sso: 'SSO', id: 'ID' }
+
 function humanize(value: string) {
-  return value.replace(/[._]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+  return value
+    .replace(/[._]/g, ' ')
+    .replace(/\b\w+/g, (w) => CASING[w.toLowerCase()] ?? w.charAt(0).toUpperCase() + w.slice(1))
 }
 
 const auditColumns: DataTableColumn<AuditLog>[] = [
@@ -27,7 +32,7 @@ const auditColumns: DataTableColumn<AuditLog>[] = [
     key: 'resource',
     header: 'Resource',
     sortValue: (row) => row.resource_type,
-    render: (row) => <span className="text-hl-fg-secondary">{row.resource_type}</span>,
+    render: (row) => <span className="text-hl-fg-secondary">{humanize(row.resource_type)}</span>,
   },
   {
     key: 'by',
@@ -96,6 +101,7 @@ function UsagePanel() {
   if (metrics.length === 0) {
     return (
       <EmptyState
+        surface
         variant="zero-results"
         title="No usage recorded yet"
         description="Counters appear as your team uses HireLens."
@@ -107,7 +113,7 @@ function UsagePanel() {
       {metrics.map((metric) => (
         <Card key={`${metric.metric}-${metric.period}`} className="p-3">
           <p className="hl-caption text-hl-fg-tertiary">{humanize(metric.metric)}</p>
-          <p className="hl-display-xl">{metric.value.toLocaleString()}</p>
+          <p className="hl-metric-sm">{metric.value.toLocaleString()}</p>
           <p className="hl-caption text-hl-fg-tertiary">{metric.period}</p>
         </Card>
       ))}
@@ -133,6 +139,7 @@ function AuditPanel() {
   if (rows.length === 0) {
     return (
       <EmptyState
+        surface
         variant="zero-results"
         title="No audited changes yet"
         description="Administrative changes are recorded here as they happen."

@@ -2,9 +2,9 @@
 
 > **Generated** by `backend/tests/test_tenant_isolation.py`. Do not edit by hand — re-run the suite.
 
-- **Run at:** 2026-07-29 04:20 UTC
+- **Run at:** 2026-07-29 15:51 UTC
 - **Environment:** `development`
-- **Backend target:** `http://localhost:8000`
+- **Backend target:** `http://127.0.0.1:8010`
 - **Supabase project:** `vmqhigckfkedkwfkvnij.supabase.co`
 - **Totals:** 25 PASS · 0 FAIL · 1 SKIPPED
 - **Overall:** ✅ PASS

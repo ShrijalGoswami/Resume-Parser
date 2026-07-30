@@ -65,7 +65,7 @@ export function AskScreen({ initial }: { initial: AskInitial }) {
   if (!configured) {
     return (
       <AppShell title="Ask">
-        <div className="hl-display p-12 text-center">Sign-in isn&rsquo;t configured</div>
+        <div className="hl-display-md p-12 text-center">Sign-in isn&rsquo;t configured</div>
       </AppShell>
     )
   }

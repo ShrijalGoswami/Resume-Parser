@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter, JetBrains_Mono, Newsreader, Public_Sans } from 'next/font/google'
+import { NeuralBackground } from '@/components/marketing/NeuralBackground'
 
 /**
  * Marketing (public site) layout.
@@ -69,6 +70,10 @@ export default function MarketingLayout({
       <noscript>
         <style>{`.mkt-reveal,.mkt-resolve{opacity:1!important;transform:none!important}.mkt-meter-fill{transform:scaleX(1)!important}`}</style>
       </noscript>
+      {/* Mounted once for the whole public surface, not per section. It is a
+          fixed overlay (see NeuralBackground) so it spans every section —
+          light and dark alike — as one continuous field. */}
+      <NeuralBackground />
       {children}
     </div>
   )

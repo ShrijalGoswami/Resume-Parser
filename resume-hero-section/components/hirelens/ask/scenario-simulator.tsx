@@ -83,7 +83,7 @@ export function ScenarioSimulator({
             id="ask-sim-forecast"
             value={effectiveForecast}
             onChange={(event) => setForecastType(event.target.value)}
-            className="hl-body h-[var(--hl-control-h-md)] rounded-hl-md border border-hl-border bg-hl-canvas px-2 text-hl-fg outline-none focus-visible:border-hl-accent"
+            className="hl-body h-hl-input rounded-hl-md border border-hl-border bg-hl-canvas px-2 text-hl-fg outline-none focus-visible:border-hl-accent"
           >
             {forecastTypes.map((type) => (
               <option key={type} value={type}>
@@ -160,12 +160,12 @@ function SimulationResult({ result }: { result: SimResult }) {
       <div className="grid gap-2 sm:grid-cols-2">
         <div className="rounded-hl-md border border-hl-border-subtle bg-hl-canvas p-3">
           <p className="hl-label text-hl-fg-tertiary">Baseline</p>
-          <p className="hl-h2">{formatForecastValue(result.baseline)}</p>
+          <p className="hl-metric-sm my-0.5">{formatForecastValue(result.baseline)}</p>
           <p className="hl-body text-hl-fg-secondary">{result.baseline.summary}</p>
         </div>
         <div className="rounded-hl-md border border-hl-border bg-hl-ai-surface p-3">
           <p className="hl-label text-hl-fg-tertiary">With scenario</p>
-          <p className="hl-h2">{formatForecastValue(result.scenario)}</p>
+          <p className="hl-metric-sm my-0.5">{formatForecastValue(result.scenario)}</p>
           <p className="hl-body text-hl-fg-secondary">{result.scenario.summary}</p>
         </div>
       </div>

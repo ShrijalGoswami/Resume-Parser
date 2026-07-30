@@ -14,6 +14,7 @@ from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, status
 
+from app.core.deps import RecruiterDep
 from app.enterprise.context import OrgContext
 from app.enterprise.deps import (
     ApiKeyRepoDep, AuditRepoDep, OrgContextDep, OrgRepoDep, UsageRepoDep, require_permission,
@@ -105,8 +106,28 @@ async def list_members(org_repo: OrgRepoDep):
 
 
 @router.get("/roles")
-async def roles():
-    """Configurable role → permission matrix (policy-based RBAC)."""
+async def roles(_: RecruiterDep):
+    """Configurable role → permission matrix (policy-based RBAC).
+
+    Authenticated as of 29 Jul 2026, closing audit finding O1 in
+    `docs/AUDIT_LOG_V4.md`: this was the one `/org/*` route with no dependency at
+    all, so it answered anonymous callers while the module's own contract says
+    every route here is organization-scoped. The matrix is policy configuration
+    rather than tenant data, so the exposure was the product's authorization
+    model, not anyone's records — but an unauthenticated hole in an admin surface
+    is not worth keeping for a payload only the Settings screen reads.
+
+    Safe to gate: the sole caller (`getRoles` in `services/org-api.ts`) goes
+    through the shared `api()` helper, which always attaches `authHeaders()` and
+    throws when signed out. Callers were checked before changing this contract —
+    silently gating a route with a header-less client is how `/batch-analysis`
+    and `/copilot/suggestions` broke.
+
+    `RecruiterDep`, not `OrgContextDep`: the matrix is static policy identical for
+    every organization, so requiring authentication is the whole requirement.
+    Resolving org context would add the four-query fan-out to a payload that does
+    not vary by org.
+    """
     return role_permission_matrix()
 
 

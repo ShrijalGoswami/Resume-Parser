@@ -100,6 +100,7 @@ function AuthedLedger() {
   } else if (resolved.length === 0) {
     body = (
       <EmptyState
+        surface
         icon={BookText}
         title="No decisions recorded yet"
         description="Decisions you approve or override in the Inbox are written here — permanently, as they stood."
@@ -141,14 +142,14 @@ function AuthedLedger() {
 
   return (
     <AppShell breadcrumbs={LEDGER_CRUMBS} account={account}>
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-8 px-8 pb-16 pt-10">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 px-6 pb-12 pt-6">
         <header className="flex flex-col gap-3">
           {oldest ? (
             <p className="hl-label-sm font-hl-mono text-hl-fg-tertiary">
               {fmtDate(oldest)} — {fmtDate(newest)}
             </p>
           ) : null}
-          <h1 className="hl-display-md text-hl-fg">The decisions you&rsquo;ve made.</h1>
+          <h1 className="hl-display text-hl-fg">The decisions you&rsquo;ve made.</h1>
           <p className="hl-body max-w-2xl text-hl-fg-secondary">
             Every decision and the evidence behind it — recorded as it stood at the moment of the
             call.

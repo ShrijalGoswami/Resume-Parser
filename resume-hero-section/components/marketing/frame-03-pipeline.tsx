@@ -148,7 +148,7 @@ export function Frame03Pipeline() {
         </Reveal>
 
         <Reveal delay={120}>
-          <h2 className="max-w-4xl text-center font-mkt-display text-4xl leading-tight font-light text-mkt-fg md:text-5xl md:leading-none lg:text-6xl">
+          <h2 className="max-w-4xl text-center font-mkt-display text-4xl leading-tight font-light text-mkt-fg md:text-5xl md:leading-none">
             One instrument, from the whole pile to the right decision — and back,
             learning each time.
           </h2>

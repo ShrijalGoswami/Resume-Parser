@@ -80,17 +80,23 @@ export function MarketingNav() {
 
   return (
     <nav
-      className={`fixed top-0 z-50 w-full backdrop-blur-[32px] transition-colors duration-500 ${
+      /* `mkt-fixed-vw` instead of `w-full`: a fixed box measures against the
+         viewport, not the zoomed `.mkt` ancestor, so `w-full` would render
+         15% narrow. See the scale compensations in globals.css. */
+      className={`mkt-fixed-vw fixed top-0 z-50 backdrop-blur-[32px] transition-colors duration-500 ${
         onInk
           ? 'border-b border-mkt-dark-outline-variant/10 bg-mkt-dark-bg/80'
           : 'border-b border-mkt-border-subtle bg-mkt-canvas/80'
       }`}
     >
-      <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between px-6 py-6 md:px-20">
+      {/* Authored at py-4 / 80px. `--mkt-scale` renders it at ~68px — between
+          Vercel's 64 and Linear's 73. Height is NOT hardcoded here: the global
+          scale owns it, so this stays at the design's authored value. */}
+      <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between px-6 py-4 md:px-20">
         {/* Brand */}
         <Link
           href="/"
-          className={`font-mkt-display text-[32px] leading-[40px] tracking-tighter transition-colors duration-500 md:text-[48px] md:leading-[56px] ${
+          className={`font-mkt-display text-[32px] leading-[40px] tracking-tighter transition-colors duration-500 ${
             onInk ? 'text-mkt-dark-fg' : 'text-mkt-fg'
           }`}
         >

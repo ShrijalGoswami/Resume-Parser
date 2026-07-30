@@ -237,6 +237,7 @@ function AuthedAnalytics() {
   } else if (!data || data.overview.total_candidates === 0) {
     body = (
       <EmptyState
+        surface
         icon={BarChart3}
         title="Nothing to measure yet"
         description="Analytics appear once candidates have been uploaded and analyzed."
@@ -376,7 +377,7 @@ function AuthedAnalytics() {
 
   return (
     <AppShell breadcrumbs={ANALYTICS_CRUMBS} account={account}>
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col px-8 pb-16 pt-10">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col px-6 pb-12 pt-6">
         <PageHeader
           title="Analytics"
           description="Pipeline health across every role you run."

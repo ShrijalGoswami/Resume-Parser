@@ -165,9 +165,10 @@ what the model produced. Mutations are optimistic with rollback.
 FastAPI ASGI app. Two families of routes under `/api/v1`:
 
 - **Stateless AI** — `analyze`, `match`, `batch`, `copilot`, `agent`, `export`,
-  `reports`, `search`. No auth, no DB; each request carries all its state. These
-  cost money per call, which is why they sit behind a rate limiter and want a WAF
-  in front of them in production.
+  `reports`, `search`. Stateless in the sense that each request carries all its
+  state and touches no database — but **not unauthenticated**: since the RBAC
+  sweep (29 Jul 2026) they require a recruiter JWT and a permission (`ai.use`,
+  `export`). They cost money per call, so they also sit behind a rate limiter.
 - **Persistence** — `campaigns`, `account`, `org`, `admin`, `analytics`,
   `integrations`, `knowledge`, `prediction`. Require a recruiter JWT and operate
   only on that recruiter's organization.

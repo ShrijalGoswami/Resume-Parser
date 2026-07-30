@@ -18,7 +18,11 @@ function MetricTile({ label, value }: { label: string; value: string | number })
   return (
     <Card className="p-4">
       <p className="hl-caption text-hl-fg-tertiary">{label}</p>
-      <p className="hl-display-xl mt-1">{value}</p>
+      {/* `hl-metric-sm` — the card-metric step. This was `hl-display-xl`, a
+          64px serif intended for a display heading, inside a p-4 tile; a
+          figure in a card wants the tabular metric family so a row of them
+          aligns. */}
+      <p className="hl-metric-sm mt-1">{value}</p>
     </Card>
   )
 }

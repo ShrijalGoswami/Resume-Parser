@@ -4,10 +4,10 @@
 
 ## 1. Environment
 
-- **Backend URL:** `http://localhost:8000`
+- **Backend URL:** `http://127.0.0.1:8010`
 - **Supabase project:** `vmqhigckfkedkwfkvnij.supabase.co`
 - **Environment:** `development`
-- **Date/time:** 2026-07-29 04:21 UTC
+- **Date/time:** 2026-07-29 15:50 UTC
 - **Original SHA-256:** `6b3f45aa0dc5dafccae3d735202ab2de2a60beac058fe9b841b15f2dc4092b03`
 
 ## 2. Execution summary

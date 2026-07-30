@@ -131,6 +131,58 @@ See §5. The service-role key is the one that matters: it bypasses RLS entirely.
 3. If the report predates the guard on inbound request IDs, treat a suspiciously
    readable ID with caution — callers could once supply arbitrary values.
 
+### 3.8 Diagnose `503 "Organization lookup failed."`
+
+This is the failure that took a session to find once already. Full analysis:
+`docs/rca/UPLOAD_503.md`. **Do not treat it as "Supabase is down"** — it was a
+client-side transport fault, and the symptom looks identical.
+
+**Symptoms.** Intermittent `503 {"detail":"Organization lookup failed."}` on any
+authenticated endpoint that resolves org context — most visibly résumé upload
+(`POST /campaigns/{id}/candidates/{id}/resume`) and `GET /org/context`. Fails in
+about 1.5s, not on a timeout. Supabase's own status page is green and the
+database is healthy. Retrying often works, which makes it look like flakiness.
+
+**One grep decides it.** Every 503 now logs its cause:
+
+```
+grep "org-context read failed" <log>
+```
+
+Read two fields on that line:
+
+| Field | Meaning |
+|---|---|
+| `failed_branches=1/4` | One query failed. A real query, RLS or permission problem — read `query=` for which, and the `exc=` chain. |
+| `failed_branches=4/4` | **The shared HTTP connection died.** All four reads went down together, so this is the transport, not the data. |
+| `query=` | Which of `org` / `member` / `sub` / `flags` failed. |
+| `branch_ms=` / `fan_ms=` | Per-branch and total fan-out latency. |
+| `exc=` | The full `cause <- cause` chain. This is the field that names the real fault. |
+
+**If it is `4/4` and `exc=` mentions `RemoteProtocolError` / `ConnectionTerminated`
+/ `_sync/http2.py`:** HTTP/2 has been re-enabled for the Supabase transport.
+That is the regression. Check `app/db/supabase_client.py` for `http2=False` and
+that both `get_user_client` and `get_service_client` still pass
+`httpx_client=_transport()`. Run `pytest tests/test_supabase_transport.py` — it
+fails on exactly this. `error_code:1` is a stream-ordering violation,
+`error_code:9` an HPACK corruption; both mean the same thing here.
+
+**If it is `4/4` and `exc=` mentions `handshake operation timed out` /
+`ConnectTimeout`:** connection *churn*, not the protocol bug — the shared pool is
+not being reused. Confirm `_transport()` returns a singleton and that
+`init_transport()` still runs in the app lifespan.
+
+**Related silent failures** (added at the same time, same cause family):
+
+* `postgrest.auth() failed …` — clients fell back to the anon key, so every
+  RLS-scoped read returns empty. Presents as "no organization" or blank
+  dashboards, *not* as an error.
+* `org_id_for failed for recruiter=…` — usage attribution degraded. Harmless to
+  the request; a burst of them is not.
+
+**Do not "fix" this by adding a retry around the fan-out.** It papers over a
+corrupted connection and roughly doubles the latency of the failure path.
+
 ---
 
 ## 4. Incident response

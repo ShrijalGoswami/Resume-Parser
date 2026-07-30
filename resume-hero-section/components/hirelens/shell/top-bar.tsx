@@ -21,7 +21,7 @@ export function TopBar({ breadcrumbs, title, unreadCount }: TopBarProps) {
   const { setCommandOpen } = useShell()
 
   return (
-    <header className="sticky top-0 z-[var(--hl-z-sticky)] flex h-[52px] shrink-0 items-center gap-3 border-b border-hl-border-subtle bg-hl-canvas px-4">
+    <header className="sticky top-0 z-[var(--hl-z-sticky)] flex h-[var(--hl-topbar-h)] shrink-0 items-center gap-3 border-b border-hl-border-subtle bg-hl-canvas px-4">
       {/*
         The trail itself is hidden below `sm`, but this spacer keeps `flex-1` so the
         launcher and account controls stay pinned right at every width.

@@ -14,6 +14,11 @@ import { ErrorState } from '../../states/error-state'
 import { toast } from '../../ui/use-toast'
 import type { AiConfig } from '@/types/ai-gateway'
 
+/** Provider ids are lowercase keys; every surface shows them title-cased. */
+function titleCase(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1)
+}
+
 const HEALTH_TONE: Record<string, BadgeProps['variant']> = {
   healthy: 'success',
   rate_limited: 'warning',
@@ -90,7 +95,10 @@ function UsagePanel() {
         {tiles.map(([label, value]) => (
           <Card key={label} className="p-3">
             <p className="hl-caption text-hl-fg-tertiary">{label}</p>
-            <p className="hl-h2">{value}</p>
+            {/* All six are figures, so they take the card-metric step rather
+                than a heading token — tabular numerals keep the grid's columns
+                aligned as counts grow. */}
+            <p className="hl-metric-sm mt-0.5">{value}</p>
           </Card>
         ))}
       </div>
@@ -165,8 +173,12 @@ function ActiveProvider({ config, canSwitch }: { config: AiConfig; canSwitch: bo
         <span className="hl-caption text-hl-fg-tertiary">Active provider</span>
         <span className="hl-h3 capitalize">{config.active_provider}</span>
         {config.override_active ? <Badge variant="info">Override</Badge> : null}
+        {/* The chain was joined raw, so the same provider read "Groq" as the
+            active one and "groq" here, two words apart on one line. */}
         {config.fallback_enabled ? (
-          <Badge variant="neutral">Fallback: {config.fallback_chain.join(' → ') || 'none'}</Badge>
+          <Badge variant="neutral">
+            Fallback: {config.fallback_chain.map(titleCase).join(' → ') || 'None'}
+          </Badge>
         ) : (
           <Badge variant="warning">Fallback off</Badge>
         )}

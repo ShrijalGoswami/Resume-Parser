@@ -14,6 +14,7 @@ from app.core.observability import (
     RateLimitMiddleware,
 )
 from app.core.startup import validate_startup
+from app.db.supabase_client import close_transport, init_transport
 from app.db.supabase_client import supabase_available
 from fastapi import Depends
 from fastapi.openapi.docs import get_swagger_ui_html
@@ -33,7 +34,11 @@ async def lifespan(app: FastAPI):
     # Fail fast on critical misconfiguration; log (don't crash) on the rest.
     validate_startup()
     logger.info(f"Resolved temp upload directory: {settings.temp_upload_path.as_posix()}")
+    # Warm the shared Supabase connection pool before serving traffic, so the
+    # first requests don't race each other into building it.
+    init_transport()
     yield
+    close_transport()
     logger.info("HireLens API shutting down.")
 
 

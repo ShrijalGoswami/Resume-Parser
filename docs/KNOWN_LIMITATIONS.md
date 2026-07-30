@@ -29,8 +29,9 @@ conditions under which each limitation matters. None are release blockers (see
 
 | Limitation | Impact | Mitigation | Planned fix |
 |-----------|--------|-----------|-------------|
-| **Coarse RBAC** — product-tier permissions (`CAMPAIGN_MANAGE`, `AI_USE`, …) defined but not enforced on every route | A non-admin role can act on **its own** data and spend AI budget (not cross-tenant) | Admin/org mutations **are** permission-gated; all data is `recruiter_id`-keyed | Enforce granular permissions per route (product decision on role capabilities) |
-| **Public stateless analyzer endpoints** (`/ats-analysis`, `/match-analysis`, `/batch-analysis`, `/copilot/chat`) require no auth by design | Anonymous cost/DoS abuse | **Rate-limited** per IP | Product decision: keep public analyzer or gate it |
+| ~~**Coarse RBAC**~~ — **RESOLVED 29 Jul 2026.** Product-tier permissions are now enforced across the API: 74 of 103 endpoints permission-gated, every non-self-service mutation among them | — | — | Done. Coverage verified by AST parse; see `docs/API.md` |
+| ~~**Public stateless analyzer endpoints**~~ — **RESOLVED 29 Jul 2026.** `/ats-analysis`, `/match-analysis`, `/batch-analysis` and `/copilot/*` now require a recruiter JWT + `ai.use`; `/export-*` require `export` | — | — | Done. The product decision was made: gate them. Only `/health` is public |
+| **UI** permission gates never verified *closed* in a live browser | A gate could render wrong in either direction — offering a control that 403s, or hiding one a role should have | **Server enforcement is now proven**: `test_rbac_enforcement` drives one account through 5 roles × 17 probes live, 67 pass / 0 fail (`docs/qa/RUNTIME_VALIDATION_RBAC.md`). The server is the authority, so the risk is cosmetic, not a privilege escalation. UI gates are also unit-tested closed | Drive a downgraded role through each gated surface in a browser |
 | **OAuth `state` not validated** on integration callback | CSRF (requires `INTEGRATION_MANAGE` on both calls) | Low blast radius | Persist + verify `state` |
 | **`INTEGRATION_ENCRYPTION_KEY` derived from JWT secret when unset** | Couples two secrets | Works; warned | Require a dedicated key in production |
 | **Member invite reveals email existence** (distinct 404) | Enumeration by an org admin | — | Invite-by-token flow |

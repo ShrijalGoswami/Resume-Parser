@@ -125,7 +125,7 @@ function AuthedSettings({ section }: { section: string }) {
               id="settings-section-select"
               value={active.id}
               onChange={(event) => router.push(`/settings/${event.target.value}`)}
-              className="hl-body h-[var(--hl-control-h-md)] w-full rounded-hl-md border border-hl-border bg-hl-canvas px-2 text-hl-fg outline-none focus-visible:border-hl-accent"
+              className="hl-body h-hl-input w-full rounded-hl-md border border-hl-border bg-hl-canvas px-2 text-hl-fg outline-none focus-visible:border-hl-accent"
             >
               {GROUPS.map((group) => (
                 <optgroup key={group} label={group}>
@@ -139,7 +139,7 @@ function AuthedSettings({ section }: { section: string }) {
             </select>
           </div>
 
-          <div className="mx-auto max-w-[980px] px-6 py-8 lg:px-10">{active.render()}</div>
+          <div className="mx-auto max-w-[980px] px-5 py-6 lg:px-8">{active.render()}</div>
         </div>
       </div>
     </AppShell>

@@ -68,7 +68,12 @@ function Row({
 }
 
 function Hint({ text }: { text: string }) {
-  return <p className="hl-label px-2 py-1.5 text-hl-fg-tertiary">{text}</p>
+  // `hl-caption`, not `hl-label`. These are sentences — "Save a search to reuse
+  // it." — and `hl-label` sets uppercase at 14/620, so each hint rendered
+  // LARGER, HEAVIER and IN CAPS than the `hl-caption` panel heading above it.
+  // The hierarchy read upside down, and the scale reserves `hl-label` for
+  // labels and table headers precisely because uppercase is not for prose.
+  return <p className="hl-caption px-2 py-1.5 text-hl-fg-tertiary">{text}</p>
 }
 
 export interface TalentSidebarProps {

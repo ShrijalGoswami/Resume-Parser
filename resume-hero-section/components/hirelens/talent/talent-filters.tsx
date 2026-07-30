@@ -5,7 +5,9 @@ import { Input } from '../ui/input'
 import type { SearchFilters } from '@/types/search'
 
 const selectClass =
-  'hl-ui h-hl-control-md rounded-hl-md border border-hl-border bg-hl-canvas px-2.5 text-hl-fg outline-none focus-visible:border-hl-accent'
+  // `h-hl-input` so the selects match the <Input> they share a row with —
+  // a filter toolbar mixing 44px selects with a 48px field steps by 4px.
+  'hl-ui h-hl-input rounded-hl-md border border-hl-border bg-hl-canvas px-2.5 text-hl-fg outline-none focus-visible:border-hl-accent'
 
 /**
  * Location commits on blur / Enter (not per-keystroke) so a text edit doesn't

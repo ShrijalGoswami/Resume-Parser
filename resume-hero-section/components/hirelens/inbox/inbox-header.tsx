@@ -50,7 +50,10 @@ export function InboxHeader({ name, org }: { name?: string; org?: string }) {
     <header className="flex flex-col gap-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="hl-display-md">
+          {/* `hl-display`, the shell page-title step — not the focal step.
+              Home is a route like Roles or Talent; titling it two steps larger
+              made the greeting shout across the whole product. */}
+          <h1 className="hl-display">
             {greeting()}
             {first ? `, ${first}` : ''}
           </h1>

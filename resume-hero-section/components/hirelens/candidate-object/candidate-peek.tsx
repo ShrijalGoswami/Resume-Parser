@@ -65,7 +65,7 @@ export function CandidatePeek({
               <CandidateHeader model={c.model} dense />
             </div>
           ) : (
-            <span className="hl-h2">Candidate</span>
+            <span className="hl-h1">Candidate</span>
           )}
           <Button variant="ghost" size="sm" onClick={goFull} className="shrink-0">
             <ArrowUpRight /> Full review <Kbd className="ml-1">F</Kbd>

@@ -133,6 +133,7 @@ function AuthedRoles({ initialNew }: { initialNew: boolean }) {
   } else if (total === 0) {
     body = (
       <EmptyState
+        surface
         variant="first-run"
         icon={Plus}
         title={canManage ? 'Create your first role' : 'No roles yet'}
@@ -153,6 +154,7 @@ function AuthedRoles({ initialNew }: { initialNew: boolean }) {
   } else if (filtered.length === 0) {
     body = (
       <EmptyState
+        surface
         variant="zero-results"
         title="No matching roles"
         description="Try a different status or search."
@@ -170,7 +172,7 @@ function AuthedRoles({ initialNew }: { initialNew: boolean }) {
 
   return (
     <AppShell breadcrumbs={ROLES_CRUMBS} account={account}>
-      <div className="mx-auto w-full max-w-[1440px] px-8 pb-16 pt-8">
+      <div className="mx-auto w-full max-w-[1440px] px-6 pb-12 pt-6">
         <PageHeader
           title="Roles"
           description="Every open role and its candidate pipeline."
@@ -215,7 +217,7 @@ function AuthedRoles({ initialNew }: { initialNew: boolean }) {
           ) : null}
         </PageHeader>
 
-        <div className="mt-6">{body}</div>
+        {body}
       </div>
 
       <RoleFormDialog

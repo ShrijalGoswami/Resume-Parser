@@ -59,7 +59,12 @@ export const NativeSelect = React.forwardRef<
   <select
     ref={ref}
     className={cn(
-      'hl-body h-[var(--hl-control-h-md)] rounded-hl-md border border-hl-border bg-hl-canvas px-2 text-hl-fg outline-none focus-visible:border-hl-accent disabled:cursor-not-allowed disabled:opacity-50',
+      // `h-hl-input` (48), not the 44px control height. A select is a form
+      // control, not a button, and it is almost always rendered beside an
+      // `<Input>` — on the Talent filter row the Location input measured 48px
+      // against 44px selects, a 4px step between adjacent controls in the same
+      // row. Same token, same height, one row.
+      'hl-body h-hl-input rounded-hl-md border border-hl-border bg-hl-canvas px-2 text-hl-fg outline-none focus-visible:border-hl-accent disabled:cursor-not-allowed disabled:opacity-50',
       className,
     )}
     {...props}

@@ -114,6 +114,7 @@ function AuthedNotifications() {
   } else if (items.length === 0) {
     body = (
       <EmptyState
+        surface
         icon={Bell}
         title="Nothing needs you right now"
         description="Recommendations awaiting a decision and activity across your roles show up here."
@@ -122,6 +123,7 @@ function AuthedNotifications() {
   } else if (filtered.length === 0) {
     body = (
       <EmptyState
+        surface
         variant="zero-results"
         title="Nothing in this filter"
         description="Try another filter to see the rest of your notifications."
@@ -150,7 +152,7 @@ function AuthedNotifications() {
 
   return (
     <AppShell breadcrumbs={NOTIFICATION_CRUMBS} account={account}>
-      <div className="mx-auto flex w-full max-w-[1100px] flex-col px-8 pb-16 pt-10">
+      <div className="mx-auto flex w-full max-w-[1100px] flex-col px-6 pb-12 pt-6">
         <PageHeader
           title="Notifications"
           description={

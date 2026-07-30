@@ -192,7 +192,7 @@ function MemoLayout({
             <p className="hl-label-sm font-hl-mono text-hl-fg-tertiary">
               Decision brief · {roleTitle}
             </p>
-            <h1 className="hl-display-md mt-1 text-hl-fg">{rec.title}</h1>
+            <h1 className="hl-display mt-1 text-hl-fg">{rec.title}</h1>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <ConfidenceChip confidence={rec.confidence} />
               {fit !== null ? (

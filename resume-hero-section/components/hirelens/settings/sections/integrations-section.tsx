@@ -16,7 +16,9 @@ import {
 } from '../../lib/api/integrations'
 import { useOrgContext } from '../../lib/api/settings'
 import { SettingsSection, Field, NativeSelect } from '../settings-ui'
+import { ProviderMark } from '../provider-icon'
 import { TypedConfirmDialog } from '../typed-confirm-dialog'
+import { cn } from '@/lib/utils'
 import { PERMS, hasPerm } from '../permissions'
 import { Card } from '../../ui/card'
 import { Badge, type BadgeProps } from '../../ui/badge'
@@ -44,6 +46,32 @@ const HEALTH_TONE: Record<string, BadgeProps['variant']> = {
   disconnected: 'neutral',
 }
 
+/* `capitalize` turned the `ats` category into "Ats" and `meeting` into the
+   singular "Meeting" next to plural siblings. Categories are a closed set from
+   the backend registry, so they get written labels rather than a transform. */
+const CATEGORY_LABEL: Record<string, string> = {
+  email: 'Email',
+  calendar: 'Calendar',
+  messaging: 'Messaging',
+  meeting: 'Meetings',
+  ats: 'ATS',
+  webhook: 'Webhook',
+}
+
+/* The badge answers "can I use this?" first. A provider that is connected but
+   unhealthy says so in its own words; everything else is the plain binary,
+   because "Disconnected" and "Not connected" are the same state described two
+   ways and the card should only ever use one of them. */
+function connectionStatus(connection?: Connection): { label: string; tone: BadgeProps['variant'] } {
+  if (!connection || connection.status === 'disconnected') {
+    return { label: 'Not connected', tone: 'neutral' }
+  }
+  const health = connection.health
+  if (health === 'degraded') return { label: 'Degraded', tone: 'warning' }
+  if (health === 'error') return { label: 'Error', tone: 'danger' }
+  return { label: 'Connected', tone: HEALTH_TONE[health] ?? 'success' }
+}
+
 function humanize(value: string) {
   return value.replace(/[._]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }
@@ -69,9 +97,12 @@ export function IntegrationsSection() {
         <div className="flex flex-col gap-2">
           <h2 className="hl-h3">Providers</h2>
           {providers.isLoading || connections.isLoading ? (
-            <div className="grid gap-2 sm:grid-cols-2">
-              {[0, 1, 2, 3].map((index) => (
-                <Skeleton key={index} className="h-20" />
+            // Six at the card's real height — the catalog ships ten providers,
+            // so a four-tile skeleton at the old height made the grid jump
+            // twice: once taller, once longer.
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[0, 1, 2, 3, 4, 5].map((index) => (
+                <Skeleton key={index} className="h-[104px]" />
               ))}
             </div>
           ) : providers.isError ? (
@@ -81,7 +112,7 @@ export function IntegrationsSection() {
               onRetry={() => providers.refetch()}
             />
           ) : (
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               {(providers.data ?? []).map((provider) => (
                 <ProviderCard
                   key={provider.name}
@@ -131,20 +162,34 @@ function ProviderCard({
     )
   }
 
+  const status = connectionStatus(connection)
+
   return (
-    <Card className="flex flex-col gap-2 p-3">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="hl-body font-medium text-hl-fg">{provider.display_name}</p>
-          <p className="hl-caption capitalize text-hl-fg-tertiary">{provider.category}</p>
+    // `group/provider` is a named group so the mark can respond to a hover on
+    // the card without also firing inside the nested action buttons.
+    <Card
+      className={cn(
+        'group/provider flex flex-col gap-3 p-4',
+        'transition-[border-color,box-shadow] duration-[var(--hl-dur-base)] ease-[var(--hl-ease-out)]',
+        'hover:border-hl-border-strong hover:shadow-[var(--hl-shadow-md)]',
+      )}
+    >
+      {/* One row, vertically centred: mark, then name over category, then
+          status pushed right. Centring the 36px mark against the two-line text
+          block is what makes a column of these line up. */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <ProviderMark provider={provider.name} />
+          <div className="min-w-0">
+            <p className="hl-body-medium truncate text-hl-fg">{provider.display_name}</p>
+            <p className="hl-caption mt-0.5 truncate text-hl-fg-tertiary">
+              {CATEGORY_LABEL[provider.category] ?? humanize(provider.category)}
+            </p>
+          </div>
         </div>
-        {connection ? (
-          <Badge variant={HEALTH_TONE[connection.health] ?? HEALTH_TONE[connection.status] ?? 'neutral'} className="capitalize">
-            {connection.health || connection.status}
-          </Badge>
-        ) : (
-          <Badge variant="neutral">Not connected</Badge>
-        )}
+        <Badge variant={status.tone} className="shrink-0">
+          {status.label}
+        </Badge>
       </div>
       {canManage ? (
         <div className="flex flex-wrap gap-1.5">
@@ -228,6 +273,7 @@ function AutomationRules({ canManage }: { canManage: boolean }) {
         <ErrorState variant="inline" title="Couldn’t load rules" onRetry={() => rules.refetch()} />
       ) : (rules.data ?? []).length === 0 ? (
         <EmptyState
+          surface
           icon={Plug}
           title="No automation rules yet"
           description="Trigger actions across your connected tools when hiring events happen."

@@ -40,9 +40,9 @@ function NavLink({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
       // already doing this).
       aria-label={collapsed ? item.label : undefined}
       className={cn(
-        // Token-driven height, not `h-9` — the rail follows the shared control
-        // scale like every other control.
-        'group relative flex h-hl-control-lg items-center gap-3 rounded-hl-md px-3 outline-none',
+        // A nav row is not a button: `control-md` (36), not `control-lg` (44).
+        // Nine rows at 44px made the rail 400px of chrome on a 695px canvas.
+        'group relative flex h-hl-control-md items-center gap-2.5 rounded-hl-md px-2.5 outline-none',
         'transition-[background-color,color,transform] duration-[var(--hl-dur-base)] ease-[var(--hl-ease-out)]',
         collapsed && 'justify-center px-0',
         active
@@ -183,14 +183,14 @@ export function LeftNav({ account }: LeftNavProps) {
       aria-label="Primary"
       className={cn(
         'hl-rail flex h-full shrink-0 flex-col border-r border-hl-border-subtle transition-[width] duration-[var(--hl-dur-base)]',
-        collapsed ? 'w-16' : 'w-64',
+        collapsed ? 'w-[var(--hl-nav-w-collapsed)]' : 'w-[var(--hl-nav-w)]',
       )}
     >
       {/* Brand zone: matches the 52px top-bar height and carries the header
           divider so the rule reads continuously across rail + header. */}
       <div
         className={cn(
-          'flex h-[52px] shrink-0 items-center border-b border-hl-border-subtle px-2',
+          'flex h-[var(--hl-topbar-h)] shrink-0 items-center border-b border-hl-border-subtle px-2',
           collapsed && 'justify-center px-0',
         )}
       >
@@ -198,7 +198,7 @@ export function LeftNav({ account }: LeftNavProps) {
       </div>
 
       {/* Grouped navigation (WORKSPACE · INTELLIGENCE). */}
-      <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-2 pt-4">
+      <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-2 pt-3">
         {visibleGroups.map((group) => (
           <div key={group.label} className="flex flex-col gap-0.5">
             {collapsed ? null : (

@@ -80,6 +80,7 @@ function ApiKeysManager() {
         <ErrorState variant="inline" title="Couldn’t load API keys" onRetry={() => keys.refetch()} />
       ) : (keys.data ?? []).length === 0 ? (
         <EmptyState
+          surface
           icon={KeyRound}
           title="No API keys yet"
           description="Create a key to access HireLens programmatically."

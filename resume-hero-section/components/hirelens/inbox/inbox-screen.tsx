@@ -45,7 +45,7 @@ function CenteredNotice({
   )
 }
 
-const SHELL = 'mx-auto flex w-full max-w-[1100px] flex-col gap-10 px-8 pb-24 pt-8'
+const SHELL = 'mx-auto flex w-full max-w-[1100px] flex-col gap-7 px-6 pb-14 pt-6'
 
 /** Skeletons (never spinners) matching the Inbox layout. */
 function InboxSkeleton() {
@@ -181,6 +181,7 @@ function AuthedInbox() {
   } else if (recommendations.length === 0 && events.length === 0) {
     body = (
       <EmptyState
+        surface
         variant="first-run"
         icon={Plus}
         title="No work needs your attention"

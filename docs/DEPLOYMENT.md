@@ -327,5 +327,7 @@ Deeper detail in [ROLLBACK.md](./ROLLBACK.md).
   volume grows.
 - **Database:** Supabase vertical scaling → read replicas → PgBouncer pooling.
 - **Cost:** stored AI results mean repeat reads never re-invoke the LLM
-  ([ADR-004](./decisions/ADR-004-store-ai-output.md)). The unauthenticated AI
-  endpoints are the cost risk, not recruiter traffic — put a WAF in front of them.
+  ([ADR-004](./decisions/ADR-004-store-ai-output.md)). The AI endpoints were the
+  cost risk while they were anonymous; since the RBAC sweep (29 Jul 2026) they
+  require a recruiter JWT + `ai.use`, so spend is attributable to an organization.
+  Watch per-org spend rather than relying on a WAF — see MONITORING §5.

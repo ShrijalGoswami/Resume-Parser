@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { Badge } from '../../ui/badge'
+import { stageLabel } from '../../workspace/stages'
 import type { CandidateModel } from '../model'
 
 function initials(name: string): string {
@@ -36,8 +37,8 @@ export function CandidateHeader({ model, dense }: { model: CandidateModel; dense
               {model.matchCategory}
             </Badge>
           ) : null}
-          <span className="hl-small capitalize text-hl-fg-tertiary">
-            Stage · {model.stage}
+          <span className="hl-small text-hl-fg-tertiary">
+            Stage · {stageLabel(model.stage)}
           </span>
         </div>
       </div>

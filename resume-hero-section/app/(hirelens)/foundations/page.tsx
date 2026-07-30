@@ -98,10 +98,11 @@ export default function FoundationsPage() {
           </p>
         </header>
 
-        <Section title="Typography" description="Fraunces display · Inter UI · JetBrains mono">
+        <Section title="Typography" description="Inter · JetBrains Mono — no serif in the product">
           <div className="flex flex-col gap-1">
-            <p className="hl-display-xl">Display XL</p>
-            <p className="hl-display">Display</p>
+            <p className="hl-display-xl">Display XL — 64 · reference</p>
+            <p className="hl-display-md">Display MD — 44 · focal moment</p>
+            <p className="hl-display">Display — 31 · page heading</p>
             <p className="hl-h1">Heading 1</p>
             <p className="hl-h2">Heading 2</p>
             <p className="hl-h3">Heading 3</p>

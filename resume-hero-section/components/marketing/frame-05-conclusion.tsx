@@ -11,7 +11,7 @@ import { Counter, Reveal } from './motion'
  * The close: customer story, pricing teaser, FAQ accordion, and the Deep Ink
  * final call to action.
  *
- * Frame 5 uses a max-w-7xl (1280px) container with 32px side padding. The FAQ
+ * Frame 5 uses a max-w-[1280px] (1280px) container with 32px side padding. The FAQ
  * is the one genuinely interactive element in the marketing frames — Stitch
  * ships it as inline `onclick` toggles with the first item open; that behaviour
  * is reproduced here as real React state so it stays keyboard-accessible.
@@ -122,10 +122,10 @@ export function Frame05Conclusion() {
       {/* ---------------------------------------------------------------- */}
       {/* CUSTOMER STORY                                                    */}
       {/* ---------------------------------------------------------------- */}
-      <section className="mx-auto max-w-7xl border-b border-mkt-subtle bg-mkt-canvas px-8 py-32">
+      <section className="mx-auto max-w-[1280px] border-b border-mkt-subtle bg-mkt-canvas px-8 py-32">
         <div className="grid grid-cols-1 items-center gap-16 lg:grid-cols-12">
           <div className="lg:col-span-7">
-            <h2 className="mb-8 font-mkt-display text-4xl leading-tight text-mkt-fg md:text-5xl md:leading-none lg:text-6xl">
+            <h2 className="mb-8 font-mkt-display text-4xl leading-tight text-mkt-fg md:text-5xl md:leading-none">
               &ldquo;HireLens changed which hires we&rsquo;re proud of, not just
               how fast we made them.&rdquo;
             </h2>
@@ -227,7 +227,7 @@ export function Frame05Conclusion() {
       {/* ---------------------------------------------------------------- */}
       <section
         id="pricing"
-        className="mx-auto max-w-7xl border-b border-mkt-subtle bg-mkt-canvas px-8 py-32"
+        className="mx-auto max-w-[1280px] border-b border-mkt-subtle bg-mkt-canvas px-8 py-32"
       >
         <div className="mb-16 text-center">
           <h2 className="mb-4 font-mkt-display text-3xl text-mkt-fg">
@@ -368,7 +368,7 @@ export function Frame05Conclusion() {
 
         <div className="relative z-10 mx-auto max-w-4xl px-8 text-center">
           <Reveal>
-            <h2 className="mb-10 font-mkt-display text-5xl tracking-tight text-mkt-canvas md:text-7xl">
+            <h2 className="mb-10 font-mkt-display text-4xl tracking-tight text-mkt-canvas md:text-5xl">
               Bring every hire into focus.
             </h2>
           </Reveal>

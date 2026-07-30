@@ -154,7 +154,7 @@ export function AskThread({
         </div>
       </div>
 
-      <div className="border-t border-hl-border-subtle bg-hl-canvas p-5">
+      <div className="border-t border-hl-border-subtle bg-hl-canvas p-4">
         <div className="mx-auto max-w-[880px]">
           <AskComposer
             draft={draft}
@@ -192,7 +192,7 @@ function Turn({
       {turn.structured ? (
         <AssistantTurn response={turn.structured} onFollowup={onFollowup} />
       ) : (
-        <div className="hl-prism-edge rounded-r-[var(--hl-radius-lg)] bg-hl-ai-surface p-5">
+        <div className="hl-prism-edge rounded-r-[var(--hl-radius-lg)] bg-hl-ai-surface p-4">
           <p className="hl-body text-hl-fg">{turn.content}</p>
         </div>
       )}
@@ -218,7 +218,7 @@ function LandingHero({ onPick }: { onPick: (prompt: string) => void }) {
             key={example.prompt}
             type="button"
             onClick={() => onPick(example.prompt)}
-            className="flex flex-col gap-1.5 rounded-hl-lg border border-hl-border bg-hl-canvas px-4 py-3.5 text-left outline-none transition-colors hover:border-hl-border-strong hover:bg-hl-subtle"
+            className="flex flex-col gap-1.5 rounded-hl-lg border border-hl-border bg-hl-canvas px-3.5 py-3 text-left outline-none transition-colors hover:border-hl-border-strong hover:bg-hl-subtle"
           >
             <span className="hl-label text-hl-prism-mid">{example.mode}</span>
             <span className="hl-body text-hl-fg">{example.prompt}</span>

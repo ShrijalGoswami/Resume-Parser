@@ -20,8 +20,18 @@ const STATUS_TONE: Record<string, BadgeProps['variant']> = {
   canceled: 'neutral',
 }
 
+/* Initial-caps on every word turned the limit keys into "Storage Mb" and
+   "Ai Requests" — the same shape of defect as the "Ats" category on the
+   Integrations page. Acronyms and units are cased explicitly; a plan surface is
+   the last place that should look auto-generated. */
+const CASING: Record<string, string> = {
+  ai: 'AI', api: 'API', mb: 'MB', gb: 'GB', ats: 'ATS', sso: 'SSO', id: 'ID',
+}
+
 function humanize(value: string) {
-  return value.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+  return value
+    .replace(/_/g, ' ')
+    .replace(/\b\w+/g, (word) => CASING[word.toLowerCase()] ?? word.charAt(0).toUpperCase() + word.slice(1))
 }
 
 export function BillingSection() {
@@ -49,7 +59,9 @@ export function BillingSection() {
         <div className="flex flex-col gap-5">
           <Card className="flex flex-col gap-3 p-4">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="hl-h2 capitalize">{humanize(current.plan)}</span>
+              {/* Sits inline with a status badge — the section heading step,
+                  not the one above it. */}
+              <span className="hl-h3 capitalize">{humanize(current.plan)}</span>
               <Badge variant={STATUS_TONE[current.status] ?? 'neutral'} className="capitalize">
                 {humanize(current.status)}
               </Badge>

@@ -360,20 +360,44 @@
      verified against while giving recruiters nothing they had asked for.
      If the product ever needs a denser mode, it belongs here as a second
      considered scale — not as a preference users have to discover. */
-  --hl-control-h-sm: 2.25rem;  /* 36 */
-  --hl-control-h-md: 2.75rem;  /* 44 */
-  --hl-control-h-lg: 3.25rem;  /* 52 */
+  /* DENSITY REBALANCE, 29 Jul 2026. Every size below came down ~17%.
+     ---------------------------------------------------------------------
+     The product was correct only at 75% browser zoom: at 100% the chrome was
+     roughly a sixth too large everywhere, so a dashboard read like a tablet
+     layout. This is a SCALE change, not a type change — every font size in the
+     scale above is untouched, and body stays at 16/26. What shrank is the
+     interface around the text: control heights, padding, row heights, avatars,
+     icon boxes and the shell chrome.
+
+     Target density is Stripe Dashboard / Linear / Vercel: 36px buttons, 40px
+     fields, 44px rows. Reduce these further only with the same care — every
+     control in the product is sized from here. */
+  --hl-control-h-sm: 1.875rem; /* 30 (was 36) */
+  --hl-control-h-md: 2.25rem;  /* 36 (was 44) */
+  --hl-control-h-lg: 2.75rem;  /* 44 (was 52) */
   /* Text inputs run one step taller than a same-size button — a field you
      type into wants a larger target than a button you click once. */
-  --hl-input-h: 3rem;          /* 48 */
-  --hl-card-pad: 1.5rem;       /* 24 */
-  --hl-section-pad: 2rem;      /* 32 */
-  --hl-row-h: 3.25rem;         /* 52 */
-  --hl-avatar: 2.25rem;        /* 36 */
+  --hl-input-h: 2.5rem;        /* 40 (was 48) */
+  --hl-card-pad: 1.25rem;      /* 20 (was 24) */
+  --hl-section-pad: 1.625rem;  /* 26 (was 32) */
+  --hl-row-h: 2.75rem;         /* 44 (was 52) */
+  --hl-avatar: 1.875rem;       /* 30 (was 36) */
+  /* Shell chrome. These were hardcoded as `w-64` and `h-[52px]` in the nav and
+     top bar, so the two largest fixed dimensions in the product could not be
+     tuned from the scale. Tokenised here as part of the same rebalance. */
+  --hl-nav-w: 13.5rem;         /* 216 (was 256) */
+  --hl-nav-w-collapsed: 3.5rem;/* 56  (was 64)  */
+  --hl-topbar-h: 2.75rem;      /* 44  (was 52)  */
   /* Icon sizes, so a rail icon and a button icon can't drift apart. */
-  --hl-icon-sm: 1.25rem;       /* 20 */
-  --hl-icon-md: 1.5rem;        /* 24 */
-  --hl-icon-lg: 1.75rem;       /* 28 */
+  /* 18 — the optical-match step for SOLID glyphs sitting beside stroked ones.
+     A filled mark at 20px carries far more ink than a 20px 1.75-stroke outline;
+     set to the same box they read as two different weights, which is exactly
+     how the Integrations grid looked with Gmail's solid logo next to Outlook's
+     hairline envelope. Two sizes, one apparent weight. */
+  --hl-icon-xs: 1rem;          /* 16 (was 18) */
+  --hl-icon-sm: 1.125rem;      /* 18 (was 20) */
+  --hl-icon-md: 1.25rem;       /* 20 (was 24) */
+  --hl-icon-lg: 1.5rem;        /* 24 (was 28) */
 }
 
 /* --- Base-token bridge --------------------------------------------------
@@ -507,7 +531,10 @@
 @theme inline {
   /* Fonts (§3.8) */
   --font-hl-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-hl-display: var(--font-fraunces), Georgia, 'Times New Roman', serif;
+  /* Deliberately the SAME stack as `--font-hl-sans`. The product has one
+     typeface. The name survives only so an existing `font-hl-display` utility
+     keeps compiling — it can no longer produce a serif. */
+  --font-hl-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-hl-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, monospace;
 
   /* Spacing scale as utilities — `h-hl-control-md`, `size-hl-icon-md`,
@@ -529,6 +556,10 @@
   --size-hl-control-sm: var(--hl-control-h-sm);
   --size-hl-control-md: var(--hl-control-h-md);
   --size-hl-control-lg: var(--hl-control-h-lg);
+  --width-hl-nav: var(--hl-nav-w);
+  --width-hl-nav-collapsed: var(--hl-nav-w-collapsed);
+  --height-hl-topbar: var(--hl-topbar-h);
+  --size-hl-icon-xs: var(--hl-icon-xs);
   --size-hl-icon-sm: var(--hl-icon-sm);
   --size-hl-icon-md: var(--hl-icon-md);
   --size-hl-icon-lg: var(--hl-icon-lg);
@@ -688,6 +719,36 @@
 /* --- Base + typography recipes (§3.8) ----------------------------------- */
 @layer base {
   .hl {
+    /* THE FONT ALIASES ARE RE-DECLARED HERE, AND THEY MUST BE.
+       -----------------------------------------------------------------
+       `@theme inline` above also declares `--font-hl-sans/display/mono`,
+       but it emits them on `:root`, and each one is defined in terms of a
+       next/font variable (`--font-inter`, `--font-fraunces`,
+       `--font-jetbrains`) that next/font only sets on THIS element, via the
+       classes the route-group layout passes in.
+
+       Custom properties resolve where they are declared and inherit
+       downward — they cannot read a value defined on a descendant. So at
+       `:root`, `var(--font-fraunces)` had nothing to resolve to, the whole
+       declaration became invalid at computed-value time, and the empty
+       result inherited into `.hl`. Every `font-family: var(--font-hl-*)`
+       below silently fell through to the document default.
+
+       The effect was total and invisible to any static check: the entire
+       authenticated product rendered in Geist — Next's template default —
+       instead of Inter, Fraunces and JetBrains Mono. It typechecks, the
+       tokens compile, the classes apply, the sizes are right. Only the
+       typeface is wrong, on every screen.
+
+       `.mkt` never had the bug because it declares its `--mkt-font-*`
+       aliases on the same element that carries its font classes. This is
+       that pattern. Found 29 Jul 2026 during visual QA, by reading
+       `getComputedStyle` on a live page rather than trusting the build. */
+    --font-hl-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+    /* Same stack as sans, on purpose — the product has one typeface. */
+    --font-hl-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+    --font-hl-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, monospace;
+
     background-color: var(--hl-bg-canvas);
     color: var(--hl-text-primary);
     font-family: var(--font-hl-sans);
@@ -702,48 +763,75 @@
 }
 
 @layer components {
-  /* Marketing / first-run hero display — Unified DS type scale (64→120px).
-     Fluid so a single editorial hero moment scales from mobile to desktop.
-     Fraunces family; use at most once per surface (Constitution lever 3). */
+  /* =====================================================================
+     THE `.hl-display*` STEPS ARE SANS. THERE IS NO SERIF IN THE PRODUCT.
+     ---------------------------------------------------------------------
+     These five classes carried Fraunces until 29 Jul 2026. The product read
+     as an editorial site rather than as software: a serif page title over
+     Inter body is a magazine masthead, and no dashboard people compare us to
+     — Stripe, Linear, GitHub, Vercel, Notion — sets a title in a display
+     serif. Every step below now takes `--font-hl-sans` (Inter).
+
+     The family is set HERE, once per step, rather than by overriding
+     `font-family` at 70+ call sites. `hl-display` alone appears 42 times and
+     `hl-display-md` 28; changing the token is the whole change.
+
+     Emphasis is carried by WEIGHT, not size: these went up to 680 while
+     coming down ~9% in size. Inter at 680 holds a title against 16px body
+     more firmly than Fraunces at 600 did, and does it without shouting.
+
+     `--font-hl-display` still exists and now resolves to the sans stack, so
+     a stray `font-hl-display` utility cannot reintroduce a serif. Fraunces
+     itself is no longer loaded — see components/hirelens/theme/fonts.ts.
+     Marketing is untouched: it has its own scope and its own serif
+     (Newsreader, via `--mkt-font-display`).
+     ===================================================================== */
+
+  /* Fluid hero step — retained for the foundations reference page. */
   .hl-display-hero {
-    font-family: var(--font-hl-display);
-    font-weight: 560;
-    font-size: clamp(4rem, 8vw, 7.5rem);
+    font-family: var(--font-hl-sans);
+    font-weight: 680;
+    font-size: clamp(3.5rem, 7vw, 6.5rem);
     line-height: 1.04;
-    letter-spacing: -0.015em;
+    letter-spacing: -0.028em;
   }
   /* Section / headline display — 40→56px fluid. */
   .hl-display-lg {
-    font-family: var(--font-hl-display);
-    font-weight: 600;
-    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    font-family: var(--font-hl-sans);
+    font-weight: 680;
+    font-size: clamp(2.125rem, 4.4vw, 3rem);
     line-height: 1.08;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.026em;
   }
-  /* Display — 64/72. The largest step inside the product shell. */
+  /* Display — 64/72. Reference specimen. */
   .hl-display-xl {
-    font-family: var(--font-hl-display);
-    font-weight: 600;
-    font-size: 4rem;
-    line-height: 4.5rem;
+    font-family: var(--font-hl-sans);
+    font-weight: 680;
+    font-size: 3.375rem;
+    line-height: 3.875rem;
+    letter-spacing: -0.03em;
+  }
+  /* Focal step — 44/52. NOT a page title. The standalone-moment heading: auth
+     screens, a centred "Sign in to continue" notice, the candidate dossier,
+     a decision memo — surfaces where the heading IS the screen. A page inside
+     the shell uses `hl-display`; if both appear on one route, that page has
+     two titles and one of them is wrong. */
+  .hl-display-md {
+    font-family: var(--font-hl-sans);
+    font-weight: 680;
+    font-size: 2.25rem;
+    line-height: 2.75rem;
     letter-spacing: -0.024em;
   }
-  /* Hero display — 56/64. The auth surface and any single large serif heading
-     that must sit between hl-display (40px) and hl-display-xl (64px). */
-  .hl-display-md {
-    font-family: var(--font-hl-display);
-    font-weight: 600;
-    font-size: 3.5rem;
-    line-height: 4rem;
-    letter-spacing: -0.022em;
-  }
-  /* Page heading, serif voice — 40/48. */
+  /* PAGE HEADING — 31/38, Inter 680. Every titled route in the product shell,
+     via `PageHeader`. Metrically identical to `hl-h1`; both names are kept so
+     the 42 existing call sites did not need editing. */
   .hl-display {
-    font-family: var(--font-hl-display);
-    font-weight: 600;
-    font-size: 2.5rem;
-    line-height: 3rem;
-    letter-spacing: -0.02em;
+    font-family: var(--font-hl-sans);
+    font-weight: 680;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    letter-spacing: -0.015em;
   }
   /* =====================================================================
      THE HIRELENS TYPE SCALE
@@ -754,42 +842,99 @@
 
      Steps, in one table:
 
-       hl-display-hero   64→120 / 1.04  600  Fraunces  marketing hero only
-       hl-display-lg     44→64  / 1.08  600  Fraunces  section display
-       hl-display-xl     64/72          600  Fraunces  display
-       hl-display-md     56/64          600  Fraunces  hero display (auth)
-       hl-display        40/48          600  Fraunces  page heading, serif
+       ALL STEPS ARE INTER. The product has no serif — see the block above
+       `.hl-display-hero` for why, and marketing keeps its own (Newsreader).
 
-       hl-h1             40/48          700  PAGE HEADING
-       hl-h2             30/38          600  section heading
-       hl-h3             22/30          600  card heading
+       hl-display-hero   64→120 / 1.04  680  reference only
+       hl-display-lg     40→56  / 1.08  680  section display
+       hl-display-xl     64/72          680  reference only
+       hl-display-md     44/52          680  focal moment (auth, notice,
+                                             dossier, memo)
+       hl-display        20/28          680  PAGE HEADING (shell)
 
-       hl-body-lg        18/29          400  large body: drawer intro,
+       hl-h1             20/28          700  page heading — same step as
+                                             hl-display, different name
+       hl-h2             16/24          600  section heading
+       hl-h3             15/22          600  card heading
+
+       hl-body-lg        16/25          400  large body: drawer intro,
                                              empty state, dialog copy
-       hl-body           16/26          400  DEFAULT BODY · input text
-       hl-body-medium    16/26          530  emphasised body
-       hl-ui             16/24          530  UI CHROME: sidebar nav, button
+       hl-body           14/22          400  DEFAULT BODY · input text
+       hl-body-medium    14/22          530  emphasised body
+       hl-ui             14/20          530  UI CHROME: sidebar nav, button
                                              labels, search, control text
-       hl-small          15/23          400  TABLE BODY / dense data. The
+       hl-small          13/20          400  TABLE BODY / dense data. The
                                              floor for readable content.
-       hl-caption        13/20          500  captions, helper, timestamps
+       hl-caption        12/18          500  captions, helper, timestamps
 
-       hl-label          14/20          620  .035em UPPERCASE  input labels,
+       hl-label          12/16          620  .035em UPPERCASE  input labels,
                                              TABLE HEADERS, group headers
-       hl-label-sm       12/16          650  .05em  UPPERCASE  NOT content —
+       hl-label-sm       11/14          650  .05em  UPPERCASE  NOT content —
                                              keycaps, axis ticks, overlines
-       hl-badge          14/20          570  status chips
+       hl-badge          12/18          570  status chips
 
-       hl-mono           15/23          500  tabular  inline data
-       hl-mono-lg        26/32          500  tabular
+       hl-mono           13/20          500  tabular  inline data
+       hl-mono-lg        22/28          500  tabular
        hl-metric-sm      28/34          600  tabular  card metric
        hl-metric         44/50          600  tabular  dashboard KPI
        hl-metric-lg      56/62          700  tabular  hero KPI
 
-     Calibrated against the Stripe Dashboard for comfort — its scale and
-     rhythm, not its visual design. The ladder is 12 → 13 → 14 → 15 → 16 →
-     18 → 22 → 30 → 40 → 56 → 64: every rung is a visible step, and the
-     only rung below 14 that carries readable content is the 13px caption.
+     HEADING PASS, 30 Jul 2026 — the panel comparison. Stripe, Linear, Vercel,
+     GitHub and HireLens were opened back to back on one 1536px canvas. The
+     14/13/12/11 floor already matched GitHub and Vercel to the pixel and did
+     not move. What still read as oversized was the TOP of the ladder: a 26px
+     page title over 14px body is a 1.9:1 jump on a screen where Vercel sets
+     no content H1 at all (the page name lives in the top bar at 14px) and
+     Linear's largest in-app title is ~19px. Titles came 26→20, section
+     headings 21→16, card headings 17→15. Nothing below h3 changed.
+
+     Note the shell already names the route in the top bar. A PageHeader title
+     is therefore the SECOND time the user reads that word — which is why it
+     earns 20px and not more.
+
+     GITHUB-MATCHED BASELINE, 30 Jul 2026. UI text is 14px, the same step
+     GitHub, Stripe Dashboard and Vercel use; Linear's app sits a touch below
+     at ~13. The ladder is 11 → 12 → 13 → 14 → 16 → 17 → 21 → 26 → 36 → 54.
+
+     This was decided by direct comparison, not arithmetic: with GitHub and
+     HireLens opened back to back on the same 1568×710 canvas, the chrome had
+     already been brought to within a few pixels (36px buttons vs 32, 44px rows
+     vs 41, 36px nav rows vs 32) and HireLens *still* read larger. The residue
+     was the type — 16px UI text inside GitHub-sized containers. Containers
+     that look oversized around 16px text look correct around 14px text, which
+     is why this step was taken instead of shaving more padding.
+
+     14px is the floor for UI text and body copy. 13 is dense data (table
+     cells, metadata), 12 is captions and table headers, 11 is marks that are
+     not content at all — keycaps, axis ticks, chip overlines.
+
+     HEADING REBALANCE, 29 Jul 2026. The previous pass overshot: page titles
+     landed at 40px (`hl-display`) and several screens titled themselves at
+     56px (`hl-display-md`), which reads as a document rather than an
+     application — a 56px "Good evening" above 16px body is a 3.5:1 jump and
+     the heading wins the screen. The top of the ladder came down ~10–15%
+     (40→34, 56→48, 30→26, 22→20) while **every body step stayed exactly
+     where it was**: 18 / 16 / 15 / 13 are unchanged, because the earlier
+     complaint was that the product read too small and that fix was correct.
+     Hierarchy is now carried by the *ratio* between steps rather than by the
+     absolute size of the title — 34 over 16 is 2.1:1, which is where Stripe,
+     Linear and Vercel sit for a dashboard page title.
+
+     The two title steps are not interchangeable:
+       · `hl-display` (31) — a route inside the app shell. Always via
+         `PageHeader`, which is the only component that should own an `<h1>`
+         for a shell route.
+       · `hl-display-md` (44) — a screen whose heading IS the screen: auth,
+         a centred sign-in notice, the candidate dossier, a decision memo.
+     Using the focal step for a shell route is what made Home shout while
+     Roles spoke normally.
+
+     TYPEFACE PASS, 29 Jul 2026. Reducing sizes twice had not fixed the
+     complaint, because the problem was not size — it was voice. Page titles
+     were set in Fraunces, a display serif, over Inter body: an editorial
+     masthead on a work surface. Titles are now Inter (31/680), down a
+     further ~9% and up in weight. Body is UNCHANGED for the third pass
+     running: 18 / 16 / 15 / 13 have not moved since the scale was built.
 
      Weight discipline: titles 700, section headings 600, body 400–500,
      metadata/labels 500+. Hierarchy is carried by size and weight — never
@@ -826,42 +971,43 @@
        else.
      ===================================================================== */
 
-  /* Page heading — 40/48. */
+  /* Page heading — 31/38. Metrically the same step as `hl-display`; that one
+     is the serif-era name kept for its call sites, this one is the sans name. */
   .hl-h1 {
     font-weight: 700;
-    font-size: 2.5rem;
-    line-height: 3rem;
-    letter-spacing: -0.024em;
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    letter-spacing: -0.015em;
   }
-  /* Section heading — 30/38. */
+  /* Section heading — 16/24. */
   .hl-h2 {
     font-weight: 600;
-    font-size: 1.875rem;
-    line-height: 2.375rem;
-    letter-spacing: -0.02em;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    letter-spacing: -0.011em;
   }
-  /* Card heading — 22/30. */
+  /* Card heading — 15/22. */
   .hl-h3 {
     font-weight: 600;
-    font-size: 1.375rem;
-    line-height: 1.875rem;
-    letter-spacing: -0.014em;
+    font-size: 0.9375rem;
+    line-height: 1.375rem;
+    letter-spacing: -0.006em;
   }
 
   /* Large body — 18/29. The first paragraph of a drawer, an empty state's
      explanation, a dialog's description. */
   .hl-body-lg {
-    font-size: 1.125rem;
-    line-height: 1.8125rem;
+    font-size: 1rem;
+    line-height: 1.5625rem;
   }
   /* DEFAULT BODY — 16/26. The reading size of the product. */
   .hl-body {
-    font-size: 1rem;
-    line-height: 1.625rem;
+    font-size: 0.875rem;
+    line-height: 1.375rem;
   }
   .hl-body-medium {
-    font-size: 1rem;
-    line-height: 1.625rem;
+    font-size: 0.875rem;
+    line-height: 1.375rem;
     font-weight: 530;
   }
   /* UI chrome — 16/24. Sidebar navigation, button labels, control text.
@@ -869,20 +1015,20 @@
      more weight, because a control label is identified at a glance rather
      than read as a line of prose. */
   .hl-ui {
-    font-size: 1rem;
-    line-height: 1.5rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
     font-weight: 530;
   }
   /* Table body / dense data — 15/23. Metadata that sits beside body copy
      and the content of a data row. The floor for readable content. */
   .hl-small {
-    font-size: 0.9375rem;
-    line-height: 1.4375rem;
+    font-size: 0.8125rem;
+    line-height: 1.25rem;
   }
   /* Caption — 13/20. Timestamps, helper text, secondary sidebar labels. */
   .hl-caption {
-    font-size: 0.8125rem;
-    line-height: 1.25rem;
+    font-size: 0.75rem;
+    line-height: 1.125rem;
     font-weight: 500;
   }
 
@@ -890,8 +1036,8 @@
      applied by the class so a label can never be half-cased across
      surfaces. */
   .hl-label {
-    font-size: 0.875rem;
-    line-height: 1.25rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
     font-weight: 620;
     letter-spacing: 0.035em;
     text-transform: uppercase;
@@ -900,31 +1046,31 @@
      overlines — things read as marks, not as sentences. Never use it for
      anything the user has to read in order to act. */
   .hl-label-sm {
-    font-size: 0.75rem;
-    line-height: 1rem;
+    font-size: 0.6875rem;
+    line-height: 0.875rem;
     font-weight: 650;
     letter-spacing: 0.05em;
     text-transform: uppercase;
   }
   /* Status chips — 14/20. */
   .hl-badge {
-    font-size: 0.875rem;
-    line-height: 1.25rem;
+    font-size: 0.75rem;
+    line-height: 1.125rem;
     font-weight: 570;
     letter-spacing: 0.004em;
   }
 
   .hl-mono {
     font-family: var(--font-hl-mono);
-    font-size: 0.9375rem;
-    line-height: 1.4375rem;
+    font-size: 0.8125rem;
+    line-height: 1.25rem;
     font-weight: 500;
     font-variant-numeric: tabular-nums;
   }
   .hl-mono-lg {
     font-family: var(--font-hl-mono);
-    font-size: 1.625rem;
-    line-height: 2rem;
+    font-size: 1.375rem;
+    line-height: 1.75rem;
     font-weight: 500;
     font-variant-numeric: tabular-nums;
   }
@@ -935,24 +1081,24 @@
      them aligns. */
   .hl-metric-sm {
     font-family: var(--font-hl-mono);
-    font-size: 1.75rem;
-    line-height: 2.125rem;
+    font-size: 1.5rem;
+    line-height: 1.875rem;
     font-weight: 600;
     letter-spacing: -0.016em;
     font-variant-numeric: tabular-nums;
   }
   .hl-metric {
     font-family: var(--font-hl-mono);
-    font-size: 2.75rem;
-    line-height: 3.125rem;
+    font-size: 2.25rem;
+    line-height: 2.625rem;
     font-weight: 600;
     letter-spacing: -0.024em;
     font-variant-numeric: tabular-nums;
   }
   .hl-metric-lg {
     font-family: var(--font-hl-mono);
-    font-size: 3.5rem;
-    line-height: 3.875rem;
+    font-size: 2.875rem;
+    line-height: 3.375rem;
     font-weight: 700;
     letter-spacing: -0.03em;
     font-variant-numeric: tabular-nums;
@@ -1215,25 +1361,41 @@
 
   /* Row hover for tables and lists: a tint plus a hairline accent on the
      leading edge, so the hovered row is identifiable at a glance. */
+  /* Row hover accent.
+     ---------------------------------------------------------------------
+     THIS MUST NOT USE A PSEUDO-ELEMENT ON THE ROW. It used to be
+     `.hl-row-hover::before { content:''; position:absolute; width:2px }`, and
+     that silently broke every table in the product.
+
+     A `<tr>` is `display: table-row`, and CSS wraps any child of a table-row
+     that is not a table-cell in an ANONYMOUS TABLE-CELL. Chrome does that
+     during box-tree construction, before out-of-flow boxes are extracted, so
+     `position: absolute` did not save it: the pseudo still claimed a column.
+     Body rows carry this class and header rows do not, so the body gained a
+     phantom leading column and every cell rendered one column right of its
+     header — on the Audit Log, "By" showed the resource type and "When" showed
+     the user's email.
+
+     Proven 29 Jul 2026 by toggling `content: none` on a live production build:
+     suppressed → 4 columns, perfectly aligned; restored → 5 columns, shifted.
+     Deterministic and reversible. See docs/rca/DATATABLE_COLUMN_MISALIGNMENT.md.
+
+     The accent is now an inset shadow on the row's FIRST CELL. A cell is a real
+     table-cell, so no anonymous box is generated and no column can appear. It
+     is painted on the cell rather than the row because the table sets
+     `border-collapse: collapse`, under which row-level backgrounds and shadows
+     are unreliable. */
   .hl-row-hover {
-    position: relative;
     transition:
       background-color var(--hl-dur-fast) var(--hl-ease-out),
       box-shadow var(--hl-dur-fast) var(--hl-ease-out);
   }
-  .hl-row-hover::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: var(--hl-accent-solid);
-    opacity: 0;
-    transition: opacity var(--hl-dur-fast) var(--hl-ease-out);
+  .hl-row-hover > :first-child {
+    box-shadow: inset 0 0 0 0 var(--hl-accent-solid);
+    transition: box-shadow var(--hl-dur-fast) var(--hl-ease-out);
   }
-  .hl-row-hover:hover::before {
-    opacity: 1;
+  .hl-row-hover:hover > :first-child {
+    box-shadow: inset 2px 0 0 0 var(--hl-accent-solid);
   }
 
   /* --- Motion --------------------------------------------------------- */
@@ -1365,6 +1527,36 @@
    public site cannot tint the `.hl` product, and as real custom properties so
    both the `--color-mkt-*` theme aliases and plain `var()` reads resolve. */
 .mkt {
+  /* =====================================================================
+     GLOBAL MARKETING SCALE — the single knob for the whole public site.
+     ---------------------------------------------------------------------
+     The marketing frames were authored at roughly 120% of the size they
+     should render at, which is why the page only looked right at 75–80%
+     browser zoom. Rather than re-tune type, spacing, containers and card
+     sizes file by file — which changes proportions and never converges —
+     the entire marketing surface is scaled once, here.
+
+     `zoom` (not `transform: scale`) because zoom participates in layout:
+     the page still reflows, wraps and scrolls normally, and there is no
+     blurring or width compensation. It is the literal equivalent of taking
+     a Figma frame exported at 120% and bringing it back to 100%.
+
+     Everything inherits this automatically — nav, containers, cards, demo
+     mockups, tables, metrics, footer, and every spacing step — so the
+     design stays exactly proportional. No component needs to know about it.
+
+     THREE THINGS DO NOT INHERIT IT and are compensated below: viewport
+     units (`vh`/`vw` resolve against the real viewport, then get scaled)
+     and `position: fixed` boxes (their containing block is the viewport,
+     not the zoomed element). Those are the only places `--mkt-scale`
+     appears by hand.
+
+     Scoped to `.mkt`, so the product shell, auth pages and dashboard are
+     untouched by construction — they are not inside this element.
+     ===================================================================== */
+  --mkt-scale: 0.85;
+  zoom: var(--mkt-scale);
+
   /* Light surfaces (frames 2-5) */
   --mkt-canvas: #fcfdfc;
   --mkt-subtle: #f4f6f5;
@@ -1928,4 +2120,133 @@
     opacity: 1;
     transform: none;
   }
+}
+
+/* =====================================================================
+   NEURAL BACKGROUND — one continuous field behind the whole marketing page
+   ---------------------------------------------------------------------
+   Scoped entirely under `.hl-neural`; nothing here can reach the product
+   shell or the rest of the marketing page. Per-instance values arrive as
+   inline custom properties, so these keyframes are declared once.
+
+   THE OVERLAY DECISION. Every marketing section paints an opaque
+   background, so a layer placed *behind* the page is invisible. The field
+   is therefore a fixed overlay that paints above section backgrounds and
+   below the nav (z-30 vs the nav's z-50), rendered twice in register:
+
+     · `multiply` darkens  → shows on light sections, no-op on black
+     · `screen`   lightens → shows on dark sections,  no-op on white
+
+   Identical geometry and timing in both copies means a section boundary is
+   just a cross-fade between them: no seam, no restart.
+
+   Motion is opt-IN via `prefers-reduced-motion: no-preference`. Unmatched,
+   the field renders complete but perfectly still. Only `transform`,
+   `opacity` and `stroke-opacity` animate, so nothing repaints per frame.
+   ===================================================================== */
+
+.hl-neural {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  overflow: hidden;
+  /* The field covers the entire page — it must never eat a click. */
+  pointer-events: none;
+  --nb-mx: 0px;
+  --nb-my: 0px;
+  --nb-scroll: 0px;
+  --nb-speed: 1;
+}
+
+/* Oversized so pointer parallax and scroll drift can never expose an edge. */
+.hl-neural__layer {
+  position: absolute;
+  inset: -20%;
+  transform: translate3d(var(--nb-mx), calc(var(--nb-my) + var(--nb-scroll)), 0);
+  will-change: transform;
+}
+
+.hl-neural__svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+/* Isolation is deliberately NOT set anywhere up the tree: each copy has to
+   blend against the real page behind it, not against its own sibling. */
+/* The two polarities are NOT equally strong at equal opacity: a saturated
+   lavender multiplied onto white is far more present than the same colour
+   screened onto near-black. The multiply copy is therefore damped so the field
+   reads at the same weight in both halves of the page. Tuned by eye against
+   the hero (dark) and the philosophy section (light). */
+.hl-neural__svg--multiply {
+  mix-blend-mode: multiply;
+  opacity: 0.42;
+}
+.hl-neural__svg--screen {
+  mix-blend-mode: screen;
+  opacity: 0.9;
+}
+
+.hl-neural__line {
+  stroke: currentColor;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+.hl-neural__node,
+.hl-neural__spark {
+  fill: currentColor;
+}
+
+/* NOTE: there are deliberately NO keyframes for nodes or lines. Each node
+   drifts around its own origin and every connection tracks the two nodes it
+   joins — CSS cannot express that, because transforming a <circle> leaves its
+   <line> endpoints behind and the edges detach. A single rAF loop in
+   NeuralBackground.tsx writes the geometry instead. Under reduced motion that
+   loop never starts and the field renders complete but still, which is why
+   nothing here needs a `prefers-reduced-motion` guard. */
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Pointer and scroll settle rather than snap. This is the ONLY CSS-driven
+     motion left, and it layers on top of the per-node drift. */
+  .hl-neural__layer {
+    transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+/* =====================================================================
+   MARKETING SCALE COMPENSATIONS
+   ---------------------------------------------------------------------
+   `zoom` on `.mkt` scales everything that is laid out inside it. Two
+   categories escape that and have to be divided back out by hand:
+
+     · viewport units — `100vh` resolves against the real viewport and is
+       THEN multiplied by the zoom, so a `min-h-screen` hero would render
+       at 85vh and stop filling the screen.
+     · `position: fixed` boxes — their containing block is the viewport,
+       not the zoomed ancestor, so `width: 100%` renders 15% narrow and
+       leaves a gap down the right-hand edge.
+
+   Dividing by `--mkt-scale` restores the true viewport size in zoomed
+   units. These are the ONLY hand-written uses of the token.
+   ===================================================================== */
+
+/* Full-bleed fixed bars (the marketing nav). */
+.mkt .mkt-fixed-vw {
+  width: calc(100vw / var(--mkt-scale));
+}
+
+/* Full-height sections (the hero, the page shell). */
+.mkt .mkt-min-vh {
+  min-height: calc(100vh / var(--mkt-scale));
+}
+
+/* The neural field is `position: fixed; inset: 0`. Restoring its box to the
+   true viewport size means the SVG (`preserveAspectRatio="… slice"`) scales
+   its viewBox by exactly the reciprocal of the zoom — so the field renders
+   pixel-identical to before the scale change, which is the requirement. */
+.mkt .hl-neural {
+  width: calc(100vw / var(--mkt-scale));
+  height: calc(100vh / var(--mkt-scale));
 }

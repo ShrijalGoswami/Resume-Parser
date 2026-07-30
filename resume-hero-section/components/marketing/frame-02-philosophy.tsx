@@ -130,7 +130,7 @@ export function Frame02Philosophy() {
       {/* ---------------------------------------------------------------- */}
       {/* THE STAKES (dark interstitial)                                    */}
       {/* ---------------------------------------------------------------- */}
-      <section className="relative w-full overflow-hidden bg-mkt-dark-bg py-32 text-mkt-canvas md:py-40">
+      <section className="relative w-full overflow-hidden bg-mkt-dark-bg py-32 text-mkt-canvas md:py-32">
         <div className="mkt-grid-dark pointer-events-none absolute inset-0" aria-hidden="true" />
         <div className="mkt-vignette-dark pointer-events-none absolute inset-0" aria-hidden="true" />
 
@@ -139,7 +139,7 @@ export function Frame02Philosophy() {
             <p className="mb-12 mkt-label text-mkt-fg-tertiary">
               The Stakes
             </p>
-            <h2 className="mb-12 max-w-4xl text-balance font-mkt-display text-[2.75rem] leading-tight font-light tracking-[-0.03em] md:text-[4rem]">
+            <h2 className="mb-12 max-w-4xl text-balance font-mkt-display text-[2.25rem] leading-tight font-light tracking-[-0.03em] md:text-[3rem]">
               The cost of a wrong hire isn&rsquo;t a bad quarter.
               <br />
               <span className="text-mkt-muted">It&rsquo;s a lost year.</span>
