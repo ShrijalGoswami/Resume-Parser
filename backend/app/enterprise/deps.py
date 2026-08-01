@@ -46,32 +46,60 @@ def require_permission(permission: Permission) -> Callable[..., OrgContext]:
     return _dep
 
 
-def feature_gate(feature: str, *, action: str) -> Callable[..., OrgContext]:
-    """Enforce a feature flag AND record an audit trail entry.
+def require_entitlement(feature: str, *, action: str = "") -> Callable[..., OrgContext]:
+    """Dependency factory: 402 unless the ORGANIZATION's plan includes `feature`.
 
-    Usable at router level (`include_router(dependencies=[...])`) or on a single
-    endpoint, which is what routers mixing gated AI with ungated CRUD need.
+    The entitlement counterpart to `require_permission`. The two are deliberately
+    different status codes and different messages — 403 means "your role may
+    not", 402 means "your plan does not" — because the remedies are opposite:
+    ask an admin vs upgrade the organization. Collapsing them tells a paying
+    owner they lack permission, which is the worst message a monetized product
+    can show.
 
-    A prior `require_feature()` factory did the same enforcement without the audit
-    entry and was never used by any route; it was removed so there is exactly one
-    way to gate a capability and every gated call is auditable.
-
-    Setting `current_org_id` (done during context resolution) also makes every AI
-    call in the request roll its usage up to the organization automatically.
+    `action`, when given, writes an audit row for the gated call (the behaviour
+    the old `feature_gate` had). Auditing is best-effort and never fails the
+    request.
     """
     def _dep(ctx: OrgContextDep) -> OrgContext:
-        if not ctx.feature_enabled(feature):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
-                                detail=f"The '{feature}' capability is not enabled for your organization.")
-        try:
-            AuditRepository(ctx.organization_id).record(
-                user_id=ctx.recruiter.id, user_email=ctx.recruiter.email,
-                action=action, resource_type="ai", workspace_id=ctx.workspace_id,
-            )
-        except Exception:  # pragma: no cover — audit is best-effort
-            pass
+        ctx.plan_service().feature(feature).raise_for_denied()
+        if action:
+            try:
+                AuditRepository(ctx.organization_id).record(
+                    user_id=ctx.recruiter.id, user_email=ctx.recruiter.email,
+                    action=action, resource_type="ai", workspace_id=ctx.workspace_id,
+                )
+            except Exception:  # pragma: no cover — audit is best-effort
+                pass
         return ctx
     return _dep
+
+
+def require_quota(metric: str, amount: int = 1) -> Callable[..., OrgContext]:
+    """Dependency factory: 402 unless consuming `amount` of `metric` fits the plan.
+
+    Use for fixed-size consumption (one member, one campaign). Variable-size
+    consumption — a batch of N résumés — must be checked in the handler with
+    `ctx.plan_service().can_upload_resume(len(files))`, because the size is not
+    known until the request body is parsed.
+    """
+    def _dep(ctx: OrgContextDep) -> OrgContext:
+        ctx.plan_service().quota(metric, amount).raise_for_denied()
+        return ctx
+    return _dep
+
+
+def feature_gate(feature: str, *, action: str) -> Callable[..., OrgContext]:
+    """DEPRECATED alias for `require_entitlement`.
+
+    Kept so the seven pre-monetization call sites could migrate one at a time
+    rather than in a single sweep. Identical behaviour, including the audit row —
+    with one deliberate change: a denial is now **402**, not 403. A capability
+    the organization has not bought is a billing answer, and the client
+    distinguishes the two codes to decide between "upgrade" and "ask an admin".
+
+    New routes should use `require_entitlement` (or `require_quota`).
+    """
+    return require_entitlement(feature, action=action)
 
 
 # ── Ready-made permission gates ──────────────────────────────────────────────

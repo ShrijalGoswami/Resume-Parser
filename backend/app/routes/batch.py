@@ -29,7 +29,7 @@ from app.core.config import settings
 from app.schemas.batch import RankingWeights, BatchAnalysisResponse
 from app.services.upload_utils import save_upload_to_temp
 from app.services.batch_service import process_batch
-from app.enterprise.deps import RequireAiUse
+from app.enterprise.deps import OrgContextDep, RequireAiUse
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -48,6 +48,7 @@ def _parse_weights(raw: str | None) -> RankingWeights:
 
 @router.post("/batch-analysis", status_code=status.HTTP_200_OK, response_model=BatchAnalysisResponse, dependencies=[RequireAiUse])
 async def batch_analysis(
+    ctx: OrgContextDep,
     job_description: str = Form(...),
     files: list[UploadFile] = File(...),
     weights: str | None = Form(default=None),
@@ -69,6 +70,17 @@ async def batch_analysis(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Too many files: {len(files)}. Maximum per batch is {settings.MAX_BATCH_SIZE}.",
         )
+
+    # Quota BEFORE any AI call. This is the earliest point at which the batch
+    # size is known, and it is deliberately ahead of parsing and analysis: a FREE
+    # organization that has used its credits must be stopped before the tokens
+    # are spent, not after. Checking only at persist time would let an exhausted
+    # account burn the AI budget on a 200-résumé batch and then be told no.
+    #
+    # The whole batch is checked as one unit — `can_upload_resume(len(files))`,
+    # not one call per file — so a partial allowance answers "you have 3 of 10
+    # left" instead of silently analysing three and dropping seven.
+    ctx.plan_service().can_upload_resume(len(files)).raise_for_denied()
 
     parsed_weights = _parse_weights(weights)
 

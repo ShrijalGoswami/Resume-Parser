@@ -26,6 +26,7 @@ from app.core.deps import (
     StorageDep,
 )
 from app.enterprise.deps import (
+    OrgContextDep,
     OrgIdDep,
     RequireAiUse,
     RequireCampaignDelete,
@@ -33,7 +34,7 @@ from app.enterprise.deps import (
     RequireCampaignView,
     RequireCandidateManage,
     RequireCandidateView,
-    feature_gate,
+    require_entitlement,
 )
 from app.services.storage_service import object_key
 from app.services.upload_utils import validate_resume_upload, _verify_magic_bytes
@@ -63,9 +64,11 @@ router = APIRouter(prefix="/campaigns", tags=["Campaigns"])
 # ── Campaign CRUD ────────────────────────────────────────────────────────────
 @router.post("", response_model=Campaign, status_code=status.HTTP_201_CREATED, dependencies=[RequireCampaignManage])
 async def create_campaign(
-    payload: CampaignCreate, repo: CampaignRepoDep, activity: ActivityRepoDep
+    payload: CampaignCreate, ctx: OrgContextDep, repo: CampaignRepoDep, activity: ActivityRepoDep
 ):
-    campaign = repo.create(payload)
+    # A "role" in the product is a campaign row. FREE includes 2.
+    ctx.plan_service().can_create_campaign().raise_for_denied()
+    campaign = repo.create(payload, organization_id=ctx.organization_id)
     activity.record(
         "campaign_created", summary=f"Created campaign '{campaign.title}'",
         campaign_id=campaign.id,
@@ -242,6 +245,7 @@ async def candidate_activity(
 async def persist_batch(
     campaign_id: str,
     batch: BatchAnalysisResponse,
+    ctx: OrgContextDep,
     campaigns: CampaignRepoDep,
     candidates: CandidateRepoDep,
     activity: ActivityRepoDep,
@@ -251,8 +255,16 @@ async def persist_batch(
 
     The frontend runs POST /batch-analysis (unchanged AI pipeline) and posts the
     response here to save it. AI logic is never re-run.
+
+    Quota is checked here as well as at /batch-analysis. The two are not
+    redundant: this endpoint is separately callable, and only what is actually
+    persisted consumes credits (dedup means the two counts can differ).
     """
-    service = PersistenceService(campaigns, candidates, activity)
+    successful = sum(1 for c in batch.candidates if getattr(c, "status", None) == "success")
+    ctx.plan_service().can_upload_resume(max(successful, 1)).raise_for_denied()
+
+    service = PersistenceService(campaigns, candidates, activity,
+                                 organization_id=ctx.organization_id)
     return service.persist_batch(campaign_id, batch)
 
 
@@ -272,7 +284,14 @@ async def upload_candidate_resume(
     activity: ActivityRepoDep,
     file: UploadFile = File(...),
 ):
-    """Store a candidate's resume in the private `resumes` bucket (server-side)."""
+    """Store a candidate's resume in the private `resumes` bucket (server-side).
+
+    Deliberately NOT quota-gated. This attaches a file to a candidate that already
+    exists, and a candidate can only come into being through `persist-batch`,
+    which already consumed the credit. Charging again here would bill twice for
+    one résumé — and blocking it at the limit would leave an already-counted
+    candidate permanently without their document.
+    """
     # Verify ownership BEFORE writing anything to storage (no orphaned objects).
     candidates.get(candidate_id)
     ext = validate_resume_upload(file)
@@ -320,7 +339,7 @@ async def campaign_activity(
 @router.post(
     "/{campaign_id}/compare",
     response_model=CandidateComparisonReport,
-    dependencies=[RequireAiUse, Depends(feature_gate("candidate_comparison", action="comparison.generated"))],
+    dependencies=[RequireAiUse, Depends(require_entitlement("candidate_comparison", action="comparison.generated"))],
 )
 async def compare_candidates(
     campaign_id: str,
@@ -376,7 +395,7 @@ async def reindex_campaign_embeddings(
 @router.post(
     "/{campaign_id}/candidates/{candidate_id}/interview",
     response_model=InterviewPack,
-    dependencies=[RequireAiUse, Depends(feature_gate("interview_intelligence", action="interview.generated"))],
+    dependencies=[RequireAiUse, Depends(require_entitlement("interview_intelligence", action="interview.generated"))],
 )
 async def generate_interview(
     campaign_id: str,

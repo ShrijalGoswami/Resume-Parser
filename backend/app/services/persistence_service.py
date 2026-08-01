@@ -20,6 +20,7 @@ from app.repositories import (
     CampaignRepository,
     CandidateRepository,
 )
+from app.enterprise.usage import record_resumes
 from app.schemas.batch import BatchAnalysisResponse
 from app.schemas.campaign import Candidate
 
@@ -32,10 +33,12 @@ class PersistenceService:
         campaign_repo: CampaignRepository,
         candidate_repo: CandidateRepository,
         activity_repo: ActivityRepository,
+        organization_id: str | None = None,
     ):
         self._campaigns = campaign_repo
         self._candidates = candidate_repo
         self._activity = activity_repo
+        self._organization_id = organization_id
 
     def persist_batch(
         self, campaign_id: str, batch: BatchAnalysisResponse
@@ -111,6 +114,7 @@ class PersistenceService:
                     file_hash=file_hash,
                     filename=filename,
                     file_size=payload.get("file_size"),
+                    organization_id=self._organization_id,
                 )
                 if not claimed:
                     self._candidates.delete_one(candidate.id, campaign_id)
@@ -148,6 +152,19 @@ class PersistenceService:
                 "stored": len(stored),
             },
         )
+        # Consume résumé credits for what was ACTUALLY stored. `stored` excludes
+        # every candidate skipped by content-hash or filename dedup, so
+        # re-uploading the same file — a double-submit, a retry, React Strict
+        # Mode, a renamed copy — costs nothing. Charging for a duplicate the
+        # product deliberately discards would be charging for nothing.
+        #
+        # Counted here rather than at /batch-analysis because this is where a
+        # résumé becomes durable organization data; the pre-check there stops an
+        # exhausted account before it spends tokens, but a batch that is analysed
+        # and never persisted must not consume credits.
+        if self._organization_id and stored:
+            record_resumes(self._organization_id, len(stored))
+
         logger.info(
             "Persisted batch %s to campaign %s: %d candidates stored",
             batch_id, campaign_id, len(stored),

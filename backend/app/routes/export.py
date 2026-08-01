@@ -14,13 +14,13 @@ Output:
 import logging
 import re
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from app.schemas.analysis import AnalysisResponse
 from app.services.report_generator import generate_report, generate_match_report
-from app.enterprise.deps import RequireExport
+from app.enterprise.deps import RequireExport, require_entitlement
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -53,7 +53,9 @@ def _sanitize_filename(name: str) -> str:
     return safe or "Candidate"
 
 
-@router.post("/export-report", status_code=status.HTTP_200_OK, dependencies=[RequireExport])
+@router.post(
+    "/export-report", status_code=status.HTTP_200_OK,
+    dependencies=[RequireExport, Depends(require_entitlement("export_pdf"))])
 def export_report(payload: ExportReportRequest):
     """
     Generate a PDF report from the provided analysis data.
@@ -94,7 +96,9 @@ class ExportMatchReportRequest(BaseModel):
     resume_data: ResumeDataPayload = Field(default_factory=ResumeDataPayload)
 
 
-@router.post("/export-match-report", status_code=status.HTTP_200_OK, dependencies=[RequireExport])
+@router.post(
+    "/export-match-report", status_code=status.HTTP_200_OK,
+    dependencies=[RequireExport, Depends(require_entitlement("export_pdf"))])
 def export_match_report(payload: ExportMatchReportRequest):
     """
     Generate a PDF recruiter match report from the provided match analysis data.

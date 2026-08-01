@@ -25,21 +25,32 @@ from app.services.resume_service import ResumeService
 from app.services.upload_utils import save_upload_to_temp
 from app.parser.exceptions import ParserError
 from app.llm.analyzer import analyze_resume
-from app.enterprise.deps import RequireAiUse
+from app.enterprise.deps import OrgContextDep, RequireAiUse
+from app.enterprise.usage import record_resumes
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
 @router.post("/ats-analysis", status_code=status.HTTP_200_OK, dependencies=[RequireAiUse])
-async def ats_analysis(file: UploadFile = File(...)):
+async def ats_analysis(ctx: OrgContextDep, file: UploadFile = File(...)):
     """
     Stateless ATS analysis pipeline:
         1. Validate and save the resume to a unique temp file
         2. Parse and extract structured resume data
         3. Run deterministic ATS scoring + Groq explanation
         4. Delete the temp file and return the results
+
+    Résumé credits are checked here AND consumed here, which differs from the
+    batch flow (checked at /batch-analysis, consumed at persist). The asymmetry is
+    forced by the endpoint: this one is stateless, so there is no later
+    persistence step to charge at. Leaving it unmetered — the state a monetization
+    audit found it in — meant an authenticated FREE account could analyse résumés
+    without limit and never reach the wall, which is the whole free tier given
+    away one file at a time.
     """
+    ctx.plan_service().can_upload_resume(1).raise_for_denied()
+
     file_path = await save_upload_to_temp(file)
 
     try:
@@ -73,6 +84,10 @@ async def ats_analysis(file: UploadFile = File(...)):
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="An unexpected error occurred during resume analysis.",
             )
+
+        # Charged only on success: a parse failure or a provider outage costs the
+        # user nothing, because they got nothing.
+        record_resumes(ctx.organization_id, 1)
 
         return {
             "resume_data": resume_data.model_dump(),

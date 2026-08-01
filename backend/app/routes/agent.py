@@ -46,7 +46,7 @@ from app.schemas.agent import (
 from app.services.agent_service import (
     list_recommendations, run_agent_scan, update_recommendation_status,
 )
-from app.enterprise.deps import OrgContextDep, feature_gate
+from app.enterprise.deps import OrgContextDep, require_entitlement
 from app.integrations import IntegrationEvent
 from app.services.integration_service import safe_emit_event
 from app.knowledge.service import safe_ingest as knowledge_ingest
@@ -62,7 +62,7 @@ router = APIRouter(prefix="/agent", tags=["Agent"])
     status_code=status.HTTP_200_OK,
     # Running the agent IS the gated capability: it costs LLM calls and writes new
     # recommendations. This is where the plan boundary belongs.
-    dependencies=[RequireAgentManage, Depends(feature_gate("autonomous_agent", action="agent.scan"))],
+    dependencies=[RequireAgentManage, Depends(require_entitlement("autonomous_agent", action="agent.scan"))],
 )
 async def scan(
     payload: AgentScanRequest,
@@ -109,7 +109,7 @@ async def update_recommendation(rec_id: str, payload: RecommendationUpdate, agen
 
 @router.get(
     "/workflows",
-    dependencies=[RequireCandidateView, Depends(feature_gate("autonomous_agent", action="agent.accessed"))],
+    dependencies=[RequireCandidateView, Depends(require_entitlement("autonomous_agent", action="agent.accessed"))],
 )
 async def workflows(_: AgentRepoDep):
     """The agent's registered workflows and tools (metadata; no secrets)."""

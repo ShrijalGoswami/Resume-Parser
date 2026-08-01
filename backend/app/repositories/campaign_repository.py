@@ -31,7 +31,11 @@ class CampaignRepository(BaseRepository):
         return c
 
     # -- CRUD --------------------------------------------------------------
-    def create(self, payload: CampaignCreate) -> Campaign:
+    def create(self, payload: CampaignCreate, organization_id: str | None = None) -> Campaign:
+        """`organization_id` (migration 0018) makes the row countable against the
+        organization's role allowance. Optional: a caller without org context
+        still creates the campaign — it is simply not counted, which is the
+        generous direction."""
         metadata: dict[str, Any] = {}
         if payload.company:
             metadata["company"] = payload.company
@@ -46,6 +50,8 @@ class CampaignRepository(BaseRepository):
             "status": payload.status.value,
             "metadata": metadata,
         }
+        if organization_id:
+            row["organization_id"] = organization_id
         if payload.ranking_weights is not None:
             row["ranking_weights"] = payload.ranking_weights.model_dump()
         try:

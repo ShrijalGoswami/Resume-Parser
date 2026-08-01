@@ -22,9 +22,10 @@ from app.enterprise.deps import (
 from app.enterprise.feature_flags import FEATURES
 from app.enterprise.rbac import Permission, role_permission_matrix
 from app.enterprise.repositories import AuditRepository
+from app.enterprise.catalog import PLAN_LABELS
 from app.enterprise.schemas import (
     ApiKeyCreateRequest, ApiKeyCreated, FeatureFlagRequest, MemberInviteRequest, MemberRoleRequest,
-    OrgContextResponse, OrgUpdateRequest, Organization, Subscription, SubscriptionUpdateRequest,
+    OrgContextResponse, OrgUpdateRequest, Organization, PlanState, Subscription,
     WorkspaceCreateRequest,
 )
 from app.db.supabase_client import get_user_client
@@ -47,9 +48,16 @@ def _audit(ctx: OrgContext, action: str, **kw) -> None:
 # ── Context (current org, role, plan, permissions, features) ─────────────────
 @router.get("/context", response_model=OrgContextResponse)
 async def get_context(ctx: OrgContextDep, org_repo: OrgRepoDep):
+    svc = ctx.plan_service()
     return OrgContextResponse(
         organization=org_repo.get(), workspace_id=ctx.workspace_id, role=ctx.role,
         plan=ctx.plan, permissions=ctx.permissions(), features=ctx.features(),
+        plan_state=PlanState(
+            key=svc.plan.value, label=PLAN_LABELS[svc.plan], status=ctx.plan_status,
+            ruleset=ctx.plan_ruleset, version=ctx.plan_version,
+        ),
+        entitlements=svc.entitlements(),
+        limits_usage=svc.limits(),
     )
 
 
@@ -137,6 +145,14 @@ async def invite_member(
     ctx: Annotated[OrgContext, Depends(require_permission(Permission.MEMBER_MANAGE))],
     org_repo: OrgRepoDep,
 ):
+    # Seats are a plan limit. Checked before the invite so an over-limit team is
+    # told to upgrade rather than discovering the cap after the invitee signs up.
+    # `add_member_by_email` upserts, so re-inviting an existing member is not a
+    # new seat — but the quota check runs first and would refuse at the cap. That
+    # is the correct trade: the alternative is resolving membership twice on
+    # every invite to save a rare re-invite from an accurate message.
+    ctx.plan_service().can_invite_member().raise_for_denied()
+
     member = org_repo.add_member_by_email(payload.email, payload.role.value)
     _audit(ctx, "member.invited", resource_type="member", resource_id=member.id,
            metadata={"email": payload.email, "role": payload.role.value})
@@ -204,21 +220,23 @@ async def audit_logs(
     return audit_repo.list(action=action, limit=min(limit, 500))
 
 
-# ── Subscription ─────────────────────────────────────────────────────────────
+# ── Subscription (READ ONLY) ─────────────────────────────────────────────────
+# The plan is server-authoritative. `PATCH /org/subscription` used to live here
+# and let anyone holding ORG_MANAGE — i.e. every organization owner — set their
+# own plan to 'enterprise' at no cost. That is not a billing foundation, it is a
+# self-serve upgrade button, and it was reachable in production.
+#
+# Plan changes now have exactly two sanctioned paths:
+#   1. `scripts/set_org_plan.py` — service-role, audited (operator action today)
+#   2. the billing provider's webhook (Phase 3) — the only automated writer
+#
+# 0016 also revokes INSERT/UPDATE/DELETE on `subscriptions` from the client roles,
+# so removing the route is not the only thing standing between a user and a free
+# enterprise plan. Defence in depth: the API has no write path AND the database
+# refuses one.
 @router.get("/subscription", response_model=Subscription)
 async def get_subscription(org_repo: OrgRepoDep):
     return org_repo.get_subscription()
-
-
-@router.patch("/subscription", response_model=Subscription)
-async def update_subscription(
-    payload: SubscriptionUpdateRequest,
-    ctx: Annotated[OrgContext, Depends(require_permission(Permission.ORG_MANAGE))],
-    org_repo: OrgRepoDep,
-):
-    sub = org_repo.update_subscription(payload.plan)
-    _audit(ctx, "subscription.changed", resource_type="subscription", metadata={"plan": payload.plan})
-    return sub
 
 
 # ── API keys (scoped; secret shown once) ─────────────────────────────────────

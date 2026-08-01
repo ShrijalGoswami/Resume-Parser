@@ -22,7 +22,8 @@ from app.services.resume_service import ResumeService
 from app.services.upload_utils import save_upload_to_temp
 from app.parser.exceptions import ParserError
 from app.llm.match_analyzer import analyze_match
-from app.enterprise.deps import RequireAiUse
+from app.enterprise.deps import OrgContextDep, RequireAiUse
+from app.enterprise.usage import record_resumes
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -30,6 +31,7 @@ router = APIRouter()
 
 @router.post("/match-analysis", status_code=status.HTTP_200_OK, dependencies=[RequireAiUse])
 async def match_analysis(
+    ctx: OrgContextDep,
     job_description: str = Form(...),
     file: UploadFile = File(...),
 ):
@@ -39,7 +41,14 @@ async def match_analysis(
         2. Parse and extract structured resume data
         3. Run JD-resume match analysis (Groq + deterministic scoring)
         4. Return match results + resume data
+
+    Metered against the résumé quota: this accepts a résumé file and runs the
+    analysis pipeline on it, which is a résumé by every definition the plan uses.
+    Checked and consumed here rather than at a persistence step, because — like
+    /ats-analysis — this endpoint is stateless and has none.
     """
+    ctx.plan_service().can_upload_resume(1).raise_for_denied()
+
     # ── Validate inputs ───────────────────────────────────────────────────
     if not job_description or not job_description.strip():
         raise HTTPException(
@@ -84,6 +93,9 @@ async def match_analysis(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="An unexpected error occurred during match analysis.",
             )
+
+        # Charged only on success — a parse failure or provider outage is free.
+        record_resumes(ctx.organization_id, 1)
 
         return {
             "resume_data": resume_data.model_dump(),

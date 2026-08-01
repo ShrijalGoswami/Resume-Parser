@@ -1,65 +1,48 @@
 """
-Subscription plans + centralized limit definitions.
+Subscription plans — compatibility shim over `enterprise/catalog.py`.
 
-Plans and their limits live here (one source of truth); enforcement reads from
-this module so quota checks are consistent everywhere. `-1` means unlimited. No
-payment processing — this is the billing FOUNDATION only.
+The plan definitions moved to the catalog when monetization shipped (Phase 1),
+because limits, features and plan ordering all have to come from one table or
+they drift. This module survives as the small surface its existing callers
+already import — `repositories.update_subscription`, `OrgContext.limits()` — so
+that move did not have to touch them.
+
+New code should import from `app.enterprise.catalog` (data) or
+`app.enterprise.entitlements` (decisions). Nothing new should reach for
+`Plan.professional`: those slugs are historical and resolve through the catalog's
+alias table.
 """
 
 from __future__ import annotations
 
-from enum import Enum
+from app.enterprise.catalog import (
+    LIMITS, UNLIMITED, Plan, is_unlimited, limits_for_plan, normalize_plan,
+)
 
-UNLIMITED = -1
+__all__ = [
+    "Plan", "PLAN_LIMITS", "UNLIMITED", "limits_for", "limit_for",
+    "is_unlimited", "within_limit", "normalize_plan",
+]
 
-
-class Plan(str, Enum):
-    free = "free"
-    professional = "professional"
-    business = "business"
-    enterprise = "enterprise"
-
-
-# Per-plan limits. Metrics also correspond to usage counters (see usage.py).
-PLAN_LIMITS: dict[Plan, dict[str, int]] = {
-    Plan.free: {
-        "recruiters": 2, "workspaces": 1, "campaigns": 3,
-        "ai_requests": 200, "storage_mb": 500, "report_exports": 5, "agent_scans": 10,
-    },
-    Plan.professional: {
-        "recruiters": 10, "workspaces": 5, "campaigns": 25,
-        "ai_requests": 5_000, "storage_mb": 10_000, "report_exports": 100, "agent_scans": 200,
-    },
-    Plan.business: {
-        "recruiters": 50, "workspaces": 20, "campaigns": 200,
-        "ai_requests": 50_000, "storage_mb": 100_000, "report_exports": 1_000, "agent_scans": 2_000,
-    },
-    Plan.enterprise: {
-        "recruiters": UNLIMITED, "workspaces": UNLIMITED, "campaigns": UNLIMITED,
-        "ai_requests": UNLIMITED, "storage_mb": UNLIMITED, "report_exports": UNLIMITED, "agent_scans": UNLIMITED,
-    },
-}
-
-
-def _plan(plan: str) -> Plan:
-    try:
-        return Plan(plan)
-    except ValueError:
-        return Plan.free
+#: Historical name for the catalog's limit table.
+PLAN_LIMITS: dict[Plan, dict[str, int]] = LIMITS
 
 
 def limits_for(plan: str) -> dict[str, int]:
-    return dict(PLAN_LIMITS.get(_plan(plan), PLAN_LIMITS[Plan.free]))
+    return limits_for_plan(normalize_plan(plan))
 
 
 def limit_for(plan: str, key: str) -> int:
     return limits_for(plan).get(key, UNLIMITED)
 
 
-def is_unlimited(value: int) -> bool:
-    return value == UNLIMITED
-
-
 def within_limit(plan: str, key: str, current: int) -> bool:
+    """Kept for callers that only need a yes/no.
+
+    Enforcement paths must NOT use this: `PlanService.quota()` returns a
+    `Decision` carrying the limit, the usage and the plan that would lift it,
+    which is what the 402 body and the upgrade prompt are built from. A bare
+    bool here is why the old limits were displayed but never enforced.
+    """
     limit = limit_for(plan, key)
     return is_unlimited(limit) or current < limit

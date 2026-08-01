@@ -121,6 +121,18 @@ class ApiKeyCreated(BaseModel):
     secret: str  # shown ONCE — the full key is never stored
 
 
+class PlanState(BaseModel):
+    """The organization's commercial state, as the client needs to render it."""
+    key: str = "free"
+    label: str = "Free"
+    status: str = "active"
+    ruleset: str = "v1"
+    #: Bumped on every plan change. A client holding a cached context can compare
+    #: this against the value in a 402 body and know to refetch rather than
+    #: showing a stale lock after an upgrade.
+    version: int = 1
+
+
 class OrgContextResponse(BaseModel):
     organization: Organization
     workspace_id: Optional[str] = None
@@ -128,3 +140,13 @@ class OrgContextResponse(BaseModel):
     plan: str
     permissions: list[str]
     features: dict[str, bool]
+    # ── Monetization (Phase 1) ───────────────────────────────────────────────
+    # Added to the context the client ALREADY fetches on every screen, rather
+    # than as a new endpoint: gating that costs an extra request is gating that
+    # arrives late, and a lock that appears after the control does is worse than
+    # no lock. `entitlements` lists EVERY catalog feature — including the ones
+    # this organization cannot use — because the UI has to render locked
+    # features, not hide them.
+    plan_state: PlanState = Field(default_factory=PlanState)
+    entitlements: dict[str, dict] = Field(default_factory=dict)
+    limits_usage: dict[str, dict] = Field(default_factory=dict)

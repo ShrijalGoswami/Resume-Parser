@@ -2,8 +2,9 @@ import logging
 import time
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.core.config import settings, APP_VERSION, API_VERSION
 from app.core.observability import (
@@ -19,7 +20,8 @@ from app.db.supabase_client import supabase_available
 from fastapi import Depends
 from fastapi.openapi.docs import get_swagger_ui_html
 from app.routes import export, match, analyze, batch, copilot, campaigns, account, analytics, search, admin, reports, agent, org, integrations, knowledge, prediction
-from app.enterprise.deps import feature_gate
+from app.enterprise.deps import require_entitlement
+from app.enterprise.entitlements import PlanError
 
 # Install structured, request-ID-aware logging before anything else logs.
 configure_logging()
@@ -73,13 +75,33 @@ app.add_middleware(
     expose_headers=["X-Request-ID", "X-Response-Time-ms"],
 )
 
+# ── Entitlement (402) responses ───────────────────────────────────────────────
+# `PlanError` carries a structured decision — which capability, which plan lifts
+# it, how much quota is left. FastAPI's default HTTPException handler would nest
+# all of that under `detail`, forcing the client to reach through a wrapper for
+# every field. This handler emits it FLAT, so the upgrade surface reads
+# `code` / `required_plan` / `used` / `limit` directly and never parses prose.
+#
+# `detail` is still present and human-readable, so a client that knows nothing
+# about entitlements (or an ad-hoc curl) still shows a sensible message.
+@app.exception_handler(PlanError)
+async def _plan_error_handler(request: Request, exc: PlanError) -> JSONResponse:
+    logger.info(
+        "entitlement.denied | code=%s feature=%s metric=%s plan=%s required=%s used=%s limit=%s path=%s",
+        exc.decision.reason, exc.decision.feature, exc.decision.metric,
+        exc.decision.current_plan, exc.decision.required_plan,
+        exc.decision.used, exc.decision.limit, request.url.path,
+    )
+    return JSONResponse(status_code=exc.status_code, content=exc.decision.as_error())
+
+
 # ── Routers ───────────────────────────────────────────────────────────────────
 app.include_router(analyze.router, prefix="/api/v1", tags=["Analyze"])
 app.include_router(match.router, prefix="/api/v1", tags=["Match"])
 app.include_router(batch.router, prefix="/api/v1", tags=["Batch"])
 app.include_router(
     copilot.router, prefix="/api/v1",
-    dependencies=[Depends(feature_gate("ai_copilot", action="copilot.accessed"))],
+    dependencies=[Depends(require_entitlement("ai_copilot", action="copilot.accessed"))],
 )
 app.include_router(export.router, prefix="/api/v1", tags=["Export"])
 # ── V4 persistence layer (additive; requires Supabase config to function) ─────
@@ -88,7 +110,7 @@ app.include_router(account.router, prefix="/api/v1")
 app.include_router(analytics.router, prefix="/api/v1")
 app.include_router(
     search.router, prefix="/api/v1",
-    dependencies=[Depends(feature_gate("semantic_search", action="search.accessed"))],
+    dependencies=[Depends(require_entitlement("semantic_search", action="search.accessed"))],
 )
 app.include_router(admin.router, prefix="/api/v1")
 # ── Feature-flag gated + audited AI capabilities ──────────────────────────────
@@ -100,7 +122,7 @@ app.include_router(admin.router, prefix="/api/v1")
 # (that router also serves ungated campaign CRUD, so it cannot be gated whole).
 app.include_router(
     reports.router, prefix="/api/v1",
-    dependencies=[Depends(feature_gate("executive_reports", action="report.generated"))],
+    dependencies=[Depends(require_entitlement("executive_reports", action="report.generated"))],
 )
 # `autonomous_agent` is gated PER-ENDPOINT inside the agent router, not here. The
 # router-level gate also covered `GET /agent/recommendations`, which is the Decision
@@ -109,9 +131,27 @@ app.include_router(
 # permanent decision record unreadable. See the module docstring in routes/agent.py.
 app.include_router(agent.router, prefix="/api/v1")
 app.include_router(org.router, prefix="/api/v1")
-app.include_router(integrations.router, prefix="/api/v1")
-app.include_router(knowledge.router, prefix="/api/v1")
-app.include_router(prediction.router, prefix="/api/v1")
+# ── Subsystems gated by the monetization audit (1 Aug 2026) ───────────────────
+# These three shipped before the plan matrix existed and were therefore reachable
+# by every organization on every plan. The audit found them; the placements are
+# product decisions, recorded here and in the catalog.
+#
+# Integrations is gated at the ROUTER on `integrations` (Pro). The webhook
+# endpoints inside it additionally require `webhooks` (Enterprise) per the
+# approved matrix — a per-endpoint gate, because this router also serves the
+# ordinary ATS/calendar connections that Pro includes.
+app.include_router(
+    integrations.router, prefix="/api/v1",
+    dependencies=[Depends(require_entitlement("integrations"))],
+)
+app.include_router(
+    knowledge.router, prefix="/api/v1",
+    dependencies=[Depends(require_entitlement("org_knowledge"))],
+)
+app.include_router(
+    prediction.router, prefix="/api/v1",
+    dependencies=[Depends(require_entitlement("predictive_intelligence"))],
+)
 
 
 @app.get("/docs", include_in_schema=False)

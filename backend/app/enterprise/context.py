@@ -16,15 +16,19 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from typing import Callable, Optional
 
 from fastapi import HTTPException, status
 
 from app.core.auth import CurrentRecruiter
 from app.db.supabase_client import get_user_client
+from app.enterprise.catalog import RULESET_FOUNDING, RULESET_V1, normalize_ruleset
+from app.enterprise.entitlements import PlanService
 from app.enterprise.feature_flags import resolve_all
 from app.enterprise.plans import limits_for
 from app.enterprise.rbac import Permission, has_permission, permissions_for_role
+from app.enterprise.usage import UsageSnapshot, current_period, read_snapshot
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +51,24 @@ def _describe(exc: BaseException) -> str:
         cur = cur.__cause__ or cur.__context__
     return " <- ".join(parts)
 
+def _parse_ts(value) -> Optional[datetime]:
+    """Parse a Postgres timestamptz as returned by PostgREST.
+
+    Returns None on anything unparseable — and the caller treats None as "not
+    expired". An unreadable expiry must not silently revoke a capability the
+    organization was granted; a grant that outlives its date by a support ticket
+    is a smaller failure than one that vanishes without explanation.
+    """
+    if not value:
+        return None
+    try:
+        text = str(value).replace("Z", "+00:00")
+        parsed = datetime.fromisoformat(text)
+        return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+    except (TypeError, ValueError):
+        return None
+
+
 # Request-scoped org id so cross-cutting concerns (usage/audit) can attribute
 # activity to an organization without threading it through every call.
 current_org_id: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar("current_org_id", default=None)
@@ -62,6 +84,13 @@ class OrgContext:
     workspace_id: Optional[str] = None
     settings: dict = field(default_factory=dict)
     feature_overrides: dict[str, bool] = field(default_factory=dict)
+    # ── monetization state (Phase 1) ─────────────────────────────────────────
+    plan_ruleset: str = RULESET_V1
+    plan_status: str = "active"
+    plan_version: int = 1
+    limit_overrides: dict = field(default_factory=dict)
+    grants: set[str] = field(default_factory=set)
+    usage: UsageSnapshot = field(default_factory=UsageSnapshot)
 
     def has(self, permission: Permission) -> bool:
         return has_permission(self.role, permission)
@@ -71,11 +100,21 @@ class OrgContext:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                                 detail=f"Your role ('{self.role}') lacks permission '{permission.value}'.")
 
+    def plan_service(self) -> PlanService:
+        """The entitlement engine for this request. Pure — no I/O; everything it
+        needs was resolved in the fan-out below."""
+        return PlanService(
+            plan=self.plan, ruleset=self.plan_ruleset, plan_status=self.plan_status,
+            plan_version=self.plan_version, usage=self.usage, grants=self.grants,
+            feature_overrides=self.feature_overrides, limit_overrides=self.limit_overrides,
+        )
+
     def features(self) -> dict[str, bool]:
-        return resolve_all(self.plan, self.feature_overrides)
+        return resolve_all(self.plan, self.feature_overrides, ruleset=self.plan_ruleset,
+                           grants=self.grants)
 
     def feature_enabled(self, feature: str) -> bool:
-        return self.features().get(feature, False)
+        return self.plan_service().has_feature(feature)
 
     def permissions(self) -> list[str]:
         return sorted(p.value for p in permissions_for_role(self.role))
@@ -142,10 +181,27 @@ def resolve_org_context(recruiter: CurrentRecruiter) -> OrgContext:
         return _rows(client.table("organization_members").select("role").eq("organization_id", org_id).eq("user_id", recruiter.id).limit(1).execute())
 
     def _fetch_sub():
-        return _rows(client.table("subscriptions").select("plan").eq("organization_id", org_id).limit(1).execute())
+        # Monetization state travels with the plan: ruleset (founding vs v1),
+        # status (a lapsed plan closes paid capabilities), version (lets a stale
+        # client detect it must refetch), and any negotiated limit overrides.
+        return _rows(client.table("subscriptions")
+                     .select("plan,status,plan_ruleset,plan_version,limit_overrides")
+                     .eq("organization_id", org_id).limit(1).execute())
 
     def _fetch_flags():
         return _rows(client.table("org_feature_flags").select("flag,enabled").eq("organization_id", org_id).execute())
+
+    def _fetch_grants():
+        # Commercial add-ons above the plan. `expires_at` is filtered at
+        # resolution time rather than by the query so an expired grant is
+        # inspectable in the row it was written to.
+        return _rows(client.table("entitlement_grants")
+                     .select("feature,expires_at").eq("organization_id", org_id).execute())
+
+    def _fetch_usage():
+        # ONE rpc → résumé counters + member and campaign counts (migration
+        # 0017). A quota decision needs all four, and this is the hot path.
+        return [read_snapshot(org_id, period=current_period()).as_dict()]
 
     # Each branch is timed and attributed individually. Reading the futures in a
     # fixed order and letting the first `.result()` raise meant a failure was
@@ -171,29 +227,50 @@ def resolve_org_context(recruiter: CurrentRecruiter) -> OrgContext:
         except Exception as exc:
             return name, None, exc, (time.perf_counter() - started) * 1000
 
-    branches: dict[str, Callable[[], list]] = {
+    # CRITICAL branches decide identity and authorization: without them there is
+    # no honest answer, so a failure is a 503 (unchanged behaviour).
+    critical: dict[str, Callable[[], list]] = {
         "org": _fetch_org, "member": _fetch_member, "sub": _fetch_sub, "flags": _fetch_flags,
     }
+    # BEST-EFFORT branches refine an answer we can already give. A monetization
+    # read that 503s the whole application would make billing infrastructure a
+    # single point of failure for the product — so these degrade instead:
+    #   usage  → zero, i.e. quotas do not block (generous; wrongly blocking a
+    #            paying customer is worse than one extra résumé)
+    #   grants → empty, i.e. only the plan's own capabilities resolve
+    # Both are logged at WARNING so degraded runs are visible, not silent.
+    optional: dict[str, Callable[[], list]] = {
+        "grants": _fetch_grants, "usage": _fetch_usage,
+    }
+    branches = {**critical, **optional}
     # Contexts are copied HERE, on the request's own thread — a copy taken inside
     # the pool worker would snapshot that worker's empty context instead.
     jobs = [(name, fn, contextvars.copy_context()) for name, fn in branches.items()]
     fan_started = time.perf_counter()
-    with ThreadPoolExecutor(max_workers=4, thread_name_prefix="orgctx") as pool:
+    with ThreadPoolExecutor(max_workers=len(branches), thread_name_prefix="orgctx") as pool:
         results = {
             name: (rows, exc, ms)
             for name, rows, exc, ms in pool.map(lambda j: _timed(*j), jobs)
         }
     fan_ms = (time.perf_counter() - fan_started) * 1000
 
-    failed = {name: exc for name, (_, exc, _) in results.items() if exc is not None}
+    failed = {name: exc for name, (_, exc, _) in results.items()
+              if exc is not None and name in critical}
+    degraded = {name: exc for name, (_, exc, _) in results.items()
+                if exc is not None and name in optional}
     timings = " ".join(f"{n}={ms:.0f}ms" for n, (_, _, ms) in results.items())
+    for name, exc in degraded.items():
+        logger.warning(
+            "org-context optional read failed (degrading) | query=%s org=%s exc=%s",
+            name, org_id, _describe(exc),
+        )
     if failed:
         for name, exc in failed.items():
             logger.error(
                 "org-context read failed | query=%s org=%s recruiter=%s thread=%s "
-                "failed_branches=%d/4 branch_ms=%s fan_ms=%.1f exc=%s",
+                "failed_branches=%d/%d branch_ms=%s fan_ms=%.1f exc=%s",
                 name, org_id, recruiter.id, threading.current_thread().name,
-                len(failed), timings, fan_ms, _describe(exc),
+                len(failed), len(critical), timings, fan_ms, _describe(exc),
                 exc_info=exc,
             )
         raise HTTPException(
@@ -202,16 +279,44 @@ def resolve_org_context(recruiter: CurrentRecruiter) -> OrgContext:
         ) from next(iter(failed.values()))
 
     logger.debug("org-context resolved | org=%s %s fan_ms=%.1f", org_id, timings, fan_ms)
-    org, member, sub, flags = (results[n][0] or [] for n in ("org", "member", "sub", "flags"))
+    org, member, sub, flags, grants, usage_rows = (
+        results[n][0] or [] for n in ("org", "member", "sub", "flags", "grants", "usage")
+    )
 
     org_row = org[0] if org else {}
-    plan = (sub[0].get("plan") if sub else None) or org_row.get("plan") or "free"
+    sub_row = sub[0] if sub else {}
+    plan = sub_row.get("plan") or org_row.get("plan") or "free"
     role = (member[0].get("role") if member else None) or "viewer"
     overrides = {f["flag"]: bool(f["enabled"]) for f in flags if f.get("flag")}
+
+    # An organization with no subscription row predates monetization (0016 gives
+    # every existing org one, so this is only reachable for a row created between
+    # the migration and its provisioning trigger). FOUNDING is the safe reading:
+    # never apply new limits to an account we cannot prove is new.
+    ruleset = normalize_ruleset(sub_row.get("plan_ruleset")) if sub_row else RULESET_FOUNDING
+
+    now = datetime.now(timezone.utc)
+    granted: set[str] = set()
+    for row in grants:
+        feature = row.get("feature")
+        if not feature:
+            continue
+        expires = row.get("expires_at")
+        if expires and _parse_ts(expires) is not None and _parse_ts(expires) <= now:
+            continue  # lapsed pilot closes itself
+        granted.add(feature)
+
+    usage = UsageSnapshot(**usage_rows[0]) if usage_rows else UsageSnapshot(period=current_period())
 
     current_org_id.set(org_id)
     return OrgContext(
         recruiter=recruiter, organization_id=org_id, organization_name=org_row.get("name", ""),
         plan=plan, role=role, workspace_id=workspace_id, settings=org_row.get("settings", {}),
         feature_overrides=overrides,
+        plan_ruleset=ruleset,
+        plan_status=(sub_row.get("status") or "active"),
+        plan_version=int(sub_row.get("plan_version") or 1),
+        limit_overrides=(sub_row.get("limit_overrides") or {}),
+        grants=granted,
+        usage=usage,
     )

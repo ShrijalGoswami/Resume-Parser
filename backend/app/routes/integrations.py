@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.concurrency import run_in_threadpool
 
 from app.enterprise.context import OrgContext
-from app.enterprise.deps import OrgContextDep, require_permission
+from app.enterprise.deps import OrgContextDep, require_entitlement, require_permission
 from app.enterprise.rbac import Permission
 from app.enterprise.repositories import AuditRepository
 from app.integrations import IntegrationEvent, provider_catalog
@@ -155,13 +155,19 @@ async def emit(event: str, ctx: ManageDep):
 
 
 # ── Webhooks ─────────────────────────────────────────────────────────────────
-@router.get("/webhooks", response_model=list[WebhookEndpointModel])
+# Enterprise, per the approved plan matrix, and gated per-endpoint rather than at
+# the router: this router also serves the ordinary ATS/calendar connections that
+# Pro includes, so the router-level gate is `integrations` (Pro) and only these
+# two endpoints carry the Enterprise requirement on top.
+@router.get("/webhooks", response_model=list[WebhookEndpointModel],
+            dependencies=[Depends(require_entitlement("webhooks"))])
 async def list_webhooks(ctx: OrgContextDep):
     rows = await run_in_threadpool(IntegrationRepository(ctx.organization_id).list_webhooks)
     return [WebhookEndpointModel(**r) for r in rows]
 
 
-@router.post("/webhooks", status_code=status.HTTP_201_CREATED)
+@router.post("/webhooks", status_code=status.HTTP_201_CREATED,
+             dependencies=[Depends(require_entitlement("webhooks"))])
 async def create_webhook(ctx: ManageDep):
     secret = "whsec_" + secrets.token_urlsafe(24)
     row = await run_in_threadpool(IntegrationRepository(ctx.organization_id).create_webhook, "webhook", secret)

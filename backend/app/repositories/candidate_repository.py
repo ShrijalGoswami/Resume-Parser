@@ -143,11 +143,17 @@ class CandidateRepository(BaseRepository):
         file_hash: str,
         filename: Optional[str] = None,
         file_size: Optional[int] = None,
+        organization_id: Optional[str] = None,
     ) -> bool:
         """
         Record a persisted upload. The UNIQUE (campaign_id, file_hash) constraint
         makes this the race-safe idempotency anchor: returns True when inserted,
         False when the hash already exists in this campaign (duplicate).
+
+        `organization_id` (migration 0018) is what makes the résumé quota an
+        ORGANIZATION allowance rather than a per-recruiter one — without it a
+        three-person team would get three independent free quotas. Optional, so a
+        caller without org context still records the upload rather than losing it.
         """
         row = {
             "campaign_id": campaign_id,
@@ -157,6 +163,8 @@ class CandidateRepository(BaseRepository):
             "file_hash": file_hash,
             "file_size": file_size,
         }
+        if organization_id:
+            row["organization_id"] = organization_id
         try:
             self._client.table("candidate_uploads").insert(row).execute()
             return True

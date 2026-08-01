@@ -154,15 +154,27 @@ class AuditRepository(_Base):
 
 class UsageRepository(_Base):
     def increment(self, metric: str, delta: int = 1, period: Optional[str] = None) -> None:
-        """Best-effort read-modify-write increment for one org/period/metric."""
+        """Atomic increment for one org/period/metric.
+
+        This was a read-modify-write — SELECT the value, add one, UPSERT the sum.
+        Two concurrent callers read the same number and wrote the same number+1,
+        so N increments could record fewer than N. That was tolerable while these
+        counters were statistics; it stopped being tolerable when a counter began
+        deciding whether a résumé may be uploaded, because the lost update IS the
+        quota bypass — and the upload path is inherently concurrent.
+
+        `increment_usage` (migration 0017) does the read and the write in one
+        statement under the row lock the unique index already provides.
+
+        Still best-effort: a counter write must never fail the request that
+        earned it. A missed increment under-counts, which is the generous
+        direction; failing the request would lie about what happened.
+        """
         p = period or _period()
         try:
-            rows = self._rows(self._t("org_usage_counters").select("value")
-                              .eq("organization_id", self.org_id).eq("period", p).eq("metric", metric).limit(1).execute())
-            current = rows[0]["value"] if rows else 0
-            self._t("org_usage_counters").upsert(
-                {"organization_id": self.org_id, "period": p, "metric": metric, "value": current + delta},
-                on_conflict="organization_id,period,metric").execute()
+            self._c.rpc("increment_usage", {
+                "p_org": self.org_id, "p_period": p, "p_metric": metric, "p_delta": delta,
+            }).execute()
         except Exception as exc:  # pragma: no cover
             logger.info("Usage increment failed (%s): %s", metric, exc)
 

@@ -21,6 +21,13 @@ class Settings(BaseSettings):
     ALLOWED_EXTENSIONS: list[str] = [".pdf", ".docx"]
     # Maximum number of resumes accepted in a single recruiter batch request.
     MAX_BATCH_SIZE: int = 100
+    # Monetization enforcement. "on" (default) means plan limits and feature
+    # entitlements are enforced with a 402; "off" disables every gate without a
+    # deploy. This is the ROLLBACK LEVER — if a quota misfires against real
+    # customers, one environment variable restores the previous behaviour while
+    # the cause is found. It is deliberately not a per-feature switch: a partial
+    # enforcement state is harder to reason about than either extreme.
+    ENTITLEMENT_ENFORCEMENT: str = "on"
     # Comma-separated list of allowed CORS origins, or "*" for any (no credentials).
     ALLOWED_ORIGINS: str = "*"
     # Deployment environment label ("development", "staging", "production").
