@@ -7,6 +7,7 @@ import { analyzeBatchWithProgress } from '@/services/api'
 import { persistBatch, uploadResume } from '@/services/campaigns-api'
 import { reindexCampaign } from '@/services/search-api'
 import { roleKeys } from '../lib/api/workspace'
+import { orgContextKey } from '../lib/api/org-context'
 import { hashFiles, buildResumeUploadPlan, runPooled } from './resume-upload'
 import {
   Dialog,
@@ -19,6 +20,7 @@ import {
 } from '../ui/dialog'
 import { Button } from '../ui/button'
 import { toast } from '../ui/use-toast'
+import { QuotaLock, QuotaMeter, useQuota, usePlanDenialHandler } from '../entitlements'
 import type { Campaign } from '@/types/campaign'
 
 type Phase = 'idle' | 'analyzing' | 'persisting' | 'indexing' | 'error'
@@ -49,6 +51,23 @@ export function AddCandidatesDialog({
   const hasJobDescription = Boolean(campaign.job_description?.trim())
   const busy = phase === 'analyzing' || phase === 'persisting' || phase === 'indexing'
 
+  // CHECK THE QUOTA BEFORE THE EXPENSIVE THING.
+  //
+  // The backend already refuses at `/batch-analysis` before any AI call, so the
+  // credits are never spent — but "before the spinner" and "after the spinner"
+  // are completely different experiences. Accepting eight files, running an
+  // upload bar to 100%, and only then saying "you have 2 credits" wastes the
+  // customer's time and reads as a bug rather than a limit. The client should
+  // not be worse than the server it fronts.
+  const quota = useQuota('resumes')
+  const handleDenial = usePlanDenialHandler()
+  const exhausted = quota.state === 'ready' && quota.isExhausted
+  const remaining = quota.state === 'ready' && !quota.unlimited ? quota.remaining : null
+  // Null means "no ceiling worth mentioning" — unlimited, founding, or a state
+  // we do not know yet. Never truncate a batch on a figure we are unsure of.
+  const overflow = remaining !== null && files.length > remaining
+  const analyzable = overflow ? (remaining as number) : files.length
+
   const reset = () => {
     setFiles([])
     setPhase('idle')
@@ -70,14 +89,18 @@ export function AddCandidatesDialog({
   }
 
   const run = async () => {
-    if (files.length === 0 || !hasJobDescription) return
+    if (files.length === 0 || !hasJobDescription || exhausted) return
     setError(null)
+    // Send only what the allowance covers. The alternative — sending all eight
+    // and letting the server refuse the batch — analyses nothing at all, so a
+    // customer with 2 credits left ends up with 0 candidates instead of 2.
+    const sending = files.slice(0, analyzable)
     try {
       setPhase('analyzing')
       setProgress(0)
       const batch = await analyzeBatchWithProgress(
         campaign.job_description,
-        files,
+        sending,
         setProgress,
       )
       setPhase('persisting')
@@ -86,7 +109,7 @@ export function AddCandidatesDialog({
       // hash). A failed upload just leaves that candidate's download gate closed —
       // it must never fail the ingestion, so this is wrapped and non-blocking.
       try {
-        const fileByHash = await hashFiles(files)
+        const fileByHash = await hashFiles(sending)
         const plan = buildResumeUploadPlan(batch.candidates, persisted, fileByHash)
         await runPooled(plan, 4, (p) => uploadResume(roleId, p.candidateId, p.file).then(() => undefined))
       } catch {
@@ -97,12 +120,29 @@ export function AddCandidatesDialog({
       await queryClient.invalidateQueries({ queryKey: roleKeys.candidates(roleId) })
       toast({
         variant: 'success',
-        title: `Added ${files.length} candidate${files.length === 1 ? '' : 's'}`,
+        title: `Added ${sending.length} candidate${sending.length === 1 ? '' : 's'}`,
+        // Truncation is never silent: a customer who selected eight files and
+        // got two must be told which two, and why.
+        description: overflow
+          ? `${files.length - sending.length} not analyzed — you've used your résumé allowance.`
+          : undefined,
       })
       reset()
       onOpenChange(false)
     } catch (caught) {
       setPhase('error')
+      // A 402 that slipped through (a teammate consumed the last credit while
+      // this dialog was open) opens the upgrade surface rather than printing
+      // the server's sentence in red. Everything else stays an error, because
+      // it is one.
+      if (handleDenial(caught)) {
+        setError(null)
+        // Our cached figure was stale — that is how the 402 got through. Pull a
+        // fresh context so the dialog now shows the wall rather than inviting
+        // the same doomed attempt again.
+        void queryClient.invalidateQueries({ queryKey: orgContextKey })
+        return
+      }
       setError(caught instanceof Error ? caught.message : 'Something went wrong')
     }
   }
@@ -130,6 +170,19 @@ export function AddCandidatesDialog({
           <div className="hl-small rounded-hl-md bg-hl-warning-bg p-3 text-hl-warning">
             Add a job description to this role before uploading — candidates are ranked against it.
           </div>
+        ) : exhausted && quota.state === 'ready' ? (
+          /* THE WALL, BEFORE THE FILE PICKER.
+             Nothing to choose, nothing to upload, no spinner that ends in a
+             refusal — the shared quota surface, stating what ran out and what
+             an upgrade gives back. Selecting files first and failing after
+             would be the same outcome delivered in the least useful order. */
+          <QuotaLock
+            metric="resumes"
+            used={quota.used}
+            limit={quota.limit}
+            window={quota.window}
+            requiredPlan={quota.requiredPlan}
+          />
         ) : (
           <div className="flex flex-col gap-3">
             <button
@@ -175,6 +228,22 @@ export function AddCandidatesDialog({
               </ul>
             ) : null}
 
+            {/* Running low, but not out: the same meter the Inbox shows, so
+                the figure the recruiter already recognises is the one that
+                appears at the moment of spending. */}
+            <QuotaMeter metric="resumes" />
+
+            {/* Over the allowance. Offered as a choice with the number stated,
+                never a silent truncation — the customer must know before they
+                press the button that six of their eight files are not going to
+                be analysed. */}
+            {overflow && !busy ? (
+              <div className="hl-small rounded-hl-md bg-hl-warning-bg p-3 text-hl-warning">
+                You selected {files.length} résumés and have {remaining} left. Analyzing the first{' '}
+                {analyzable} — remove some to choose which.
+              </div>
+            ) : null}
+
             {busy ? (
               <div className="hl-small flex items-center gap-2 text-hl-fg-secondary">
                 <span className="hl-ai-shimmer inline-block h-1.5 flex-1 rounded-full bg-hl-muted" />
@@ -194,10 +263,12 @@ export function AddCandidatesDialog({
           <Button
             variant="primary"
             onClick={run}
-            disabled={!hasJobDescription || files.length === 0 || busy}
+            disabled={!hasJobDescription || files.length === 0 || busy || exhausted}
             loading={busy}
           >
-            {files.length > 0 ? `Analyze ${files.length} résumé${files.length === 1 ? '' : 's'}` : 'Analyze'}
+            {files.length > 0
+              ? `Analyze ${analyzable} résumé${analyzable === 1 ? '' : 's'}`
+              : 'Analyze'}
           </Button>
         </DialogFooter>
       </DialogContent>

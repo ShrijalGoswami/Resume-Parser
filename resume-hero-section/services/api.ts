@@ -1,5 +1,6 @@
 import { BatchAnalysisResponse } from '../types/batch';
 import { authHeaders, API_BASE_URL } from './auth-headers';
+import { apiErrorFrom } from '@/lib/api-error';
 
 /**
  * Stateless batch analysis — one job description against many resumes.
@@ -58,13 +59,23 @@ export function analyzeBatchWithProgress(
               reject(new Error('Invalid response from analysis service'));
             }
           } else {
-            let detail = 'Failed to analyze resume';
+            // `/batch-analysis` is where the résumé quota is enforced, so this
+            // is the one client whose 402 body matters most — it carries
+            // `used`, `limit` and `required_plan`, which is everything the wall
+            // needs to say "2 of 2 used · upgrade to Plus for 25 a month".
+            //
+            // It used to `reject(new Error(detail))`, discarding the status and
+            // the entire payload, so an exhausted customer got a bare sentence
+            // in a red line and no way forward. The nine other clients were
+            // converted in Phase 1; this XHR path was missed because it does
+            // not go through the shared `fetch` helper.
+            let body: unknown = null;
             try {
-              detail = JSON.parse(xhr.responseText).detail || detail;
+              body = JSON.parse(xhr.responseText);
             } catch {
-              /* keep default */
+              /* non-JSON error body — apiErrorFrom falls back to the status */
             }
-            reject(new Error(detail));
+            reject(apiErrorFrom(xhr.status, body));
           }
         };
         xhr.onerror = () => reject(new Error('Network error during analysis'));

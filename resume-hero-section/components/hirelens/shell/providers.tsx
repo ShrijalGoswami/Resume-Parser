@@ -7,6 +7,7 @@ import { TooltipProvider } from '../ui/tooltip'
 import { Toaster } from '../ui/toast'
 import { CommandRegistryProvider } from '../command-palette/command-registry'
 import { ApiProvider } from '../lib/api/query-client'
+import { UpgradeDialogProvider } from '../entitlements'
 import { ShellProvider } from './shell-context'
 
 /**
@@ -51,7 +52,13 @@ export function HireLensProviders({
         <TooltipProvider>
           <CommandRegistryProvider>
             <ShellProvider>
-              <HireLensRoot fontClassName={fontClassName}>{children}</HireLensRoot>
+              {/* Every upgrade CTA in the product — a locked button, a lock
+                  panel, a quota wall, a 402 from an action — resolves to this
+                  one dialog. Phase 3 turns its footer into a checkout session
+                  and nothing else in the app changes. */}
+              <UpgradeDialogProvider>
+                <HireLensRoot fontClassName={fontClassName}>{children}</HireLensRoot>
+              </UpgradeDialogProvider>
             </ShellProvider>
           </CommandRegistryProvider>
         </TooltipProvider>

@@ -23,6 +23,13 @@ export {
   type UpgradeHandler,
   type UpgradeRequest,
 } from './upgrade-action'
+export {
+  UpgradeDialog,
+  UpgradeDialogProvider,
+  type UpgradeDialogProps,
+} from './upgrade-dialog'
+export { usePlanDenialHandler, quotaDenialOf } from './use-plan-denial'
+
 // Re-exported so a product surface needs one import to gate, meter and route a
 // denial — a gate that is easy to add is a gate that gets added.
 export { useEntitlement, usePlan, usePlanGate, useQuota } from '../lib/entitlements/use-entitlement'

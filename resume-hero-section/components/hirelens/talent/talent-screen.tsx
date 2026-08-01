@@ -9,6 +9,7 @@ import { useProfile } from '../lib/api/hooks'
 import { useCompareCandidates } from '../lib/api/workspace'
 import { useTalentSearch, useSimilarCandidates, type SimilarSeed } from '../lib/api/talent'
 import { useCan, PERMS } from '../lib/use-can'
+import { FeatureLock, usePlanGate } from '../entitlements'
 import { useSearchHistory, useSavedSearches, type CollectionItem, type SavedTalentSearch } from '../lib/talent-store'
 import { TalentSidebar } from './talent-sidebar'
 import { TalentFilters } from './talent-filters'
@@ -106,7 +107,13 @@ function AuthedTalent({ initial }: { initial: TalentInitial }) {
   const savedSearches = useSavedSearches()
 
   const searchActive = !similarSeed && !viewCollectionId
-  const search = useTalentSearch({ query, filters }, searchActive)
+  // `semantic_search` gates the whole search router server-side. Only the
+  // results surface is gated here — the screen's collections do not touch it.
+  const searchPlan = usePlanGate('semantic_search')
+  // Don't fire a query we know will be refused. Only a resolved denial stops
+  // it — loading and error states still run, because the server is the
+  // authority and withholding on a failed context check is the mistake.
+  const search = useTalentSearch({ query, filters }, searchActive && searchPlan.state !== 'denied')
   const similar = useSimilarCandidates(similarSeed)
   const active = similarSeed ? similar : search
   const results = React.useMemo<SearchResultItem[]>(() => active.data?.results ?? [], [active.data])
@@ -334,6 +341,21 @@ function AuthedTalent({ initial }: { initial: TalentInitial }) {
                   onOpen={(item) => {
                     if (item.campaignId) openDrawer(item.campaignId, item.candidateId)
                   }}
+                />
+              ) : searchPlan.state === 'denied' ? (
+                /* Search is the whole point of this screen and the entire
+                   `/search/*` router is behind `semantic_search`, so a Free
+                   organization gets a 402 for every query — including the
+                   example chips in the empty state below, which is why the lock
+                   sits BEFORE that state rather than after it. Inviting someone
+                   to click a query that cannot run is worse than saying so.
+
+                   Collections are client-side and keep working, which is also
+                   why the Talent rail entry carries no `entitlement`: the
+                   destination still does something without Pro. */
+                <FeatureLock
+                  feature="semantic_search"
+                  requiredPlan={searchPlan.requiredPlan}
                 />
               ) : !query.trim() && !similarSeed ? (
                 <EmptyState

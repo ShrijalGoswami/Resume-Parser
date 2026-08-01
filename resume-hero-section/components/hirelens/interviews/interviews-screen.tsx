@@ -18,6 +18,7 @@ import { NativeSelect, DeferredNote } from '../settings/settings-ui'
 import { ScoreMeter } from '../domain/score-meter'
 import { HireBadge } from '../workspace/hire-badge'
 import { InterviewIntelligence } from '@/components/interview/interview-intelligence'
+import { FeatureLock, PlanGate, usePlanGate } from '../entitlements'
 import type { CandidateRow } from '@/lib/candidate'
 import type { Campaign } from '@/types/campaign'
 
@@ -188,6 +189,9 @@ function RoleInterviews({
 
   const candidates = useCandidates(roleId)
   const selected = candidates.data?.find((row) => row.id === candidateId) ?? null
+  // Read once here so the lock can name the tier; `PlanGate` below owns the
+  // loading and error states.
+  const interviewPlan = usePlanGate('interview_intelligence')
 
   // A candidate from a previous role must not stay selected after switching.
   const onRoleChange = (next: string) => {
@@ -252,11 +256,29 @@ function RoleInterviews({
                 Clear selection
               </Button>
             </div>
-            <InterviewIntelligence
-              key={`${roleId}:${selected.id}`}
-              campaignId={roleId}
-              candidateId={selected.id}
-            />
+            {/* Generating a pack calls `/campaigns/{id}/interview`, which is
+                behind `require_entitlement("interview_intelligence")`. Only the
+                generator is gated: the candidate table above reads ungated
+                campaign data, so the screen stays useful and a Free team can
+                still see who is up for interview — they just cannot have the
+                pack written for them. */}
+            <PlanGate
+              feature="interview_intelligence"
+              fallback={
+                <FeatureLock
+                  feature="interview_intelligence"
+                  requiredPlan={
+                    interviewPlan.state === 'denied' ? interviewPlan.requiredPlan : null
+                  }
+                />
+              }
+            >
+              <InterviewIntelligence
+                key={`${roleId}:${selected.id}`}
+                campaignId={roleId}
+                candidateId={selected.id}
+              />
+            </PlanGate>
           </section>
         ) : (
           <p className="hl-body px-1 text-hl-fg-tertiary">
