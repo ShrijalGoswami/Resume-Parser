@@ -77,4 +77,4 @@ workflow engine.
 Related: [ADR-011](./ADR-011-ai-gateway-and-provider-management.md),
 [ADR-013](./ADR-013-autonomous-agent-architecture.md),
 [ADR-014](./ADR-014-enterprise-platform-architecture.md),
-[sprints/V6_SPRINT11.md](../sprints/V6_SPRINT11.md).
+[sprints/V6_SPRINT11.md](../archive/sprints/V6_SPRINT11.md).

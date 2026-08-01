@@ -2,7 +2,7 @@
 
 > Forward-looking product and engineering direction. This is **not** a changelog
 > — completed work lives in [CHANGELOG.md](../CHANGELOG.md) and
-> [sprints/](./sprints/). Here we track vision, phases, and what is
+> [sprints/](./archive/sprints/). Here we track vision, phases, and what is
 > **Implemented**, **In Progress**, or **Planned**.
 
 ---
@@ -27,7 +27,7 @@ so no qualified candidate is lost to formatting and no decision is a black box.
 - **In development:** `v4.0.0` — **Supabase Foundation** (auth, campaigns,
   persistence, storage, RLS). Sprint 1 is feature-complete and the persistence
   infrastructure is **activated & live-verified** (2026-07-18, 15/15 e2e checks);
-  see [sprints/V4_SPRINT1.md](./sprints/V4_SPRINT1.md) and
+  see [sprints/V4_SPRINT1.md](./archive/sprints/V4_SPRINT1.md) and
   [PROJECT_AUDIT.md](./PROJECT_AUDIT.md).
 
 ---
@@ -85,63 +85,63 @@ external infrastructure or a product decision, not because they are defects. See
 - **AI Recruiter Copilot (Sprint 4)** — ambient, context-aware assistant on the
   orchestration layer: server-side context resolution (grounded, priority-ordered),
   structured responses with Sources Used, persistent page-scoped conversations, and
-  a global Cursor-style panel ([sprints/V4_SPRINT4.md](./sprints/V4_SPRINT4.md),
+  a global Cursor-style panel ([sprints/V4_SPRINT4.md](./archive/sprints/V4_SPRINT4.md),
   [ADR-007](./decisions/ADR-007-ai-recruiter-copilot.md))
 - **AI Candidate Comparison (Sprint 5)** — an AI Hiring Analyst comparing 2–5
   candidates into an executive report (rankings, skill matrix, risks, hiring
   recommendation, interview focus, trade-offs); one engine reused by the campaign
-  UI and the Copilot ([sprints/V4_SPRINT5.md](./sprints/V4_SPRINT5.md),
+  UI and the Copilot ([sprints/V4_SPRINT5.md](./archive/sprints/V4_SPRINT5.md),
   [ADR-008](./decisions/ADR-008-ai-candidate-comparison.md))
 - **AI Semantic Talent Search (Sprint 6)** — embedding-based retrieval (separate
   from the LLM): natural-language search, "find similar candidates", provider- and
   vector-store-agnostic; reused by the Copilot
-  ([sprints/V4_SPRINT6.md](./sprints/V4_SPRINT6.md),
+  ([sprints/V4_SPRINT6.md](./archive/sprints/V4_SPRINT6.md),
   [ADR-009](./decisions/ADR-009-semantic-search-architecture.md))
 - **AI Interview Intelligence (Sprint 7)** — a complete interview workbench
   (strategy, technical & behavioral questions, skill verification, risk analysis,
   interviewer scorecard, hiring recommendation) with PDF export; one engine reused
   by candidate detail, the Copilot, and Comparison
-  ([sprints/V4_SPRINT7.md](./sprints/V4_SPRINT7.md),
+  ([sprints/V4_SPRINT7.md](./archive/sprints/V4_SPRINT7.md),
   [ADR-010](./decisions/ADR-010-interview-intelligence-engine.md))
 - **Multi-Provider AI Gateway (Sprint 7.5)** — logical model roles, model +
   provider registries, configurable fallback, cost/health tracking, runtime
   provider switch; swap Groq/Gemini/Anthropic/OpenAI/OpenRouter and embedding
-  providers by configuration only ([sprints/V4_SPRINT7_5.md](./sprints/V4_SPRINT7_5.md),
+  providers by configuration only ([sprints/V4_SPRINT7_5.md](./archive/sprints/V4_SPRINT7_5.md),
   [ADR-011](./decisions/ADR-011-ai-gateway-and-provider-management.md))
 - **Executive Hiring Intelligence (Sprint 8)** — AI executive reports grounded in
   real platform data (pipeline health, campaign intelligence, recruiter
   productivity, skill gaps, hiring risks, prioritised recommendations, talent
   snapshot) with PDF export; schedulable service; reused by the Copilot
-  ([sprints/V4_SPRINT8.md](./sprints/V4_SPRINT8.md),
+  ([sprints/V4_SPRINT8.md](./archive/sprints/V4_SPRINT8.md),
   [ADR-012](./decisions/ADR-012-executive-intelligence-architecture.md))
 - **Autonomous Recruiting Agent (Sprint 9)** — proactive agent that coordinates the
   existing engines via a tool registry, runs 5 workflows (stalled campaign,
   high-potential candidate, weak pool, interview backlog, deadline risk), and
   produces explainable, human-approved recommendations; scheduler-ready; reused by
-  the Copilot ([sprints/V4_SPRINT9.md](./sprints/V4_SPRINT9.md),
+  the Copilot ([sprints/V4_SPRINT9.md](./archive/sprints/V4_SPRINT9.md),
   [ADR-013](./decisions/ADR-013-autonomous-agent-architecture.md))
 - **Enterprise Platform & Organizations (V6 Sprint 10)** — multi-tenant orgs +
   workspaces, policy-based RBAC, immutable audit log, org usage accounting,
   subscription plans + limits, per-org feature flags, scoped API keys, and an Admin
-  Console; layered additively over V5 ([sprints/V6_SPRINT10.md](./sprints/V6_SPRINT10.md),
+  Console; layered additively over V5 ([sprints/V6_SPRINT10.md](./archive/sprints/V6_SPRINT10.md),
   [ADR-014](./decisions/ADR-014-enterprise-platform-architecture.md))
 - **Integration Platform & Workflow Automation (V6 Sprint 11)** — provider-plugin
   integration layer (Gmail/Outlook/Calendar/Slack/Teams/Meet/Zoom/ATS/webhook) with
   OAuth + encrypted credentials, event-driven automation rules, retry/backoff,
   execution history + replay, and an Integration Hub; Agent → Workflow → Integration
-  ([sprints/V6_SPRINT11.md](./sprints/V6_SPRINT11.md),
+  ([sprints/V6_SPRINT11.md](./archive/sprints/V6_SPRINT11.md),
   [ADR-015](./decisions/ADR-015-integration-platform-architecture.md))
 - **Organizational Knowledge & Long-Term Memory (V7 Sprint 12)** — structured,
   time-aware, org-scoped recruiting memory (extraction, explainable retrieval, graph,
   timeline, emergent preferences) injected into every AI capability before reasoning;
   Knowledge Center; independent of the AI gateway
-  ([sprints/V7_SPRINT12.md](./sprints/V7_SPRINT12.md),
+  ([sprints/V7_SPRINT12.md](./archive/sprints/V7_SPRINT12.md),
   [ADR-016](./decisions/ADR-016-organizational-knowledge-architecture.md))
 - **Predictive Intelligence & Digital Twin (V8 Sprint 13)** — deterministic
   Organizational Digital Twin + forecasts (completion, delay, offer, capacity, skill
   shortage, cost, pipeline health) + scenario simulation; explainable, evidence-backed;
   AI explains but never generates; Predictive Intelligence workspace
-  ([sprints/V8_SPRINT13.md](./sprints/V8_SPRINT13.md),
+  ([sprints/V8_SPRINT13.md](./archive/sprints/V8_SPRINT13.md),
   [ADR-017](./decisions/ADR-017-predictive-intelligence-architecture.md))
 
 ### 🚧 In Progress

@@ -4,7 +4,7 @@
 > platform: multi-tenant organizations with strict isolation, policy-based RBAC,
 > immutable auditing, usage accounting, subscription foundations, feature flags,
 > and scoped API keys — all layered additively over V5. Decision record:
-> [ADR-014](../decisions/ADR-014-enterprise-platform-architecture.md).
+> [ADR-014](../../decisions/ADR-014-enterprise-platform-architecture.md).
 
 ## Goal
 

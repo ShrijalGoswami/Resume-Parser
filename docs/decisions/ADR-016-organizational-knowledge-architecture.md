@@ -76,4 +76,4 @@ org-scoped memory that every AI capability retrieves before reasoning.
 Related: [ADR-006](./ADR-006-ai-orchestration-layer.md),
 [ADR-009](./ADR-009-semantic-search-architecture.md),
 [ADR-014](./ADR-014-enterprise-platform-architecture.md),
-[sprints/V7_SPRINT12.md](../sprints/V7_SPRINT12.md).
+[sprints/V7_SPRINT12.md](../archive/sprints/V7_SPRINT12.md).

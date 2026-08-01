@@ -165,23 +165,18 @@ In addition to the ATS score, a **Confidence Score (0-100)** is calculated. It e
 ## 📷 Screenshots
 
 ### Landing Page
-![Landing Page](docs/assets/placeholder-landing.png)
 *A premium SaaS landing experience welcoming users to analyze their profiles.*
 
 ### Upload Dialog
-![Upload Dialog](docs/assets/placeholder-upload.png)
 *Seamless resume and Job Description upload workflow.*
 
 ### ATS Analysis Dashboard
-![ATS Analysis](docs/assets/placeholder-ats.png)
 *Beautiful data visualizations presenting candidate completeness and skill densities.*
 
 ### Job Match Results
-![Job Match Results](docs/assets/placeholder-match.png)
 *Deep comparative insights highlighting exactly which required skills the candidate is missing.*
 
 ### PDF Report Export
-![PDF Report](docs/assets/placeholder-pdf.png)
 *Instantly generated, recruiter-ready PDF intelligence briefs.*
 
 ---

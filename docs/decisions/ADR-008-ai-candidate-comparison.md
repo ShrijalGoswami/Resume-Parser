@@ -73,4 +73,4 @@ and a single shared engine consumed by two entry points.
 
 Related: [ADR-006](./ADR-006-ai-orchestration-layer.md),
 [ADR-007](./ADR-007-ai-recruiter-copilot.md),
-[sprints/V4_SPRINT5.md](../sprints/V4_SPRINT5.md).
+[sprints/V4_SPRINT5.md](../archive/sprints/V4_SPRINT5.md).

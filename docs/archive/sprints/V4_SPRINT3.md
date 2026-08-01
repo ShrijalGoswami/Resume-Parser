@@ -2,9 +2,9 @@
 
 > Sprint record. Establishes the centralized AI architecture every future AI
 > capability will use — **not** a new product feature. Cross-refs:
-> [AI_ARCHITECTURE.md](../AI_ARCHITECTURE.md),
-> [decisions/ADR-006](../decisions/ADR-006-ai-orchestration-layer.md),
-> [AI_PIPELINE.md](../AI_PIPELINE.md).
+> [AI_ARCHITECTURE.md](../../AI_ARCHITECTURE.md),
+> [decisions/ADR-006](../../decisions/ADR-006-ai-orchestration-layer.md),
+> [AI_PIPELINE.md](../../AI_PIPELINE.md).
 
 - **Status:** ✅ Complete (implementation + verification + documentation)
 - **Theme:** AI orchestration substrate; no Sprint 2 behavior changed
@@ -38,7 +38,7 @@ the current AI pipeline.
 New `app/ai` package sits between domain services and the LLM SDK. Domain
 services (`analyzer`, `match_analyzer`) now build a context, call
 `orchestrator.run(capability, variables, schema)`, and keep deterministic scoring
-+ merging. See the module map in [AI_ARCHITECTURE.md](../AI_ARCHITECTURE.md).
++ merging. See the module map in [AI_ARCHITECTURE.md](../../AI_ARCHITECTURE.md).
 
 ## Database changes
 
@@ -69,7 +69,7 @@ No measurable overhead added to the LLM round-trip.
 
 ## Technical decisions
 
-See [ADR-006](../decisions/ADR-006-ai-orchestration-layer.md). Key points:
+See [ADR-006](../../decisions/ADR-006-ai-orchestration-layer.md). Key points:
 `AIError` subclasses `RuntimeError` (routes' `→ 503` unchanged); prompts reuse
 existing text (no duplication); batch/copilot phased migration to avoid
 regression risk; providers constructed lazily via a registry.

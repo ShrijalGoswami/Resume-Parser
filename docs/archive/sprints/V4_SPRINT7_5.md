@@ -3,7 +3,7 @@
 > Evolve the AI Foundation into a true **AI Gateway** — the platform switches LLM
 > and embedding providers (Groq, Gemini, Anthropic, OpenAI, OpenRouter, local)
 > entirely by configuration, with every capability following automatically.
-> Decision record: [ADR-011](../decisions/ADR-011-ai-gateway-and-provider-management.md).
+> Decision record: [ADR-011](../../decisions/ADR-011-ai-gateway-and-provider-management.md).
 
 ## Goal
 

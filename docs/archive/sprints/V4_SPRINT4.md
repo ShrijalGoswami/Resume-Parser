@@ -1,9 +1,9 @@
 # V4 Sprint 4 — AI Recruiter Copilot (V5)
 
 > Builds the first production version of the **Recruiter Copilot** on top of the
-> Sprint 3 [AI Foundation Layer](../AI_ARCHITECTURE.md). An ambient, context-aware
+> Sprint 3 [AI Foundation Layer](../../AI_ARCHITECTURE.md). An ambient, context-aware
 > assistant that grounds every answer in the recruiter's own data — not a generic
-> chatbot. Decision record: [ADR-007](../decisions/ADR-007-ai-recruiter-copilot.md).
+> chatbot. Decision record: [ADR-007](../../decisions/ADR-007-ai-recruiter-copilot.md).
 
 ## Goal
 

@@ -3,7 +3,7 @@
 > The platform's semantic intelligence: discover talent by **meaning**, not
 > keywords. An embedding-based retrieval engine, fully separate from the LLM,
 > reused by the Recruiter Copilot. Decision record:
-> [ADR-009](../decisions/ADR-009-semantic-search-architecture.md).
+> [ADR-009](../../decisions/ADR-009-semantic-search-architecture.md).
 
 ## Goal
 

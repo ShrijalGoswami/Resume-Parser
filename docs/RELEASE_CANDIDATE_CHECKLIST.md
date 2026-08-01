@@ -1,7 +1,12 @@
 # HireLens Monetization — Release Candidate Checklist
 
-**Created:** 1 Aug 2026 · **Status:** NOT STARTED · **Gate:** nothing ships until every
-P0 box here is ticked by a human who ran it
+**Created:** 1 Aug 2026 · **Updated:** 1 Aug 2026 (added §6 Pricing experience)
+**Status:** NOT STARTED · **Gate:** nothing ships until every P0 box here is
+ticked by a human who ran it
+
+**Nothing in this document has been verified in a browser.** That includes the
+whole of §6, which covers a pricing page whose currency preference, accordion
+and upgrade dialog are all behaviour that only exists after hydration.
 
 This is the **single document** to follow before calling HireLens monetization
 production-ready. It exists so validation happens once, completely, in one
@@ -9,7 +14,7 @@ sitting — rather than as scattered manual testing whose coverage nobody can
 reconstruct afterwards.
 
 **How to use it.** Work top to bottom. Tick a box only when you have *run* the
-thing, not when you believe it works. If a box fails, log it in §11 and keep
+thing, not when you believe it works. If a box fails, log it in §12 and keep
 going — a partial pass with a written defect list is worth far more than an
 abandoned run. Do not tick anything on someone else's behalf.
 
@@ -21,6 +26,7 @@ abandoned run. Do not tick anything on someone else's behalf.
 | `docs/HANDOFF.md` §11 | Known technical debt, no-lock decisions |
 | `docs/ROLLBACK.md` | Per-plane rollback runbook |
 | `docs/MONETIZATION_ARCHITECTURE.md` | The design being validated |
+| `resume-hero-section/lib/pricing.ts` | The prices §6 checks the page against |
 | `docs/LAUNCH_CHECKLIST.md` | Broader V4 launch items, not monetization-specific |
 
 ---
@@ -29,7 +35,7 @@ abandoned run. Do not tick anything on someone else's behalf.
 
 - [ ] **Chrome extension can reach `localhost`.** Currently it cannot; every tool
       call against a local page returns `Frame with ID 0 is showing error page`.
-      Full diagnosis in `BROWSER_QA_CHECKLIST.md` §0. **This blocks §3–§8 entirely.**
+      Full diagnosis in `BROWSER_QA_CHECKLIST.md` §0. **This blocks §3–§9 entirely.**
 - [ ] **Both servers running.** Frontend `:3000`, backend `:8000`,
       `curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/health` → `200`.
       Backend must be launched detached (see `HANDOFF.md` §0) or it gets reaped.
@@ -37,12 +43,12 @@ abandoned run. Do not tick anything on someone else's behalf.
       existing orgs are `founding` and show **no locks, no meters, no limits** —
       testing on a real account proves nothing and will read as "Phase 2 didn't ship".
 - [ ] **A second throwaway account** for the seat-limit and multi-user checks.
-- [ ] **3–6 test résumés** (PDF/DOCX, <10 MB). §3 and §7 spend real Groq tokens
+- [ ] **3–6 test résumés** (PDF/DOCX, <10 MB). §3 and §10 spend real Groq tokens
       against a **100k tokens/day free tier** — budget the run accordingly and do
       the upload steps early in the day.
 - [ ] **`scripts/set_org_plan.py` access** (service-role) to move a throwaway org
       between free/plus/pro/enterprise and to flip `plan_ruleset`.
-- [ ] Decide the **run date and owner**. Record both in §12.
+- [ ] Decide the **run date and owner**. Record both in §13.
 
 ---
 
@@ -80,7 +86,7 @@ Enforcement posture:
 
 Automated.
 
-- [ ] `npx vitest run` → **253 passed**, 22 files
+- [ ] `npx vitest run` → **296 passed**, 23 files
 - [ ] `npx tsc --noEmit` → clean
 - [ ] `npx eslint .` → **exactly 4 errors**, all `react-hooks/refs` in
       `components/marketing/NeuralBackground.tsx` (known debt, `HANDOFF.md` §11.1).
@@ -198,10 +204,131 @@ Paid tiers:
 
 ---
 
-## 6. Responsive QA (P1)
+## 6. Pricing experience (P0)
+
+> **STATUS: ENTIRELY UNVERIFIED.** Every box in this section requires a real
+> browser and none has been ticked. The pricing page has only ever been checked
+> by unit tests and by curling its server-rendered HTML — which proves the
+> markup exists and proves nothing about how it looks, reflows, or behaves once
+> hydrated. Treat a green test suite here as no evidence at all.
+
+Prices live in `lib/pricing.ts`; features and limits come from the entitlement
+catalog. The whole risk of this surface is the two disagreeing, or the page
+quoting a number nobody agreed to.
+
+### 6.1 Currency preference
+
+- [ ] Selector renders with both options, labelled as **currencies**
+      ("Indian Rupee (INR)", "US Dollar (USD)") — never as countries
+- [ ] Switching INR → USD updates **every** price on the page at once: all four
+      cards, and any figure in the Enterprise band
+- [ ] Switching USD → INR returns the exact original figures
+- [ ] The selected option is visually and programmatically marked
+      (`aria-checked`), and the group is reachable by keyboard
+- [ ] The initial guess is sensible for your timezone — **and can be overridden**.
+      This is the case that matters: a US buyer working from India must be able
+      to reach the price they will actually be charged.
+
+### 6.2 Persistence
+
+- [ ] Choose USD → **refresh** → still USD
+- [ ] Choose USD → close the tab → reopen `/pricing` → still USD
+- [ ] Choose USD → open the **homepage** → its pricing band also shows USD
+      (one preference, two surfaces — they must never disagree)
+- [ ] Two tabs open: change currency in one → the other follows
+- [ ] Clear site data → the guess runs again from scratch
+- [ ] Private/incognito window (where `localStorage` can throw): the page still
+      renders and the selector still works for that session
+
+### 6.3 Both surfaces agree
+
+- [ ] `/pricing` cards show Free / Plus / Pro / Enterprise in that order
+- [ ] Homepage pricing band shows the same four plans at the same prices
+- [ ] **Neither surface shows the retired Team / Business tiers or $499 / $999**
+- [ ] Homepage "Compare every plan" and the nav "Pricing" both land on `/pricing`
+- [ ] Enterprise reads "Custom" on both, never a number
+
+### 6.4 Prices match the config
+
+- [ ] Read `lib/pricing.ts` and check every rendered figure against it, in both
+      currencies. Expected today: Plus **₹999 / $19**, Pro **₹2,499 / $49**,
+      Free renders "Free", Enterprise renders "Custom"
+- [ ] "/month" appears on paid tiers only — never on Free or Enterprise
+- [ ] **No yearly or annual option appears anywhere.** The schema carries a
+      yearly field, but `YEARLY_BILLING_ENABLED` is false and the backend has no
+      annual period — a visible annual toggle would be a promise the server
+      cannot keep
+- [ ] No price shows trailing decimals
+
+### 6.5 Comparison table
+
+- [ ] Every catalog feature has a row; every plan has a column
+- [ ] Included/excluded marks match the enforced matrix — spot-check AI Copilot
+      (Pro+), PDF Export (Plus+), Webhooks (Enterprise only)
+- [ ] Limits read as the server enforces them: Free **"2 total"** (lifetime —
+      never "2 / month"), Plus "25 / month", Pro and Enterprise "Unlimited"
+- [ ] **Desktop (≥1280):** full table visible, no clipping
+- [ ] **Tablet (768–1024):** table scrolls **inside its own container**; the
+      page itself must not scroll horizontally
+- [ ] **Mobile (390):** same — horizontal scroll belongs to the table, never the
+      document. Column headers remain readable while scrolling
+- [ ] Screen reader announces row and column headers when moving through cells
+
+### 6.6 FAQ accordion
+
+- [ ] First panel is open on load
+- [ ] Clicking a question opens it and closes the previously open one
+- [ ] Clicking an open question closes it
+- [ ] Keyboard: Tab reaches each question, Enter/Space toggles
+- [ ] `aria-expanded` flips correctly; the panel is associated with its button
+- [ ] Browser find-in-page can locate text inside a **closed** panel
+
+### 6.7 CTA behaviour — signed out vs signed in
+
+- [ ] **Signed out:** Free → "Start free", Plus/Pro → "Start with …", all to
+      `/auth/signup`
+- [ ] **Signed out:** Enterprise → "Talk to sales" (mail client opens)
+- [ ] **Signed in:** Plus/Pro → the **upgrade dialog opens on the pricing page**,
+      and it is the *same* dialog a lock or quota wall opens in the product
+- [ ] The dialog answers all three questions: what is locked · why want it ·
+      what changes if you upgrade
+- [ ] Dialog traps focus, closes on `Esc`, and returns focus to the CTA
+- [ ] Dialog renders with product styling on a marketing page — it carries its
+      own `.hl` scope, so confirm no unstyled or half-styled panel
+- [ ] **Signed in:** Free → "Go to HireLens", not an offer to upgrade downward
+- [ ] No CTA is a dead button. There is no checkout yet; the honest route is
+      "Contact us to upgrade"
+
+### 6.8 Currency must not touch entitlements
+
+The single most important check in this section.
+
+- [ ] Switch currency while signed in: **no** lock, meter, badge or gate changes
+- [ ] `/org/context` is **not** refetched by a currency change (watch the
+      network panel — a display preference must not hit the API)
+- [ ] A FREE org still sees exactly the same locks in USD as in INR
+- [ ] A founding org still sees no locks in either currency
+- [ ] Nothing writes to `subscriptions` or any entitlement state on switch
+
+### 6.9 Theme and polish
+
+- [ ] Light mode: cards, table, Enterprise ink band, FAQ, and the currency
+      selector all legible; the featured card is distinguishable
+- [ ] Dark mode: same, and the Enterprise band still reads as deliberate rather
+      than as a rendering fault
+- [ ] Contrast on muted table text, the "—" exclusion marks, and the featured
+      badge
+- [ ] No layout shift when the currency preference resolves after hydration
+- [ ] No console errors or hydration warnings on `/pricing` or the homepage
+
+---
+
+## 7. Responsive QA (P1)
 
 Every screen touched by Phase 2: Inbox, Roles, Role workspace, Talent,
-Interviews, Ask, Analytics, Settings ▸ Billing, and the upgrade dialog.
+Interviews, Ask, Analytics, Settings ▸ Billing, and the upgrade dialog. The
+pricing page has its own breakpoint checks in §6.5 — do those there rather than
+twice.
 
 - [ ] **≥1280** — rail expanded, no horizontal scroll
 - [ ] **1279** — rail auto-collapses (`useMediaQuery('(max-width: 1279px)')`);
@@ -216,7 +343,7 @@ Interviews, Ask, Analytics, Settings ▸ Billing, and the upgrade dialog.
 
 ---
 
-## 7. Accessibility (P1)
+## 8. Accessibility (P1)
 
 **No automated a11y tooling is installed** (no axe, no Lighthouse CI, no
 Playwright). These are manual — say so in the sign-off rather than implying a
@@ -234,7 +361,7 @@ scan ran.
 
 ---
 
-## 8. Performance (P1)
+## 9. Performance (P1)
 
 - [ ] `/org/context` p95 measured — it is **deliberately uncached** and runs on
       nearly every authenticated request. It has caused one ~1s regression before
@@ -249,7 +376,7 @@ scan ran.
 
 ---
 
-## 9. Regression testing (P0)
+## 10. Regression testing (P0)
 
 Phase 2 touched shared surfaces. Confirm nothing that used to work stopped.
 
@@ -270,7 +397,7 @@ Phase 2 touched shared surfaces. Confirm nothing that used to work stopped.
 
 ---
 
-## 10. Pre-ship gates
+## 11. Pre-ship gates
 
 - [ ] `docs/HANDOFF.md` §11 debt list reviewed and still accurate
 - [ ] The 4 known eslint errors either fixed **or** explicitly accepted for this release
@@ -288,7 +415,7 @@ Phase 2 touched shared surfaces. Confirm nothing that used to work stopped.
 
 ---
 
-## 11. Defect log
+## 12. Defect log
 
 Record everything found, including cosmetic. One row per defect.
 
@@ -300,7 +427,7 @@ Severity: **P0** blocks release · **P1** ship with a written plan · **P2** bac
 
 ---
 
-## 12. Sign-off
+## 13. Sign-off
 
 No box may be ticked by someone who did not run it.
 
@@ -311,11 +438,12 @@ No box may be ticked by someone who did not run it.
 | §3 FREE journey | | | | |
 | §4 Monetization | | | | |
 | §5 Upgrade flows | | | | |
-| §6 Responsive | | | | |
-| §7 Accessibility | | | | |
-| §8 Performance | | | | |
-| §9 Regression | | | | |
-| §10 Pre-ship | | | | |
+| §6 Pricing experience | | | | |
+| §7 Responsive | | | | |
+| §8 Accessibility | | | | |
+| §9 Performance | | | | |
+| §10 Regression | | | | |
+| §11 Pre-ship | | | | |
 
 **Release decision:** ☐ Ship ☐ Ship with known issues (listed) ☐ Hold
 
@@ -327,7 +455,7 @@ No box may be ticked by someone who did not run it.
 
 Verified without a browser, so it does not need re-running:
 
-- Backend 140 tests · frontend 253 tests · `tsc` clean
+- Backend 140 tests · frontend 296 tests · `tsc` clean
 - Catalog parity proven by deliberate mutation in both directions
 - Live schema reads: 68/68 `founding`, 0 orgs without a subscription, both RPCs callable
 - 24 concurrent `increment_usage` calls → 24, zero lost updates
@@ -335,9 +463,19 @@ Verified without a browser, so it does not need re-running:
 - Audit gates 9/9 live across FREE / PRO / ENTERPRISE on a throwaway account
 - End-to-end 12/12 on a throwaway org: context, entitlements, limits, seat quota,
   founding flip and back
+- Pricing: prices asserted against `lib/pricing.ts`, the comparison table proven
+  to derive every row from the catalog, and `/pricing` and `/` both confirmed to
+  return 200 with the expected figures in their server-rendered HTML
 
 What that is **not**: evidence the product renders correctly. The entire risk
 concentrated in this checklist is that every Phase 2 surface passes its tests and
 is still wrong for a customer — a wall that appears after the spinner, a meter
-that never shows, a lock a founding customer should never have seen. §3 and §4
-are the ones that would catch it, and neither has ever been run.
+that never shows, a lock a founding customer should never have seen, a
+comparison table that pushes a phone sideways. §3, §4 and §6 are the ones that
+would catch it, and none has ever been run.
+
+Server-rendered HTML deserves a specific warning, because it is the strongest
+evidence gathered so far and it is weaker than it looks: it proves the markup
+exists. It says nothing about layout, contrast, focus order, or anything that
+happens after hydration — and the currency preference, the FAQ accordion and
+the upgrade dialog are *all* post-hydration behaviour.

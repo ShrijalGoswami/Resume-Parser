@@ -215,7 +215,7 @@ The full AI platform, stabilized and frozen for a production v1.0 release. See
 HireLens models the hiring organization and forecasts the future — deterministic,
 explainable predictions + scenario simulation, grounded in the org's own history.
 LLMs explain forecasts; they never generate them. Full detail:
-[sprints/V8_SPRINT13.md](./docs/sprints/V8_SPRINT13.md),
+[sprints/V8_SPRINT13.md](./docs/archive/sprints/V8_SPRINT13.md),
 [decisions/ADR-017](./docs/decisions/ADR-017-predictive-intelligence-architecture.md).
 
 ### Added
@@ -245,7 +245,7 @@ LLMs explain forecasts; they never generate them. Full detail:
 
 A company-wide recruiting knowledge system — persistent, structured, time-aware,
 org-scoped memory that every AI capability retrieves before reasoning. Full detail:
-[sprints/V7_SPRINT12.md](./docs/sprints/V7_SPRINT12.md),
+[sprints/V7_SPRINT12.md](./docs/archive/sprints/V7_SPRINT12.md),
 [decisions/ADR-016](./docs/decisions/ADR-016-organizational-knowledge-architecture.md).
 
 ### Added
@@ -276,7 +276,7 @@ org-scoped memory that every AI capability retrieves before reasoning. Full deta
 
 HireLens as the AI layer above existing HR software — a provider-plugin integration
 platform + event-driven workflow automation, with all AI reasoning and approvals kept
-inside HireLens. Full detail: [sprints/V6_SPRINT11.md](./docs/sprints/V6_SPRINT11.md),
+inside HireLens. Full detail: [sprints/V6_SPRINT11.md](./docs/archive/sprints/V6_SPRINT11.md),
 [decisions/ADR-015](./docs/decisions/ADR-015-integration-platform-architecture.md).
 
 ### Added
@@ -310,7 +310,7 @@ inside HireLens. Full detail: [sprints/V6_SPRINT11.md](./docs/sprints/V6_SPRINT1
 The transition from an AI recruiting application to an enterprise AI recruiting
 platform — multi-tenant organizations, RBAC, auditing, usage, subscriptions,
 feature flags, and API keys, layered additively over V5. Full detail:
-[sprints/V6_SPRINT10.md](./docs/sprints/V6_SPRINT10.md),
+[sprints/V6_SPRINT10.md](./docs/archive/sprints/V6_SPRINT10.md),
 [decisions/ADR-014](./docs/decisions/ADR-014-enterprise-platform-architecture.md).
 
 ### Added
@@ -348,7 +348,7 @@ feature flags, and API keys, layered additively over V5. Full detail:
 
 The first proactive AI teammate — observes the pipeline, coordinates the existing
 engines, and produces explainable recommendations requiring human approval. Full
-detail: [sprints/V4_SPRINT9.md](./docs/sprints/V4_SPRINT9.md),
+detail: [sprints/V4_SPRINT9.md](./docs/archive/sprints/V4_SPRINT9.md),
 [decisions/ADR-013](./docs/decisions/ADR-013-autonomous-agent-architecture.md).
 
 ### Added
@@ -384,7 +384,7 @@ detail: [sprints/V4_SPRINT9.md](./docs/sprints/V4_SPRINT9.md),
 
 An AI-powered executive decision system — explains hiring health, why, and what to
 do, grounded in real data and composing existing engines. Full detail:
-[sprints/V4_SPRINT8.md](./docs/sprints/V4_SPRINT8.md),
+[sprints/V4_SPRINT8.md](./docs/archive/sprints/V4_SPRINT8.md),
 [decisions/ADR-012](./docs/decisions/ADR-012-executive-intelligence-architecture.md).
 
 ### Added
@@ -415,7 +415,7 @@ do, grounded in real data and composing existing engines. Full detail:
 
 The AI Foundation becomes a true AI Gateway — switch LLM and embedding providers
 by configuration only, with every capability following automatically. Full detail:
-[sprints/V4_SPRINT7_5.md](./docs/sprints/V4_SPRINT7_5.md),
+[sprints/V4_SPRINT7_5.md](./docs/archive/sprints/V4_SPRINT7_5.md),
 [decisions/ADR-011](./docs/decisions/ADR-011-ai-gateway-and-provider-management.md).
 
 ### Added
@@ -454,7 +454,7 @@ by configuration only, with every capability following automatically. Full detai
 
 A complete AI interview workbench for any candidate — grounded, structured, and
 reused by the Copilot and Comparison. Full detail:
-[sprints/V4_SPRINT7.md](./docs/sprints/V4_SPRINT7.md),
+[sprints/V4_SPRINT7.md](./docs/archive/sprints/V4_SPRINT7.md),
 [decisions/ADR-010](./docs/decisions/ADR-010-interview-intelligence-engine.md).
 
 ### Added
@@ -485,7 +485,7 @@ reused by the Copilot and Comparison. Full detail:
 
 The platform's semantic retrieval layer: discover talent by meaning, not
 keywords. Embedding-based, fully separate from the LLM, reused by the Copilot.
-Full detail: [sprints/V4_SPRINT6.md](./docs/sprints/V4_SPRINT6.md),
+Full detail: [sprints/V4_SPRINT6.md](./docs/archive/sprints/V4_SPRINT6.md),
 [decisions/ADR-009](./docs/decisions/ADR-009-semantic-search-architecture.md).
 
 ### Added
@@ -524,7 +524,7 @@ Full detail: [sprints/V4_SPRINT6.md](./docs/sprints/V4_SPRINT6.md),
 
 The first flagship AI capability on the Copilot: an **AI Hiring Analyst** that
 compares 2–5 candidates into an executive report, reused by the Copilot. Full
-detail: [sprints/V4_SPRINT5.md](./docs/sprints/V4_SPRINT5.md),
+detail: [sprints/V4_SPRINT5.md](./docs/archive/sprints/V4_SPRINT5.md),
 [decisions/ADR-008](./docs/decisions/ADR-008-ai-candidate-comparison.md).
 
 ### Added
@@ -555,7 +555,7 @@ detail: [sprints/V4_SPRINT5.md](./docs/sprints/V4_SPRINT5.md),
 
 The first production **Recruiter Copilot** — an ambient, context-aware assistant
 built entirely on the Sprint 3 orchestration layer. Full detail:
-[sprints/V4_SPRINT4.md](./docs/sprints/V4_SPRINT4.md),
+[sprints/V4_SPRINT4.md](./docs/archive/sprints/V4_SPRINT4.md),
 [decisions/ADR-007](./docs/decisions/ADR-007-ai-recruiter-copilot.md).
 
 ### Added
@@ -590,7 +590,7 @@ built entirely on the Sprint 3 orchestration layer. Full detail:
 
 Introduces the centralized AI architecture every future AI feature will use. No
 new product feature; the AI pipeline behavior is preserved. Full detail:
-[sprints/V4_SPRINT3.md](./docs/sprints/V4_SPRINT3.md), [AI_ARCHITECTURE.md](./docs/AI_ARCHITECTURE.md).
+[sprints/V4_SPRINT3.md](./docs/archive/sprints/V4_SPRINT3.md), [AI_ARCHITECTURE.md](./docs/AI_ARCHITECTURE.md).
 
 ### Added
 - **AI Foundation Layer** (`backend/app/ai/`): central **AIOrchestrator**,
@@ -619,7 +619,7 @@ new product feature; the AI pipeline behavior is preserved. Full detail:
 
 Turns the persisted V4 foundation into a usable recruiter product. Reuses the
 repository pattern and the **unchanged** AI pipeline; no migrations. Full detail:
-[sprints/V4_SPRINT2.md](./docs/sprints/V4_SPRINT2.md).
+[sprints/V4_SPRINT2.md](./docs/archive/sprints/V4_SPRINT2.md).
 
 ### Added
 - **Campaign Dashboard** (`/dashboard`) — per-campaign KPIs (candidates, awaiting,
@@ -654,7 +654,7 @@ repository pattern and the **unchanged** AI pipeline; no migrations. Full detail
 
 Converts HireLens from a stateless AI application into a persistent SaaS
 platform. **The AI pipeline was not modified** — persistence is layered on top,
-additively. Full detail: [sprints/V4_SPRINT1.md](./docs/sprints/V4_SPRINT1.md).
+additively. Full detail: [sprints/V4_SPRINT1.md](./docs/archive/sprints/V4_SPRINT1.md).
 
 ### Added
 - **Supabase persistence layer**: PostgreSQL schema across 4 migrations

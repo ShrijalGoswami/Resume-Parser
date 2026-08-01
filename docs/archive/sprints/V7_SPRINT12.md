@@ -4,7 +4,7 @@
 > org-scoped memory that every AI capability retrieves before reasoning — so
 > HireLens reasons over organizational history, not just the current pipeline, and
 > gets smarter every month. Decision record:
-> [ADR-016](../decisions/ADR-016-organizational-knowledge-architecture.md).
+> [ADR-016](../../decisions/ADR-016-organizational-knowledge-architecture.md).
 
 ## Goal
 

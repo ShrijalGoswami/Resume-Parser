@@ -306,7 +306,7 @@ Prepend the dated governance note at the top of the file. Entries unchanged.
 |---|---|
 | **Backlog ID** | GAB-E3 |
 | **Severity** | Minor |
-| **Repository Path** | `docs/sprints/V6_SPRINT10.md` (line 3) · `docs/sprints/V4_SPRINT8.md` (line 3) |
+| **Repository Path** | `docs/archive/sprints/V6_SPRINT10.md` (line 3) · `docs/archive/sprints/V4_SPRINT8.md` (line 3) |
 | **Estimated Effort** | S |
 | **Dependencies** | None |
 | **Owner** | Design Ops |

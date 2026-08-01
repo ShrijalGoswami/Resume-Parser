@@ -92,7 +92,7 @@ PREMIUM_REASONING, EMBEDDINGS); the gateway maps role → (provider, model) from
 config, builds a **configurable fallback chain**, tracks usage/cost/health, and
 supports a **runtime provider switch** that updates the whole platform at once. See
 [ADR-011](./decisions/ADR-011-ai-gateway-and-provider-management.md) and
-[sprints/V4_SPRINT7_5.md](./sprints/V4_SPRINT7_5.md). Admin: `GET /ai/config`,
+[sprints/V4_SPRINT7_5.md](./archive/sprints/V4_SPRINT7_5.md). Admin: `GET /ai/config`,
 `GET /ai/usage`, `POST /ai/provider` (authenticated, no secrets).
 
 ## Provider abstraction
@@ -175,7 +175,7 @@ no over-engineering, just clean hooks.
 
 The `RECRUITER_COPILOT` capability is now live and built entirely on this layer —
 see [ADR-007](./decisions/ADR-007-ai-recruiter-copilot.md) and
-[sprints/V4_SPRINT4.md](./sprints/V4_SPRINT4.md). Additions:
+[sprints/V4_SPRINT4.md](./archive/sprints/V4_SPRINT4.md). Additions:
 
 - **Prompt** — `prompts/copilot.py`: versioned system prompt (`v2.0`) encoding the
   recruiter persona, the **context priority** (Campaign → Candidate → Resume → JD
@@ -199,7 +199,7 @@ layout follows the recruiter across pages.
 
 The `CANDIDATE_COMPARISON` capability is live — an AI Hiring Analyst comparing 2–5
 candidates from one campaign. See [ADR-008](./decisions/ADR-008-ai-candidate-comparison.md)
-and [sprints/V4_SPRINT5.md](./sprints/V4_SPRINT5.md).
+and [sprints/V4_SPRINT5.md](./archive/sprints/V4_SPRINT5.md).
 
 - **Prompt** — `prompts/comparison.py` (`v1.0`): analyst persona, anti-fabrication
   rules, JSON contract mirroring `ComparisonLLMOutput`.
@@ -224,7 +224,7 @@ happens if…" via the same engine, and the Agent has a `forecast` tool. No capa
 computes forecasts itself, and the prediction layer is **independent of the AI gateway**
 (no gateway import). See
 [ADR-017](./decisions/ADR-017-predictive-intelligence-architecture.md) and
-[sprints/V8_SPRINT13.md](./sprints/V8_SPRINT13.md).
+[sprints/V8_SPRINT13.md](./archive/sprints/V8_SPRINT13.md).
 
 ## Organizational memory before reasoning (V7 Sprint 12)
 
@@ -235,7 +235,7 @@ explainable (source/timestamp/confidence/why). The Copilot, Comparison, Intervie
 Report services inject it; approved agent decisions feed it. The `app/knowledge` layer
 is **independent of the AI gateway** (no gateway import). See
 [ADR-016](./decisions/ADR-016-organizational-knowledge-architecture.md) and
-[sprints/V7_SPRINT12.md](./sprints/V7_SPRINT12.md).
+[sprints/V7_SPRINT12.md](./archive/sprints/V7_SPRINT12.md).
 
 ## Integration platform & AI separation (V6 Sprint 11)
 
@@ -245,7 +245,7 @@ Dispatcher → Workflow Engine → Integration Layer → Provider. On approval o
 recommendation the route emits `agent_recommendation_approved`; the agent service
 imports no integration code (verified). See
 [ADR-015](./decisions/ADR-015-integration-platform-architecture.md) and
-[sprints/V6_SPRINT11.md](./sprints/V6_SPRINT11.md).
+[sprints/V6_SPRINT11.md](./archive/sprints/V6_SPRINT11.md).
 
 ## Enterprise org-awareness (V6 Sprint 10)
 
@@ -255,14 +255,14 @@ that attributes each AI call's `ai_requests`/`tokens` to the request's
 `current_org_id`. AI capabilities are gated by per-org **feature flags** (reports,
 agent, …) and the AI provider switch is org-admin-gated + audited. See
 [ADR-014](./decisions/ADR-014-enterprise-platform-architecture.md) and
-[sprints/V6_SPRINT10.md](./sprints/V6_SPRINT10.md).
+[sprints/V6_SPRINT10.md](./archive/sprints/V6_SPRINT10.md).
 
 ## Autonomous Recruiting Agent (V4 Sprint 9)
 
 The agent is an ORCHESTRATION layer — it observes the pipeline and coordinates the
 existing engines through a **Tool Registry**, owning no business logic. See
 [ADR-013](./decisions/ADR-013-autonomous-agent-architecture.md) and
-[sprints/V4_SPRINT9.md](./sprints/V4_SPRINT9.md).
+[sprints/V4_SPRINT9.md](./archive/sprints/V4_SPRINT9.md).
 
 - **Tools** (`ai/agent/tools.py`) wrap existing services (`search_candidates`,
   `compare_candidates`, `generate_interview_pack`, `generate_executive_report`) +
@@ -282,7 +282,7 @@ existing engines through a **Tool Registry**, owning no business logic. See
 The `EXECUTIVE_REPORT` capability is an AI decision system for leadership — it
 composes the existing analytics + engines into a grounded executive briefing. See
 [ADR-012](./decisions/ADR-012-executive-intelligence-architecture.md) and
-[sprints/V4_SPRINT8.md](./sprints/V4_SPRINT8.md).
+[sprints/V4_SPRINT8.md](./archive/sprints/V4_SPRINT8.md).
 
 - **Deterministic first** — `services/report_data.py` gathers real metrics from the
   existing analytics/campaign/activity repositories (bounded queries, no N+1). The
@@ -300,7 +300,7 @@ composes the existing analytics + engines into a grounded executive briefing. Se
 The `INTERVIEW_GENERATION` capability is a complete interview workbench, reused by
 the candidate-detail tab, the Copilot, and Comparison. See
 [ADR-010](./decisions/ADR-010-interview-intelligence-engine.md) and
-[sprints/V4_SPRINT7.md](./sprints/V4_SPRINT7.md).
+[sprints/V4_SPRINT7.md](./archive/sprints/V4_SPRINT7.md).
 
 - **Prompt** — `prompts/interview.py` (`v1.0`): interview-intelligence persona,
   anti-fabrication rules, JSON contract; versioned per-focus task instructions
@@ -320,7 +320,7 @@ the candidate-detail tab, the Copilot, and Comparison. See
 
 Retrieval is a **separate responsibility from the LLM** — the LLM never retrieves;
 embeddings never explain. See [ADR-009](./decisions/ADR-009-semantic-search-architecture.md)
-and [sprints/V4_SPRINT6.md](./sprints/V4_SPRINT6.md).
+and [sprints/V4_SPRINT6.md](./archive/sprints/V4_SPRINT6.md).
 
 - **Embedding layer** (`ai/embeddings/`) — an `EmbeddingProvider` abstraction that
   mirrors `LLMProvider`: default dependency-free hashing provider, optional OpenAI,
@@ -367,4 +367,4 @@ against live Groq (15/15 checks: deterministic scores preserved, LLM text
 generated, versions intact, observability captured — latency/model/tokens). Batch
 path re-verified. Backend imports with 23 API routes (backward compatible);
 frontend `tsc` + `next build` clean. See
-[sprints/V4_SPRINT3.md](./sprints/V4_SPRINT3.md).
+[sprints/V4_SPRINT3.md](./archive/sprints/V4_SPRINT3.md).

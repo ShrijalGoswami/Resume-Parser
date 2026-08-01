@@ -70,4 +70,4 @@ Related: [ADR-006](./ADR-006-ai-orchestration-layer.md),
 [ADR-008](./ADR-008-ai-candidate-comparison.md),
 [ADR-010](./ADR-010-interview-intelligence-engine.md),
 [ADR-011](./ADR-011-ai-gateway-and-provider-management.md),
-[sprints/V4_SPRINT8.md](../sprints/V4_SPRINT8.md).
+[sprints/V4_SPRINT8.md](../archive/sprints/V4_SPRINT8.md).

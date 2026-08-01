@@ -1,6 +1,6 @@
 # HireLens V3 — Complete UX Specification
 
-> **Status:** Architecture approved (see [HIRELENS_V3_REDESIGN.md](./HIRELENS_V3_REDESIGN.md)).
+> **Status:** Architecture approved.
 > **Purpose:** The single source of truth for building the HireLens V3 frontend. Detailed
 > enough that a frontend engineer can build the entire product without further UX decisions.
 > **Scope:** Layouts, components, states, interactions, AI behavior, tokens, shortcuts,

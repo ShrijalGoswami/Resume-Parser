@@ -76,4 +76,4 @@ Layer the enterprise model **additively** on top of the recruiter-scoped product
 
 Related: [ADR-003](./ADR-003-repository-pattern.md),
 [ADR-011](./ADR-011-ai-gateway-and-provider-management.md),
-[sprints/V6_SPRINT10.md](../sprints/V6_SPRINT10.md).
+[sprints/V6_SPRINT10.md](../archive/sprints/V6_SPRINT10.md).

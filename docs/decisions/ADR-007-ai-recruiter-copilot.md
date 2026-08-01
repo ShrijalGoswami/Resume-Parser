@@ -83,4 +83,4 @@ provider is called outside `app/ai`. Concretely:
 
 Related: [ADR-006](./ADR-006-ai-orchestration-layer.md) (the orchestration layer),
 [ADR-003](./ADR-003-repository-pattern.md) (repository seam),
-[sprints/V4_SPRINT4.md](../sprints/V4_SPRINT4.md).
+[sprints/V4_SPRINT4.md](../archive/sprints/V4_SPRINT4.md).

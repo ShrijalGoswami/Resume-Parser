@@ -75,4 +75,4 @@ Related: [ADR-006](./ADR-006-ai-orchestration-layer.md),
 [ADR-008](./ADR-008-ai-candidate-comparison.md),
 [ADR-010](./ADR-010-interview-intelligence-engine.md),
 [ADR-012](./ADR-012-executive-intelligence-architecture.md),
-[sprints/V4_SPRINT9.md](../sprints/V4_SPRINT9.md).
+[sprints/V4_SPRINT9.md](../archive/sprints/V4_SPRINT9.md).

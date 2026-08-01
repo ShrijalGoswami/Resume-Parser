@@ -75,4 +75,4 @@ Evolve the AI Foundation into a true **AI Gateway** — "Stripe for AI providers
 
 Related: [ADR-002](./ADR-002-groq.md), [ADR-006](./ADR-006-ai-orchestration-layer.md),
 [ADR-009](./ADR-009-semantic-search-architecture.md),
-[sprints/V4_SPRINT7_5.md](../sprints/V4_SPRINT7_5.md).
+[sprints/V4_SPRINT7_5.md](../archive/sprints/V4_SPRINT7_5.md).

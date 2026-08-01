@@ -2,8 +2,8 @@
 
 > Sprint record. Converts HireLens from a stateless AI app into a persistent SaaS
 > platform **without modifying the AI pipeline**. Supersedes the earlier
-> `docs/V4_SPRINT1_SUPABASE_FOUNDATION.md`. Cross-refs: [ARCHITECTURE.md](../ARCHITECTURE.md),
-> [DATABASE.md](../DATABASE.md), [API.md](../API.md), [SECURITY.md](../SECURITY.md).
+> `docs/V4_SPRINT1_SUPABASE_FOUNDATION.md`. Cross-refs: [ARCHITECTURE.md](../../ARCHITECTURE.md),
+> [DATABASE.md](../../DATABASE.md), [API.md](../../API.md), [SECURITY.md](../../SECURITY.md).
 
 - **Status:** ✅ Feature-complete
 - **Version line:** `v4.0.0` (unreleased; backend `APP_VERSION` still `1.2.0`)
@@ -41,7 +41,7 @@
   stateful request path (previously every request was stateless).
 - New layering: routes → **repositories** → user-scoped Supabase client → RLS.
 - Two request families now coexist: stateless AI (unchanged) and authed
-  persistence. See [ARCHITECTURE.md](../ARCHITECTURE.md#request-lifecycle-persistence-endpoint).
+  persistence. See [ARCHITECTURE.md](../../ARCHITECTURE.md#request-lifecycle-persistence-endpoint).
 
 ## Database changes
 
@@ -52,14 +52,14 @@
 - `0003_storage_buckets.sql` — 4 private buckets + object RLS.
 - `0004_auth_triggers.sql` — auto-provision `recruiters` on sign-up; email sync.
 
-Full detail in [DATABASE.md](../DATABASE.md).
+Full detail in [DATABASE.md](../../DATABASE.md).
 
 ## API changes
 
 All **additive** under `/api/v1` (no existing endpoint changed): `/me`,
 `/activity`, `/campaigns` (+ nested candidates, notes, stage, resume
 upload/signed-URL, `persist-batch`, activity). `/health` now reports
-`persistence` + `auth` status. Full list in [API.md](../API.md).
+`persistence` + `auth` status. Full list in [API.md](../../API.md).
 
 ## Frontend changes
 
@@ -98,7 +98,7 @@ upload/signed-URL, `persist-batch`, activity). `/health` now reports
 
 ## Next sprint
 
-See [ROADMAP.md](../ROADMAP.md#development-phases). Priorities:
+See [ROADMAP.md](../../ROADMAP.md#development-phases). Priorities:
 1. Wire Copilot conversation persistence (P0).
 2. Client-side resume upload to storage during batch (P0).
 3. Realtime pipeline board + keyset pagination (P1).

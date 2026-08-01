@@ -4,7 +4,7 @@
 > technical & behavioral questions, skill verification, risk analysis, an
 > interviewer scorecard, and a hiring recommendation — grounded in platform data
 > and reused by the Copilot and Comparison. Decision record:
-> [ADR-010](../decisions/ADR-010-interview-intelligence-engine.md).
+> [ADR-010](../../decisions/ADR-010-interview-intelligence-engine.md).
 
 ## Goal
 

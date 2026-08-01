@@ -3,7 +3,7 @@
 > The first step toward an AI employee: an agent that proactively watches the
 > pipeline, detects situations, coordinates the existing engines, and produces
 > explainable recommendations for human approval. Decision record:
-> [ADR-013](../decisions/ADR-013-autonomous-agent-architecture.md).
+> [ADR-013](../../decisions/ADR-013-autonomous-agent-architecture.md).
 
 ## Goal
 

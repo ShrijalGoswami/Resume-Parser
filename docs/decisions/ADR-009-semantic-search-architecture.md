@@ -76,4 +76,4 @@ Add an embedding-based retrieval stack, fully separate from the LLM path.
 Related: [ADR-006](./ADR-006-ai-orchestration-layer.md),
 [ADR-007](./ADR-007-ai-recruiter-copilot.md),
 [ADR-008](./ADR-008-ai-candidate-comparison.md),
-[sprints/V4_SPRINT6.md](../sprints/V4_SPRINT6.md).
+[sprints/V4_SPRINT6.md](../archive/sprints/V4_SPRINT6.md).

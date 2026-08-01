@@ -4,7 +4,7 @@
 > deterministic prediction framework + Organizational Digital Twin forecasts future
 > recruiting outcomes and simulates alternative strategies, grounded in the org's own
 > history. LLMs explain forecasts; they never generate them. Decision record:
-> [ADR-017](../decisions/ADR-017-predictive-intelligence-architecture.md).
+> [ADR-017](../../decisions/ADR-017-predictive-intelligence-architecture.md).
 
 ## Goal
 

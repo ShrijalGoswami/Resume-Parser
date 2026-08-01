@@ -3,7 +3,7 @@
 > An AI-powered executive decision system: leaders open the platform and see what's
 > happening in their hiring, why, and what to do — grounded in real data, composing
 > the existing engines. Decision record:
-> [ADR-012](../decisions/ADR-012-executive-intelligence-architecture.md).
+> [ADR-012](../../decisions/ADR-012-executive-intelligence-architecture.md).
 
 ## Goal
 

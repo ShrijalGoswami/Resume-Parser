@@ -627,7 +627,7 @@ a deliberate decision before anyone touches it.
 ### 11.1 `eslint` — 4 errors in `components/marketing/NeuralBackground.tsx`
 
 Found 1 Aug 2026 while verifying Phase 2.1. **Earlier versions of this file, and
-`docs/MONETIZATION_PHASE1_COMPLETE.md`, claimed "`eslint` clean". That claim was
+`docs/archive/monetization/MONETIZATION_PHASE1_COMPLETE.md`, claimed "`eslint` clean". That claim was
 wrong** — it appears to have been carried forward rather than re-run after the
 marketing redesign landed.
 

@@ -3,7 +3,7 @@
 > The first flagship AI capability on top of the Copilot: an **AI Hiring Analyst**
 > that compares 2–5 candidates from one campaign into an executive hiring report,
 > grounded in stored data and reused by the Recruiter Copilot. Decision record:
-> [ADR-008](../decisions/ADR-008-ai-candidate-comparison.md).
+> [ADR-008](../../decisions/ADR-008-ai-candidate-comparison.md).
 
 ## Goal
 

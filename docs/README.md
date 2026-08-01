@@ -30,8 +30,13 @@ stateful SaaS platform with recruiter accounts, hiring campaigns, and storage.
 | [ROADMAP.md](./ROADMAP.md) | Vision, phases, priority matrix, cost scaling |
 | [CHANGELOG.md](../CHANGELOG.md) | Semantic version history |
 | [PROJECT_AUDIT.md](./PROJECT_AUDIT.md) | Full project audit: config, DB, auth, AI, readiness, tech-debt backlog |
-| [sprints/](./sprints/) | Per-sprint implementation records |
+| [MONETIZATION_ARCHITECTURE.md](./MONETIZATION_ARCHITECTURE.md) | Plans, entitlements, quotas — the commercial layer's design |
+| [HANDOFF.md](./HANDOFF.md) | Current state of the monetization work; §12 is the live section |
+| [RELEASE_CANDIDATE_CHECKLIST.md](./RELEASE_CANDIDATE_CHECKLIST.md) | **The release gate.** Nothing ships until its P0 boxes are ticked |
 | [decisions/](./decisions/) | Architecture Decision Records (ADRs) |
+| [security/](./security/) | Permission matrix, tenant isolation, security validation |
+| [qa/](./qa/) | Runtime validation records, cited by the backend test suite |
+| [archive/](./archive/) | Finished work — completed sprints, superseded programs. Not authoritative |
 
 ---
 
@@ -64,7 +69,8 @@ Resume-Parser/
 │   └── {app,components,lib,services,types}
 ├── supabase/migrations/     # SQL: schema, RLS, storage, auth triggers
 ├── docs/                    # ← you are here
-│   ├── sprints/  decisions/
+│   ├── decisions/  security/  qa/  rca/
+│   └── archive/             # finished work, kept for the record
 └── README.md
 ```
 

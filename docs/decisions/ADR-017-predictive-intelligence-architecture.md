@@ -75,4 +75,4 @@ Add a **Predictive Intelligence Layer** (`app/prediction/`) with an Organization
 Related: [ADR-006](./ADR-006-ai-orchestration-layer.md),
 [ADR-012](./ADR-012-executive-intelligence-architecture.md),
 [ADR-016](./ADR-016-organizational-knowledge-architecture.md),
-[sprints/V8_SPRINT13.md](../sprints/V8_SPRINT13.md).
+[sprints/V8_SPRINT13.md](../archive/sprints/V8_SPRINT13.md).

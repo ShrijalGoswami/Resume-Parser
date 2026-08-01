@@ -4,7 +4,7 @@
 > integration platform + event-driven workflow automation that orchestrates the
 > tools recruiters already use, while all AI reasoning, approvals, and governance
 > stay inside HireLens. Decision record:
-> [ADR-015](../decisions/ADR-015-integration-platform-architecture.md).
+> [ADR-015](../../decisions/ADR-015-integration-platform-architecture.md).
 
 ## Goal
 

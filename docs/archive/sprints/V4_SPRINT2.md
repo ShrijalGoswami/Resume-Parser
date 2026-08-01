@@ -1,8 +1,8 @@
 # V4 — Sprint 2: Recruiter Workspace & Candidate Management
 
 > Sprint record. Transforms the persisted V4 foundation into a usable, polished
-> recruiter product. Cross-refs: [ARCHITECTURE](../ARCHITECTURE.md),
-> [API](../API.md), [DATABASE](../DATABASE.md), [sprints/V4_SPRINT1](./V4_SPRINT1.md).
+> recruiter product. Cross-refs: [ARCHITECTURE](../../ARCHITECTURE.md),
+> [API](../../API.md), [DATABASE](../../DATABASE.md), [sprints/V4_SPRINT1](./V4_SPRINT1.md).
 
 - **Status:** ✅ Complete (implementation + live verification + documentation)
 - **Theme:** Product functionality on the live persistence layer

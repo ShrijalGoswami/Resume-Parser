@@ -13,7 +13,7 @@
 > **Sprint 2 (Recruiter Workspace) shipped:** campaign dashboard, candidate
 > management table, candidate detail page, intelligent upload, and the Executive
 > Intelligence analytics dashboard — 62/62 live checks. See
-> [sprints/V4_SPRINT2.md](./sprints/V4_SPRINT2.md).
+> [sprints/V4_SPRINT2.md](./archive/sprints/V4_SPRINT2.md).
 
 ---
 
