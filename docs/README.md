@@ -31,6 +31,9 @@ stateful SaaS platform with recruiter accounts, hiring campaigns, and storage.
 | [CHANGELOG.md](../CHANGELOG.md) | Semantic version history |
 | [PROJECT_AUDIT.md](./PROJECT_AUDIT.md) | Full project audit: config, DB, auth, AI, readiness, tech-debt backlog |
 | [MONETIZATION_ARCHITECTURE.md](./MONETIZATION_ARCHITECTURE.md) | Plans, entitlements, quotas — the commercial layer's design |
+| [OPERATIONAL_HARDENING_BACKLOG.md](./OPERATIONAL_HARDENING_BACKLOG.md) | PITR, audit trail, retention, deletion procedure — **blocks first payment** |
+| [MIGRATION_ROLLBACK_NOTES.md](./MIGRATION_ROLLBACK_NOTES.md) | Per-migration rollback strategy for the billing schema (0022–0026) |
+| [BILLING_ARCHITECTURE.md](./BILLING_ARCHITECTURE.md) | Phase 4 — Razorpay subscriptions, mandates, webhooks, dunning. **Design only; nothing built** |
 | [HANDOFF.md](./HANDOFF.md) | Current state of the monetization work; §12 is the live section |
 | [RELEASE_CANDIDATE_CHECKLIST.md](./RELEASE_CANDIDATE_CHECKLIST.md) | **The release gate.** Nothing ships until its P0 boxes are ticked |
 | [decisions/](./decisions/) | Architecture Decision Records (ADRs) |
