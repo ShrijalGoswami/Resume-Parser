@@ -50,6 +50,7 @@ import {
   ErrorState,
   GateState,
 } from '@/components/hirelens/states'
+import { FeatureLock, QuotaLock } from '@/components/hirelens/entitlements'
 
 function Section({
   title,
@@ -397,11 +398,11 @@ export default function FoundationsPage() {
               />
             </Card>
             <Card className="p-4">
-              <GateState
-                reason="plan"
-                title="Executive Reports is available on the Growth plan."
-                action={<Button variant="primary">Upgrade</Button>}
-              />
+              {/* Catalog-derived: the label, the explanatory line and the tier
+                  all come from the plan catalog. Nothing here names a plan.
+                  (This card previously hardcoded a "Growth plan" that has never
+                  existed in the product — exactly what deriving prevents.) */}
+              <FeatureLock feature="executive_reports" requiredPlan="pro" />
             </Card>
             <Card className="p-4">
               <GateState
@@ -410,6 +411,11 @@ export default function FoundationsPage() {
                 title="You need Recruiter access to view this."
                 action={<Button variant="secondary">Request access</Button>}
               />
+            </Card>
+            <Card className="p-4">
+              {/* A quota is a different surface from a lock: it has numbers,
+                  and on a paid plan it fixes itself next month. */}
+              <QuotaLock metric="resumes" used={2} limit={2} window="lifetime" requiredPlan="plus" />
             </Card>
           </div>
         </Section>
