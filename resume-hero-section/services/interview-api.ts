@@ -6,6 +6,7 @@
  */
 import type { InterviewGenerateRequest, InterviewPack } from '@/types/interview';
 import { authHeaders, V1 } from './auth-headers';
+import { apiErrorFrom } from '@/lib/api-error';
 
 export async function generateInterview(
   campaignId: string,
@@ -19,7 +20,7 @@ export async function generateInterview(
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || `Interview generation failed: ${res.status}`);
+    throw apiErrorFrom(res.status, err);
   }
   return res.json() as Promise<InterviewPack>;
 }

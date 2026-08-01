@@ -1,4 +1,4 @@
-import { ApiError } from '@/lib/api-error'
+import { apiErrorFrom } from '@/lib/api-error'
 import type { ActivityEvent } from '@/types/campaign'
 import { authHeaders, V1 } from '@/services/auth-headers'
 
@@ -12,7 +12,7 @@ export async function getActivity(limit = 20): Promise<ActivityEvent[]> {
   const res = await fetch(`${V1}/activity?limit=${limit}`, { headers: await authHeaders() })
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
-    throw new ApiError(res.status, err.detail || `Request failed: ${res.status}`)
+    throw apiErrorFrom(res.status, err);
   }
   return res.json() as Promise<ActivityEvent[]>
 }

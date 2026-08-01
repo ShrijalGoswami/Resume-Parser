@@ -4,7 +4,7 @@
  * Authenticated + recruiter-scoped. The agent only produces recommendations that
  * require human approval — it never modifies production data.
  */
-import { ApiError } from '@/lib/api-error';
+import { apiErrorFrom } from '@/lib/api-error';
 import type { AgentScanResponse, ApprovalStatus, Recommendation } from '@/types/agent';
 import { authHeaders, V1 } from './auth-headers';
 
@@ -16,7 +16,7 @@ async function req<T>(path: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(`${V1}${path}`, { ...init, headers });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new ApiError(res.status, err.detail || `Request failed: ${res.status}`);
+    throw apiErrorFrom(res.status, err);
   }
   return res.json() as Promise<T>;
 }

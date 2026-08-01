@@ -8,6 +8,7 @@ import type {
   ApiKey, AuditLog, OrgContext, OrgMember, Organization, Subscription, UsageCounter, Workspace,
 } from '@/types/org';
 import { authHeaders, V1 } from './auth-headers';
+import { apiErrorFrom } from '@/lib/api-error';
 
 async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
@@ -17,7 +18,7 @@ async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(`${V1}${path}`, { ...init, headers });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || `Request failed: ${res.status}`);
+    throw apiErrorFrom(res.status, err);
   }
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
@@ -52,9 +53,8 @@ export const getUsage = () => api<{ period: string | null; metrics: UsageCounter
 export const getAuditLogs = (action?: string) =>
   api<AuditLog[]>(`/org/audit-logs${action ? `?action=${encodeURIComponent(action)}` : ''}`);
 
+// Read-only by design — the plan is server-authoritative (see settings.ts).
 export const getSubscription = () => api<Subscription>('/org/subscription');
-export const updateSubscription = (plan: string) =>
-  api<Subscription>('/org/subscription', { method: 'PATCH', body: JSON.stringify({ plan }) });
 
 export const listApiKeys = () => api<ApiKey[]>('/org/api-keys');
 export const createApiKey = (name: string, scope: string) =>

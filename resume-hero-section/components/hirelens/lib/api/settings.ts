@@ -18,7 +18,6 @@ import {
   getUsage,
   getAuditLogs,
   getSubscription,
-  updateSubscription,
 } from '@/services/org-api'
 import { updateProfile } from '@/services/campaigns-api'
 import { useOrgContext, orgContextKey } from './org-context'
@@ -223,13 +222,7 @@ export function useSubscription() {
   return useQuery<Subscription>({ queryKey: settingsKeys.subscription, queryFn: getSubscription })
 }
 
-export function useUpdateSubscription() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (plan: string) => updateSubscription(plan),
-    onSuccess: (subscription) => {
-      queryClient.setQueryData(settingsKeys.subscription, subscription)
-      queryClient.invalidateQueries({ queryKey: settingsKeys.orgContext })
-    },
-  })
-}
+// There is deliberately no `useUpdateSubscription`. The plan is server-authoritative:
+// `PATCH /org/subscription` was removed (it let any owner self-grant the enterprise
+// plan), and migration 0016 revokes client writes to `subscriptions`. Plan changes
+// arrive from billing or an audited operator action — never from this client.

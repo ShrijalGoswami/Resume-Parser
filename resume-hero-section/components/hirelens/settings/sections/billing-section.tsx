@@ -1,17 +1,13 @@
 'use client'
 
 import * as React from 'react'
-import { useOrgContext, useSubscription, useUpdateSubscription } from '../../lib/api/settings'
-import { SettingsSection, Field, NativeSelect, DeferredNote } from '../settings-ui'
+import { useOrgContext, useSubscription } from '../../lib/api/settings'
+import { SettingsSection, DeferredNote } from '../settings-ui'
 import { PERMS, hasPerm } from '../permissions'
 import { Card } from '../../ui/card'
 import { Badge, type BadgeProps } from '../../ui/badge'
-import { Button } from '../../ui/button'
 import { Skeleton } from '../../ui/skeleton'
 import { ErrorState } from '../../states/error-state'
-import { toast } from '../../ui/use-toast'
-
-const PLANS = ['free', 'professional', 'business', 'enterprise'] as const
 
 const STATUS_TONE: Record<string, BadgeProps['variant']> = {
   active: 'success',
@@ -37,13 +33,8 @@ function humanize(value: string) {
 export function BillingSection() {
   const ctx = useOrgContext()
   const subscription = useSubscription()
-  const update = useUpdateSubscription()
   const canManage = hasPerm(ctx.data?.permissions, PERMS.ORG_MANAGE)
-
-  const [plan, setPlan] = React.useState<string | null>(null)
   const current = subscription.data
-  const selectedPlan = plan ?? current?.plan ?? 'free'
-  const changed = current ? selectedPlan !== current.plan : false
 
   return (
     <SettingsSection title="Billing & plan" description="Your subscription tier and its limits.">
@@ -83,48 +74,10 @@ export function BillingSection() {
             ) : null}
           </Card>
 
-          {canManage ? (
-            <div className="flex flex-wrap items-end gap-3">
-              <Field label="Change plan" htmlFor="billing-plan">
-                <NativeSelect
-                  id="billing-plan"
-                  value={selectedPlan}
-                  onChange={(event) => setPlan(event.target.value)}
-                >
-                  {PLANS.map((value) => (
-                    <option key={value} value={value}>
-                      {humanize(value)}
-                    </option>
-                  ))}
-                </NativeSelect>
-              </Field>
-              <Button
-                variant="primary"
-                size="sm"
-                disabled={!changed}
-                loading={update.isPending}
-                onClick={() =>
-                  update.mutate(selectedPlan, {
-                    onSuccess: () => {
-                      toast({ variant: 'success', title: `Plan changed to ${humanize(selectedPlan)}` })
-                      setPlan(null)
-                    },
-                    onError: (error) =>
-                      toast({
-                        variant: 'danger',
-                        title: error instanceof Error ? error.message : 'Change failed',
-                      }),
-                  })
-                }
-              >
-                Change plan
-              </Button>
-            </div>
-          ) : null}
-
-          <DeferredNote title="Invoices & payment are handled separately">
-            This manages your plan tier and limits. Payment methods, invoices, and seat billing live
-            outside HireLens for now.
+          <DeferredNote title="Your plan is managed by billing">
+            {canManage
+              ? 'Plan changes go through billing. Self-serve upgrade and payment arrive with the pricing release; until then, contact support to move plans.'
+              : 'Only an owner can change the organization’s plan.'}
           </DeferredNote>
         </div>
       )}

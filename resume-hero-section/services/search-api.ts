@@ -6,6 +6,7 @@
  */
 import type { SearchFilters, TalentSearchResponse } from '@/types/search';
 import { authHeaders, V1 } from './auth-headers';
+import { apiErrorFrom } from '@/lib/api-error';
 
 async function post<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${V1}${path}`, {
@@ -15,7 +16,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || `Request failed: ${res.status}`);
+    throw apiErrorFrom(res.status, err);
   }
   return res.json() as Promise<T>;
 }

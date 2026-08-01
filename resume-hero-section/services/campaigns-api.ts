@@ -17,6 +17,7 @@ import type {
   ActivityEvent,
 } from '@/types/campaign';
 import { authHeaders, V1 } from './auth-headers';
+import { apiErrorFrom } from '@/lib/api-error';
 
 async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
@@ -27,7 +28,7 @@ async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(`${V1}${path}`, { ...init, headers });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || `Request failed: ${res.status}`);
+    throw apiErrorFrom(res.status, err);
   }
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
@@ -94,7 +95,7 @@ export const uploadResume = async (
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || `Résumé upload failed: ${res.status}`);
+    throw apiErrorFrom(res.status, err);
   }
   return res.json() as Promise<Candidate>;
 };

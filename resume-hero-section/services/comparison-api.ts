@@ -6,6 +6,7 @@
  */
 import type { CandidateComparisonReport } from '@/types/comparison';
 import { authHeaders, V1 } from './auth-headers';
+import { apiErrorFrom } from '@/lib/api-error';
 
 export async function compareCandidates(
   campaignId: string,
@@ -18,7 +19,7 @@ export async function compareCandidates(
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || `Comparison failed: ${res.status}`);
+    throw apiErrorFrom(res.status, err);
   }
   return res.json() as Promise<CandidateComparisonReport>;
 }
