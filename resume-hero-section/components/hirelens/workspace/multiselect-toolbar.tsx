@@ -19,6 +19,7 @@ import {
   DialogClose,
 } from '../ui/dialog'
 import { useCan, PERMS } from '../lib/use-can'
+import { LockedButton } from '../entitlements'
 import { ALL_STAGES, STAGE_LABELS } from './stages'
 import type { PipelineStage } from '@/types/campaign'
 
@@ -64,10 +65,21 @@ export function MultiselectToolbar({
         <span className="mx-1 h-4 w-px bg-hl-border" aria-hidden />
       ) : null}
 
+      {/* Permission hides the control; the plan locks it. `canCompare` is a
+          separate, non-commercial condition (you need at least two selected),
+          and it still disables — running out of selection is not something to
+          upsell. Server counterpart: `require_entitlement("candidate_comparison")`
+          on the comparison endpoint. */}
       {canUseAi ? (
-        <Button size="sm" variant="secondary" onClick={onCompare} disabled={!canCompare}>
+        <LockedButton
+          feature="candidate_comparison"
+          size="sm"
+          variant="secondary"
+          onClick={onCompare}
+          disabled={!canCompare}
+        >
           <GitCompare /> Compare
-        </Button>
+        </LockedButton>
       ) : null}
 
       {canManage ? (

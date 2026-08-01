@@ -11,6 +11,7 @@ import {
   Sun,
   Moon,
   Monitor,
+  Sparkles,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { navGroups, settingsNav, type NavItem } from './nav-config'
@@ -23,7 +24,16 @@ import { WorkspaceSwitcher } from './workspace-switcher'
 import { AccountMenu, type AccountMenuProps } from './account-menu'
 
 /** Left nav rail (Stitch RC-1 "Instrument Rail" · Design Bible §5.1) — 240 expanded / 56 collapsed. */
-function NavLink({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
+function NavLink({
+  item,
+  collapsed,
+  locked,
+}: {
+  item: NavItem
+  collapsed: boolean
+  /** Entitlement lock: the item stays present and navigable, and gains a mark. */
+  locked?: boolean
+}) {
   const pathname = usePathname()
   const active = item.isActive(pathname)
   const Icon = item.icon
@@ -38,7 +48,8 @@ function NavLink({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
       // "link". Expanded, the visible label already names it, so the attribute
       // is only added where it is missing (the Settings link below the rail was
       // already doing this).
-      aria-label={collapsed ? item.label : undefined}
+      aria-label={collapsed ? (locked ? `${item.label} — not included in your plan` : item.label) : undefined}
+      data-locked={locked ? 'true' : undefined}
       className={cn(
         // A nav row is not a button: `control-md` (36), not `control-lg` (44).
         // Nine rows at 44px made the rail 400px of chrome on a 695px canvas.
@@ -77,12 +88,24 @@ function NavLink({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
           >
             {item.label}
           </span>
-          {/* Keyboard-forward: the go-to key-hint is revealed on hover (Stitch RC-1). */}
-          {item.shortcut ? (
+          {/* A locked destination is still a destination: it keeps its row, its
+              label and its link, and gains a quiet mark. The mark replaces the
+              key-hint rather than crowding it, because a shortcut to a locked
+              screen is not the thing worth advertising. */}
+          {locked ? (
+            <Sparkles
+              className="size-3.5 shrink-0 text-hl-fg-tertiary"
+              strokeWidth={1.8}
+              aria-hidden
+            />
+          ) : item.shortcut ? (
             <span className="hidden shrink-0 rounded-hl-sm border border-hl-border bg-hl-canvas px-1 hl-label-sm text-hl-fg-tertiary font-[family-name:var(--font-hl-mono)] group-hover:inline-flex">
               {item.shortcut}
             </span>
           ) : null}
+          {/* The glyph is decorative; the fact is not. Without this the rail
+              announces a locked and an unlocked destination identically. */}
+          {locked ? <span className="sr-only">Not included in your plan</span> : null}
         </>
       )}
     </Link>
@@ -92,7 +115,9 @@ function NavLink({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>{link}</TooltipTrigger>
-        <TooltipContent side="right">{item.label}</TooltipContent>
+        <TooltipContent side="right">
+          {locked ? `${item.label} — not included in your plan` : item.label}
+        </TooltipContent>
       </Tooltip>
     )
   }
@@ -158,17 +183,30 @@ export function LeftNav({ account }: LeftNavProps) {
   // briefly hiding it from someone who has it looks like the nav is broken.
   const ctx = useOrgContext()
   const permissions = ctx.data?.permissions
+  // Entitlements travel with the same context object, so locking costs no extra
+  // request. `undefined` until the context resolves — and on failure it STAYS
+  // undefined, which is what makes the lock disappear rather than appear when
+  // `/org/context` 503s. Marking a paying customer's features as unavailable
+  // because a request failed is the same false accusation the gate hooks refuse
+  // to make; the rail must not make it either.
+  const entitlements = ctx.data?.entitlements
   const visibleGroups = React.useMemo(
     () =>
       navGroups
         .map((group) => ({
           ...group,
-          items: group.items.filter(
-            (item) => !item.perm || !permissions || hasPerm(permissions, item.perm),
-          ),
+          items: group.items
+            .filter((item) => !item.perm || !permissions || hasPerm(permissions, item.perm))
+            // PERMISSION HIDES · ENTITLEMENT LOCKS. See `nav-config.ts`.
+            .map((item) => ({
+              item,
+              locked: Boolean(
+                item.entitlement && entitlements && entitlements[item.entitlement]?.enabled === false,
+              ),
+            })),
         }))
         .filter((group) => group.items.length > 0),
-    [permissions],
+    [permissions, entitlements],
   )
 
   React.useEffect(() => {
@@ -206,8 +244,8 @@ export function LeftNav({ account }: LeftNavProps) {
                 {group.label}
               </span>
             )}
-            {group.items.map((item) => (
-              <NavLink key={item.href} item={item} collapsed={collapsed} />
+            {group.items.map(({ item, locked }) => (
+              <NavLink key={item.href} item={item} collapsed={collapsed} locked={locked} />
             ))}
           </div>
         ))}

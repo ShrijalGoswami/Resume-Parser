@@ -13,6 +13,8 @@ import { EmptyState } from '../states/empty-state'
 import { ErrorState } from '../states/error-state'
 import { GateState } from '../states/gate-state'
 import { usePermissionGate, PERMS } from '../lib/use-can'
+import { usePlanGate } from '../lib/entitlements'
+import { FeatureLock } from '../entitlements'
 import { Button } from '../ui/button'
 import { Card } from '../ui/card'
 import { DataTable, type DataTableColumn } from '../ui/data-table'
@@ -52,6 +54,12 @@ export function AnalyticsScreen() {
   // charts built from a 403; now it says why. Export CSV needs no separate gate —
   // it serialises the overview already in memory and calls nothing.
   const gate = usePermissionGate(PERMS.USAGE_VIEW)
+  // Permission first, THEN plan — the same order as the route's own dependency
+  // list (`RequireUsageView, require_entitlement("advanced_analytics")`), so the
+  // client and the server never disagree about which of the two a user is told.
+  // It is also the honest order: selling an upgrade to a viewer whose role still
+  // could not open the screen takes money for nothing.
+  const plan = usePlanGate('advanced_analytics')
 
   if (!configured) {
     return (
@@ -103,6 +111,17 @@ export function AnalyticsScreen() {
             reason="permission"
             title="Analytics is available to hiring managers, admins, and owners."
           />
+        </div>
+      </AppShell>
+    )
+  }
+  if (plan.state === 'denied') {
+    return (
+      <AppShell breadcrumbs={ANALYTICS_CRUMBS}>
+        <div className="mx-auto w-full max-w-xl px-6 py-24">
+          {/* The shared lock — same component, same sentence, same CTA as every
+              other locked surface. Nothing about Analytics is composed here. */}
+          <FeatureLock feature="advanced_analytics" requiredPlan={plan.requiredPlan} />
         </div>
       </AppShell>
     )

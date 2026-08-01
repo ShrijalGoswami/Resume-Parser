@@ -44,6 +44,20 @@ export interface NavItem {
    * hidden rail entry is not access control, and deep links exist.
    */
   perm?: PermissionKey
+  /**
+   * Catalog feature the destination requires. SHOWS THE ITEM LOCKED — it does
+   * NOT hide it, and that is the exact opposite of `perm` above.
+   *
+   * The two rules diverge because the remedies do. A hidden item is right for a
+   * permission: no amount of money gets a viewer into Ask, so listing it is a
+   * promise the rail cannot keep. It is wrong for a plan: a hidden feature
+   * sells nothing and teaches nothing, and the customer never discovers the
+   * product does the thing they need. Locked-and-visible is how they find out.
+   *
+   * The destination still gates itself with the same feature key, so a deep
+   * link lands on the lock rather than a broken screen.
+   */
+  entitlement?: string
 }
 
 export interface NavGroup {
@@ -95,6 +109,9 @@ export const navGroups: NavGroup[] = [
         isActive: (p) => p.startsWith('/ask'),
         shortcut: 'G K',
         perm: PERMS.AI_USE,
+        // Server counterpart: the whole copilot router is behind
+        // `require_entitlement("ai_copilot")` (main.py).
+        entitlement: 'ai_copilot',
       },
       {
         label: 'Analytics',
@@ -103,7 +120,15 @@ export const navGroups: NavGroup[] = [
         isActive: (p) => p.startsWith('/analytics'),
         shortcut: 'G A',
         perm: PERMS.USAGE_VIEW,
+        // Server counterpart: `/analytics/overview` carries
+        // `require_entitlement("advanced_analytics")`.
+        entitlement: 'advanced_analytics',
       },
+      // Learning is deliberately NOT given an entitlement. `org_knowledge` is a
+      // Pro capability server-side, but this screen is an honest "not built
+      // yet" placeholder with no backend behind it. Locking it would put an
+      // upgrade CTA on something the customer cannot receive after paying.
+      // Add the key here when a real calibration backend ships.
       {
         label: 'Ledger',
         href: '/ledger',

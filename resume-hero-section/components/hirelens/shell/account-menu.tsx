@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
 } from '../ui/dropdown-menu'
 import { ThemeToggle } from '../theme/theme-toggle'
+import { PlanBadge } from '../entitlements'
 
 /**
  * Account menu (Design Bible §5.6). Identity, theme control, settings,
@@ -57,9 +58,16 @@ export function AccountMenu({
       <DropdownMenuContent align="end" side="top" className="w-64">
         {email ? (
           <>
-            <div className="px-2 py-1.5">
-              <p className="hl-body-medium truncate">{name}</p>
-              <p className="hl-caption truncate text-hl-fg-tertiary">{email}</p>
+            <div className="flex items-start justify-between gap-2 px-2 py-1.5">
+              <div className="min-w-0">
+                <p className="hl-body-medium truncate">{name}</p>
+                <p className="hl-caption truncate text-hl-fg-tertiary">{email}</p>
+              </div>
+              {/* The organization's plan, beside its identity — the one place a
+                  member can always check it without going to Settings. Renders
+                  nothing while loading or on error, so it never shows a wrong
+                  plan to someone who pays for a better one. */}
+              <PlanBadge className="mt-0.5 shrink-0" />
             </div>
             <DropdownMenuSeparator />
           </>

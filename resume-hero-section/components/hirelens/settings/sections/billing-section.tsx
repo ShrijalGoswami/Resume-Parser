@@ -5,30 +5,17 @@ import { useOrgContext, useSubscription } from '../../lib/api/settings'
 import { SettingsSection, DeferredNote } from '../settings-ui'
 import { PERMS, hasPerm } from '../permissions'
 import { Card } from '../../ui/card'
-import { Badge, type BadgeProps } from '../../ui/badge'
+import { PlanBadge, QuotaMeter } from '../../entitlements'
+import { METRIC_KEYS, planLabel } from '../../lib/entitlements'
 import { Skeleton } from '../../ui/skeleton'
 import { ErrorState } from '../../states/error-state'
 
-const STATUS_TONE: Record<string, BadgeProps['variant']> = {
-  active: 'success',
-  trialing: 'info',
-  past_due: 'warning',
-  canceled: 'neutral',
-}
-
-/* Initial-caps on every word turned the limit keys into "Storage Mb" and
-   "Ai Requests" — the same shape of defect as the "Ats" category on the
-   Integrations page. Acronyms and units are cased explicitly; a plan surface is
-   the last place that should look auto-generated. */
-const CASING: Record<string, string> = {
-  ai: 'AI', api: 'API', mb: 'MB', gb: 'GB', ats: 'ATS', sso: 'SSO', id: 'ID',
-}
-
-function humanize(value: string) {
-  return value
-    .replace(/_/g, ' ')
-    .replace(/\b\w+/g, (word) => CASING[word.toLowerCase()] ?? word.charAt(0).toUpperCase() + word.slice(1))
-}
+/* `STATUS_TONE`, `CASING` and `humanize` lived here to turn raw plan, status and
+   limit-metric keys into presentable text. All three are gone: `PlanBadge` now
+   owns status presentation, `planLabel` owns the plan name, and `QuotaMeter`
+   owns metric copy — each from the catalog, shared with every other surface.
+   Local title-casing was how "Storage Mb" and "Ai Requests" happened, and a
+   plan surface is the last place that should look auto-generated. */
 
 export function BillingSection() {
   const ctx = useOrgContext()
@@ -51,27 +38,31 @@ export function BillingSection() {
           <Card className="flex flex-col gap-3 p-4">
             <div className="flex flex-wrap items-center gap-2">
               {/* Sits inline with a status badge — the section heading step,
-                  not the one above it. */}
-              <span className="hl-h3 capitalize">{humanize(current.plan)}</span>
-              <Badge variant={STATUS_TONE[current.status] ?? 'neutral'} className="capitalize">
-                {humanize(current.status)}
-              </Badge>
+                  not the one above it. `planLabel` normalizes the stored slug,
+                  so an account sold as `business` reads "Pro" rather than being
+                  shown a database value. */}
+              <span className="hl-h3">{planLabel(current.plan)}</span>
+              {/* The shared badge: it encodes founding, past-due and trialing in
+                  one place, so this section no longer decides how a plan looks. */}
+              <PlanBadge />
             </div>
-            {Object.keys(current.limits).length > 0 ? (
-              <div className="grid gap-2 sm:grid-cols-2">
-                {Object.entries(current.limits).map(([metric, value]) => (
-                  <div
-                    key={metric}
-                    className="flex items-center justify-between rounded-hl-md border border-hl-border-subtle px-3 py-2"
-                  >
-                    <span className="hl-small text-hl-fg-secondary">{humanize(metric)}</span>
-                    <span className="hl-small font-medium text-hl-fg">
-                      {value < 0 ? 'Unlimited' : value.toLocaleString()}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : null}
+
+            {/* Usage, not just limits. The old grid listed allowances with no
+                indication of how much was left, which is the half of the fact
+                that does not help anyone. Meters show both, in the same visual
+                language as the warning that appears in the Inbox — this is the
+                one surface where they are always visible, because here the
+                figure IS the content rather than an interruption.
+
+                Only the four catalog metrics are shown. `subscriptions.limits`
+                can still carry pre-catalog keys that nothing enforces, and a
+                limit the product does not enforce is not information — it is a
+                rule the customer will believe and we will not apply. */}
+            <div className="grid gap-2 sm:grid-cols-2">
+              {METRIC_KEYS.map((metric) => (
+                <QuotaMeter key={metric} metric={metric} variant="always" showUpgrade={false} />
+              ))}
+            </div>
           </Card>
 
           <DeferredNote title="Your plan is managed by billing">

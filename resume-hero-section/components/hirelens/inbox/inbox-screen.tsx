@@ -18,6 +18,7 @@ import { ErrorState } from '../states/error-state'
 import { Skeleton } from '../ui/skeleton'
 import { Button } from '../ui/button'
 import { CandidatePeek } from '../candidate-object'
+import { QuotaMeter } from '../entitlements'
 import { InboxHeader } from './inbox-header'
 import { InboxSummary } from './inbox-summary'
 import { InboxPriorityQueue } from './inbox-priority-queue'
@@ -224,6 +225,13 @@ function AuthedInbox() {
     <AppShell breadcrumbs={INBOX_CRUMBS} account={account}>
       <div className={SHELL}>
         <InboxHeader name={name} org={org} />
+        {/* Résumé credits. Silent below 80% by design — an always-on meter turns
+            an allowance into a countdown and teaches the recruiter to watch a
+            number instead of working. It appears while there is still room to
+            act, and it appears HERE because the Inbox is the screen they open
+            first, not buried in Settings where they would meet the wall before
+            the warning. Founding and unlimited orgs never see it. */}
+        <QuotaMeter metric="resumes" />
         <InboxSummary stats={stats} loading={analytics.isLoading} />
         {body}
       </div>

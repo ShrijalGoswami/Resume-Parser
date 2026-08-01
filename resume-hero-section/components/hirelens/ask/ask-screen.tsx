@@ -13,6 +13,8 @@ import { LoadingScreen } from '../states/loading'
 import { GateState } from '../states/gate-state'
 import { ErrorState } from '../states/error-state'
 import { usePermissionGate, PERMS } from '../lib/use-can'
+import { usePlanGate } from '../lib/entitlements'
+import { FeatureLock } from '../entitlements'
 import { AskNav, type AskNavProps } from './ask-sidebar'
 import { AskThread } from './ask-thread'
 import { AgentBacklog } from './agent-backlog'
@@ -61,6 +63,9 @@ export function AskScreen({ initial }: { initial: AskInitial }) {
   // Checked here rather than inside `AuthedAsk` because that component's hooks
   // run the length of its body; the branch belongs where the hooks are two.
   const gate = usePermissionGate(PERMS.AI_USE)
+  // Permission first, then plan — the same order as the copilot router's own
+  // dependencies, so client and server never name a different remedy.
+  const plan = usePlanGate('ai_copilot')
 
   if (!configured) {
     return (
@@ -110,6 +115,15 @@ export function AskScreen({ initial }: { initial: AskInitial }) {
             reason="permission"
             title="Ask needs AI access. Your role can read roles and candidates, but not run AI on them."
           />
+        </div>
+      </AppShell>
+    )
+  }
+  if (plan.state === 'denied') {
+    return (
+      <AppShell title="Ask">
+        <div className="mx-auto w-full max-w-xl px-6 py-24">
+          <FeatureLock feature="ai_copilot" requiredPlan={plan.requiredPlan} />
         </div>
       </AppShell>
     )
