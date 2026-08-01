@@ -40,5 +40,9 @@ soon after launch · **P2** = future roadmap (mostly backend-dependent).
 
 ## Notes
 - No `TODO`/`FIXME`/`HACK` markers remain in the migrated code.
-- TypeScript, ESLint, and production build are clean across the repo.
+- TypeScript and the production build are clean across the repo.
+- **ESLint is not.** 4 `react-hooks/refs` errors in
+  `components/marketing/NeuralBackground.tsx` (from `6ba960a`). This line
+  previously claimed ESLint was clean; corrected 1 Aug 2026. Recorded as known
+  debt in `docs/HANDOFF.md` §11 and deliberately not fixed.
 - The frozen legacy app (`(legacy)`, `components/hero/*`, `/login`) is intentional and untouched.
