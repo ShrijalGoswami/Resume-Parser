@@ -125,7 +125,11 @@ export default function PrivacyPage() {
           standard contractual clauses with that provider.
         </P>
         <P>These are every third party that processes data on our behalf:</P>
-        <div className="overflow-x-auto">
+        {/* `contain: paint` for the same reason as the pricing comparison
+            table: `overflow-x-auto` alone does not stop a wide child adding to
+            `documentElement.scrollWidth` under the `.mkt` zoom, so the page
+            itself scrolls sideways on a phone. */}
+        <div className="overflow-x-auto [contain:paint]">
           <table className="w-full min-w-[520px] border-collapse text-left">
             <thead>
               <tr>

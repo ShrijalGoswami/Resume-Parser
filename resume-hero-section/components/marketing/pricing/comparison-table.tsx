@@ -106,10 +106,22 @@ export function ComparisonTable({ featured }: { featured: PlanKey }) {
   )
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto [contain:paint]">
       {/* The table scrolls inside its own container rather than pushing the
           page sideways: five columns cannot fit a phone, and a horizontally
-          scrolling document is a far worse failure than a scrolling table. */}
+          scrolling document is a far worse failure than a scrolling table.
+
+          `contain: paint` IS LOAD-BEARING, not decoration. `overflow-x: auto`
+          clips the table visually and lets it scroll — but it does NOT stop the
+          child's extent contributing to `documentElement.scrollWidth` when an
+          ancestor carries `zoom`, and `.mkt` carries `zoom: 0.85`. Measured at
+          390px: without it the document scrolled sideways by 201px while the
+          table scrolled correctly inside its box, so the page moved AND the
+          table moved. Paint containment takes it to exactly 0.
+
+          Verified in Chromium by mutating the live page: hiding the neural
+          field changed nothing, zeroing the table's min-width only halved it,
+          and `contain: paint` on this element alone fixed it completely. */}
       <table className="w-full min-w-[720px] border-collapse text-left">
         <caption className="sr-only">
           Feature and limit comparison across the Free, Plus, Pro and Enterprise plans
