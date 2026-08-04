@@ -1,12 +1,21 @@
 # HireLens — Engineering Handoff
 
-**Written:** 2 Aug 2026 · **Updated:** 5 Aug 2026 (authentication UX milestone) ·
+**Written:** 2 Aug 2026 · **Updated:** 5 Aug 2026, end of day ·
 **Replaces** the previous handoff entirely
 (recoverable at `git show e76df63:docs/HANDOFF.md`)
 
 This document is written to be read **alone**. Nothing in it depends on chat
-history. If you are opening this repository for the first time, this is the only
-file you need to understand where the project stands.
+history. If you are opening this repository for the first time — or starting a
+new session tomorrow — this is the only file you need to understand where the
+project stands.
+
+> **Starting a session? Read in this order.**
+> §1 (repository state, and how to run it) → §12 (what is done, what is verified,
+> what is blocked) → §11 (**the next milestone: AI Provider Architecture**) →
+> §9 (standing rules you must not break).
+>
+> If you are about to touch billing, read §5A **first** — it is blocked, and
+> five specific shortcuts around that blocker are forbidden by decision.
 
 > **One-line status.** The product, its monetization and its public surface are
 > built, enforced and truthful. The billing domain, adapter, repository,
@@ -16,11 +25,15 @@ file you need to understand where the project stands.
 > credentials are valid** (§5A). Nothing further can be built against it, and
 > nothing is to be worked around.
 >
-> **Last updated:** 5 Aug 2026. The authentication UX milestone is **closed**
-> (§8D) — passwords can be revealed, both emailed-link flows validate their
-> session before offering a form, and the auth surface stopped claiming a SOC 2
-> audit it does not have. Preceded by AI discoverability (§8C). Billing work
-> resumes only when Razorpay Subscriptions becomes available — §11.
+> **Last updated:** 5 Aug 2026, end of day. The **Authentication milestone is
+> complete and browser-verified end to end** (§8D) — reveal toggles, forgot
+> password, reset password, a real password policy, and `/auth/accept-invite`
+> now sharing the reset flow's session-validation architecture rather than
+> owning a second copy of it. Preceded by AI discoverability (§8C).
+>
+> **Tomorrow starts a new milestone: AI Provider Architecture (§11)** — and it
+> starts with an architecture investigation, not implementation. That work is
+> independent of the Razorpay blocker, so it is not waiting on anything.
 
 ---
 
@@ -29,21 +42,21 @@ file you need to understand where the project stands.
 | | |
 |---|---|
 | **Branch** | `manus-ui-v1` |
-| **Latest commit** | `64302d6` — *test(auth): cover the invite state machine…* |
+| **Latest commit** | `65a43dd` — *docs: close the authentication UX milestone* |
 | **Working tree** | **clean** |
-| **Current milestone** | Authentication UX — **CLOSED** (§8D). Billing remains **PAUSED** on the gateway (§5A, §11) |
+| **Last milestone** | Authentication — **COMPLETE and browser-verified** (§8D) |
+| **Next milestone** | **AI Provider Architecture** — starts with an *investigation*, not code (§11) |
 | **Backend tests** | **493 passed** (measured 5 Aug 2026) |
 | **Frontend tests** | **450 passed**, 32 files (measured 5 Aug 2026) |
 | **`tsc --noEmit`** | clean |
-| **`eslint .`** | **4 errors — all known debt** (§10) |
-| **`next build`** | succeeds; 39 routes |
+| **`eslint .`** | **exactly 4 errors — all known debt** (§10 item 1). A 5th is a regression |
+| **`next build`** | succeeds; 40 routes (36 static, 4 dynamic) |
 
-> **On the test counts.** Frontend went 363 → 410 → 442. The discoverability
-> milestone added `tests/discoverability.test.ts` (30) and matcher-coverage
-> assertions in `tests/proxy.test.ts` (17); the auth milestone added
-> `tests/password-policy.test.ts` (9) and `tests/auth-password-ux.test.tsx`
-> (22, then 30 when the invite screen joined it). No backend code changed in
-> either, so 493 is unmoved.
+> **On the test counts.** Frontend went 363 → 410 → 442 → 450. The
+> discoverability milestone added `tests/discoverability.test.ts` (30) and
+> matcher-coverage assertions in `tests/proxy.test.ts` (17); the auth milestone
+> added `tests/password-policy.test.ts` (9) and `tests/auth-password-ux.test.tsx`
+> (30). No backend code changed in either, so 493 is unmoved.
 
 ### Working tree
 
@@ -66,6 +79,7 @@ ad5c358 test(auth): pin the authentication UX guarantees
 3f3d26f docs: record the authentication UX milestone
 40e2695 fix(auth): give accept-invite the reset flow's session validation
 64302d6 test(auth): cover the invite state machine, and fix a matcher
+65a43dd docs: close the authentication UX milestone   ← HEAD
 ```
 
 Five deleted marketing PNGs are **deliberate** (§8A) — invented customer logos
@@ -188,6 +202,19 @@ since Step 2 with nothing calling them, so no organization was ever suspended an
 the grace period was unbounded. Built as a CLI-invoked service, dry-run by
 default, idempotent, concurrency-safe — and deliberately left untriggered until
 there is a dunning cycle to end (§5A).
+
+**AI discoverability (5 Aug 2026).** The public surface could be read by a
+person and not by a machine. Robots, sitemap, canonicals, Open Graph and
+schema.org — all *generated* from the catalog, pricing and legal modules, so
+nothing is stated twice — plus a `/llms.txt` whose most useful section is the
+product's own limitations. Detail in §8C.
+
+**Authentication (5 Aug 2026).** Passwords were write-only, and the two screens
+reached by an emailed link rendered their forms having verified nothing. Both
+fixed, the second by extracting a shared session-validation hook rather than
+copying one screen's logic into the other. Browser-verified end to end against
+real Supabase, including a real password change and a real invite acceptance.
+Detail in §8D.
 
 ---
 
@@ -447,10 +474,10 @@ from the self-upgrade hole Phase 1 removed.
   interface** (the endpoint exists)
 - Invoices surface, billing portal, dunning worker, refunds
 - Reconciliation worker
-- Grace sweep. `state_machine.due_for_suspension()` and `expire_grace()` exist
-  and are tested, but **nothing calls them** — so no organization is ever
-  actually suspended today. The FAQ promise that "your team keeps working" is
-  currently kept by accident rather than by design.
+- **The grace sweep's *trigger*.** The sweep itself was built and tested as
+  BILL-2 later the same day (`app/billing/grace.py`, `scripts/grace_sweep.py`);
+  what does not exist is anything that *invokes* it, so no organization is ever
+  actually suspended today. Deferred on purpose — §5A, BILL-T1.
 
 ---
 
@@ -572,8 +599,8 @@ existed before the sweep was written, so nothing regresses by waiting.
 - **Recovery script committed** — `scripts/restore_founding_subscriptions.py`,
   idempotent, reversible.
 - **Subscription invariant exists** — surfaced at `/health?check=billing` and on
-  startup. (Uncommitted; see §1.)
-- **Billing schema applied** — 0022–0026 live; all billing tables empty.
+  startup. Committed.
+- **Billing schema applied** — 0022–**0027** live; all billing tables empty.
 - **No real payment has ever been processed.** Not one rupee has moved.
 - **Razorpay Test Mode only.** No live credentials are configured anywhere, and
   the adapter refuses a key id that is neither `rzp_test_` nor `rzp_live_`.
@@ -610,13 +637,16 @@ Existing product variables are unchanged: `SUPABASE_URL`,
 
 ### Verified
 
-- Backend **335** tests, frontend **363** tests, `tsc` clean, `next build`
-  succeeds across 28 routes — including the four new policy routes, which
-  prerender as static.
+- Backend **493** tests, frontend **450** tests, `tsc` clean, `next build`
+  succeeds across 40 routes — including the four policy routes and the five
+  agent files (`robots.txt`, `sitemap.xml`, `llms.txt`, `humans.txt`,
+  `.well-known/security.txt`), all of which prerender as static.
 - Catalog parity proven **bidirectionally** by deliberate mutation.
-- Migrations 0022–0026 applied to production; every CHECK tested by attempting a
-  real write against the live database (negative amounts, refund > amount,
-  `provider='stripe'`, the GST invariant, `corrected > drift` — all rejected).
+- Migrations 0022–**0027** applied to production. For 0022–0026 every CHECK was
+  tested by attempting a real write against the live database (negative amounts,
+  refund > amount, `provider='stripe'`, the GST invariant, `corrected > drift` —
+  all rejected). 0027 is additive and nullable; its backfill was confirmed by
+  query (all 4 rows `active`).
 - `bigint` range: 50,000,000,000 paise accepted where `integer` would overflow.
 - Idempotency: a duplicate `(provider, event_id)` rejected by the live database.
 - RLS: anonymous denied on events/payments/reconciliation; empty set on invoices.
@@ -627,6 +657,16 @@ Existing product variables are unchanged: `SUPABASE_URL`,
 - Architectural boundaries proven by injecting violations and watching the
   guards fail.
 - Razorpay mapping verified against **current documentation**, fetched 1 Aug 2026.
+- **The public machine-readable surface** (§8C) — Playwright with JS disabled
+  against `next start`: JSON-LD parses on all six public pages, canonicals and
+  `og:image` resolve, `/auth/*` serves `noindex, follow`, all five agent files
+  serve 200 and prerender static.
+- **Every authentication flow** (§8D) — Playwright against `next start` and a
+  real Supabase project: sign-in, sign-up validation, forgot password, reset
+  password **with and without a session**, and invite acceptance from a real
+  generated invite link. A password was genuinely changed and restored; an
+  invite was genuinely accepted and the account deleted afterwards. 88 checks
+  across three scripted passes.
 
 ### NOT verified — every one of these is genuinely unknown
 
@@ -638,10 +678,11 @@ Existing product variables are unchanged: `SUPABASE_URL`,
 - **A real payment.** Zero — not even in test mode.
 - **End-to-end subscription lifecycle.** Every transition is unit-tested against
   a fake; none has ever been driven by an actual gateway.
-- **Anything requiring credentials.** `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`,
-  `RAZORPAY_WEBHOOK_SECRET` and both plan ids are unset in this environment, and
-  no Razorpay account exists. Step 4's objective 6 (a test-mode payment) is
-  **blocked on that**, not on code.
+- **Anything requiring the Subscriptions API.** `RAZORPAY_KEY_ID` and
+  `RAZORPAY_KEY_SECRET` **are** present and valid as of 5 Aug (§5A) — it is
+  `RAZORPAY_WEBHOOK_SECRET` and both plan ids that are unset, and the
+  Subscriptions product that is switched off. A test-mode payment is blocked on
+  that, not on code.
 - **Browser QA — PARTIALLY DONE, and this entry was wrong for two days.** It
   read "nothing has ever been seen in a browser". That stopped being true on
   **3 Aug 2026**, when the blocker was resolved by dropping the Chrome extension
@@ -656,12 +697,16 @@ Existing product variables are unchanged: `SUPABASE_URL`,
   overscroll containment, `/pricing` card baseline alignment in both themes, and
   a ~170-shot sweep of every route × light/dark × 1440/1280 with zero horizontal
   overflow.
-- **Everything built on 4–5 Aug is NOT in that pass**, because it postdates it:
-  the four policy pages, the mobile disclosure menu, the drop zone, the
-  plan-level upgrade dialog, the Settings ▸ Billing CTA, the Inbox em-dash
-  states and the homepage marketing rewrite. 363 passing tests and a clean build
-  prove the markup and the logic; they prove nothing about how any of it looks.
-  The harness to check exists now — that is the difference from a week ago.
+- **Most of what was built on 4–5 Aug is NOT in that pass**, because it
+  postdates it: the four policy pages, the mobile disclosure menu, the drop
+  zone, the plan-level upgrade dialog, the Settings ▸ Billing CTA, the Inbox
+  em-dash states and the homepage marketing rewrite. Passing tests and a clean
+  build prove the markup and the logic; they prove nothing about how any of it
+  looks.
+
+  **Two exceptions, both driven in a browser on 5 Aug:** the machine-readable
+  public surface (§8C) and **every authentication screen** (§8D). Those are
+  genuinely verified, including mobile at 390px for the auth routes.
 - **Also still unverified** (§0b): marketing home, Ledger, Notifications,
   Learning, Foundations; the New-role, upgrade and Add-to-collection dialogs;
   the real upload path and the résumé wall end to end; motion *quality*;
@@ -685,7 +730,8 @@ rendered product.
 
 ## 8A. Product polish milestone (4 Aug 2026)
 
-Everything in this section is **uncommitted** and lives in the working tree (§1).
+**Committed.** (This section previously said "uncommitted"; that stopped being
+true when the tree was cleaned on 5 Aug — §1.)
 
 ### The public site now claims only what it can keep
 
@@ -845,16 +891,25 @@ unit-tested.
 
 The audit's P2 and P3 items were explicitly deferred. The ones most likely to be
 raised next: no mobile navigation in the product shell (§10, item 9), the
-`© 2024` footer, the login page's "we'll check if your team uses SSO" which
-checks nothing, and signup surfacing raw Supabase error strings while login maps
-them. (Sitemap, robots and OG images were on this list and have since been done
-— §8C.)
+`© 2024` footer, and the login page's "we'll check if your team uses SSO" which
+checks nothing.
+
+Two entries have since been cleared and are recorded here so they are not
+re-raised: sitemap, robots and OG images were done in §8C, and **signup
+surfacing raw Supabase error strings** was fixed in §8D — every auth form now
+maps through `lib/auth-errors.ts`.
 
 ---
 
-## 8C. AI discoverability milestone (5 Aug 2026)
+> **There is no §8B.** Nothing is missing — the section was never written, and
+> the milestone sections are lettered in the order they happened. Do not go
+> looking for it.
 
-**Committed**, five commits, listed in §1.
+---
+
+## 8C. AI discoverability milestone (5 Aug 2026) — COMPLETE
+
+**Committed**, six commits, listed in §1.
 
 ### The problem it solved
 
@@ -963,11 +1018,24 @@ scoped not to redesign.
 
 ---
 
-## 8D. Authentication UX milestone (5 Aug 2026) — CLOSED
+## 8D. Authentication milestone (5 Aug 2026) — COMPLETE
 
-**Committed**, seven commits, listed in §1. Browser-verified against real
-Supabase, including an actual password change and an actual invite acceptance,
-both cleaned up afterwards (*Verified*, below).
+**Committed**, eight commits, listed in §1. Browser-verified end to end against
+real Supabase, including an actual password change and an actual invite
+acceptance, both cleaned up afterwards (*Verified*, below).
+
+### What shipped
+
+| | |
+|---|---|
+| **Show / hide password** | every password field: sign-in, sign-up, reset, confirm, and both invite fields |
+| **Forgot password** | live email validation, loading, success, mapped errors, resend on a 30s cooldown |
+| **Reset password** | four-state machine — session validated *before* the form exists — and a success screen instead of a redirect |
+| **Password policy** | `lib/password-policy.ts`; live accessible checklist; blocking rule unchanged from what the server already enforced |
+| **UX** | loading indicators, keyboard operability, mobile 390, autofill (username carriers), focus management on every in-place screen swap |
+| **`/auth/accept-invite`** | now a **consumer of the same shared session-validation architecture** as reset, not a second implementation |
+
+All of it is **browser-verified end to end** — see *Verified*, below.
 
 ### The three real failures it fixed
 
@@ -1074,31 +1142,73 @@ target inside the field), and a keyboard-only walk of sign-in.
 
 The invite flow was driven end to end on a **real Supabase invite**, minted with
 `admin.generateLink({ type: 'invite' })` — which returns the token without
-sending mail — to `qa.invite@hirelens.test`. 24 checks: the expired screen with
-no session, a bogus token refused at the callback, the real link recognised, the
-form gated until valid, the confirmation screen, signing in with the new
-credentials on a clean browser, and the link refused on replay. The account is
-deleted afterwards.
-
-### The invite screen, and why the pattern is now shared
-
-`/auth/accept-invite` had the identical unvalidated-session bug. It was fixed by
-**extracting** the reset screen's logic rather than copying it — copying is how
-the two came to differ in the first place.
+sending mail — to `qa.invite@hirelens.test`. 24 checks:
 
 | | |
 |---|---|
-| `use-link-session.ts` | one read of the session behind an emailed link, one subscription, and one fix for the race between them |
-| `link-session-screens.tsx` | the shared `checking` spinner and `expired` screen |
+| **Real invite generated** | via the admin API; no email leaves the system, and `hirelens.test` is RFC 6761 reserved so none could be delivered anyway |
+| **Expired / absent session** | the refusal screen renders; no name or password field is ever offered |
+| **Invalid token** | a bogus `token_hash` is refused at `/auth/callback` and never reaches the form |
+| **Replay protection** | the same link, used a second time, is refused |
+| **Successful acceptance** | form gated until valid, then the confirmation screen — still on `/auth/accept-invite`, not dropped into the product |
+| **Login after password creation** | the new credentials sign in on a **clean browser context** |
+| **Reset re-verified after the refactor** | the full live reset pass (17 checks) was re-run to prove the extraction did not break the flow it came from |
 
-**`tests/auth-password-ux.test.tsx` asserts neither form contains
-`onAuthStateChange` and both import `useLinkSession`.** A future copy fails the
-suite rather than drifting silently. Keep that test.
+The invitee account is deleted afterwards, and the reset QA account is restored
+to its seeded password. Both passes leave the project exactly as they found it.
+
+**Two bugs surfaced by this QA were bugs in the tests, not in the product.**
+Both were corrected; both are described under *Two traps*, below. Neither
+required a production code change.
+
+### The shared emailed-link architecture — read this before touching either screen
+
+Two screens in this product are reachable **only** by clicking a link in an
+email, and both then call `supabase.auth.updateUser` against whatever session
+that link established: `/auth/reset-password` and `/auth/accept-invite`.
+
+They had the same bug. The reset screen was fixed first. When the invite screen's
+turn came, the obvious move was to paste the fix across — **and that is exactly
+how the two came to differ in the first place.** So the logic was extracted
+instead, and both screens are now *consumers* of it rather than owners of their
+own implementations.
+
+| Module | What it owns |
+|---|---|
+| `components/hirelens/auth/use-link-session.ts` | one read of the session behind an emailed link, one `onAuthStateChange` subscription, and the resolution of the race between them |
+| `components/hirelens/auth/link-session-screens.tsx` | the shared `checking` spinner and `expired` screen, so the wait and the refusal behave identically on both |
+
+**Three reasons it exists, in order of weight:**
+
+1. **Eliminate duplicated auth-link logic.** One session read, in one file,
+   reviewed once.
+2. **Prevent future drift.** The invite screen was broken *because* it was a
+   copy that did not receive a later fix. A shared module cannot fall behind
+   itself.
+3. **Fix the `getSession()` vs `onAuthStateChange()` race permanently.** Fixing
+   it in two places means fixing it in one and forgetting the other, which is
+   the failure this whole section is about.
+
+**The state machine both screens run:**
+
+```
+checking  → is there a session behind this link?
+invalid   → say so BEFORE asking for a name or a password
+ready     → the form
+done      → a confirmation screen, never a silent redirect
+```
+
+**`tests/auth-password-ux.test.tsx` reads both component sources and asserts
+that neither contains `onAuthStateChange` and that both import
+`useLinkSession`.** A future copy-paste fails the suite rather than drifting
+silently. **Keep that test** — it is the only thing preventing a repeat.
 
 **Where invite diverges, deliberately:** an expired reset can be re-requested by
-the person standing there; an expired invite cannot — only an admin can reissue
-it. So that screen offers **no action button** and names who to ask, rather than
-dangling a control that would not work.
+the person standing there (`/auth/forgot-password` is one click away); an expired
+invite cannot — only an admin can reissue it. So that screen offers **no action
+button** and names who to ask, rather than dangling a control that would not
+work. That divergence is in the *copy and the call to action*, never in the
+session logic.
 
 ### Two traps in testing these screens
 
@@ -1112,7 +1222,24 @@ dangling a control that would not work.
    read, and every link flow looks broken. Not a product bug — but it costs an
    hour every time. Drive local auth QA on `localhost`.
 
----
+### An observation, recorded — NOT a defect
+
+`app/auth/callback/route.ts` derives its redirect origin from `request.url`.
+Locally that resolves to the hostname `next start` bound to rather than the
+`Host` header on the request, which is what produced trap 2 above.
+
+**This is safe as things stand.** A deployment serves one canonical origin, and
+nothing today is behind a proxy that would rewrite it. It is written down only
+because it is the kind of thing that is invisible until it is not:
+
+> **Verify after the first production deployment**, particularly if the app ends
+> up behind a proxy, a custom domain, or anything that sets `x-forwarded-host`.
+> The check is one line — click a real reset link on the deployed host and
+> confirm you land on that same host with a session.
+
+Do not pre-emptively change it. There is no way to test the fix from a local
+machine, and altering redirect-origin logic blind is a worse risk than the one
+it would address.
 
 ## 9. Standing architectural rules
 
@@ -1174,7 +1301,7 @@ Never break these. Each is a specific failure that was designed out.
 |---|---|---|
 | 1 | **4 eslint errors** — `react-hooks/refs` in `components/marketing/NeuralBackground.tsx:292–293`, refs mutated during render. From commit `6ba960a`; unrelated to monetization. **`npx eslint .` exiting non-zero is expected — a 5th error is a regression.** | Deliberately unfixed |
 | 2 | **Browser QA partially done.** Unblocked 3 Aug 2026 by dropping the Chrome extension for Playwright. A real pass covered the product shell, keyboard paths and a ~170-shot route sweep; §0b of `BROWSER_QA_CHECKLIST.md` separates what was driven from what was only typechecked. | Harness works; coverage incomplete |
-| 3 | **Everything built 4–5 Aug is unverified in a browser** — policy pages, mobile menu, drop zone, upgrade dialog, Settings ▸ Billing CTA, Inbox states, marketing rewrite. Postdates the pass. | Open — the harness now exists |
+| 3 | **Most of what was built 4–5 Aug is unverified in a browser** — policy pages, mobile menu, drop zone, upgrade dialog, Settings ▸ Billing CTA, Inbox states, marketing rewrite. Postdates the pass. **Cleared since:** the machine-readable public surface (§8C) and every authentication screen (§8D), both driven in a browser on 5 Aug. | Open — narrowed |
 | 4 | **PITR / backups outstanding.** `pitr_enabled: false`, no restorable backup. **Blocks the first real payment** — invoices are statutory records. | OPS-1, open |
 | 5 | **Razorpay production account / KYC pending.** No live credentials, and no plans created even in test mode. | Blocks Step 4 |
 | 6 | **International payments deferred.** Razorpay is INR-only in V1. `/pricing` quotes USD but now routes it to sales rather than checkout (§8A). | Handled by decision |
@@ -1192,15 +1319,93 @@ Items 4, 7 and 8 are tracked with three more in
 
 ---
 
-## 11. Next milestone — PAUSED, and what unpauses it
+## 11. Next milestone — AI Provider Architecture
+
+**This is where tomorrow starts.** It is independent of the Razorpay blocker, so
+nothing here is waiting on the gateway. Billing's own resumption plan is §11A,
+below, and remains paused.
+
+> ### Tomorrow begins with an **architecture investigation**, not implementation.
+>
+> Read the existing AI path first and report on it before writing anything.
+> There is a working system here — `orchestrator.run` is the single funnel every
+> backend LLM call already goes through — and the goal is to generalise it
+> without breaking a product that currently works. An investigation that finds
+> the abstraction already half-present is a better outcome than a rewrite that
+> ignores it.
+
+### The problem
+
+Every model call in the product goes to Groq, on a free tier capped at roughly
+100k tokens/day, with no fallback. The vendor is not *hardcoded everywhere* —
+the orchestrator saw to that — but the system has never had to answer the
+questions a second provider asks: who chooses the model, when, and on what
+basis? What does a caller say when it needs *reasoning* rather than
+`llama-3.3-70b`? What happens when a provider is down, rate-limited, or simply
+more expensive than the answer is worth?
+
+### Goals
+
+| # | Goal | What it means |
+|---|---|---|
+| 1 | **Provider abstraction** | a port, in the shape of `BillingProvider` (§3) — the domain names capabilities, never vendors |
+| 2 | **Model abstraction** | callers ask for a *capability tier*, not a model string. `llama-3.3-70b-versatile` must not appear in business logic |
+| 3 | **Runtime configuration** | which provider and model serve which task, changeable without a deploy |
+| 4 | **Paid Groq support** | the immediate practical unblock — the free tier's daily cap is a real ceiling on real usage |
+| 5 | **Local model selection** | run against a local model for development and evaluation without touching a paid endpoint |
+| 6 | **Future providers** | OpenAI, Gemini, Anthropic, OpenRouter — each an *addition*, never an audit of everything else |
+| 7 | **AI disclaimer system** | what the product must say, and where, about output being model-generated |
+
+**The point of all seven:** prepare the platform for multiple AI providers
+**without coupling business logic to any vendor.**
+
+### Why goal 7 is not a footnote
+
+HireLens is a hiring product. CV screening is high-risk under the EU AI Act, and
+NYC Local Law 144 governs automated employment decision tools. A disclaimer
+system is not decoration — it is the same category of obligation as the bias-audit
+claim the marketing audit had to remove (§8A), and it interacts with which
+provider processed which candidate's data. Design it with the provider layer,
+not after it.
+
+### What the investigation should cover before anything is built
+
+1. **What `orchestrator.run` already is.** Every backend LLM call goes through
+   it (batch analysis included), with QA-mode caching and instrumentation. Start
+   from what it already abstracts, and name precisely what it does not.
+2. **Where model identity currently leaks.** Every place a model string, a token
+   budget, or a Groq-specific behaviour is named outside the orchestrator.
+3. **What "capability tier" should mean** for this product's actual call sites —
+   they are not interchangeable, and the tiers should come from the calls, not
+   from a vendor's marketing page.
+4. **Where runtime configuration lives.** Environment, database, or a config
+   module — and what happens on a bad value.
+5. **The failure model.** Note the existing decision that **429 is not retried**
+   and Groq has no fallback; a provider layer changes what that should mean.
+6. **What the disclaimer system must assert**, and on which surfaces.
+
+### Standing rules that already apply to this work
+
+The billing layer solved the same shape of problem, and rules 5–7 in §9 were
+written for it. They transfer verbatim: **the domain never imports a provider
+SDK**, **capabilities are declared rather than inferred from a provider name**,
+and **unknown states fail loudly rather than being guessed**. Reuse the pattern;
+do not reinvent it. `app/billing/providers/fake.py` is the reference for why a
+port with a working fake is testable and a port without one is decorative.
+
+---
+
+## 11A. Billing — PAUSED, and what unpauses it
 
 ### The work is stopped, deliberately
 
-**Everything that can be built without the gateway has been built.** There is no
-remaining coding task that does not depend on the Razorpay Subscriptions API,
-which returns 401 for this account (§5A). Do not start anything below until that
-is resolved — building against an API that has never answered means guessing at
-its shape and discovering the mismatch at a worse moment.
+**Everything that can be built without the gateway has been built.** No
+remaining *billing* task is independent of the Razorpay Subscriptions API, which
+returns 401 for this account (§5A). Do not start anything below until that is
+resolved — building against an API that has never answered means guessing at its
+shape and discovering the mismatch at a worse moment.
+
+(The AI Provider milestone above needs none of this and is not blocked by it.)
 
 ### The one action that unblocks everything
 
@@ -1250,43 +1455,80 @@ Not blockers, and not started. Full detail in `BILLING_TODO.md`.
 
 ## 12. Final status
 
+Three distinctions matter here, and conflating them is how a project convinces
+itself it is closer to shipping than it is:
+
+- **Implemented** — the code exists, is committed, and its tests pass.
+- **Browser verified** — it has been driven in a real browser against real
+  infrastructure. Green tests do not confer this.
+- **Blocked** — waiting on something outside this repository.
+
+### Completed milestones
+
+| Milestone | Implemented | Browser verified | Note |
+|---|---|---|---|
+| Monetization & Entitlements (Phase 1–2) | ✅ | ⬜ | enforced in production |
+| Pricing experience (Phase 3) | ✅ | ⬜ | markup checked by curl only |
+| Product polish (4 Aug) | ✅ | ⬜ | §8A |
+| Legal pages | ⚠️ | ⬜ | built, but **DRAFT** until `lib/legal.ts` is filled (§8A) |
+| Marketing trust / compliance cleanup | ✅ | ⬜ | nine untrue claims removed; pinned by tests (§8A) |
+| Billing architecture | ✅ | n/a | §3 |
+| Billing Step 1 — schema | ✅ | n/a | 0022–0027 applied to production |
+| Billing Step 2 — domain | ✅ | n/a | provider-agnostic; fake provider |
+| Billing Step 3 — Razorpay adapter | ✅ | n/a | offline-tested; **never run against the gateway** |
+| Billing Step 4 — repository / service | ✅ | n/a | code complete, offline-tested |
+| Grace sweep (BILL-2) | ✅ | n/a | trigger deliberately deferred (BILL-T1) |
+| AI discoverability (SEO + LLMs) | ✅ | **✅** | §8C |
+| **Authentication** | ✅ | **✅** | §8D — end to end, against real Supabase |
+
+### Blocked by an external dependency
+
+| Item | Blocked on |
+|---|---|
+| Billing Step 5 — test-mode payment | **Razorpay Subscriptions API returns 401** — the product is not enabled on the account, most likely pending KYC (§5A) |
+| Razorpay plans, checkout UI, webhook delivery | the same |
+| Razorpay merchant activation | `lib/legal.ts` unfilled — four policy pages must be published (§8A) |
+| PITR / restorable backup | operator action; **blocks the first real payment** (OPS-1) |
+
+### Not started
+
 ```
-Monetization (Phase 1)        ██████████  complete, enforced in production
-Entitlements & UI (Phase 2)   ██████████  complete  — never seen in a browser
-Pricing experience (Phase 3)  ██████████  complete  — never seen in a browser
-Product polish (4 Aug)        ██████████  complete  — never seen in a browser
-Legal pages                   ███████░░░  built; DRAFT until lib/legal.ts is filled
-Billing architecture          ██████████  complete, documented
-Billing Step 1 (schema)       ██████████  complete, applied to production
-Billing Step 2 (domain)       ██████████  complete  — UNCOMMITTED
-Billing Step 3 (Razorpay)     ██████████  complete  — UNCOMMITTED
-Billing Step 4 (integration)  ██████████  code complete, offline-tested
-Billing Step 5 (test mode)    ██░░░░░░░░  BLOCKED — Subscriptions API 401 (§5A)
-Grace sweep (BILL-2)          ██████████  built, tested, verified — trigger deferred
 Billing trigger (BILL-T1)     ░░░░░░░░░░  deliberately deferred (§5A)
 Enterprise activation         ░░░░░░░░░░  no code path at all (BILL-3)
 Reconciliation worker         ░░░░░░░░░░  table exists, nothing writes it (BILL-6)
-Browser QA                    █████░░░░░  unblocked 3 Aug; shell done, 4–5 Aug work not
+AI Provider Architecture      ░░░░░░░░░░  NEXT — investigation first (§11)
 RC checklist                  ░░░░░░░░░░  0 of 267 boxes ticked
-Production payments           ░░░░░░░░░░  not started, none ever processed
+Production payments           ░░░░░░░░░░  none ever processed
 ```
 
-**Tests:** backend 493 · frontend 363 · `tsc` clean · `next build` clean ·
-eslint 4 known errors.
+### Browser QA coverage
+
+```
+Product shell, keyboard paths ██████████  3 Aug — Playwright, ~170-shot sweep
+Public machine-readable layer ██████████  5 Aug — §8C
+Authentication (all screens)  ██████████  5 Aug — §8D, real Supabase
+Marketing / policy pages      ░░░░░░░░░░  built 4 Aug, never looked at
+Product screens built 4–5 Aug ░░░░░░░░░░  drop zone, dialogs, Inbox states
+```
+
+**Tests:** backend 493 · frontend 450 (32 files) · `tsc` clean · `next build`
+clean, 40 routes · eslint exactly 4 known errors.
 
 **The honest summary:** the server side is real and verified. The public surface
-is now truthful, which it was not on 3 August. Billing is code-complete up to
-the point where a gateway is required, including the sweep that ends a dunning
-cycle.
+is now truthful, which it was not on 3 August, and machine-readable, which it was
+not this morning. Authentication is the first whole feature area in this project
+that is both implemented *and* driven end to end in a browser. Billing is
+code-complete up to the point where a gateway is required.
 
 Three things are still true and all three gate the release:
 
 1. **No money has ever moved.** Not one rupee, not even in Test Mode. The
    Razorpay Subscriptions API has never returned a subscription to this account.
-2. **Most of the rendered product has now been looked at — but not the newest
-   part.** The browser blocker was removed on 3 Aug (Playwright, not the
-   extension) and a real pass covered the product shell. Everything built on
-   4–5 Aug postdates it and has been seen only by tests. §8 and
+2. **Much of the rendered product still has not been looked at.** The browser
+   blocker was removed on 3 Aug (Playwright, not the extension) and real passes
+   have now covered the product shell, the public machine-readable layer and
+   every authentication screen. The marketing and policy pages, and the product
+   screens built on 4–5 Aug, have been seen only by tests. §8 and
    `BROWSER_QA_CHECKLIST.md` §0b are the honest breakdown.
 3. **Nothing suspends anyone.** The grace sweep is built and idle by choice.
 
@@ -1307,5 +1549,5 @@ Three things are still true and all three gate the release:
 | [OPERATIONAL_HARDENING_BACKLOG.md](./OPERATIONAL_HARDENING_BACKLOG.md) | PITR, audit trail, retention (OPS-1…6) |
 | [MIGRATION_ROLLBACK_NOTES.md](./MIGRATION_ROLLBACK_NOTES.md) | Per-migration rollback for 0022–0027 |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) · [DATABASE.md](./DATABASE.md) · [API.md](./API.md) · [SECURITY.md](./SECURITY.md) | The product itself |
-| [decisions/](./decisions/) | 17 ADRs |
+| [decisions/](./decisions/) | 18 ADRs |
 | [archive/](./archive/) | Finished work. Not authoritative |
