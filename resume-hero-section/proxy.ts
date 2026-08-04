@@ -101,7 +101,63 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Run on everything except static assets and images.
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    /**
+     * Everything except static assets — AND except the public surface.
+     *
+     * WHY THE PUBLIC PAGES ARE EXCLUDED. This proxy calls
+     * `supabase.auth.getUser()`, which is a network round trip to Supabase Auth,
+     * on every request it matches. It used to match the marketing pages, the
+     * policy pages and the agent files, none of which has a session to refresh.
+     *
+     * Measured: `/` took 102–186ms and `/terms` 51–160ms against 13ms for a
+     * static asset — the difference being a round trip performed so that an
+     * anonymous visitor could be found to be anonymous.
+     *
+     * Two things made it worth fixing rather than tolerating:
+     *
+     *   1. It is the crawl path. `/robots.txt`, `/sitemap.xml` and `/llms.txt`
+     *      are the files an indexer hits first and most often, and they would
+     *      have inherited an auth round trip apiece.
+     *   2. It put Supabase in the serving path of a static marketing page. A
+     *      Supabase incident would have slowed or failed the pages that explain
+     *      what the product is — including, pointedly, the ones a customer would
+     *      read while trying to find out whether the product was down.
+     *
+     * The excluded routes are exhaustively public: they render identically to
+     * every visitor and none reads a session. `resolveMiddlewareAction` still
+     * guards everything else, and the product routes are unchanged — this
+     * removes work, not protection.
+     */
+    '/home/:path*',
+    '/roles/:path*',
+    '/talent/:path*',
+    '/interviews/:path*',
+    '/ask/:path*',
+    '/analytics/:path*',
+    '/ledger/:path*',
+    '/learning/:path*',
+    '/notifications/:path*',
+    '/settings/:path*',
+    '/foundations/:path*',
+    // Every `/auth/*` page, not only the two that bounce a signed-in user:
+    // callback, reset-password, accept-invite and forgot-password all run
+    // mid-session and need the refreshed cookie.
+    '/auth/:path*',
+    // The frozen legacy entry points.
+    '/login',
+    '/signup',
   ],
 };
+
+/**
+ * A POSITIVE LIST, mirroring `V4_PROTECTED` + `V4_AUTH_REDIRECT` +
+ * `LEGACY_AUTH_ROUTES` in `lib/auth-routing`.
+ *
+ * It replaced a negative lookahead that matched everything except static
+ * assets. Inverting it is what excludes the public surface — but it also
+ * introduces a coupling: a new protected route added to `V4_PROTECTED` and not
+ * added here would render to an anonymous visitor without ever being guarded.
+ *
+ * `tests/proxy.test.ts` asserts the two lists agree, so that mistake fails a
+ * test rather than shipping.
+ */

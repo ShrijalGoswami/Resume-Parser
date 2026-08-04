@@ -1,11 +1,81 @@
 import { describe, it, expect } from 'vitest'
-import { resolveMiddlewareAction } from '../lib/auth-routing'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import {
+  LEGACY_AUTH_ROUTES,
+  V4_AUTH_REDIRECT,
+  V4_PROTECTED,
+  resolveMiddlewareAction,
+} from '../lib/auth-routing'
 
 /**
  * Security-critical: server-side route protection for the V4 app. These test the
  * middleware's pure decision (resolveMiddlewareAction); proxy.ts wires it to
  * Supabase + Next, and the decision is what determines who can reach what.
  */
+/**
+ * The matcher and the route lists must agree.
+ *
+ * The proxy used to match everything except static assets, so a new protected
+ * route was guarded the moment it existed. It is now a positive list — which is
+ * what keeps Supabase out of the serving path for the public marketing and
+ * policy pages — and the cost of that is exactly this coupling: a route added
+ * to `V4_PROTECTED` and forgotten here would render to an anonymous visitor
+ * without the guard ever running.
+ *
+ * This is the test that turns that from a silent hole into a red build.
+ */
+describe('proxy matcher covers every guarded route', () => {
+  const source = readFileSync(resolve(process.cwd(), 'proxy.ts'), 'utf-8')
+  /**
+   * The matcher's STRING LITERALS, not the surrounding source.
+   *
+   * Two earlier attempts asserted against a slice of the file and both failed
+   * on the prose rather than the patterns: the block comment explaining why the
+   * public files are excluded necessarily names those files. Extracting the
+   * quoted entries tests what actually reaches Next.
+   */
+  const start = source.indexOf('matcher: [')
+  const block = source.slice(start, source.indexOf('],', start) + 2)
+  const patterns = [...block.matchAll(/'([^']+)'/g)].map((m) => m[1])
+
+  /** The first segment each pattern guards: `/roles/:path*` -> `roles`. */
+  const guarded = new Set(patterns.map((p) => p.replace(/^\//, '').split('/')[0]))
+
+  const firstSegment = (route: string) => route.replace(/^\//, '').split('/')[0]
+
+  it.each([...V4_PROTECTED, ...V4_AUTH_REDIRECT, ...LEGACY_AUTH_ROUTES])(
+    'guards %s',
+    (route) => {
+      expect(
+        guarded.has(firstSegment(route)),
+        `proxy.ts matcher does not cover ${route} — add it, or an anonymous ` +
+          `visitor reaches it with no guard`,
+      ).toBe(true)
+    },
+  )
+
+  it('does NOT match the public marketing and policy pages', () => {
+    // These are why the matcher was inverted: no session to refresh, and a
+    // Supabase round trip on each was measurably slowing the crawl path.
+    for (const publicPath of ['pricing', 'terms', 'privacy', 'refunds', 'contact']) {
+      expect(guarded.has(publicPath), `${publicPath} should not be proxied`).toBe(false)
+    }
+  })
+
+  it('does NOT match the agent-facing files', () => {
+    // robots.txt, sitemap.xml and llms.txt are the files a crawler hits first
+    // and most often; each would otherwise carry an auth round trip.
+    for (const file of ['robots.txt', 'sitemap.xml', 'llms.txt', 'humans.txt', '.well-known']) {
+      expect(guarded.has(file), `${file} should not be proxied`).toBe(false)
+    }
+  })
+
+  it('does not match the site root', () => {
+    expect(patterns).not.toContain('/')
+  })
+})
+
 describe('resolveMiddlewareAction — V4 route protection', () => {
   it('unauthenticated → protected V4 route redirects to /auth/login (preserving next)', () => {
     expect(resolveMiddlewareAction('/home', false)).toEqual({
