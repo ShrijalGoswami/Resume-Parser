@@ -1,9 +1,49 @@
+import os
 import tempfile
 from pathlib import Path
 # pyrefly: ignore [missing-import]
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
+
+#: The env files this application reads, lowest precedence first.
+ENV_FILES = (BACKEND_DIR / ".env", BACKEND_DIR / ".env.local")
+
+
+def _export_env_files_to_environ() -> None:
+    """Put the env files into `os.environ` as well as into `Settings`.
+
+    THE GAP THIS CLOSES, which cost nothing to find and would have cost an
+    afternoon to debug:
+
+    `pydantic-settings` reads `.env` / `.env.local` into the `Settings` OBJECT.
+    It does not touch `os.environ`. That is fine for every setting declared on
+    the model — but the billing modules deliberately read `os.environ` directly
+    (`billing/providers/razorpay/config.py`, `plans.py`), because credentials
+    for a payment gateway should come from the process environment and have no
+    business being a typed application setting with a default.
+
+    The result was that `RAZORPAY_KEY_ID` written into `.env.local` was
+    invisible to billing. The failure is the worst kind: the operator is told
+    "missing environment variable: RAZORPAY_KEY_ID" while looking straight at a
+    file that plainly contains it.
+
+    `override=False` is the important argument. A real process environment
+    variable always wins over a file — that is what makes a production
+    deployment, a CI run and a `docker run -e` behave the way everyone expects,
+    and it means a stale `.env.local` on someone's laptop cannot silently
+    displace the value a deployment actually set.
+    """
+    try:
+        from dotenv import load_dotenv
+    except ImportError:  # pragma: no cover - python-dotenv ships with pydantic-settings
+        return
+    for path in ENV_FILES:
+        if path.exists():
+            load_dotenv(path, override=False)
+
+
+_export_env_files_to_environ()
 
 # Application version and API version, surfaced by the /health endpoint.
 # Reported by /health. Keep in step with the top entry in CHANGELOG.md and the git
@@ -191,8 +231,10 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
 
     # Absolute paths so the env file is found regardless of the launch CWD.
+    # Same tuple `_export_env_files_to_environ()` uses, so the two views of
+    # configuration can never read different files.
     model_config = SettingsConfigDict(
-        env_file=(BACKEND_DIR / ".env", BACKEND_DIR / ".env.local"),
+        env_file=ENV_FILES,
         env_file_encoding="utf-8",
         extra="ignore",
     )

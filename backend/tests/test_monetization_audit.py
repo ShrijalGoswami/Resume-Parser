@@ -82,6 +82,29 @@ NO_PAID_VALUE = {
     "/api/v1/agent/scan", "/api/v1/agent/workflows",
     # Deliberately never gated — see UNGATEABLE in test_feature_flag_enforcement.
     "/api/v1/agent/recommendations", "/api/v1/agent/recommendations/{rec_id}",
+    # ── Billing (Phase 4 Step 4) ─────────────────────────────────────────────
+    # BILLING IS HOW AN ORGANIZATION ACQUIRES A PLAN. Gating any of these on an
+    # entitlement would be a lock on the door to the shop: a Free org would need
+    # a paid capability in order to become paid. They are protected by RBAC
+    # instead — `require_permission(ORG_MANAGE)`, which is owner-only, because
+    # spending the organization's money is the same class of act as disposing of
+    # the account.
+    #
+    # The webhook is the exception to the exception: it carries no permission
+    # either, because Razorpay has no session. Its identity is the HMAC
+    # signature over the raw body, verified in the adapter before anything is
+    # read, and an unverified envelope is refused rather than processed.
+    #
+    # It is hidden from the OpenAPI schema (`include_in_schema=False`) so it is
+    # not advertised as product API — but this audit reads the ROUTE GRAPH, not
+    # the schema, which is exactly right: a route that is unreachable in the
+    # documentation is still reachable over HTTP, and an inventory that trusted
+    # `include_in_schema` would be blind to precisely the endpoints someone
+    # wanted to keep quiet.
+    "/api/v1/billing/subscriptions",
+    "/api/v1/billing/subscriptions/verify",
+    "/api/v1/billing/subscriptions/cancel",
+    "/api/v1/billing/webhook/razorpay",
 }
 
 #: Reachable paid value that is NOT gated, each with the reason it is not, and

@@ -87,4 +87,97 @@ def validate_startup() -> None:
     except RoutingConfigError as e:
         raise StartupError(str(e)) from e
 
+    # Billing integrity: every active organization must have exactly one
+    # subscription. Reports and continues — a service that refuses to boot over
+    # one organization's row takes the product down for everyone else, and the
+    # failure being guarded against is a SILENT demotion, not an unsafe one.
+    try:
+        from app.billing.health import log_integrity_on_startup
+
+        log_integrity_on_startup()
+    except Exception as exc:  # noqa: BLE001 - never block startup on a check
+        logger.warning("Billing integrity check skipped: %s", exc)
+
+    # Plan bindings: what the gateway CHARGES must equal what the page ADVERTISES.
+    #
+    # FATAL in production, and this is the one billing check that should be.
+    # `lib/pricing.ts` publishes ₹999 and the Razorpay plan object carries its own
+    # amount; the two are separate systems that can drift, and a mismatch between
+    # what a customer is shown and what leaves their card is the single worst
+    # defect this integration can produce. It should fail a deploy, not a card.
+    #
+    # Skipped when no bindings are configured — checkout is simply unavailable
+    # then, which `start_checkout` reports honestly, and a stateless or
+    # billing-less deployment is a configuration this app supports.
+    _validate_plan_bindings()
+
     logger.info("Startup validation complete.")
+
+
+def _validate_plan_bindings() -> None:
+    """Assert the gateway's prices match the published ones."""
+    try:
+        from app.billing.providers.razorpay import plans
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Razorpay plan bindings not checked: %s", exc)
+        return
+
+    configured = plans.configured_plans()
+    if not configured:
+        logger.info(
+            "No Razorpay plan bindings configured — self-serve checkout is "
+            "unavailable. Set %s to enable it.",
+            " / ".join(sorted(plans.PLAN_ENV_VARS.values())),
+        )
+        return
+
+    # COULD NOT ASK ≠ GOT A WRONG ANSWER, and conflating them here would be a
+    # serious bug: `verify_bindings` catches a failed fetch internally and
+    # reports it in the same list as a genuine price mismatch, so a Razorpay
+    # outage would look identical to a misbound plan and would REFUSE TO BOOT
+    # THE ENTIRE PRODUCT — for every customer, including the ones who never
+    # touch billing. That inverts the standing rule that entitlement must
+    # survive a gateway incident.
+    #
+    # So transport failures are recorded separately as they happen, and their
+    # presence downgrades the whole check to "unverified" rather than "wrong".
+    transport_errors: list[str] = []
+
+    def fetch(plan_id: str) -> dict:
+        from app.billing.providers.razorpay.provider import RazorpayProvider
+
+        try:
+            return RazorpayProvider()._client().plan.fetch(plan_id)
+        except Exception as exc:  # noqa: BLE001
+            transport_errors.append(f"{plan_id}: {exc}")
+            raise
+
+    try:
+        problems = plans.verify_bindings(fetch)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(
+            "Could not verify Razorpay plan bindings (%s). Prices are UNVERIFIED "
+            "this boot.", exc,
+        )
+        return
+
+    if transport_errors:
+        logger.warning(
+            "Could not reach Razorpay to verify plan bindings (%s). Prices are "
+            "UNVERIFIED this boot; the check runs again on the next one.",
+            "; ".join(transport_errors),
+        )
+        return
+
+    if not problems:
+        logger.info("Razorpay plan bindings verified: %s", ", ".join(sorted(configured)))
+        return
+
+    message = "Razorpay plan bindings disagree with the published prices: " + "; ".join(problems)
+    if settings.ENVIRONMENT == "production":
+        raise StartupError(
+            message
+            + ". Refusing to boot: charging a customer an amount the pricing page "
+              "does not show is worse than being unavailable."
+        )
+    logger.error("%s (non-production: booting anyway)", message)

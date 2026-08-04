@@ -19,7 +19,7 @@ from app.db.supabase_client import close_transport, init_transport
 from app.db.supabase_client import supabase_available
 from fastapi import Depends
 from fastapi.openapi.docs import get_swagger_ui_html
-from app.routes import export, match, analyze, batch, copilot, campaigns, account, analytics, search, admin, reports, agent, org, integrations, knowledge, prediction
+from app.routes import export, match, analyze, batch, copilot, campaigns, account, analytics, search, admin, reports, agent, org, integrations, knowledge, prediction, billing
 from app.enterprise.deps import require_entitlement
 from app.enterprise.entitlements import PlanError
 
@@ -152,6 +152,21 @@ app.include_router(
     prediction.router, prefix="/api/v1",
     dependencies=[Depends(require_entitlement("predictive_intelligence"))],
 )
+# ── Billing (Phase 4 Step 4) ──────────────────────────────────────────────────
+# NO ROUTER-LEVEL DEPENDENCY, and that is deliberate. This router carries two
+# incompatible security models: the customer-facing endpoints are owner-only via
+# `require_permission(ORG_MANAGE)` declared per route, while
+# `/billing/webhook/razorpay` must be reachable by Razorpay, which has no session
+# and no bearer token. Its identity is the HMAC signature over the raw body.
+#
+# A router-level auth dependency here would 401 every webhook, and the symptom
+# would be silent: Razorpay would retry, give up, and the subscriptions of
+# paying customers would simply never activate.
+#
+# There is also NO `require_entitlement` on this router. Billing is how an
+# organization ACQUIRES a plan — gating it on the plan it does not yet have
+# would be a lock on the door to the shop.
+app.include_router(billing.router, prefix="/api/v1")
 
 
 @app.get("/docs", include_in_schema=False)
@@ -173,10 +188,16 @@ async def custom_swagger_ui_html():
 # that issue HEAD still get a 200 with identical headers and no body.
 @app.head("/health", include_in_schema=False)
 @app.get("/health", tags=["Health"])
-async def health_check():
-    """Lightweight operational health check. Never exposes secrets."""
+async def health_check(check: str | None = None):
+    """Lightweight operational health check. Never exposes secrets.
+
+    `?check=billing` additionally verifies that every active organization has
+    exactly one subscription row. It is OPT-IN because it reads three tables,
+    and a liveness probe that fails on a slow query is worse than no probe.
+    See `app/billing/health.py` and `docs/rca/SUBSCRIPTION_ROWS_MISSING.md`.
+    """
     uptime_seconds = round(time.time() - _START_TIME, 1)
-    return {
+    payload = {
         "status": "healthy",
         "service": "hirelens-api",
         "version": APP_VERSION,
@@ -194,3 +215,17 @@ async def health_check():
             "allowed_extensions": settings.ALLOWED_EXTENSIONS,
         },
     }
+
+    if check == "billing":
+        from app.billing.health import billing_integrity_status
+
+        billing = billing_integrity_status()
+        payload["billing_integrity"] = billing
+        # A missing subscription row silently demotes a grandfathered customer,
+        # so it must be visible to something that watches status codes rather
+        # than only to something that reads bodies.
+        if not billing.get("healthy", True):
+            payload["status"] = "degraded"
+            return JSONResponse(status_code=503, content=payload)
+
+    return payload
