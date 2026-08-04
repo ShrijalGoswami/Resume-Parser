@@ -37,8 +37,20 @@ export function AuthSplit({ children }: { children: React.ReactNode }) {
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-[380px] py-10">{children}</div>
         </div>
+        {/* "SOC 2 Type II · SSO · your data stays yours."
+            The first of those three was false. There is no SOC 2 audit and no
+            report to send — /privacy says so in as many words ("We hold no
+            security certification at this time"), and /llms.txt lists it under
+            the product's own limitations. The identical claim was deleted from
+            the homepage trust strip as fabricated; this copy survived only
+            because it lives on the auth surface, where it was doing its work on
+            the one screen where someone decides whether to hand over an email
+            and a password.
+
+            What is left is true: enterprise SSO is real (`signInWithSSO` on
+            this very page), and the data statement is the one /privacy makes. */}
         <p className="hl-caption font-hl-mono tracking-wide text-hl-fg-tertiary">
-          SOC 2 Type II · SSO · your data stays yours.
+          SSO · encrypted in transit · your data stays yours.
         </p>
       </div>
 
