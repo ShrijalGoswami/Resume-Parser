@@ -16,11 +16,11 @@ file you need to understand where the project stands.
 > credentials are valid** (§5A). Nothing further can be built against it, and
 > nothing is to be worked around.
 >
-> **Last updated:** 5 Aug 2026, after the authentication UX milestone (§8D) —
-> passwords can be revealed, the reset flow validates its session before
-> offering a form, and the auth surface stopped claiming a SOC 2 audit it does
-> not have. Preceded by AI discoverability (§8C). Billing work resumes only when
-> Razorpay Subscriptions becomes available — §11.
+> **Last updated:** 5 Aug 2026. The authentication UX milestone is **closed**
+> (§8D) — passwords can be revealed, both emailed-link flows validate their
+> session before offering a form, and the auth surface stopped claiming a SOC 2
+> audit it does not have. Preceded by AI discoverability (§8C). Billing work
+> resumes only when Razorpay Subscriptions becomes available — §11.
 
 ---
 
@@ -29,11 +29,11 @@ file you need to understand where the project stands.
 | | |
 |---|---|
 | **Branch** | `manus-ui-v1` |
-| **Latest commit** | `ad5c358` — *test(auth): pin the authentication UX guarantees* |
+| **Latest commit** | `64302d6` — *test(auth): cover the invite state machine…* |
 | **Working tree** | **clean** |
-| **Current milestone** | Authentication UX — **complete and committed** (§8D). Billing remains **PAUSED** on the gateway (§5A, §11) |
+| **Current milestone** | Authentication UX — **CLOSED** (§8D). Billing remains **PAUSED** on the gateway (§5A, §11) |
 | **Backend tests** | **493 passed** (measured 5 Aug 2026) |
-| **Frontend tests** | **442 passed**, 32 files (measured 5 Aug 2026) |
+| **Frontend tests** | **450 passed**, 32 files (measured 5 Aug 2026) |
 | **`tsc --noEmit`** | clean |
 | **`eslint .`** | **4 errors — all known debt** (§10) |
 | **`next build`** | succeeds; 39 routes |
@@ -42,7 +42,8 @@ file you need to understand where the project stands.
 > milestone added `tests/discoverability.test.ts` (30) and matcher-coverage
 > assertions in `tests/proxy.test.ts` (17); the auth milestone added
 > `tests/password-policy.test.ts` (9) and `tests/auth-password-ux.test.tsx`
-> (22). No backend code changed in either, so 493 is unmoved.
+> (22, then 30 when the invite screen joined it). No backend code changed in
+> either, so 493 is unmoved.
 
 ### Working tree
 
@@ -62,6 +63,9 @@ f7045d8 test(seo): pin the discoverability guarantees
 1b74dd1 feat(auth): finish the sign-in, sign-up, forgot and invite screens
 b7d4b66 fix(auth): stop claiming a SOC 2 audit on the sign-up screen
 ad5c358 test(auth): pin the authentication UX guarantees
+3f3d26f docs: record the authentication UX milestone
+40e2695 fix(auth): give accept-invite the reset flow's session validation
+64302d6 test(auth): cover the invite state machine, and fix a matcher
 ```
 
 Five deleted marketing PNGs are **deliberate** (§8A) — invented customer logos
@@ -959,10 +963,11 @@ scoped not to redesign.
 
 ---
 
-## 8D. Authentication UX milestone (5 Aug 2026)
+## 8D. Authentication UX milestone (5 Aug 2026) — CLOSED
 
-**Committed**, five commits, listed in §1. Browser-verified against real
-Supabase, including an actual password change and restoration (§8D, *Verified*).
+**Committed**, seven commits, listed in §1. Browser-verified against real
+Supabase, including an actual password change and an actual invite acceptance,
+both cleaned up afterwards (*Verified*, below).
 
 ### The three real failures it fixed
 
@@ -972,13 +977,13 @@ sign-in — and on the reset and invite screens, where a mistyped password is
 *saved* rather than rejected, there was no way to find it at all. That is an
 account someone is locked out of one minute after creating it.
 
-**2. `/auth/reset-password` rendered its form having verified nothing.** An
-expired link, a different device from the one that requested the reset, or a
-typed URL all produced a working form. The person chose a password, confirmed
-it, submitted, and only then learned there was no session to update — the
+**2. `/auth/reset-password` and `/auth/accept-invite` rendered their forms having
+verified nothing.** An expired link, a different device from the one that
+requested it, or a typed URL all produced a working form. The person filled it
+in, submitted, and only then learned there was no session to update — the
 failure arriving after the effort, phrased as a guess, with no way forward from
-the screen they were on. It also `router.replace('/home')`'d on success, so the
-only confirmation of a security-relevant change was arriving somewhere else.
+the screen they were on. Both also redirected on success, so the only
+confirmation of a security-relevant change was arriving somewhere else.
 
 **3. The two-step sign-in dropped the email input.** Step two replaced it with a
 chip, leaving a password form with no username field — which no password manager
@@ -992,6 +997,8 @@ will fill or offer to save.
 | `components/hirelens/auth/password-field.tsx` | the reveal toggle |
 | `components/hirelens/auth/password-requirements.tsx` | the live checklist |
 | `components/hirelens/auth/use-focus-on-mount.ts` | focus for in-place screen swaps |
+| `components/hirelens/auth/use-link-session.ts` | the emailed-link session check, shared by reset and invite |
+| `components/hirelens/auth/link-session-screens.tsx` | their shared `checking` and `expired` screens |
 
 `AuthField` gained a trailing-adornment slot and multi-target
 `aria-describedby`. `lib/auth-errors.ts` gained the account-creation and
@@ -1032,11 +1039,12 @@ afterwards is both wrong and unactionable.
 
 ### A race found while testing
 
-`getSession()` and the `PASSWORD_RECOVERY` event resolve in either order. When
-the SDK resolves a fragment-carried recovery link first, the in-flight
-`getSession` answers null — and taking that answer tore a working form down and
-told the person their *valid* link had expired. `getSession` can no longer
-downgrade a session another path already established. Pinned by a test.
+`getSession()` and the auth-state event resolve in either order. When the SDK
+resolves a fragment-carried link first, the in-flight `getSession` answers null
+— and taking that answer tore a working form down and told the person their
+*valid* link had expired. **`getSession` may confirm a session but may never
+retract one.** Now fixed once, in `useLinkSession`, for both screens. Pinned by
+a test on each.
 
 ### One false claim removed
 
@@ -1064,15 +1072,45 @@ reset with **and** without a session, `/auth/callback` with a bad recovery
 token, mobile 390 (no sideways scroll on any auth route; the toggle is a 44×44
 target inside the field), and a keyboard-only walk of sign-in.
 
-### Remaining, not done
+The invite flow was driven end to end on a **real Supabase invite**, minted with
+`admin.generateLink({ type: 'invite' })` — which returns the token without
+sending mail — to `qa.invite@hirelens.test`. 24 checks: the expired screen with
+no session, a bogus token refused at the callback, the real link recognised, the
+form gated until valid, the confirmation screen, signing in with the new
+credentials on a clean browser, and the link refused on replay. The account is
+deleted afterwards.
 
-**`/auth/accept-invite` has the same unvalidated-session bug the reset screen
-just had.** It renders its form without checking that the invite established a
-session, so an expired invite fails only after the name and password have been
-typed. It was outside this milestone's stated scope, so it received the reveal
-toggles, live validation and mapped errors but *not* the four-state session
-check. The fix is the `ResetForm` pattern applied verbatim — roughly ten lines.
-Worth doing next.
+### The invite screen, and why the pattern is now shared
+
+`/auth/accept-invite` had the identical unvalidated-session bug. It was fixed by
+**extracting** the reset screen's logic rather than copying it — copying is how
+the two came to differ in the first place.
+
+| | |
+|---|---|
+| `use-link-session.ts` | one read of the session behind an emailed link, one subscription, and one fix for the race between them |
+| `link-session-screens.tsx` | the shared `checking` spinner and `expired` screen |
+
+**`tests/auth-password-ux.test.tsx` asserts neither form contains
+`onAuthStateChange` and both import `useLinkSession`.** A future copy fails the
+suite rather than drifting silently. Keep that test.
+
+**Where invite diverges, deliberately:** an expired reset can be re-requested by
+the person standing there; an expired invite cannot — only an admin can reissue
+it. So that screen offers **no action button** and names who to ask, rather than
+dangling a control that would not work.
+
+### Two traps in testing these screens
+
+1. **`/You’re in/i` is a substring of "You’re invited."** A loose heading matcher
+   resolves against the *form's* heading and reports the confirmation screen as
+   rendered when it never was — which hid a real focus assertion behind a false
+   pass in both the unit test and the browser QA. Both match exactly now.
+2. **`localhost` and `127.0.0.1` are different cookie hosts.** `/auth/callback`
+   redirects to the origin `next start` was bound to, so a QA script that
+   requests one and is redirected to the other gets a session cookie it cannot
+   read, and every link flow looks broken. Not a product bug — but it costs an
+   hour every time. Drive local auth QA on `localhost`.
 
 ---
 
