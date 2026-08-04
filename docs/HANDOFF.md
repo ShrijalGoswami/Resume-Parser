@@ -1,6 +1,6 @@
 # HireLens — Engineering Handoff
 
-**Written:** 2 Aug 2026 · **Updated:** 4 Aug 2026 (product polish milestone) ·
+**Written:** 2 Aug 2026 · **Updated:** 5 Aug 2026 (AI discoverability milestone) ·
 **Replaces** the previous handoff entirely
 (recoverable at `git show e76df63:docs/HANDOFF.md`)
 
@@ -16,8 +16,11 @@ file you need to understand where the project stands.
 > credentials are valid** (§5A). Nothing further can be built against it, and
 > nothing is to be worked around.
 >
-> **Last updated:** 5 Aug 2026, after BILL-2 (grace sweep). Work resumes only
-> when Razorpay Subscriptions becomes available — §11.
+> **Last updated:** 5 Aug 2026, after the AI discoverability milestone (§8C).
+> The public surface is now machine-readable: robots, sitemap, canonicals,
+> structured data generated from the product catalog, and a generated
+> `/llms.txt` that states the product's own limitations. Billing work resumes
+> only when Razorpay Subscriptions becomes available — §11.
 
 ---
 
@@ -26,86 +29,46 @@ file you need to understand where the project stands.
 | | |
 |---|---|
 | **Branch** | `manus-ui-v1` |
-| **Latest commit** | `e76df63` — *feat(billing): Phase 4 Step 1 — schema foundation, and recover the founding rows* |
-| **Current milestone** | **PAUSED.** All work that does not need the gateway is done. Resumes when Razorpay Subscriptions is enabled (§5A, §11) |
+| **Latest commit** | `f7045d8` — *test(seo): pin the discoverability guarantees* |
+| **Working tree** | **clean** |
+| **Current milestone** | AI discoverability — **complete and committed** (§8C). Billing remains **PAUSED** on the gateway (§5A, §11) |
 | **Backend tests** | **493 passed** (measured 5 Aug 2026) |
-| **Frontend tests** | **363 passed**, 29 files (measured 5 Aug 2026) |
+| **Frontend tests** | **410 passed**, 30 files (measured 5 Aug 2026) |
 | **`tsc --noEmit`** | clean |
 | **`eslint .`** | **4 errors — all known debt** (§10) |
-| **`next build`** | succeeds; 28 routes |
+| **`next build`** | succeeds; 39 routes |
 
-> **On the test counts.** The previous revision of this document recorded 320
-> backend tests. The figure is now 335 and **no backend code changed** to produce
-> it: the working tree carries uncommitted copilot work
-> (`test_copilot_attribution.py`, `test_copilot_workspace_context.py`) that the
-> earlier count did not include. Frontend went 296 → 363 because the polish pass
-> added 67 assertions across 6 new files (§8A).
+> **On the test counts.** Frontend went 363 → 410: `tests/discoverability.test.ts`
+> is new (30) and `tests/proxy.test.ts` gained matcher-coverage assertions (17).
+> No backend code changed in this milestone, so 493 is unmoved.
 
-### Working tree — significant uncommitted work
+### Working tree
 
-**Billing Steps 2 and 3, the Phase 3 pricing experience, and the 4 Aug product
-polish pass are all written, tested and NOT COMMITTED.** Commit them before
-starting Step 4, or a Step 4 mistake becomes indistinguishable from them in the
-diff.
+**Clean.** Everything through the AI discoverability milestone is committed. The
+last sixteen commits of the billing and polish work landed earlier; the five
+commits of this milestone are:
 
 ```
- M backend/app/core/startup.py                      billing integrity on boot
- M backend/app/main.py                              /health?check=billing
- M backend/requirements.txt                         razorpay>=2.0.1
- M docs/BILLING_ARCHITECTURE.md                     paused-mapping correction
-?? backend/app/billing/                             domain + providers (Steps 2, 3)
-?? backend/tests/test_billing_domain.py             61 tests
-?? backend/tests/test_billing_invariants.py         27 tests
-?? backend/tests/test_billing_razorpay.py           77 tests
-?? backend/tests/test_copilot_*.py                  copilot work, unrelated
-?? backend/scripts/seed_qa_org.py                   unrelated
-                                                    ── Step 4 (4 Aug) ──
- M backend/app/core/startup.py                      + plan-binding boot check
- M backend/app/main.py                              + billing router
- M backend/tests/test_monetization_audit.py         billing routes classified
-?? backend/app/billing/repository.py                persistence
-?? backend/app/billing/service.py                   lifecycle
-?? backend/app/routes/billing.py                    HTTP surface
-?? backend/tests/test_billing_service.py            43 tests
-?? backend/tests/test_billing_repository.py         25 tests
-?? backend/tests/test_billing_routes.py             19 tests
-?? backend/tests/test_billing_boot_checks.py         8 tests
-
-?? resume-hero-section/app/(marketing)/pricing/     /pricing route
-?? resume-hero-section/app/(marketing)/terms/       ┐
-?? resume-hero-section/app/(marketing)/privacy/     │ legal pages (§8A)
-?? resume-hero-section/app/(marketing)/refunds/     │
-?? resume-hero-section/app/(marketing)/contact/     ┘
-?? resume-hero-section/components/marketing/legal/  shared policy shell
-?? resume-hero-section/components/marketing/pricing/
-?? resume-hero-section/lib/pricing.ts
-?? resume-hero-section/lib/legal.ts                 ← MUST BE FILLED IN (§8A)
-?? resume-hero-section/tests/pricing.test.tsx            51 tests
-?? resume-hero-section/tests/legal.test.ts               16 tests
-?? resume-hero-section/tests/marketing-claims.test.ts    13 tests
-?? resume-hero-section/tests/marketing-nav.test.tsx       7 tests
-?? resume-hero-section/tests/billing-section.test.tsx     8 tests
-?? resume-hero-section/tests/upload-rejection.test.ts    10 tests
- D resume-hero-section/public/marketing/logo-0{1..4}.png            fabricated
- D resume-hero-section/public/marketing/portrait-sarah-jenkins.png  fabricated
+7c0d20a fix(marketing): correct the semantics a machine reader actually sees
+11f35c9 feat(seo): describe HireLens to machines, generated from the product
+c5d0970 feat(seo): serve /llms.txt, security.txt and humans.txt
+d924625 perf(proxy): stop authenticating crawlers on public pages
+f7045d8 test(seo): pin the discoverability guarantees
 ```
 
-The five deleted PNGs are **deliberate** (§8A). They were invented customer
-logos and a stock portrait attached to a fabricated testimonial, and they stayed
-live at their public URLs after the markup stopped referencing them.
+Five deleted marketing PNGs are **deliberate** (§8A) — invented customer logos
+and a stock portrait attached to a fabricated testimonial, still live at their
+public URLs after the markup stopped referencing them.
 
-Also present: **122 deletions under `Manus Design/`**. Those are the **user's**
-deliberate deletions, unrelated to this work. Leave them alone.
+Also present in `git status`: **122 deletions under `Manus Design/`**. Those are
+the **user's** deliberate deletions, unrelated to this work. Leave them alone.
 
-> **This document itself is uncommitted, and that has already cost something.**
-> On 4 Aug a `git checkout -- docs/HANDOFF.md` — run to undo an encoding
-> mistake — discarded the entire 2 Aug revision, because HEAD still carries the
-> 1 Aug version. It was reconstructed from a full read taken earlier in the same
-> session. Commit this file.
->
-> Related: do **not** round-trip it through `Get-Content | Set-Content` on
-> Windows. PowerShell 5.1 reads UTF-8 as ANSI and writes it back double-encoded,
-> mangling every `—`, `é` and box-drawing character in the document.
+> **Do not round-trip this file through `Get-Content | Set-Content` on Windows.**
+> PowerShell 5.1 reads UTF-8 as ANSI and writes it back double-encoded, mangling
+> every `—`, `é` and box-drawing character in the document. On 4 Aug a
+> `git checkout --` run to undo exactly that mistake discarded an entire
+> uncommitted revision. Edit source files with the editor tool only; that same
+> corruption was reproduced a second time on 5 Aug on `pricing-faq.tsx`.
 
 ### Running it
 
@@ -870,9 +833,121 @@ unit-tested.
 
 The audit's P2 and P3 items were explicitly deferred. The ones most likely to be
 raised next: no mobile navigation in the product shell (§10, item 9), the
-`© 2024` footer, no sitemap/robots/OG images, the login page's "we'll check if
-your team uses SSO" which checks nothing, and signup surfacing raw Supabase
-error strings while login maps them.
+`© 2024` footer, the login page's "we'll check if your team uses SSO" which
+checks nothing, and signup surfacing raw Supabase error strings while login maps
+them. (Sitemap, robots and OG images were on this list and have since been done
+— §8C.)
+
+---
+
+## 8C. AI discoverability milestone (5 Aug 2026)
+
+**Committed**, five commits, listed in §1.
+
+### The problem it solved
+
+An AI system asked *"what should I use to screen résumés?"* had nothing to read.
+The marketing pages are written to persuade a human — a hero line, mock
+interfaces, animated frames — and stated nowhere what the product **is**, what
+it **costs**, or what it **refuses to do**. There was no `robots.txt`, no
+sitemap, no canonical, no structured data and no OG card. Worse, four
+**fabricated candidate cards** on the homepage were marked up as `<article>`,
+the element extractors treat as *this is the page's content* — a summariser came
+away with invented people rather than the product.
+
+### The one rule
+
+**Nothing is typed twice.** Every fact the machine layer publishes is read from
+the module that already decides it — `catalog.ts` for features and limits,
+`pricing.ts` for prices, `legal.ts` for the entity, the policies and the
+subprocessors. There is no hardcoded price or feature anywhere in `lib/seo/`,
+and a test asserts a price literal cannot be introduced.
+
+### What was built
+
+| | |
+|---|---|
+| `lib/seo/site.ts` | one source for the origin and the public route list; `robots.ts` and `sitemap.ts` are generated from it, so a new public page cannot exist in one and not the other |
+| `lib/seo/structured-data.ts` | JSON-LD assembled from the catalog, pricing and legal modules |
+| `lib/seo/llms-txt.ts` | `/llms.txt`, generated — see below |
+| `lib/seo/og-image.tsx` | the OG card, copy = `SERVICE_DESCRIPTION` |
+| `components/seo/` | the blocks each page mounts; `JsonLd` escapes `<` so content cannot break out of `<script>` |
+| `app/{robots,sitemap}.ts` | generated |
+| `app/llms.txt`, `app/humans.txt`, `app/.well-known/security.txt` | route handlers, all prerendered static |
+
+Plus: `metadataBase` and Open Graph defaults sitewide, a canonical on every
+public page, `noindex` on `/auth`, and the semantic corrections (`<article>` →
+`<div>`, `aria-hidden` on every icon span, `<header>` around the nav, an
+`sr-only h2` closing an h1→h3 jump on `/pricing`).
+
+### What is deliberately NOT emitted
+
+- **`AggregateRating`, `Review`** — there are no customers. Emitting either is
+  the schema equivalent of a fabricated testimonial.
+- **`JobPosting`** — HireLens *reads* job descriptions; it does not publish them.
+  A crawler that believed otherwise would index the product as a job board.
+- **`Organization`, `Offer`** — gated behind `LEGAL_ENTITY_CONFIRMED`, which is
+  still `false`. `organizationSchema()` returns `null` and `graph()` drops nulls,
+  so the published graph degrades to exactly what is true today.
+- **`SoftwareApplication` is ungated** — it describes the software, not the legal
+  entity, and every claim in it is read from the catalog.
+
+### `/llms.txt` — the limitations section is the point
+
+It states, in the file's own words, that HireLens is **not an ATS**, **not an
+autonomous screener** and **not a sourcing tool** — the three things a
+summariser would otherwise guess. Then: no ATS integrations, no published bias
+audit, no security certification, one data region, INR-only checkout, monthly
+billing only, and self-serve checkout not live. While `LEGAL_ENTITY_CONFIRMED`
+is false it also says the policies are drafts.
+
+A product that states its own constraints is easier to recommend accurately than
+one that has to be caught out. All of it is generated, so a capability cannot be
+advertised here that the server would refuse.
+
+### The proxy fix
+
+The matcher was a negative lookahead excluding `_next` and static assets, so
+every marketing page, legal page and agent file paid for a Supabase session
+lookup — to guard nothing. It is a **positive list** of guarded routes now.
+`/robots.txt` and `/llms.txt` now serve in **11–28 ms**; the HTML pages still
+measure 75–190 ms, which is page weight, not the proxy.
+
+The hazard this creates: a new protected route added without touching the list
+ships **unguarded**. `tests/proxy.test.ts` asserts the matcher covers every entry
+in `V4_PROTECTED`, `V4_AUTH_REDIRECT` and `LEGACY_AUTH_ROUTES` and matches none
+of the public pages, so that failure is a red test.
+
+### Two traps worth knowing
+
+1. **A page that declares its own `openGraph` block stops inheriting the
+   file-convention OG image** from an ancestor segment. No build warning, no type
+   error — `og:image` simply vanishes. Every public route re-exports
+   `lib/seo/og-image.tsx` from its own `opengraph-image.tsx`, and a test asserts
+   the file exists for each route in `PUBLIC_ROUTES`. This regressed twice.
+2. **Importing a value out of a `'use client'` module into a server component**
+   yields a client reference proxy, not the value. The pricing FAQ answers moved
+   to `lib/marketing/pricing-faqs.ts` so the schema builder and the rendered
+   accordion read the same plain module; the failure surfaced only at prerender.
+
+### Verified in a real browser
+
+Playwright, JS disabled, against `next start`. All six public pages: JSON-LD
+parses, canonical correct, `og:image` resolves, one `<header>`, zero
+`<article>` on the homepage, no heading jump, the string `UNCONFIRMED` absent.
+`/auth/login` and `/auth/signup` serve `noindex, follow`. All five agent files
+serve 200 and prerender static. Accessible names checked via `ariaSnapshot` —
+no icon ligature reaches one.
+
+### Remaining, not done
+
+Icon ligatures (`arrow_forward`, `auto_awesome`) are still in the DOM as text
+nodes on `/` and `/pricing`. `aria-hidden` removes them from accessible names
+and from assistive tech, which is the standard mitigation, but a naive
+`innerText`-based extractor still sees them. Eliminating them means moving the
+glyph into `::before { content: attr(data-icon) }` across ~16 call sites —
+deliberately not done, as it touches rendering on pages this milestone was
+scoped not to redesign.
 
 ---
 
