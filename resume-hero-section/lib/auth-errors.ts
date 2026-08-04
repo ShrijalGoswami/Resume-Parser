@@ -39,6 +39,33 @@ const PATTERNS: ReadonlyArray<[RegExp, string]> = [
     /user not found/i,
     'That email and password don’t match. Check both and try again.',
   ],
+  // ── Account creation and password change ────────────────────────────────
+  [
+    /user already registered|already been registered/i,
+    'That email already has an account. Sign in instead, or reset your password.',
+  ],
+  [
+    // Supabase's own wording names the constraint but not the remedy, and it
+    // varies with the project's password policy — which this client cannot
+    // read. Deferring to the server's requirement rather than restating a
+    // number that may be wrong. See `lib/password-policy.ts`.
+    /password should be at least|password is too short|weak.?password|password should contain/i,
+    'That password doesn’t meet the requirements. Try a longer one with a mix of characters.',
+  ],
+  [
+    /new password should be different|same.*(as|to).*(old|current) password/i,
+    'That’s already your password. Choose a different one.',
+  ],
+  [
+    // The recovery session is gone: expired link, a link already spent, or a
+    // reset opened on a different device from the one that requested it.
+    /session.?not.?found|invalid.?claim|jwt expired|token has expired|refresh.?token.?not.?found/i,
+    'That link has expired. Request a new one and try again.',
+  ],
+  [
+    /email address.*invalid|unable to validate email/i,
+    'That doesn’t look like an email address we can send to.',
+  ],
   [
     /network|fetch failed|failed to fetch/i,
     'We couldn’t reach HireLens. Check your connection and try again.',
