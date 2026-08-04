@@ -3,14 +3,16 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowRight, Loader2 } from 'lucide-react'
-import { getSupabaseBrowserClient, isSupabaseConfigured } from '@/lib/supabase/client'
+import { ArrowRight } from 'lucide-react'
+import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import { authErrorMessage } from '@/lib/auth-errors'
 import { confirmError, isPasswordAcceptable } from '@/lib/password-policy'
 import { Button } from '../ui/button'
 import { PasswordField } from './password-field'
 import { PasswordRequirements } from './password-requirements'
+import { CheckingLink, LinkExpired } from './link-session-screens'
 import { useFocusOnMount } from './use-focus-on-mount'
+import { useLinkSession } from './use-link-session'
 
 /**
  * Reset password — set a new password on the recovery session.
@@ -27,9 +29,8 @@ import { useFocusOnMount } from './use-focus-on-mount'
  * So the session is now established BEFORE the form exists, and the four states
  * are explicit:
  *
- *   checking → is there a recovery session? (Supabase's callback set the
- *              cookies; this reads them, and also listens for PASSWORD_RECOVERY
- *              in case the SDK resolves the link after we mount)
+ *   checking → is there a recovery session? (`useLinkSession`, shared with the
+ *              invite screen, which had the identical bug)
  *   invalid  → say so immediately, and put "request a new link" on the screen
  *   ready    → the form
  *   done     → a success screen, not a silent redirect
@@ -44,19 +45,13 @@ import { useFocusOnMount } from './use-focus-on-mount'
  * they are already authenticated, and `updateUser` is exactly as safe for them.
  * ─────────────────────────────────────────────────────────────────────────────
  */
-type Phase = 'checking' | 'invalid' | 'ready' | 'done'
-
 export function ResetForm() {
   const router = useRouter()
-  const configured = isSupabaseConfigured()
+  // `email` is carried into the hidden username field below so a password
+  // manager has an account to attach the new credential to.
+  const { status, email: accountEmail, configured } = useLinkSession()
 
-  // Seeded rather than set from the effect: with Supabase unconfigured there is
-  // nothing to check, and starting at 'checking' only to correct it on the first
-  // commit is a cascading render for a value known before the first one.
-  const [phase, setPhase] = React.useState<Phase>(configured ? 'checking' : 'invalid')
-  // Read off the recovery session purely so a password manager has an account
-  // to attach the new credential to — see the hidden username field below.
-  const [accountEmail, setAccountEmail] = React.useState('')
+  const [done, setDone] = React.useState(false)
   const [password, setPassword] = React.useState('')
   const [confirm, setConfirm] = React.useState('')
   const [touched, setTouched] = React.useState(false)
@@ -65,44 +60,7 @@ export function ResetForm() {
   const [error, setError] = React.useState<string | null>(null)
 
   const passwordRef = React.useRef<HTMLInputElement>(null)
-  const doneHeadingRef = useFocusOnMount<HTMLHeadingElement>(phase === 'done')
-  const invalidHeadingRef = useFocusOnMount<HTMLHeadingElement>(phase === 'invalid')
-
-  // ── Establish the session before offering the form ──────────────────────
-  React.useEffect(() => {
-    if (!configured) return
-    const supabase = getSupabaseBrowserClient()
-    let cancelled = false
-
-    // PASSWORD_RECOVERY fires when the SDK itself resolves a recovery link.
-    // Our /auth/callback route normally handles that server-side, but a link
-    // opened in a client that carries the token in the URL fragment resolves
-    // here instead, and it can land after this effect has already read a null
-    // session. Subscribing first means neither ordering loses.
-    const { data: subscription } = supabase.auth.onAuthStateChange((event, session) => {
-      if (cancelled) return
-      if (event === 'PASSWORD_RECOVERY' || session) {
-        if (session?.user?.email) setAccountEmail(session.user.email)
-        setPhase('ready')
-      }
-    })
-
-    supabase.auth.getSession().then(({ data }) => {
-      if (cancelled) return
-      if (data.session?.user?.email) setAccountEmail(data.session.user.email)
-      // MUST NOT DOWNGRADE. These two resolve in either order, and when the SDK
-      // resolves a fragment-carried recovery link first, this call was started
-      // before that session existed and answers null. Taking that answer would
-      // tear a working form down and tell the person their link had expired
-      // while they were holding a valid one.
-      setPhase((current) => (current === 'ready' ? 'ready' : data.session ? 'ready' : 'invalid'))
-    })
-
-    return () => {
-      cancelled = true
-      subscription.subscription.unsubscribe()
-    }
-  }, [configured])
+  const doneHeadingRef = useFocusOnMount<HTMLHeadingElement>(done)
 
   const mismatch = confirmError(password, confirm)
   const canSubmit = isPasswordAcceptable(password) && !mismatch && confirm.length > 0
@@ -124,7 +82,7 @@ export function ResetForm() {
       const supabase = getSupabaseBrowserClient()
       const { error: updateError } = await supabase.auth.updateUser({ password })
       if (updateError) throw updateError
-      setPhase('done')
+      setDone(true)
     } catch (err) {
       setError(
         authErrorMessage(err, 'We couldn’t change your password. Request a new link and try again.'),
@@ -134,46 +92,37 @@ export function ResetForm() {
   }
 
   // ── checking ────────────────────────────────────────────────────────────
-  if (phase === 'checking') {
-    return (
-      <div className="flex flex-col gap-4" role="status" aria-live="polite">
-        <Loader2 className="size-5 animate-spin text-hl-fg-tertiary" aria-hidden />
-        <p className="hl-body text-hl-fg-secondary">Checking your reset link…</p>
-      </div>
-    )
+  // `done` is checked first so the confirmation survives the moment after the
+  // password changes, when the session it was validated against is refreshed.
+  if (!done && status === 'checking') {
+    return <CheckingLink label="Checking your reset link…" />
   }
 
   // ── invalid ─────────────────────────────────────────────────────────────
-  if (phase === 'invalid') {
+  if (!done && status === 'invalid') {
     return (
-      <div className="flex flex-col gap-4">
-        <h1 ref={invalidHeadingRef} tabIndex={-1} className="hl-display-md outline-none">
-          This link has expired.
-        </h1>
-        <p className="hl-body text-hl-fg-secondary">
-          {configured
-            ? 'Reset links can only be used once, and they stop working after a while. Request a new one and we’ll email it straight away.'
-            : 'Password reset isn’t configured yet.'}
-        </p>
-        {configured ? (
-          <Button asChild variant="primary" size="lg" className="w-full">
-            <Link href="/auth/forgot-password">
-              Request a new link
-              <ArrowRight />
-            </Link>
-          </Button>
-        ) : null}
-        <p className="hl-body text-hl-fg-tertiary">
-          <Link href="/auth/login" className="text-hl-accent-fg outline-none hover:underline">
-            Back to sign in
-          </Link>
-        </p>
-      </div>
+      <LinkExpired
+        title="This link has expired."
+        action={
+          configured ? (
+            <Button asChild variant="primary" size="lg" className="w-full">
+              <Link href="/auth/forgot-password">
+                Request a new link
+                <ArrowRight />
+              </Link>
+            </Button>
+          ) : null
+        }
+      >
+        {configured
+          ? 'Reset links can only be used once, and they stop working after a while. Request a new one and we’ll email it straight away.'
+          : 'Password reset isn’t configured yet.'}
+      </LinkExpired>
     )
   }
 
   // ── done ────────────────────────────────────────────────────────────────
-  if (phase === 'done') {
+  if (done) {
     return (
       <div className="flex flex-col gap-4">
         <h1 ref={doneHeadingRef} tabIndex={-1} className="hl-display-md outline-none">
