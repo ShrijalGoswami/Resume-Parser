@@ -50,6 +50,7 @@ import { PasswordRequirements } from '../components/hirelens/auth/password-requi
 import { ResetForm } from '../components/hirelens/auth/reset-form'
 import { ForgotForm } from '../components/hirelens/auth/forgot-form'
 import { LoginForm } from '../components/hirelens/auth/login-form'
+import { AcceptInviteForm } from '../components/hirelens/auth/accept-form'
 
 /** A subscription handle shaped like Supabase's, that never fires. */
 const idleSubscription = { data: { subscription: { unsubscribe: () => {} } } }
@@ -239,6 +240,145 @@ describe('reset password — session validation', () => {
     expect(username).toHaveValue('jane@acme.com')
     // Must not be type=hidden — managers skip hidden inputs.
     expect(username).toHaveAttribute('type', 'text')
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * The invite screen runs the SAME state machine on the SAME hook. These are not
+ * duplicated assertions for their own sake: the reason the logic was extracted
+ * is that the two screens must not drift, and a test that only covers one of
+ * them would not notice if they did.
+ */
+describe('accept invite — session validation', () => {
+  it('checks for a session before asking for a name or a password', async () => {
+    let resolve!: (v: unknown) => void
+    auth.getSession.mockReturnValue(new Promise((r) => (resolve = r)))
+    render(<AcceptInviteForm />)
+
+    expect(screen.queryByLabelText('Full name')).not.toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent(/checking your invite/i)
+
+    resolve({ data: { session: { user: { email: 'new@acme.com' } } } })
+    await waitFor(() => expect(screen.getByLabelText('Full name')).toBeInTheDocument())
+  })
+
+  it('refuses an expired invite before any effort is spent', async () => {
+    auth.getSession.mockResolvedValue({ data: { session: null } })
+    render(<AcceptInviteForm />)
+
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: /this invite has expired/i })).toBeInTheDocument(),
+    )
+    expect(screen.queryByLabelText('Full name')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Password')).not.toBeInTheDocument()
+    expect(auth.updateUser).not.toHaveBeenCalled()
+  })
+
+  it('offers no self-serve action, because there is none', async () => {
+    // An expired reset can be re-requested by the person standing there. An
+    // expired invite can only be reissued by an admin — a button here would be
+    // a control that cannot work.
+    auth.getSession.mockResolvedValue({ data: { session: null } })
+    render(<AcceptInviteForm />)
+    await waitFor(() => screen.getByRole('heading', { name: /this invite has expired/i }))
+
+    expect(screen.queryByRole('link', { name: /request a new/i })).not.toBeInTheDocument()
+    expect(screen.getByText(/ask whoever invited you/i)).toBeInTheDocument()
+    // The way back out is still offered.
+    expect(screen.getByRole('link', { name: /back to sign in/i })).toHaveAttribute(
+      'href',
+      '/auth/login',
+    )
+  })
+
+  it('survives the same getSession / auth-event race the reset screen had', async () => {
+    auth.getSession.mockResolvedValue({ data: { session: null } })
+    let fire!: (e: string, s: unknown) => void
+    auth.onAuthStateChange.mockImplementation((cb: (e: string, s: unknown) => void) => {
+      fire = cb
+      return idleSubscription
+    })
+    render(<AcceptInviteForm />)
+    act(() => fire('SIGNED_IN', { user: { email: 'new@acme.com' } }))
+    await waitFor(() => expect(screen.getByLabelText('Full name')).toBeInTheDocument())
+    // The in-flight null must not tear the form down.
+    expect(screen.getByLabelText('Full name')).toBeInTheDocument()
+  })
+
+  it('confirms on screen instead of redirecting into the product', async () => {
+    auth.getSession.mockResolvedValue({ data: { session: { user: { email: 'new@acme.com' } } } })
+    auth.updateUser.mockResolvedValue({ error: null })
+    render(<AcceptInviteForm />)
+    await waitFor(() => screen.getByLabelText('Full name'))
+
+    fireEvent.change(screen.getByLabelText('Full name'), { target: { value: 'Jane Recruiter' } })
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'Abcdefg1!' } })
+    fireEvent.change(screen.getByLabelText('Confirm password'), { target: { value: 'Abcdefg1!' } })
+    fireEvent.click(screen.getByRole('button', { name: /join hirelens/i }))
+
+    // EXACT. "You’re in." is a substring of "You’re invited.", so a loose
+    // matcher here resolves against the form's own heading and the test passes
+    // without the confirmation screen ever rendering — which is exactly what
+    // happened to the browser QA before this was caught.
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: 'You’re in.' })).toBeInTheDocument(),
+    )
+    expect(screen.queryByLabelText('Full name')).not.toBeInTheDocument()
+    expect(router.replace).not.toHaveBeenCalled()
+    expect(auth.updateUser).toHaveBeenCalledWith({
+      password: 'Abcdefg1!',
+      data: { full_name: 'Jane Recruiter' },
+    })
+  })
+
+  it('carries the invited address for the password manager', async () => {
+    auth.getSession.mockResolvedValue({ data: { session: { user: { email: 'new@acme.com' } } } })
+    const { container } = render(<AcceptInviteForm />)
+    await waitFor(() => screen.getByLabelText('Full name'))
+
+    const username = container.querySelector('input[autocomplete="username"]')
+    expect(username).toHaveValue('new@acme.com')
+    expect(username).toHaveAttribute('type', 'text')
+  })
+
+  it('will not submit an incomplete or mismatched form', async () => {
+    auth.getSession.mockResolvedValue({ data: { session: { user: { email: 'new@acme.com' } } } })
+    render(<AcceptInviteForm />)
+    await waitFor(() => screen.getByLabelText('Full name'))
+
+    const join = screen.getByRole('button', { name: /join hirelens/i })
+    expect(join).toBeDisabled()
+
+    fireEvent.change(screen.getByLabelText('Full name'), { target: { value: 'Jane' } })
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'Abcdefg1!' } })
+    fireEvent.change(screen.getByLabelText('Confirm password'), { target: { value: 'Abcdefg2!' } })
+    expect(join).toBeDisabled()
+
+    fireEvent.change(screen.getByLabelText('Confirm password'), { target: { value: 'Abcdefg1!' } })
+    expect(join).toBeEnabled()
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe('the link-session pattern is shared, not copied', () => {
+  it('both link screens import the same hook', async () => {
+    // The whole point of the extraction. If either screen grows its own copy of
+    // the getSession/auth-event dance, the race gets fixed in one place and not
+    // the other — which is exactly how the invite screen came to be broken
+    // after the reset screen was fixed.
+    const { readFileSync } = await import('node:fs')
+    const { resolve } = await import('node:path')
+    for (const file of [
+      'components/hirelens/auth/reset-form.tsx',
+      'components/hirelens/auth/accept-form.tsx',
+    ]) {
+      const source = readFileSync(resolve(process.cwd(), file), 'utf-8')
+      expect(source, `${file} must use the shared hook`).toMatch(/useLinkSession/)
+      expect(source, `${file} must not re-implement the session read`).not.toMatch(
+        /onAuthStateChange/,
+      )
+    }
   })
 })
 
