@@ -1,6 +1,6 @@
 # HireLens — Engineering Handoff
 
-**Written:** 2 Aug 2026 · **Updated:** 5 Aug 2026 (AI discoverability milestone) ·
+**Written:** 2 Aug 2026 · **Updated:** 5 Aug 2026 (authentication UX milestone) ·
 **Replaces** the previous handoff entirely
 (recoverable at `git show e76df63:docs/HANDOFF.md`)
 
@@ -16,11 +16,11 @@ file you need to understand where the project stands.
 > credentials are valid** (§5A). Nothing further can be built against it, and
 > nothing is to be worked around.
 >
-> **Last updated:** 5 Aug 2026, after the AI discoverability milestone (§8C).
-> The public surface is now machine-readable: robots, sitemap, canonicals,
-> structured data generated from the product catalog, and a generated
-> `/llms.txt` that states the product's own limitations. Billing work resumes
-> only when Razorpay Subscriptions becomes available — §11.
+> **Last updated:** 5 Aug 2026, after the authentication UX milestone (§8D) —
+> passwords can be revealed, the reset flow validates its session before
+> offering a form, and the auth surface stopped claiming a SOC 2 audit it does
+> not have. Preceded by AI discoverability (§8C). Billing work resumes only when
+> Razorpay Subscriptions becomes available — §11.
 
 ---
 
@@ -29,31 +29,39 @@ file you need to understand where the project stands.
 | | |
 |---|---|
 | **Branch** | `manus-ui-v1` |
-| **Latest commit** | `f7045d8` — *test(seo): pin the discoverability guarantees* |
+| **Latest commit** | `ad5c358` — *test(auth): pin the authentication UX guarantees* |
 | **Working tree** | **clean** |
-| **Current milestone** | AI discoverability — **complete and committed** (§8C). Billing remains **PAUSED** on the gateway (§5A, §11) |
+| **Current milestone** | Authentication UX — **complete and committed** (§8D). Billing remains **PAUSED** on the gateway (§5A, §11) |
 | **Backend tests** | **493 passed** (measured 5 Aug 2026) |
-| **Frontend tests** | **410 passed**, 30 files (measured 5 Aug 2026) |
+| **Frontend tests** | **442 passed**, 32 files (measured 5 Aug 2026) |
 | **`tsc --noEmit`** | clean |
 | **`eslint .`** | **4 errors — all known debt** (§10) |
 | **`next build`** | succeeds; 39 routes |
 
-> **On the test counts.** Frontend went 363 → 410: `tests/discoverability.test.ts`
-> is new (30) and `tests/proxy.test.ts` gained matcher-coverage assertions (17).
-> No backend code changed in this milestone, so 493 is unmoved.
+> **On the test counts.** Frontend went 363 → 410 → 442. The discoverability
+> milestone added `tests/discoverability.test.ts` (30) and matcher-coverage
+> assertions in `tests/proxy.test.ts` (17); the auth milestone added
+> `tests/password-policy.test.ts` (9) and `tests/auth-password-ux.test.tsx`
+> (22). No backend code changed in either, so 493 is unmoved.
 
 ### Working tree
 
-**Clean.** Everything through the AI discoverability milestone is committed. The
-last sixteen commits of the billing and polish work landed earlier; the five
-commits of this milestone are:
+**Clean.** Everything through the authentication UX milestone is committed.
 
 ```
+                                                    ── AI discoverability (§8C) ──
 7c0d20a fix(marketing): correct the semantics a machine reader actually sees
 11f35c9 feat(seo): describe HireLens to machines, generated from the product
 c5d0970 feat(seo): serve /llms.txt, security.txt and humans.txt
 d924625 perf(proxy): stop authenticating crawlers on public pages
 f7045d8 test(seo): pin the discoverability guarantees
+993b1ea docs: record the AI discoverability milestone, and correct §1
+                                                    ── Authentication UX (§8D) ──
+23c22a4 feat(auth): a password you can read back, and a rule you can see
+3e71f23 fix(auth): validate the recovery session before offering the reset form
+1b74dd1 feat(auth): finish the sign-in, sign-up, forgot and invite screens
+b7d4b66 fix(auth): stop claiming a SOC 2 audit on the sign-up screen
+ad5c358 test(auth): pin the authentication UX guarantees
 ```
 
 Five deleted marketing PNGs are **deliberate** (§8A) — invented customer logos
@@ -948,6 +956,123 @@ and from assistive tech, which is the standard mitigation, but a naive
 glyph into `::before { content: attr(data-icon) }` across ~16 call sites —
 deliberately not done, as it touches rendering on pages this milestone was
 scoped not to redesign.
+
+---
+
+## 8D. Authentication UX milestone (5 Aug 2026)
+
+**Committed**, five commits, listed in §1. Browser-verified against real
+Supabase, including an actual password change and restoration (§8D, *Verified*).
+
+### The three real failures it fixed
+
+**1. Every password field was write-only.** No reveal control anywhere. On a
+phone, with a mixed-case password, the only way to find a typo was to fail the
+sign-in — and on the reset and invite screens, where a mistyped password is
+*saved* rather than rejected, there was no way to find it at all. That is an
+account someone is locked out of one minute after creating it.
+
+**2. `/auth/reset-password` rendered its form having verified nothing.** An
+expired link, a different device from the one that requested the reset, or a
+typed URL all produced a working form. The person chose a password, confirmed
+it, submitted, and only then learned there was no session to update — the
+failure arriving after the effort, phrased as a guess, with no way forward from
+the screen they were on. It also `router.replace('/home')`'d on success, so the
+only confirmation of a security-relevant change was arriving somewhere else.
+
+**3. The two-step sign-in dropped the email input.** Step two replaced it with a
+chip, leaving a password form with no username field — which no password manager
+will fill or offer to save.
+
+### What was built
+
+| | |
+|---|---|
+| `lib/password-policy.ts` | what blocks and what is advice — pure, no React, no Supabase |
+| `components/hirelens/auth/password-field.tsx` | the reveal toggle |
+| `components/hirelens/auth/password-requirements.tsx` | the live checklist |
+| `components/hirelens/auth/use-focus-on-mount.ts` | focus for in-place screen swaps |
+
+`AuthField` gained a trailing-adornment slot and multi-target
+`aria-describedby`. `lib/auth-errors.ts` gained the account-creation and
+password-change cases.
+
+### The rule that must not be broken
+
+**The client refuses exactly what the server refuses, and no more.** The
+blocking rule is eight characters, which is what `minLength` already enforced —
+this milestone did *not* tighten the policy. Case and digit variety are shown
+and are never fatal.
+
+A client-side rule the server does not share rejects passwords that would have
+worked, and on a reset screen that locks someone out of their own account over a
+rule nobody agreed to. `tests/password-policy.test.ts` asserts that exactly one
+rule carries `required: true`; marking another one required fails the suite on
+purpose. **If the Supabase dashboard policy is ever tightened, change it there
+first, then here** — the forms render whatever the module returns.
+
+There is deliberately **no requirement checklist on sign-in**. That password
+already exists, and telling someone their correct password fails a rule invented
+afterwards is both wrong and unactionable.
+
+### Accessibility decisions worth keeping
+
+- The toggle is named for the **action** ("Show password"), with `aria-pressed`
+  carrying the state and `aria-controls` naming the field. A button named for
+  its state is ambiguous about what pressing it will do.
+- Each checklist item carries visually-hidden "met" / "not met" text. The state
+  never depends on telling a green tick from a grey ring.
+- The list is `aria-live="polite"`, so a satisfied rule is announced as it is
+  satisfied — polite so it does not interrupt the character echo of the field.
+- Every form is `noValidate`. The browser's own bubble ("Please lengthen this
+  text to 8 characters or more") is in the browser's voice, is not announced to
+  a screen reader, and vanishes on the next keystroke.
+- Screens that swap in place move focus to the new heading. None of those
+  transitions is a navigation, so focus was falling to `<body>`.
+
+### A race found while testing
+
+`getSession()` and the `PASSWORD_RECOVERY` event resolve in either order. When
+the SDK resolves a fragment-carried recovery link first, the in-flight
+`getSession` answers null — and taking that answer tore a working form down and
+told the person their *valid* link had expired. `getSession` can no longer
+downgrade a session another path already established. Pinned by a test.
+
+### One false claim removed
+
+Every auth page carried **"SOC 2 Type II · SSO · your data stays yours."** The
+first of those is false — `/privacy` says "We hold no security certification at
+this time", and `/llms.txt` lists it under the product's limitations. The
+identical claim was deleted from the homepage trust strip as fabricated; this
+copy survived only because it lives on the auth surface, where it was doing its
+work on the one screen where a stranger decides whether to hand over an email
+and a password. Now: "SSO · encrypted in transit · your data stays yours."
+
+### Verified
+
+Playwright against `next start`, 47 checks on the anonymous flows plus 17
+against a real session using the `scripts.seed_qa_org` account
+(`qa.browser@hirelens.test`, a reserved RFC 6761 domain that cannot receive
+mail). The live pass **actually changed the password**, signed in with the new
+one on a clean browser context, then restored the seeded value and re-verified
+it — the QA account is left exactly as found.
+
+Covered: reveal toggle (masking, relabelling, caret preserved across the type
+swap, keyboard operation, cannot submit its form), live requirements, forgot
+password (validation → loading → success → cooldown → mapped rate limit),
+reset with **and** without a session, `/auth/callback` with a bad recovery
+token, mobile 390 (no sideways scroll on any auth route; the toggle is a 44×44
+target inside the field), and a keyboard-only walk of sign-in.
+
+### Remaining, not done
+
+**`/auth/accept-invite` has the same unvalidated-session bug the reset screen
+just had.** It renders its form without checking that the invite established a
+session, so an expired invite fails only after the name and password have been
+typed. It was outside this milestone's stated scope, so it received the reveal
+toggles, live validation and mapped errors but *not* the four-state session
+check. The fix is the `ResetForm` pattern applied verbatim — roughly ten lines.
+Worth doing next.
 
 ---
 
