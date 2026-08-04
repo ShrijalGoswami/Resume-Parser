@@ -106,14 +106,25 @@ export function Frame01Hero() {
                 </a>
               </div>
 
+              {/* WHAT THIS LINE MAY SAY.
+                  It read "Trusted by teams hiring at scale · Vertex · Nexus ·
+                  Omni". None of those three companies exists as a customer —
+                  HireLens has no reference customers at all yet — so the line
+                  was an invented endorsement in the most prominent position on
+                  the site.
+
+                  The slot is kept because the hero needs a third beat under the
+                  CTAs, but it now states a property of the PRODUCT, which is
+                  checkable, rather than a claim about who uses it, which was
+                  not. Nothing goes back in here until there is a customer who
+                  has agreed in writing to be named. */}
               <div className="mkt-fade-in-up mkt-delay-300 pt-12">
                 <p className="mkt-data font-medium uppercase tracking-widest text-mkt-dark-fg-variant opacity-60">
                   {/* The spaces around each separator are significant — the
                       frame has them either side of the `mx-2` dot. */}
-                  Trusted by teams hiring at scale{' '}
-                  <span className="mx-2">·</span> Vertex{' '}
-                  <span className="mx-2">·</span> Nexus{' '}
-                  <span className="mx-2">·</span> Omni
+                  Every claim opens to its evidence{' '}
+                  <span className="mx-2">·</span> Every decision reversible{' '}
+                  <span className="mx-2">·</span> Nothing left unread
                 </p>
               </div>
             </div>

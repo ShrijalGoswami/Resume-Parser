@@ -1,6 +1,6 @@
 'use client'
 
-import { Counter, Reveal } from './motion'
+import { Reveal } from './motion'
 
 /**
  * Frame 2 — `hirelens_marketing_the_philosophy_frame_2`.
@@ -12,24 +12,58 @@ import { Counter, Reveal } from './motion'
  *   display-xl 4rem/1.1 (-0.03em) · display-md 2.5rem/1.2 (-0.02em)
  *   body-lg 1.125rem/1.75rem · container-max 1200px · manifesto 680px
  *
- * Note frame 2's `ink` is #121414 (not the #0B0D0D used by frames 4–5); the
+ * Note frame 2's `ink` is --mkt-dark-bg (not the deeper --mkt-ink of frames 4–5); the
  * Stakes band is deliberately the lighter of the two inks.
  */
 
-const CUSTOMER_LOGOS = [
-  { src: '/marketing/logo-01.png', alt: 'Vertex', className: '' },
-  { src: '/marketing/logo-02.png', alt: 'Nexus', className: 'hidden sm:block' },
-  { src: '/marketing/logo-03.png', alt: 'Omni', className: '' },
-  { src: '/marketing/logo-04.png', alt: 'Meridian', className: 'hidden md:block' },
-]
+/**
+ * WHAT THIS SECTION USED TO BE, AND WHY IT IS NOT THAT ANY MORE.
+ *
+ * It carried four customer logos (Vertex, Nexus, Omni, Meridian — as real PNG
+ * files), a quote attributed to a "Head of Talent, Vertex", and four animated
+ * outcome counters: −38% time-to-decision, 4.1× more of the pile reviewed, 100%
+ * of decisions with evidence, and zero regretted hires over two quarters.
+ *
+ * Not one of those companies is a customer. Not one of those numbers was
+ * measured. HireLens has three recruiters across two real organizations and has
+ * never processed a payment, so the entire band was an invented endorsement —
+ * a deceptive-endorsement exposure under the FTC guides and, for the market
+ * these prices are set in, under the CCPA 2019 misleading-advertisement
+ * provisions.
+ *
+ * The section keeps its `#customers` id (the nav and two CTAs target it) and
+ * its shape: a statement, then a four-up grid supporting it. What changed is
+ * that every figure in the grid is now a PROPERTY OF THE ANALYSIS — true of
+ * every run, checkable by anyone with an account, and derived from how the
+ * product actually works rather than from a customer we do not have.
+ *
+ * NOTHING GOES BACK IN HERE without a named customer who has agreed in writing
+ * to be quoted, and a number somebody actually measured.
+ */
 
-/** The outcome numbers behind the pull quote. A testimonial with one metric
- *  reads as a line someone was talked into; four make it a result. */
-const CUSTOMER_RESULTS = [
-  { value: 38, prefix: '−', suffix: '%', label: 'Time to decision' },
-  { value: 4.1, decimals: 1, suffix: '×', label: 'More of the pile reviewed' },
-  { value: 100, suffix: '%', label: 'Decisions with evidence' },
-  { value: 0, label: 'Regretted hires, 2 qtrs' },
+/** What the instrument guarantees on every run. Each is a design property of
+ *  the product, not an outcome claimed on someone's behalf. */
+const ANALYSIS_PROPERTIES = [
+  {
+    value: 'Every',
+    label: 'Résumé read in full',
+    detail: 'No keyword pre-filter decides who gets looked at.',
+  },
+  {
+    value: 'Every',
+    label: 'Claim linked to its source',
+    detail: 'Each statement opens to the passage it came from.',
+  },
+  {
+    value: 'Both',
+    label: 'Directions of regret priced',
+    detail: 'What you lose by choosing either candidate, not just the winner.',
+  },
+  {
+    value: '30 days',
+    label: 'Every decision reversible',
+    detail: 'Logged, attributable, and reopenable.',
+  },
 ]
 
 /** The Stakes band: the arithmetic of one wrong senior hire, so the claim in
@@ -73,52 +107,31 @@ export function Frame02Philosophy() {
       >
         <div className="mb-16 h-px w-full bg-mkt-border-subtle" />
 
-        <Reveal className="mb-20 flex max-w-[1200px] justify-center gap-12 px-6 opacity-60 grayscale md:gap-24">
-          {CUSTOMER_LOGOS.map((logo) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              key={logo.src}
-              src={logo.src}
-              alt={logo.alt}
-              className={`h-6 object-contain ${logo.className}`}
-            />
-          ))}
-        </Reveal>
-
-        <Reveal delay={80} className="flex max-w-3xl flex-col items-center px-6 text-center">
-          <p className="mb-8 text-balance font-mkt-display text-[2.5rem] leading-[1.2] font-light tracking-[-0.02em] text-mkt-fg">
-            &ldquo;We stopped losing our best candidates in the pile.&rdquo;
+        <Reveal className="flex max-w-3xl flex-col items-center px-6 text-center">
+          <p className="mb-6 text-balance font-mkt-display text-[2.5rem] leading-[1.2] font-light tracking-[-0.02em] text-mkt-fg">
+            We would rather show you the instrument than tell you about it.
           </p>
-          <div className="flex items-center gap-4">
-            <p className="mkt-body text-mkt-fg-secondary">
-              Head of Talent, Vertex
-            </p>
-            <div className="h-1 w-1 rounded-full bg-mkt-border" />
-            <p className="mkt-data tracking-tight text-mkt-fg">
-              −38% time-to-decision
-            </p>
-          </div>
+          <p className="mkt-body text-mkt-fg-secondary">
+            HireLens is early, and we are not going to dress that up with logos we have not
+            earned. What follows is what the analysis does on every run — check it yourself on
+            two résumés, free, without a card.
+          </p>
         </Reveal>
 
-        {/* What the quote is standing on. */}
+        {/* What the statement above is standing on: properties of the product,
+            each one true of every analysis and verifiable in a free account. */}
         <Reveal delay={140} className="mt-16 w-full max-w-[1200px] px-6">
           <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-mkt-lg border border-mkt-border-subtle bg-mkt-border-subtle md:grid-cols-4">
-            {CUSTOMER_RESULTS.map((result) => (
+            {ANALYSIS_PROPERTIES.map((property) => (
               <div
-                key={result.label}
-                className="mkt-lift bg-mkt-canvas p-6 text-center md:p-8"
+                key={property.label}
+                className="mkt-lift flex flex-col bg-mkt-canvas p-6 text-center md:p-8"
               >
                 <dd className="font-mkt-mono text-3xl leading-none text-mkt-fg md:text-4xl">
-                  <Counter
-                    to={result.value}
-                    prefix={result.prefix}
-                    suffix={result.suffix}
-                    decimals={result.decimals ?? 0}
-                  />
+                  {property.value}
                 </dd>
-                <dt className="mt-3 mkt-label text-mkt-fg-tertiary">
-                  {result.label}
-                </dt>
+                <dt className="mt-3 mkt-label text-mkt-fg-tertiary">{property.label}</dt>
+                <p className="mt-2 mkt-body-sm text-mkt-fg-tertiary">{property.detail}</p>
               </div>
             ))}
           </dl>
@@ -177,7 +190,7 @@ export function Frame02Philosophy() {
                         {item.detail}
                       </p>
                     </div>
-                    <dd className="shrink-0 font-mkt-mono text-xl text-[#e0a06b]">
+                    <dd className="shrink-0 font-mkt-mono text-xl text-[#ffb184]">
                       {item.value}
                     </dd>
                   </div>

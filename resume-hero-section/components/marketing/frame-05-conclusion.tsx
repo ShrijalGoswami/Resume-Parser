@@ -3,7 +3,25 @@
 import { useState } from 'react'
 import Link from 'next/link'
 
-import { Counter, Reveal } from './motion'
+import { Reveal } from './motion'
+import {
+  FEATURES,
+  FEATURE_KEYS,
+  LIMITS,
+  PLAN_KEYS,
+  PLAN_LABELS,
+  RESUME_WINDOW,
+  isUnlimited,
+  planRank,
+} from '@/components/hirelens/lib/entitlements/catalog'
+import {
+  FEATURED_PLAN,
+  PLAN_POSITIONING,
+  formatPrice,
+  isQuoted,
+  priceSuffix,
+} from '@/lib/pricing'
+import { useCurrencyPreference } from './pricing/use-currency-preference'
 
 /**
  * Frame 5 — `hirelens_marketing_the_conclusion_frame_5`.
@@ -17,65 +35,47 @@ import { Counter, Reveal } from './motion'
  * is reproduced here as real React state so it stays keyboard-accessible.
  */
 
-const PRICING_TIERS = [
-  {
-    name: 'Team',
-    blurb: 'Essential clarity for focused hiring sprints and small teams.',
-    price: 'Starts at $499',
-    unit: '/mo',
-    cta: 'Start with Team',
-    featured: false,
-    meta: 'Up to 5 open roles · 3 seats',
-    // What each tier actually gives you. Without this, three cards differ only
-    // by a number, which asks the reader to guess at the difference.
-    features: [
-      'Triage, deep review, and decision memos',
-      'Evidence linked to every claim',
-      'Shared decision ledger',
-      'Email support',
-    ],
-  },
-  {
-    name: 'Business',
-    blurb: 'Advanced AI calibration for growing organizations.',
-    price: 'Starts at $999',
-    unit: '/mo',
-    cta: 'Start with Business',
-    featured: true,
-    meta: 'Unlimited roles · 15 seats',
-    features: [
-      'Everything in Team',
-      'Calibration tuned to your own hires',
-      'Regret analysis across shortlists',
-      'ATS integration · SSO / SAML',
-      'Priority support',
-    ],
-  },
-  {
-    name: 'Enterprise',
-    blurb: 'Custom modeling and dedicated strategic support.',
-    price: 'Custom',
-    unit: ' terms',
-    cta: 'Talk to us',
-    featured: false,
-    meta: 'Unlimited roles and seats',
-    features: [
-      'Everything in Business',
-      'Custom competency modelling',
-      'Data residency · your region',
-      'Audit export and retention controls',
-      'Named integration partner',
-    ],
-  },
-]
+/**
+ * The homepage pricing band is DERIVED, not written.
+ *
+ * It used to name a "Team" tier at $499 and a "Business" tier at $999 — three
+ * tiers, hand-written features, and no relationship to what the product
+ * actually sells or enforces. Since monetization shipped, the real matrix is
+ * four plans in the entitlement catalog, and the prices live in `lib/pricing`.
+ * A marketing page quoting tiers that do not exist is not a stale detail; it is
+ * the first thing a visitor reads and the last thing they will forgive.
+ *
+ * This band is a teaser: the plan, the price, the headline limit, and the tier
+ * it builds on. The full comparison is `/pricing`.
+ */
 
-/** The customer story's outcome, told as the sequence it happened in. A quote
- *  says it worked; the timeline says when, and at what cost. */
+/**
+ * THE STORY THIS SECTION USED TO TELL WAS NOT TRUE.
+ *
+ * It ran a named testimonial — "Sarah Jenkins, VP of Engineering", with a
+ * photographic portrait — over a timeline claiming 412 applicants across two
+ * roles resolved to two signed offers and zero regretted hires in nine days.
+ * There is no such customer, no such engagement and no such result. Attaching a
+ * stock portrait to an invented person and a fabricated outcome is the single
+ * most damaging thing that was on this site.
+ *
+ * The section keeps its shape — a claim on the left, the arithmetic on the
+ * right — because the shape is good. What it now describes is THE PATH THE
+ * PRODUCT PUTS YOU ON, written in the second person and in the conditional, so
+ * it reads as what happens when you use it rather than as something that
+ * already happened to somebody else.
+ *
+ * When a real customer agrees in writing to be named, this is where they go,
+ * with numbers someone measured.
+ */
+
+/** The shape of the work HireLens is built around, told as the sequence it
+ *  happens in. Illustrative of the flow, attributed to nobody. */
 const STORY_TIMELINE = [
-  { day: 'Day 0', event: '412 applicants across 2 roles', tone: 'neutral' },
-  { day: 'Day 1', event: '38 viable · every exclusion reasoned', tone: 'neutral' },
-  { day: 'Day 4', event: '9 deep reviews, evidence attached', tone: 'neutral' },
-  { day: 'Day 9', event: 'Both offers signed · 0 regretted', tone: 'good' },
+  { day: 'Intake', event: 'Every applicant read in full', tone: 'neutral' },
+  { day: 'Triage', event: 'The few worth your time, each exclusion reasoned', tone: 'neutral' },
+  { day: 'Review', event: 'Deep reviews with evidence attached to every claim', tone: 'neutral' },
+  { day: 'Decide', event: 'The call, its reasoning, and what you traded away', tone: 'good' },
 ]
 
 /** The last beat of the story: the decision, kept. */
@@ -85,37 +85,66 @@ const LEDGER_ENTRIES = [
   { time: '14:03', actor: 'Ledger', action: 'Entry written · reversible 30 days' },
 ]
 
+/**
+ * EVERY ANSWER HERE HAD TO BE REWRITTEN, and it is worth recording why.
+ *
+ * The previous set claimed: that we "integrate with major ATS platforms"
+ * (integrations are an unbuilt Pro capability — there are none); that "our
+ * models are continuously audited for bias" and that we "intentionally obscure
+ * demographic identifiers during the initial screening phases" (no bias audit
+ * has ever been performed and no redaction stage exists in the pipeline); and
+ * that migration "is typically completed within a few days" with "dedicated
+ * integration support" (nothing to migrate to, nobody assigned).
+ *
+ * The bias one is the most serious. A published bias audit is a REGULATED
+ * artefact for hiring technology — NYC Local Law 144 requires an annual one for
+ * automated employment decision tools, and the EU AI Act classifies CV
+ * screening as high-risk. Claiming an audit you have not performed is worse
+ * than performing none, because it is the claim a regulator can act on.
+ *
+ * The privacy answer also contradicted the /pricing FAQ, which says flatly that
+ * customer data is never used to train anything for anyone else. The version
+ * here hedged with "without explicit consent", implying a consent mechanism
+ * that does not exist. The two pages now give the same answer, and it is the
+ * stricter one.
+ *
+ * The test for an answer on this page: could a customer hold us to it tomorrow?
+ */
 const FAQS = [
   {
     question: 'Is HireLens an ATS?',
     answer:
-      'No. HireLens is an intelligence layer that sits on top of your existing Applicant Tracking System. We integrate with major ATS platforms to provide scoring, calibration, and insights without forcing you to migrate your core data infrastructure.',
+      'No, and it does not replace one. HireLens is a decision layer: you bring résumés for a role, it reads all of them, and it gives you evidence, risk and what each choice would cost you. Today you upload résumés directly — there are no ATS integrations yet, so it runs alongside whatever you already use rather than plugging into it. Integrations are on the roadmap and are not something you have today.',
   },
   {
     question: 'Does it replace my recruiters?',
     answer:
-      'HireLens acts as a highly capable assistant, not a replacement. It handles the high-volume data processing and initial calibration, freeing your recruiters to focus on relationship building, negotiation, and strategic alignment.',
+      'No. It reads the pile so a recruiter does not have to, and it attaches evidence to every claim it makes — but it recommends and a person decides. Our terms require a human to review any decision that materially affects a candidate, and the product records who made each call and on what basis.',
   },
   {
     question: 'How do you handle bias?',
     answer:
-      'Our models are continuously audited for bias. We focus on skill-based evaluation and intentionally obscure demographic identifiers during the initial screening phases to ensure a fair calibration process.',
+      'Honestly: we have not completed a formal bias audit, and we will not claim one until we have. What we do today is structural. Every score opens to the passage of the résumé it came from, so a judgement you disagree with can be traced rather than taken on faith; low confidence is shown rather than rounded up; and nothing is auto-rejected — the tool ranks, a person decides, and the decision is logged with its reasoning. If you are subject to an audit requirement such as NYC Local Law 144, talk to us before you deploy rather than after.',
   },
   {
     question: 'How is my data used?',
     answer:
-      'Your data remains yours. We do not use your proprietary candidate data to train our global models without explicit consent. Security and privacy are foundational to the HireLens architecture.',
+      'To serve your organization and nothing else. Your résumés, decisions and notes are never used to train models that serve anyone but you, we do not sell personal data, and there is no advertising or third-party tracking on any signed-in page. Data is stored in Singapore; résumé text is sent to a US inference provider to produce the analysis. The full list of who touches your data is in our Privacy Policy.',
   },
   {
-    question: 'How hard is migration?',
+    question: 'What does it take to get started?',
     answer:
-      'Since we integrate with your existing systems, implementation is typically completed within a few days, not months. Our enterprise tier includes dedicated integration support.',
+      'An account, a job description and some résumés. There is nothing to install, no data migration and no implementation project, because there is nothing to integrate with yet. Every new organization gets two full analyses free, without a card, which is enough to tell whether the output is worth anything to you.',
   },
 ]
 
 export function Frame05Conclusion() {
   // Stitch ships frame 5 with the first inquiry already expanded.
   const [openFaq, setOpenFaq] = useState<number | null>(0)
+  // The same currency preference `/pricing` uses, including a choice made
+  // there on an earlier visit — the homepage must never quote a different
+  // currency than the page it links to.
+  const [currency] = useCurrencyPreference()
 
   return (
     <>
@@ -126,44 +155,35 @@ export function Frame05Conclusion() {
         <div className="grid grid-cols-1 items-center gap-16 lg:grid-cols-12">
           <div className="lg:col-span-7">
             <h2 className="mb-8 font-mkt-display text-4xl leading-tight text-mkt-fg md:text-5xl md:leading-none">
-              &ldquo;HireLens changed which hires we&rsquo;re proud of, not just
-              how fast we made them.&rdquo;
+              Change which hires you&rsquo;re proud of, not just how fast you
+              make them.
             </h2>
 
-            <div className="flex items-start gap-6">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/marketing/portrait-sarah-jenkins.png"
-                alt="Sarah Jenkins, VP of Engineering"
-                className="h-16 w-16 rounded-full object-cover grayscale"
-              />
-              <div>
-                <p className="mb-4 mkt-body-lg text-mkt-fg-secondary">
-                  Before HireLens, our engineering recruitment was a volume
-                  game. We prioritized speed over alignment. The AI didn&rsquo;t
-                  just filter resumes; it highlighted the nuances we were
-                  missing. We shifted from reacting to applications to designing
-                  our teams.
-                </p>
-                <p className="font-mkt-label text-base font-medium text-mkt-fg">
-                  Sarah Jenkins, VP of Engineering
-                </p>
-                <div className="mt-2 mkt-data text-mkt-fg-tertiary">
-                  <span className="font-medium text-mkt-fg">2 roles</span>{' '}
-                  -&gt; filled in 9 days,{' '}
-                  <span className="font-medium text-mkt-fg">0 regretted</span>.
-                </div>
-              </div>
+            <div>
+              <p className="mb-4 mkt-body-lg text-mkt-fg-secondary">
+                Most engineering recruitment is a volume game: speed over alignment, and the
+                outliers lost somewhere in the middle of the stack. HireLens does not just
+                filter résumés — it surfaces the nuance you would have missed, attaches the
+                evidence for every claim it makes, and prices what each choice costs you. The
+                shift is from reacting to applications to designing a team.
+              </p>
+              <p className="mkt-body-sm text-mkt-fg-tertiary">
+                Two résumés, free, no card. That is enough to see whether any of this is true.
+              </p>
             </div>
 
             <div className="mt-12">
               <Link
-                href="/auth/signup"
+                href="/pricing"
                 // `py-1` is hit area only — the link was 20px tall, under the
                 // 24px WCAG 2.5.8 minimum for a standalone target on touch.
                 className="-my-1 inline-flex items-center py-1 mkt-body-sm font-medium text-mkt-accent-text transition-opacity hover:opacity-80"
               >
-                Read more stories
+                {/* Was "Read more stories" pointing at /auth/signup — a label
+                    promising content and delivering a registration wall. There
+                    are no stories to read; there is a plan comparison, so the
+                    link now says what it does. */}
+                See what each plan includes
                 <span className="material-symbols-outlined ml-1 text-[16px]">
                   arrow_forward
                 </span>
@@ -186,12 +206,10 @@ export function Frame05Conclusion() {
                   carries the result and not just the atmosphere. */}
               <div className="absolute inset-x-4 bottom-4 rounded-mkt-lg border border-white/15 bg-mkt-ink/85 p-5 backdrop-blur-md">
                 <div className="mb-4 flex items-baseline justify-between border-b border-white/10 pb-3">
-                  <span className="mkt-label text-white/50">
-                    Two roles, start to signed
-                  </span>
-                  <span className="mkt-data text-white">
-                    <Counter to={9} suffix=" days" />
-                  </span>
+                  <span className="mkt-label text-white/50">How a role runs</span>
+                  {/* Was a `<Counter to={9} suffix=" days" />` — a fabricated
+                      time-to-hire presented as a measured result. */}
+                  <span className="mkt-data text-white/70">Four stages</span>
                 </div>
 
                 <ol className="space-y-2.5">
@@ -203,7 +221,7 @@ export function Frame05Conclusion() {
                         }`}
                         aria-hidden="true"
                       />
-                      <span className="w-11 shrink-0 mkt-data text-white/45">
+                      <span className="w-14 shrink-0 mkt-data text-white/45">
                         {step.day}
                       </span>
                       <span
@@ -238,83 +256,113 @@ export function Frame05Conclusion() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-          {PRICING_TIERS.map((tier, i) => (
-            <Reveal
-              key={tier.name}
-              delay={i * 90}
-              className={`mkt-lift relative flex flex-col overflow-hidden rounded-mkt-lg border bg-mkt-canvas p-8 ${
-                tier.featured
-                  ? 'border-mkt-border-strong shadow-[0_8px_40px_rgba(11,13,13,0.05)]'
-                  : 'border-mkt-border'
-              }`}
-            >
-              {tier.featured && (
-                <div className="mkt-prism-hairline absolute top-0 right-0 left-0 h-px" />
-              )}
-
-              <div className="mb-2 flex items-baseline justify-between">
-                <h3 className="mkt-body-lg font-medium text-mkt-fg">
-                  {tier.name}
-                </h3>
-                {tier.featured && (
-                  <span className="rounded-[0.25rem] bg-mkt-accent-bg px-2 py-0.5 mkt-label text-mkt-accent-text">
-                    Most teams
-                  </span>
-                )}
-              </div>
-
-              <p className="mb-6 mkt-body-sm text-mkt-fg-secondary">
-                {tier.blurb}
-              </p>
-
-              <div className="mb-6 border-b border-mkt-border-subtle pb-6">
-                <div className="font-mkt-mono text-xl text-mkt-fg">
-                  {tier.price}
-                  <span className="text-base text-mkt-fg-tertiary">{tier.unit}</span>
-                </div>
-                <p className="mt-1 mkt-data text-mkt-fg-tertiary">
-                  {tier.meta}
-                </p>
-              </div>
-
-              <ul className="mb-8 flex-grow space-y-2.5">
-                {tier.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2">
-                    <span
-                      className="material-symbols-outlined mt-px text-[15px] text-mkt-accent-text"
-                      aria-hidden="true"
-                    >
-                      check
-                    </span>
-                    <span className="mkt-body-sm text-mkt-fg-secondary">
-                      {feature}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-
-              <Link
-                href="/auth/signup"
-                className={
-                  tier.featured
-                    ? 'w-full rounded-[0.25rem] bg-mkt-fg py-2.5 text-center text-base font-medium text-mkt-canvas transition-opacity hover:opacity-90'
-                    : 'w-full rounded-[0.25rem] border border-mkt-border py-2.5 text-center text-base font-medium text-mkt-fg transition-colors hover:bg-mkt-subtle'
-                }
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+          {PLAN_KEYS.map((plan, i) => {
+            const featured = plan === FEATURED_PLAN
+            const previous = PLAN_KEYS[planRank(plan) - 1]
+            const resumes = LIMITS[plan].resumes
+            const seats = LIMITS[plan].members
+            return (
+              <Reveal
+                key={plan}
+                delay={i * 80}
+                // Kept identical to the /pricing cards (pricing/plan-cards.tsx)
+                // — the same four plans rendered two ways is the seam a visitor
+                // notices when they click through from here.
+                className={`mkt-lift relative flex flex-col overflow-hidden rounded-mkt-lg border bg-mkt-raised p-7 ${
+                  featured
+                    ? 'border-mkt-border-strong shadow-[var(--mkt-shadow-card-raised)]'
+                    : 'border-mkt-border shadow-[var(--mkt-shadow-card-resting)]'
+                }`}
               >
-                {tier.cta}
-              </Link>
-            </Reveal>
-          ))}
+                {featured && (
+                  <div className="mkt-prism-hairline absolute top-0 right-0 left-0 h-px" />
+                )}
+
+                <div className="mb-1.5 flex items-baseline justify-between gap-2">
+                  <h3 className="mkt-body-lg font-medium text-mkt-fg">{PLAN_LABELS[plan]}</h3>
+                  {featured && (
+                    <span className="shrink-0 rounded-[0.25rem] bg-mkt-accent-bg px-2 py-0.5 mkt-label text-mkt-accent-text">
+                      Most teams
+                    </span>
+                  )}
+                </div>
+
+                {/* 4.5rem, matching pricing/plan-cards.tsx — NOT 2.75rem.
+                    This band and the /pricing cards render the same four
+                    strings from PLAN_POSITIONING, and at the 4-up width three
+                    of the four wrap to three lines while Plus wraps to two. At
+                    2.75rem the reserve cleared only two lines, so Plus's price,
+                    rule and feature list all sat ~21px above its neighbours and
+                    the row read as misaligned. /pricing was fixed and this copy
+                    of the same card was not. `mkt-body-sm` is 15/24, so three
+                    lines is 72px = 4.5rem. Re-measure both if the copy grows. */}
+                <p className="mb-6 min-h-[4.5rem] mkt-body-sm text-mkt-fg-secondary">
+                  {PLAN_POSITIONING[plan]}
+                </p>
+
+                <div className="mb-6 border-b border-mkt-border-subtle pb-6">
+                  <div className="flex items-baseline gap-1 font-mkt-mono text-xl text-mkt-fg">
+                    {formatPrice(plan, currency)}
+                    <span className="text-base text-mkt-fg-tertiary">
+                      {priceSuffix(plan, currency)}
+                    </span>
+                  </div>
+                  <p className="mt-1.5 mkt-data text-mkt-fg-tertiary">
+                    {isUnlimited(resumes)
+                      ? 'Unlimited résumés'
+                      : RESUME_WINDOW[plan] === 'month'
+                        ? `${resumes} résumés / month`
+                        : `${resumes} résumés to try`}
+                    {' · '}
+                    {isUnlimited(seats) ? 'Unlimited seats' : `${seats} seat${seats === 1 ? '' : 's'}`}
+                  </p>
+                </div>
+
+                <ul className="mb-8 flex-grow space-y-2.5">
+                  {previous && (
+                    <li className="mkt-body-sm text-mkt-fg-secondary">
+                      Everything in {PLAN_LABELS[previous]}, plus:
+                    </li>
+                  )}
+                  {FEATURE_KEYS.map((key) => FEATURES[key])
+                    .filter((f) => f.minPlan === plan)
+                    .slice(0, 4)
+                    .map((feature) => (
+                      <li key={feature.key} className="flex items-start gap-2">
+                        <span
+                          className="material-symbols-outlined mt-px text-[15px] text-mkt-accent-text"
+                          aria-hidden="true"
+                        >
+                          check
+                        </span>
+                        <span className="mkt-body-sm text-mkt-fg-secondary">{feature.label}</span>
+                      </li>
+                    ))}
+                </ul>
+
+                <Link
+                  href="/pricing"
+                  className={
+                    featured
+                      ? 'w-full rounded-[0.25rem] bg-mkt-fg py-2.5 text-center text-base font-medium text-mkt-canvas transition-opacity hover:opacity-90'
+                      : 'w-full rounded-[0.25rem] border border-mkt-border py-2.5 text-center text-base font-medium text-mkt-fg transition-colors hover:bg-mkt-subtle'
+                  }
+                >
+                  {isQuoted(plan) ? 'Talk to sales' : `See ${PLAN_LABELS[plan]}`}
+                </Link>
+              </Reveal>
+            )
+          })}
         </div>
 
         <div className="mt-12 text-center">
           <Link
-            href="/auth/signup"
+            href="/pricing"
             // `py-1` is hit area only — see the note on the CTA above.
             className="-my-1 inline-flex items-center py-1 mkt-body-sm text-mkt-fg-tertiary transition-colors hover:text-mkt-fg"
           >
-            See full pricing
+            Compare every plan
             <span className="material-symbols-outlined ml-1 text-[16px]">
               arrow_forward
             </span>

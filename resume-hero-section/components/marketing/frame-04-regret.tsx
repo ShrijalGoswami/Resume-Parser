@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link'
+
 import { Reveal } from './motion'
 
 /**
@@ -10,16 +12,49 @@ import { Reveal } from './motion'
  * tenets, and the enterprise trust strip.
  *
  * Frame 4 uses a 1280px container with 16/32px side margins, and the deepest
- * ink (#0B0D0D) rather than frame 2's #121414.
+ * ink (--mkt-ink) rather than frame 2's --mkt-dark-bg.
  */
 
-/** Trust marks, each with the thing it actually guarantees. A bare row of
- *  badges asks for faith; the second line is what makes it a claim. */
+/**
+ * Trust marks — WHAT IS ACTUALLY TRUE, which is less than this strip claimed.
+ *
+ * It read: "SOC 2 Type II — Audited annually, report on request" · "SSO / SAML
+ * — Okta, Entra, Google Workspace" · "Audit trail — Every decision, immutable,
+ * exportable" · "Data residency — US, EU, or your own region".
+ *
+ * Every one of those was false. There is no SOC 2 audit and no report to send
+ * anyone who asks for one. SSO is an unbuilt Enterprise capability. There is no
+ * audit trail for administrative operations at all — the absence of one is a
+ * tracked hardening item, and it is the reason a production incident in July
+ * left no record of who deleted what. And the entire deployment is a single
+ * database in Singapore, so a choice of three regions was false in all three
+ * branches.
+ *
+ * These are the claims an enterprise buyer forwards to their security reviewer,
+ * and "report on request" invites them to ask in writing for a document that
+ * does not exist.
+ *
+ * Each mark below is now something a reviewer could verify today, and the
+ * things that are merely PLANNED say so in their own words. The honest, longer
+ * answers live on /privacy, which this strip now points at.
+ */
 const TRUST_MARKS = [
-  { mark: 'SOC 2 Type II', detail: 'Audited annually, report on request' },
-  { mark: 'SSO / SAML', detail: 'Okta, Entra, Google Workspace' },
-  { mark: 'Audit trail', detail: 'Every decision, immutable, exportable' },
-  { mark: 'Data residency', detail: 'US, EU, or your own region' },
+  {
+    mark: 'Row-level isolation',
+    detail: 'Enforced in the database, not the application layer',
+  },
+  {
+    mark: 'Encrypted in transit and at rest',
+    detail: 'Across storage, database and backups',
+  },
+  {
+    mark: 'Data stored in Singapore',
+    detail: 'One region today — no residency choice yet',
+  },
+  {
+    mark: 'Your data trains nothing',
+    detail: 'Never used to serve another organization',
+  },
 ]
 
 /** The two candidates, compared on the dimensions that decide the role rather
@@ -336,9 +371,17 @@ export function Frame04Regret() {
             ))}
           </dl>
 
-          <div className="mt-8 flex items-center justify-center gap-2 mkt-data text-mkt-fg-tertiary">
+          {/* The strip states what is true; this line points at where the
+              unflattering detail lives, including the certifications we do NOT
+              hold. A security reviewer who has to hunt for that answer assumes
+              the worst, and on this point the worst is roughly correct. */}
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-2 mkt-data text-mkt-fg-tertiary">
             <span className="h-px w-4 bg-mkt-border-strong" />
-            Your data trains only your own calibration.
+            No security certification yet — the full picture is in our{' '}
+            <Link href="/privacy" className="text-mkt-accent-text underline">
+              Privacy Policy
+            </Link>
+            .
             <span className="h-px w-4 bg-mkt-border-strong" />
           </div>
         </div>
