@@ -21,3 +21,8 @@ storybook-static
 # TypeScript incremental build cache — a local artifact, not source.
 tsconfig.tsbuildinfo
 *.tsbuildinfo
+
+# Browser-QA artifacts (tests/visual/capture.mjs)
+.qa-*/
+.qa-*.log
+.qa-*.html
