@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { Upload, FileText, X } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
+import { cn } from '@/lib/utils'
 import { analyzeBatchWithProgress } from '@/services/api'
 import { persistBatch, uploadResume } from '@/services/campaigns-api'
 import { reindexCampaign } from '@/services/search-api'
@@ -24,6 +25,50 @@ import { QuotaLock, QuotaMeter, useQuota, usePlanDenialHandler } from '../entitl
 import type { Campaign } from '@/types/campaign'
 
 type Phase = 'idle' | 'analyzing' | 'persisting' | 'indexing' | 'error'
+
+/** 10MB. Stated once so the check and the sentence explaining it cannot drift. */
+const MAX_BYTES = 10 * 1024 * 1024
+const ACCEPTED = /\.(pdf|docx?)$/i
+
+interface RejectedFile {
+  name: string
+  reason: 'type' | 'size'
+  /** Only meaningful for a size rejection. */
+  sizeMb: string
+}
+
+/** "photo.png (not a PDF or Word file)" · "scan.pdf (14.2MB, limit 10MB)" */
+export function describeRejection(file: RejectedFile): string {
+  return file.reason === 'type'
+    ? `${file.name} (not a PDF or Word file)`
+    : `${file.name} (${file.sizeMb}MB, limit 10MB)`
+}
+
+/**
+ * Split a selection into what we will analyse and what we will not.
+ *
+ * THE REJECTED HALF IS THE POINT. This filtering already existed, inline and
+ * silent: anything that was not a PDF or Word file, or was over 10MB, was
+ * dropped with no message at all. A recruiter selecting twelve files from an
+ * email export saw eight appear, with no error and no count — and the most
+ * likely reading of that is that the app is broken, the second most likely that
+ * they miscounted. Four candidates never entered the pipeline.
+ *
+ * The constraint is printed under the picker, but a constraint stated once and
+ * then enforced invisibly is not communication. Extracted and exported so the
+ * behaviour is testable without a DOM.
+ */
+export function partitionFiles(list: File[]): { accepted: File[]; rejected: RejectedFile[] } {
+  const accepted: File[] = []
+  const rejected: RejectedFile[] = []
+  for (const file of list) {
+    const sizeMb = (file.size / (1024 * 1024)).toFixed(1)
+    if (!ACCEPTED.test(file.name)) rejected.push({ name: file.name, reason: 'type', sizeMb })
+    else if (file.size > MAX_BYTES) rejected.push({ name: file.name, reason: 'size', sizeMb })
+    else accepted.push(file)
+  }
+  return { accepted, rejected }
+}
 
 /**
  * Add candidates (UX Spec §7.1). The real 3-step flow: batch-analyze the
@@ -47,6 +92,9 @@ export function AddCandidatesDialog({
   const [phase, setPhase] = React.useState<Phase>('idle')
   const [progress, setProgress] = React.useState(0)
   const [error, setError] = React.useState<string | null>(null)
+  /** Files the picker took and we would not — named, never silently dropped. */
+  const [rejected, setRejected] = React.useState<RejectedFile[]>([])
+  const [dragging, setDragging] = React.useState(false)
 
   const hasJobDescription = Boolean(campaign.job_description?.trim())
   const busy = phase === 'analyzing' || phase === 'persisting' || phase === 'indexing'
@@ -73,6 +121,7 @@ export function AddCandidatesDialog({
     setPhase('idle')
     setProgress(0)
     setError(null)
+    setRejected([])
   }
 
   const handleOpenChange = (next: boolean) => {
@@ -82,10 +131,30 @@ export function AddCandidatesDialog({
 
   const addFiles = (list: FileList | null) => {
     if (!list) return
-    const accepted = Array.from(list).filter(
-      (file) => /\.(pdf|docx?)$/i.test(file.name) && file.size <= 10 * 1024 * 1024,
-    )
+    const { accepted, rejected: skipped } = partitionFiles(Array.from(list))
     setFiles((prev) => [...prev, ...accepted])
+    // Replaces the previous notice rather than accumulating: this describes the
+    // selection just made, and a list growing across four attempts is noise.
+    setRejected(skipped)
+  }
+
+  /**
+   * DRAG AND DROP, because the target already looked like it accepted one.
+   *
+   * The drop zone is a full-width dashed rectangle with an upload glyph — the
+   * universal drag-and-drop affordance — and nothing in the component handled a
+   * drop. Dragging résumés onto it did nothing, and worse: with no handler the
+   * browser takes the default action and NAVIGATES AWAY to open the PDF,
+   * destroying the dialog and any files already staged. Bulk résumé intake is
+   * drag-and-drop-shaped work; this is the product's core loop.
+   *
+   * `dragEnter`/`dragOver` must both preventDefault or the drop never fires.
+   */
+  const onDrop = (event: React.DragEvent) => {
+    event.preventDefault()
+    setDragging(false)
+    if (busy || exhausted) return
+    addFiles(event.dataTransfer.files)
   }
 
   const run = async () => {
@@ -184,17 +253,52 @@ export function AddCandidatesDialog({
             requiredPlan={quota.requiredPlan}
           />
         ) : (
-          <div className="flex flex-col gap-3">
+          <div
+            className="flex flex-col gap-3"
+            onDragEnter={(event) => {
+              event.preventDefault()
+              if (!busy) setDragging(true)
+            }}
+            onDragOver={(event) => event.preventDefault()}
+            onDragLeave={(event) => {
+              // Only when the pointer leaves the zone itself, not when it
+              // crosses one of the children inside it.
+              if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragging(false)
+            }}
+            onDrop={onDrop}
+          >
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
               disabled={busy}
-              className="flex flex-col items-center gap-2 rounded-hl-lg border border-dashed border-hl-border-strong bg-hl-subtle px-6 py-8 text-center outline-none transition-colors hover:border-hl-accent disabled:opacity-60"
+              className={cn(
+                'flex flex-col items-center gap-2 rounded-hl-lg border border-dashed bg-hl-subtle px-6 py-8 text-center outline-none transition-colors hover:border-hl-accent disabled:opacity-60',
+                dragging ? 'border-hl-accent bg-hl-accent-subtle' : 'border-hl-border-strong',
+              )}
             >
               <Upload className="size-6 text-hl-fg-tertiary" aria-hidden />
-              <span className="hl-body-medium">Choose résumés</span>
+              <span className="hl-body-medium">
+                {dragging ? 'Drop to add' : 'Drop résumés here, or choose files'}
+              </span>
               <span className="hl-caption text-hl-fg-tertiary">PDF or DOCX · up to 10MB each</span>
             </button>
+
+            {/* WHAT WE WOULD NOT TAKE, AND WHY. Named individually: "2 files
+                skipped" still leaves the recruiter to work out which two. */}
+            {rejected.length > 0 ? (
+              <div className="hl-small rounded-hl-md bg-hl-warning-bg p-3 text-hl-warning" role="status">
+                <p className="font-medium">
+                  {rejected.length === 1
+                    ? "1 file wasn't added"
+                    : `${rejected.length} files weren't added`}
+                </p>
+                <ul className="mt-1 flex flex-col gap-0.5">
+                  {rejected.map((file) => (
+                    <li key={`${file.name}-${file.reason}`}>{describeRejection(file)}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
             <input
               ref={inputRef}
               type="file"
