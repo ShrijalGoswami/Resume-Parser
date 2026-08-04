@@ -37,6 +37,69 @@ def format_history(messages: list[dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
+#: Roles listed to the model when no single role is in scope. Bounded because
+#: this block costs one `count_candidates` query per row and real tokens; an org
+#: with 200 roles must not turn one question into 200 queries.
+MAX_WORKSPACE_ROLES = 12
+
+
+def build_workspace_context(roles: list[dict[str, Any]], total: int) -> str:
+    """
+    Render the organization's roles when the recruiter is not inside one.
+
+    This exists because the copilot used to be told, verbatim, that there was
+    "no specific page context" and to "ask the recruiter to open a campaign" —
+    on a workspace that might hold a dozen roles and hundreds of analysed
+    candidates. The model obeyed, and answered "no campaign is currently
+    selected" to an org full of campaigns. The org's own data was never queried.
+
+    `roles` carries id/title/status/candidate counts; `total` is the true count
+    before truncation, so the model is never told a bounded list is the whole
+    workspace.
+    """
+    if not roles:
+        # A genuinely empty workspace. Saying so is correct, not a failure.
+        return (
+            "### Workspace\n"
+            "This organization has no roles yet. Nothing can be analysed until a "
+            "role is created and résumés are uploaded against it. Say so plainly "
+            "and point the recruiter at creating a role — do not invent data."
+        )
+
+    lines = [
+        "### Workspace — roles in this organization",
+        f"The recruiter is NOT inside a specific role right now. "
+        f"This organization has {total} role(s); "
+        f"{'all are' if total <= len(roles) else f'the {len(roles)} most recently updated are'} listed below.",
+        "",
+    ]
+    for r in roles:
+        bits = [f"- {r.get('title') or 'Untitled role'}"]
+        if r.get("role_title") and r.get("role_title") != r.get("title"):
+            bits.append(f"({r['role_title']})")
+        meta = []
+        if r.get("status"):
+            meta.append(str(r["status"]))
+        cand = r.get("candidate_count")
+        if cand is not None:
+            meta.append(f"{cand} candidate(s)")
+        if meta:
+            bits.append(f"— {', '.join(meta)}")
+        bits.append(f"[role_id: {r.get('id')}]")
+        lines.append(" ".join(bits))
+
+    lines += [
+        "",
+        "HOW TO USE THIS: these roles and their counts are real data — answer "
+        "directly from them wherever the question allows (which roles are busiest, "
+        "where candidates are waiting, how the workspace looks). When the question "
+        "needs one role's candidates in depth — shortlisting, comparing, ranking — "
+        "name the roles above and ask which one to look at. Never claim that no "
+        "role or campaign exists or is available: the list above proves otherwise.",
+    ]
+    return "\n".join(lines)
+
+
 def build_campaign_context(campaign: dict[str, Any], candidates: list[dict[str, Any]]) -> str:
     """
     Render a campaign overview + ranked candidate roster from persisted data.
@@ -56,7 +119,12 @@ def build_campaign_context(campaign: dict[str, Any], candidates: list[dict[str, 
     ):
         val = campaign.get(key)
         if val:
-            header.append(f"{label}: {val}")
+            # Pydantic's `model_dump()` keeps enum MEMBERS in python mode, so
+            # `status` arrives as CampaignStatus.active and formats as
+            # "Status: CampaignStatus.active" — which the model reads and then
+            # echoes back at the recruiter. Every campaign-grounded question has
+            # carried this. `.value` where there is one, plain value otherwise.
+            header.append(f"{label}: {getattr(val, 'value', val)}")
     total = campaign.get("total_candidates", campaign.get("candidate_count"))
     if total is not None:
         header.append(f"Total candidates: {total}")

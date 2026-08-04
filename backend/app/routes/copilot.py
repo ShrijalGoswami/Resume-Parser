@@ -48,6 +48,7 @@ from app.schemas.copilot import (
     CopilotStructuredResponse,
     PostMessageRequest,
     PostMessageResponse,
+    is_grounded,
     SuggestionGroup,
     SuggestionsResponse,
 )
@@ -260,7 +261,23 @@ async def post_conversation_message(
     conv_repo.touch(conversation_id)
 
     # Accumulate organizational memory from this exchange (incremental, best-effort).
-    knowledge_ingest(org_id, "copilot", source_id=conversation_id, question=message, answer=structured.answer)
+    #
+    # ONLY when the answer was grounded in platform data. The copilot reads org
+    # memory back in as authoritative ("prefer this over generic assumptions"),
+    # so memorising an ungrounded answer closes a feedback loop: the QA org had
+    # five stored copies of "No campaign or candidate is currently selected",
+    # written by the copilot, re-injected on every later turn, each one teaching
+    # the model again that the workspace was empty. A turn with no platform
+    # source is the model reasoning from nothing — that is not organizational
+    # knowledge and must not be stored as it.
+    #
+    # Same `is_grounded` rule the response's `grounded` field is computed from,
+    # deliberately: "what we memorise" and "what we tell the client was grounded"
+    # must not be able to drift apart.
+    if is_grounded(resolved.sources):
+        knowledge_ingest(
+            org_id, "copilot", source_id=conversation_id, question=message, answer=structured.answer
+        )
 
     # Auto-name a fresh conversation from the first question.
     if (conv.title or "").strip() in ("", "New conversation") and not prior:

@@ -53,6 +53,19 @@ export interface CopilotStructuredResponse {
   followups: string[];
   sources_used: CopilotSource[];
   degraded: boolean;
+  /**
+   * Whether real platform evidence backed this answer. Computed server-side
+   * from `sources_used` (see CopilotStructuredResponse.grounded in the backend
+   * schema), so it can never disagree with the attribution beside it.
+   *
+   * Read THIS rather than `sources_used.length`: an empty list is ambiguous —
+   * it means both "grounded, attribution missing" and "answered from general
+   * knowledge, nothing to attribute", and those must not render identically.
+   *
+   * Optional because conversations persisted before the field existed reload
+   * without it; treat `undefined` as "unknown", not as "not grounded".
+   */
+  grounded?: boolean;
 }
 
 export type CopilotContextType =

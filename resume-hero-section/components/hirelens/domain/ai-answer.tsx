@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ConfidencePill } from './confidence-pill'
 
@@ -22,6 +23,13 @@ export interface AIAnswerProps {
   reasoning?: React.ReactNode
   actions?: React.ReactNode
   className?: string
+  /**
+   * `false` renders an explicit "not from your data" note in place of the
+   * sources row. Pass it whenever the caller KNOWS the answer's grounding;
+   * leave it `undefined` when grounding is genuinely unknown, which renders
+   * neither — silence is honest there, and a wrong badge is not.
+   */
+  grounded?: boolean
 }
 
 export function AIAnswer({
@@ -31,6 +39,7 @@ export function AIAnswer({
   reasoning,
   actions,
   className,
+  grounded,
 }: AIAnswerProps) {
   const [showReasoning, setShowReasoning] = React.useState(false)
 
@@ -39,6 +48,17 @@ export function AIAnswer({
       className={cn('hl-prism-edge rounded-r-[var(--hl-radius-lg)] bg-hl-ai-surface p-4', className)}
     >
       <div className="hl-body text-hl-fg">{children}</div>
+
+      {/* An ungrounded answer says so, rather than just omitting the sources
+          row. Those two states used to look identical, so "we had no data" was
+          indistinguishable from "we had data and forgot to cite it" — the
+          reader could not tell how much to trust what they were reading. */}
+      {grounded === false ? (
+        <p className="mt-3 flex items-start gap-1.5 hl-caption text-hl-fg-tertiary">
+          <Info className="mt-px size-3.5 shrink-0" aria-hidden />
+          <span>This answer wasn&rsquo;t generated from your organization&rsquo;s data.</span>
+        </p>
+      ) : null}
 
       {sources && sources.length > 0 ? (
         <div className="mt-3 flex flex-wrap items-center gap-1.5">

@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 from app.schemas.batch import CandidateResult
 
@@ -61,6 +61,20 @@ class CopilotSource(BaseModel):
     detail: str = Field(default="", description="What was drawn from this source")
 
 
+#: Recalled memory is not evidence. It is the copilot's own prior output fed
+#: back in, so counting it as grounding lets an answer cite itself — which is
+#: exactly how five stored copies of a wrong answer became "organizational
+#: knowledge". Named here so the rule has ONE definition.
+MEMORY_SOURCE = "Organizational Memory"
+
+
+def is_grounded(sources: list["CopilotSource"] | list[str]) -> bool:
+    """True when at least one real platform source contributed to an answer."""
+    return any(
+        (s if isinstance(s, str) else s.source) != MEMORY_SOURCE for s in (sources or [])
+    )
+
+
 class CopilotStructuredResponse(BaseModel):
     """The full, predictable Copilot response returned to the frontend."""
     answer: str = ""
@@ -73,6 +87,27 @@ class CopilotStructuredResponse(BaseModel):
     followups: list[str] = Field(default_factory=list)
     sources_used: list[CopilotSource] = Field(default_factory=list)
     degraded: bool = Field(default=False)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def grounded(self) -> bool:
+        """
+        Whether real platform evidence backed this answer.
+
+        DERIVED, not assigned, and that is the point: ten call sites build this
+        response (the orchestrated path, the deterministic fallback, and the
+        comparison / interview / agent / prediction / report / search
+        specialists). A flag any of them could forget to set would be wrong the
+        first time someone adds an eleventh. Computing it from `sources_used`
+        means attribution and this signal can never disagree.
+
+        It exists because an empty `sources_used` was ambiguous: the client
+        could not tell "answered from your data, attribution missing" from
+        "answered from general knowledge, nothing to attribute". Both rendered
+        as no sources at all, so an ungrounded answer looked exactly like a
+        grounded one whose citations had been dropped.
+        """
+        return is_grounded(self.sources_used)
 
 
 class CopilotPageContext(BaseModel):

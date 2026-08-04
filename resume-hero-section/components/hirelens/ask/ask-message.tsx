@@ -69,6 +69,12 @@ export function AssistantTurn({
     <AIAnswer
       confidence={response.confidence}
       sources={sources.length > 0 ? sources : undefined}
+      // `response.grounded`, NOT `sources.length`. The server computes grounding
+      // from the same attribution it sends, so this stays truthful as new AI
+      // surfaces are added; inferring it here would re-create the ambiguity the
+      // backend field exists to remove. `undefined` on conversations persisted
+      // before the field shipped, which renders no claim either way.
+      grounded={response.grounded}
       reasoning={response.reasoning_summary || undefined}
       actions={
         response.followups.length > 0

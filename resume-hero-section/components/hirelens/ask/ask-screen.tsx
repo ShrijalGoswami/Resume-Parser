@@ -246,7 +246,7 @@ function AuthedAsk({ initial }: { initial: AskInitial }) {
 
   return (
     <AppShell title="Ask" account={account}>
-      <div className="flex h-full">
+      <div className="flex min-h-0 flex-1">
         <aside className="hidden w-72 shrink-0 border-r border-hl-border-subtle lg:block">
           <AskNav {...navProps} />
         </aside>

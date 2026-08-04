@@ -19,11 +19,14 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
+from types import SimpleNamespace
 from typing import Any, Optional
 
 from app.ai.context.copilot_context import (
+    MAX_WORKSPACE_ROLES,
     build_campaign_context,
     build_dashboard_context,
+    build_workspace_context,
     classify_intent,
 )
 from app.schemas.batch import CandidateResult
@@ -129,14 +132,106 @@ def _resolve_dispatch(
     if ptype in ("dashboard", "analytics") and analytics_repo is not None:
         return _resolve_dashboard(page, question, analytics_repo)
 
-    # Global / no specific context.
+    # Global — no ROUTE context, which is not the same as no DATA. See
+    # `_resolve_global`; this branch used to assert the latter from the former.
+    return _resolve_global(page, question, campaign_repo, candidate_repo)
+
+
+def _resolve_global(page, question, campaign_repo, candidate_repo) -> ResolvedContext:
+    """
+    Resolve context for a question asked outside any role — i.e. from /ask.
+
+    THE BUG THIS REPLACES: this branch returned a fixed string saying "(No
+    specific page context … ask the recruiter to open a campaign or candidate
+    for grounded, data-backed answers.)" and queried nothing. "The recruiter is
+    not on a role page" was being reported to the model as "this organization
+    has no roles", so the copilot answered "No campaign or candidate is
+    currently selected" to workspaces holding many analysed candidates. That
+    sentence appears nowhere in this codebase — the model was reading its
+    instructions correctly. `campaign_repo` was passed in the whole time and
+    never used.
+
+    Resolution ladder, mirroring how a person would read the situation:
+      * one role in the org  → use it, exactly as if the recruiter had opened it
+      * several             → list them with counts and let the model pick or ask
+      * none                → say so honestly
+    """
+    if campaign_repo is None:  # No repo wired (unit tests, stateless mode).
+        return ResolvedContext(
+            context_text="(No workspace data is available in this deployment. "
+            "Answer from conversation history and general recruiting expertise, "
+            "and do not assert anything about this organization's roles.)",
+            available_sources=[],
+            sources=[],
+            intent=classify_intent(question, "global"),
+        )
+
+    try:
+        campaigns = campaign_repo.list()
+    except Exception as exc:
+        # Degrade honestly: unknown is not the same as empty.
+        logger.info("Copilot: workspace roles unavailable: %s", exc)
+        return ResolvedContext(
+            context_text="(This organization's roles could not be loaded for this "
+            "turn. Answer from conversation history and general recruiting "
+            "expertise, and do not claim the workspace is empty.)",
+            available_sources=[],
+            sources=[],
+            intent=classify_intent(question, "global"),
+        )
+
+    # Exactly one role: there is nothing to disambiguate, so ground fully in it
+    # and answer the question that was actually asked.
+    if len(campaigns) == 1:
+        only = campaigns[0]
+        resolved = _resolve_campaign(
+            SimpleNamespace(campaign_id=getattr(only, "id", None), candidate_id=None),
+            question,
+            campaign_repo,
+            candidate_repo,
+        )
+        resolved.context_text = (
+            "### Role selected automatically\n"
+            "This organization has exactly one role, so it is in scope for this "
+            "question — answer directly rather than asking which role to use.\n\n"
+            + resolved.context_text
+        )
+        return resolved
+
+    rows: list[dict] = []
+    for c in campaigns[:MAX_WORKSPACE_ROLES]:
+        cid = getattr(c, "id", None)
+        count = None
+        if cid:
+            try:
+                count = campaign_repo.count_candidates(cid)
+            except Exception:  # A missing count must not lose the whole role.
+                count = None
+        # `status` is a CampaignStatus enum; `str()` on it renders
+        # "CampaignStatus.draft", which is what the model would then read back
+        # and echo at the recruiter. Send the plain value.
+        status = getattr(c, "status", None)
+        rows.append(
+            {
+                "id": cid,
+                "title": getattr(c, "title", None),
+                "role_title": getattr(c, "role_title", None),
+                "status": getattr(status, "value", status),
+                "candidate_count": count,
+            }
+        )
+
+    sources: list[CopilotSource] = []
+    available: list[str] = []
+    if rows:
+        sources.append(CopilotSource(source="Workspace", detail=f"{len(campaigns)} role(s)"))
+        available.append("Workspace")
+
     return ResolvedContext(
-        context_text="(No specific page context. Answer from conversation history "
-        "and general recruiting expertise, and ask the recruiter to open a campaign "
-        "or candidate for grounded, data-backed answers.)",
-        available_sources=[],
-        sources=[],
-        intent=classify_intent(question, ptype),
+        context_text=build_workspace_context(rows, len(campaigns)),
+        available_sources=available,
+        sources=sources,
+        intent=classify_intent(question, "global"),
     )
 
 
