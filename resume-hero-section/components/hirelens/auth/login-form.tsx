@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowRight, KeyRound, Wand2, User } from 'lucide-react'
 import { getSupabaseBrowserClient, isSupabaseConfigured } from '@/lib/supabase/client'
+import { authErrorMessage } from '@/lib/auth-errors'
 import { Button } from '../ui/button'
 import { AuthField } from './auth-field'
 
@@ -118,7 +119,7 @@ export function LoginForm() {
       router.replace(next)
       router.refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
+      setError(authErrorMessage(err))
       setLoading(false)
     }
   }
@@ -146,7 +147,7 @@ export function LoginForm() {
   }
 
   const errorLine = error ? (
-    <p className="hl-body text-[color:var(--hl-danger)]" role="alert">
+    <p id="login-error" className="hl-body text-[color:var(--hl-danger)]" role="alert">
       {error}
     </p>
   ) : null
@@ -243,6 +244,8 @@ export function LoginForm() {
             required
             autoFocus
             placeholder="••••••••"
+            invalid={Boolean(error)}
+            errorId="login-error"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             labelAction={

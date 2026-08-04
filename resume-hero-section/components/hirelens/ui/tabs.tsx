@@ -44,7 +44,12 @@ export const TabsTrigger = React.forwardRef<
       className={cn(
         'hl-ui inline-flex items-center gap-2 whitespace-nowrap text-hl-fg-secondary outline-none transition-[color,background-color,border-color] duration-[var(--hl-dur-fast)] disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4',
         variant === 'segmented'
-          ? 'rounded-hl-sm px-3 py-1 data-[state=active]:bg-hl-canvas data-[state=active]:text-hl-accent-fg data-[state=active]:shadow-[var(--hl-shadow-xs)]'
+          // Third of the three segmented controls in the product (with
+          // ThemeToggle and the Roles filter) — all now ride
+          // `--hl-segment-thumb` so the selected pill sits one step lighter
+          // than its track in BOTH themes. `bg-hl-canvas` gave the opposite
+          // step on dark, where the canvas is the darkest surface in the ramp.
+          ? 'rounded-hl-sm px-3 py-1 data-[state=active]:bg-hl-segment-thumb data-[state=active]:text-hl-accent-fg data-[state=active]:shadow-[var(--hl-shadow-xs)]'
           : 'border-b-2 border-transparent pb-2 data-[state=active]:border-hl-accent data-[state=active]:text-hl-fg',
         className,
       )}

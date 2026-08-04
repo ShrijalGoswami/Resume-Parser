@@ -195,7 +195,10 @@ function AuthedRoles({ initialNew }: { initialNew: boolean }) {
                     className={cn(
                       'hl-small rounded-hl-sm px-2.5 py-1 outline-none transition-colors',
                       status === f.value
-                        ? 'bg-hl-canvas text-hl-accent-fg shadow-[var(--hl-shadow-xs)]'
+                        // See ThemeToggle: the thumb rides one step lighter
+                        // than the track in both themes, which `bg-hl-canvas`
+                        // cannot do on dark.
+                        ? 'bg-hl-segment-thumb text-hl-accent-fg shadow-[var(--hl-shadow-xs)]'
                         : 'text-hl-fg-secondary hover:text-hl-fg',
                     )}
                   >

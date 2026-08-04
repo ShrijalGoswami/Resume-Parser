@@ -116,13 +116,13 @@ const INTAKE = [
 const VERDICT_STYLE = {
   advanced: {
     label: 'Advanced',
-    chip: 'border-[#2fb8c6]/40 bg-[#2fb8c6]/10 text-[#7fdbe4]',
+    chip: 'border-[#66d9ff]/40 bg-[#66d9ff]/10 text-[#7fe2ff]',
     card: 'border-white/10 bg-white/[0.04]',
     body: 'opacity-100',
   },
   held: {
     label: 'Held',
-    chip: 'border-[#c1c1ff]/30 bg-[#c1c1ff]/10 text-[#c1c1ff]',
+    chip: 'border-[#b9aeff]/30 bg-[#b9aeff]/10 text-[#b9aeff]',
     card: 'border-white/10 bg-white/[0.03]',
     body: 'opacity-100',
   },
@@ -195,9 +195,9 @@ const SIGNAL = [
 ] as const
 
 const VERDICT_TONE = {
-  risk: 'border-[#c6702e]/40 bg-[#c6702e]/10 text-[#e0a06b]',
-  find: 'border-[#2fb8c6]/40 bg-[#2fb8c6]/10 text-[#7fdbe4]',
-  strong: 'border-[#2e9e86]/40 bg-[#2e9e86]/10 text-[#6fd0b8]',
+  risk: 'border-[#ff9052]/40 bg-[#ff9052]/10 text-[#ffb184]',
+  find: 'border-[#66d9ff]/40 bg-[#66d9ff]/10 text-[#7fe2ff]',
+  strong: 'border-[#3ddc97]/40 bg-[#3ddc97]/10 text-[#7ce9b8]',
   open: 'border-white/15 bg-white/[0.05] text-mkt-dark-outline',
 } as const
 
@@ -275,7 +275,7 @@ export function CompressionEngine() {
       {/* ------------------------------------------------------------------ */}
       <div className="relative z-10 flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.07] px-5 py-4 md:px-8">
         <div className="flex items-center gap-3">
-          <span className="mkt-live-dot h-1.5 w-1.5 rounded-full bg-[#2fb8c6]" />
+          <span className="mkt-live-dot h-1.5 w-1.5 rounded-full bg-[#66d9ff]" />
           <span className="mkt-label text-mkt-dark-fg-variant">
             Live · Senior Backend Engineer
           </span>
@@ -358,7 +358,7 @@ export function CompressionEngine() {
             {[0, 1, 2].map((i) => (
               <span
                 key={i}
-                className="mkt-particle absolute left-1/2 h-6 w-px -translate-x-1/2 bg-gradient-to-b from-transparent to-[#c1c1ff]"
+                className="mkt-particle absolute left-1/2 h-6 w-px -translate-x-1/2 bg-gradient-to-b from-transparent to-[#b9aeff]"
                 style={{
                   animationDelay: `${i * 1.2}s`,
                   // Fixed px rather than a percentage: the particle is 24px
@@ -372,7 +372,7 @@ export function CompressionEngine() {
 
             {/* The scan pass — one slow sweep of the whole column. */}
             <div
-              className="mkt-scan pointer-events-none absolute inset-x-2 top-0 h-16 bg-gradient-to-b from-transparent via-[#5b5bd6]/10 to-transparent"
+              className="mkt-scan pointer-events-none absolute inset-x-2 top-0 h-16 bg-gradient-to-b from-transparent via-[#6d5ef8]/10 to-transparent"
               aria-hidden="true"
             />
 
@@ -385,7 +385,7 @@ export function CompressionEngine() {
                   className="relative flex flex-col items-center gap-1.5"
                 >
                   <span
-                    className="mkt-node-pulse h-2 w-2 rounded-full border border-[#c1c1ff]/60 bg-mkt-dark-bg"
+                    className="mkt-node-pulse h-2 w-2 rounded-full border border-[#b9aeff]/60 bg-mkt-dark-bg"
                     style={{ animationDelay: `${i * 0.5}s` }}
                     aria-hidden="true"
                   />
@@ -397,7 +397,7 @@ export function CompressionEngine() {
                   </span>
                   {/* Width meter: the column visibly narrows as it descends. */}
                   <span
-                    className="h-px bg-gradient-to-r from-transparent via-[#5b5bd6]/70 to-transparent"
+                    className="h-px bg-gradient-to-r from-transparent via-[#6d5ef8]/70 to-transparent"
                     style={{ width: `${Math.max(pass.pct, 14)}%`, minWidth: '24px' }}
                     aria-hidden="true"
                   />
@@ -458,7 +458,7 @@ export function CompressionEngine() {
                 <dl className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-white/[0.07] pt-3">
                   <div className="flex items-center gap-1.5">
                     <span
-                      className="material-symbols-outlined text-[13px] text-[#7fdbe4]"
+                      className="material-symbols-outlined text-[13px] text-[#7fe2ff]"
                       aria-hidden="true"
                     >
                       description
@@ -472,7 +472,7 @@ export function CompressionEngine() {
                   <div className="flex items-center gap-1.5">
                     <span
                       className={`material-symbols-outlined text-[13px] ${
-                        candidate.risks > 0 ? 'text-[#e0a06b]' : 'text-mkt-dark-outline'
+                        candidate.risks > 0 ? 'text-[#ffb184]' : 'text-mkt-dark-outline'
                       }`}
                       aria-hidden="true"
                     >
@@ -494,10 +494,10 @@ export function CompressionEngine() {
                           inView ? 'is-visible' : ''
                         } ${
                           candidate.confidence >= 80
-                            ? 'bg-[#2e9e86]'
+                            ? 'bg-[#3ddc97]'
                             : candidate.confidence >= 65
-                              ? 'bg-[#b78514]'
-                              : 'bg-[#c6702e]'
+                              ? 'bg-[#ffb84d]'
+                              : 'bg-[#ff9052]'
                         }`}
                         style={{
                           width: `${candidate.confidence}%`,

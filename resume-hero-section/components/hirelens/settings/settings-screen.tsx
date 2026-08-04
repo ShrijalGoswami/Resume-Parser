@@ -90,7 +90,7 @@ function AuthedSettings({ section }: { section: string }) {
       breadcrumbs={[{ label: 'Settings', href: '/settings' }, { label: active.label }]}
       account={account}
     >
-      <div className="flex h-full">
+      <div className="flex min-h-0 flex-1">
         <aside className="hidden w-64 shrink-0 overflow-y-auto border-r border-hl-border-subtle p-3 lg:block">
           <nav aria-label="Settings sections" className="flex flex-col gap-4">
             {GROUPS.map((group) => (

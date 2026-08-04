@@ -302,7 +302,18 @@ export function DataTable<T>({
               </colgroup>
             ) : null}
             <thead>
-              <tr className="border-b border-hl-border-subtle bg-hl-subtle">
+              {/* The header's rule is the DEFAULT border; every row divider
+                  below it is the SUBTLE one. Both used to be subtle, so the
+                  boundary between the header and the data carried exactly as
+                  much weight as the boundary between row 4 and row 5 — and a
+                  table whose every horizontal line is the same weight has no
+                  structure, it has stripes. One step of contrast at the top is
+                  what makes the header hold the table down.
+
+                  It also resolves a collision: the header fill and the
+                  row-hover fill are both `--hl-bg-subtle`, so a hovered first
+                  row was previously continuous with the header. */}
+              <tr className="border-b border-hl-border bg-hl-subtle">
                 {selectable ? (
                   <th scope="col" className={cn(CELL_X, 'w-9 py-2')}>
                     <input
@@ -341,7 +352,17 @@ export function DataTable<T>({
                           type="button"
                           onClick={() => toggleSort(column.key)}
                           className={cn(
-                            'inline-flex items-center gap-1 rounded-hl-sm outline-none transition-colors hover:text-hl-fg',
+                            // `[text-transform:inherit]` IS LOAD-BEARING.
+                            // Tailwind's preflight ships `button, select {
+                            // text-transform: none }`. The `<th>` carries
+                            // `hl-label`, which is uppercase — but the label
+                            // lives inside this button on sortable columns, so
+                            // the reset won and every SORTABLE header rendered
+                            // "Member" while every non-sortable one rendered
+                            // "MEMBER". Same header row, two casings, entirely
+                            // invisible to a static read of the classes.
+                            // Caught by reading computed style in a browser.
+                            'inline-flex items-center gap-1 rounded-hl-sm outline-none transition-colors hover:text-hl-fg [text-transform:inherit]',
                             column.align === 'right' && 'flex-row-reverse',
                           )}
                         >

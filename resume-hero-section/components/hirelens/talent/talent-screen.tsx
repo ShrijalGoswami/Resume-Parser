@@ -239,7 +239,7 @@ function AuthedTalent({ initial }: { initial: TalentInitial }) {
 
   return (
     <AppShell title="Talent" account={account}>
-      <div className="flex h-full">
+      <div className="flex min-h-0 flex-1">
         <aside className="hidden w-56 shrink-0 overflow-y-auto border-r border-hl-border-subtle p-4 lg:block">
           <TalentSidebar
             onRunQuery={(q) => runSearch(q, filters)}

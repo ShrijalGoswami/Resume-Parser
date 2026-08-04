@@ -11,7 +11,7 @@ import { ErrorState } from '../states/error-state'
 import { useCandidateObject, useCandidateShortcuts } from './use-candidate-object'
 import { NoteDialog } from './note-dialog'
 import { CandidateHeader } from './sections/header'
-import { CandidateVerdict, CandidateConfidence } from './sections/ai'
+import { CandidateVerdict } from './sections/ai'
 import { CandidateStrengths, CandidateRisks } from './sections/evidence'
 import { CandidateDecisionBar } from './sections/decision-bar'
 
@@ -79,8 +79,15 @@ export function CandidatePeek({
             <ErrorState variant="inline" title="Couldn't load this candidate" onRetry={c.refetch} />
           ) : (
             <>
+              {/* CandidateConfidence is deliberately NOT rendered here.
+                  `CandidateVerdict` wraps AIAnswer, which already prints a
+                  confidence pill from the same `model.confidence` — so the Peek
+                  showed "High confidence" twice, in adjacent rows, once inside
+                  the verdict card and again immediately under it. Same fact,
+                  same value, stated twice. The standalone pill is kept for
+                  surfaces that show confidence WITHOUT the verdict card above
+                  it; here the verdict owns it. */}
               <CandidateVerdict model={c.model} onOpenResume={c.openResume} />
-              <CandidateConfidence model={c.model} />
               <CandidateStrengths model={c.model} />
               <CandidateRisks model={c.model} />
             </>

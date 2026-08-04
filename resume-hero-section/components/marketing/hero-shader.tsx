@@ -34,7 +34,7 @@ void main() {
     float y = uv.y * 2.0 + u_time * 0.03;
 
     // HireLens Prism Spectral Colors (extremely subtle/desaturated)
-    vec3 iris = vec3(0.357, 0.357, 0.839); // #5B5BD6
+    vec3 iris = vec3(0.427, 0.369, 0.973); // #6D5EF8
     vec3 sky = vec3(0.85, 0.92, 0.98);
     vec3 mint = vec3(0.92, 0.98, 0.95);
 
@@ -45,8 +45,8 @@ void main() {
     vec3 color = mix(sky, mint, n);
     color = mix(color, iris, n2 * 0.2);
 
-    // Deep Ink background blend (#0B0D0D base)
-    vec3 ink = vec3(0.043, 0.051, 0.051);
+    // Deep Ink background blend (#0A0C18 base)
+    vec3 ink = vec3(0.039, 0.047, 0.094);
 
     // Keep it as a 4-8% "breath" behind the type
     float mask = smoothstep(0.2, 0.8, uv.y) * smoothstep(0.8, 0.2, uv.y);

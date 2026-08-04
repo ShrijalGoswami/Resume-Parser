@@ -5,6 +5,7 @@ import { Card } from '../ui/card'
 import { Avatar } from '../ui/avatar'
 import { Badge } from '../ui/badge'
 import { ScoreMeter } from '../domain/score-meter'
+import { DRAWER_FOCUS_KEY } from '../ui/drawer'
 import { HireBadge } from './hire-badge'
 import type { CandidateRow } from '@/lib/candidate'
 
@@ -41,7 +42,14 @@ export function CandidateCard({ row, selected, onToggleSelect, onOpen }: Candida
         ) : null}
         <Avatar name={row.name} size={24} />
         {onOpen ? (
-          <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left outline-none">
+          <button
+            type="button"
+            onClick={onOpen}
+            // Same restore target as the table's name button, so switching
+            // between board and table view does not change where focus lands.
+            {...{ [DRAWER_FOCUS_KEY]: `candidate-${row.id}` }}
+            className="min-w-0 flex-1 text-left outline-none"
+          >
             <p className="hl-body-medium truncate hover:underline">{row.name}</p>
             {row.matchCategory ? (
               <p className="hl-caption truncate text-hl-fg-tertiary">{row.matchCategory}</p>

@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { Avatar } from '../ui/avatar'
 import { Badge } from '../ui/badge'
 import { ScoreMeter } from '../domain/score-meter'
+import { DRAWER_FOCUS_KEY } from '../ui/drawer'
 import { HireBadge } from './hire-badge'
 import { StageMenu } from './stage-menu'
 import { relativeTime } from '../lib/format'
@@ -117,6 +118,10 @@ export function PipelineTable({
                     <button
                       type="button"
                       onClick={() => onOpenCandidate(row.id)}
+                      // Focus comes back here when the drawer closes. Keyed
+                      // rather than left to Radix's node reference because this
+                      // table is virtualized — see DRAWER_FOCUS_KEY.
+                      {...{ [DRAWER_FOCUS_KEY]: `candidate-${row.id}` }}
                       className="min-w-0 text-left outline-none"
                     >
                       <p className="hl-body-medium truncate hover:underline">{row.name}</p>

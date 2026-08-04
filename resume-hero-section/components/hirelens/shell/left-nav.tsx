@@ -58,6 +58,18 @@ function NavLink({
         collapsed && 'justify-center px-0',
         active
           ? 'hl-nav-active text-hl-accent-fg'
+          // HOVER IS NEUTRAL. IT MUST NOT BE THE ACCENT.
+          // Inactive rows used to hover to `bg-hl-accent-subtle` (#F0EDFE),
+          // which is within a hair of the plate the ACTIVE row carries
+          // (`hl-nav-active`, the accent at 13%→5%). Passing the pointer down
+          // the rail therefore lit each row up as though it were the selected
+          // one, and the only thing still separating "where I am" from "what
+          // is under my cursor" was the 3px marker.
+          //
+          // Violet in this rail now means exactly one thing: this is the page
+          // you are on. Hover is a neutral surface change — the same
+          // `bg-hl-muted` the rail's own settings, theme and collapse controls
+          // have always used, so the rail is finally internally consistent too.
           : 'text-hl-fg-secondary hover:bg-hl-muted hover:text-hl-fg active:scale-[0.99]',
       )}
     >
@@ -65,7 +77,17 @@ function NavLink({
         <span
           // The active marker grows out of the rail edge rather than simply
           // being present — it is the one piece of motion in the nav.
-          className="absolute left-0 top-1/2 h-7 w-[3px] -translate-y-1/2 rounded-r-full bg-hl-accent shadow-[0_0_12px_color-mix(in_srgb,var(--hl-accent-solid)_60%,transparent)]"
+          //
+          // NO GLOW. This carried `0 0 12px` of the accent at 60% alpha — a
+          // halo four times the width of the 3px bar casting it, and the
+          // strongest glow anywhere in the product (the primary CTA's is 35%).
+          // The design system reserves accent glow for the primary CTA and
+          // live AI surfaces, on the grounds that a coloured shadow on
+          // ordinary furniture reads as a bug rather than as premium; a
+          // permanent glow bolted to the navigation is the clearest case of
+          // that. The rail is chrome and should be the calmest surface on
+          // screen — the marker identifies the page, it does not announce it.
+          className="hl-gradient-primary absolute left-0 top-1/2 h-7 w-[3px] -translate-y-1/2 rounded-r-full"
           aria-hidden
         />
       ) : null}

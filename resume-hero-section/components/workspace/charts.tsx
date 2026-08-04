@@ -67,16 +67,24 @@ export function Histogram({ data }: { data: { range: string; count: number }[] }
   const total = data.reduce((s, d) => s + d.count, 0);
   if (total === 0) return <p className="py-6 text-center hl-body text-muted-foreground">No scores yet</p>;
   return (
-    <div className="flex items-end justify-between gap-2" style={{ height: 140 }}>
+    // `items-stretch` + the `flex-1` track below are what make the bars exist.
+    // With `items-end` on this row every column was sized to its own content, so
+    // the bar's percentage height had no definite parent to resolve against and
+    // collapsed to the 2px floor: the chart rendered as counts and axis labels
+    // floating over a hairline, on both distribution cards. `min-h-0` keeps the
+    // track from being pushed open by its own content.
+    <div className="flex items-stretch justify-between gap-2" style={{ height: 140 }}>
       {data.map((d) => (
-        <div key={d.range} className="flex flex-1 flex-col items-center justify-end gap-1" title={`${d.range}: ${d.count}`}>
+        <div key={d.range} className="flex flex-1 flex-col items-center gap-1" title={`${d.range}: ${d.count}`}>
           <span className="hl-caption hl-num text-foreground">{d.count || ""}</span>
-          <div
-            className={cn('w-full rounded-t bg-primary', d.count === 0 && 'bg-muted')}
-            style={{ height: `${Math.max(2, (d.count / max) * 100)}%`, minHeight: 2 }}
-            role="img"
-            aria-label={`${d.range}: ${d.count}`}
-          />
+          <div className="flex min-h-0 w-full flex-1 items-end">
+            <div
+              className={cn('w-full rounded-t bg-primary', d.count === 0 && 'bg-muted')}
+              style={{ height: `${Math.max(2, (d.count / max) * 100)}%`, minHeight: 2 }}
+              role="img"
+              aria-label={`${d.range}: ${d.count}`}
+            />
+          </div>
           <span className="hl-label-sm text-muted-foreground">{d.range}</span>
         </div>
       ))}

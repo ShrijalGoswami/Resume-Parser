@@ -30,8 +30,8 @@ export default function MarketingError({
         alignItems: 'center',
         justifyContent: 'center',
         padding: '24px',
-        background: '#0B0D0D',
-        color: '#EDF1F0',
+        background: '#0A0C18',
+        color: '#EEF0FA',
         fontFamily:
           'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
       }}
@@ -60,8 +60,8 @@ export default function MarketingError({
               padding: '0.5rem 1rem',
               fontSize: '0.875rem',
               fontWeight: 500,
-              color: '#0B0D0D',
-              background: '#EDF1F0',
+              color: '#0A0C18',
+              background: '#EEF0FA',
             }}
           >
             Try again
@@ -73,7 +73,7 @@ export default function MarketingError({
               padding: '0.5rem 1rem',
               fontSize: '0.875rem',
               fontWeight: 500,
-              color: '#EDF1F0',
+              color: '#EEF0FA',
               textDecoration: 'none',
               border: '1px solid rgba(237, 241, 240, 0.24)',
             }}

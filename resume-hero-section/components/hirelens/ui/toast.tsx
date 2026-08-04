@@ -49,7 +49,7 @@ export function Toaster() {
               if (!open) dismissToast(item.id)
             }}
             className={cn(
-              'hl relative flex items-start gap-3 overflow-hidden rounded-hl-md border border-hl-border bg-hl-canvas p-3 pl-4 text-hl-fg shadow-[var(--hl-shadow-md)]',
+              'hl pointer-events-auto relative flex items-start gap-3 overflow-hidden rounded-hl-md border border-hl-border bg-hl-canvas p-3 pl-4 text-hl-fg shadow-[var(--hl-shadow-md)]',
               'before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:content-[""]',
               edgeFor[variant],
               'data-[state=open]:animate-in data-[state=open]:slide-in-from-right-full data-[state=closed]:animate-out data-[state=closed]:fade-out-80',
@@ -89,7 +89,16 @@ export function Toaster() {
           </ToastPrimitive.Root>
         )
       })}
-      <ToastPrimitive.Viewport className="hl fixed bottom-0 right-0 z-[var(--hl-z-toast)] flex w-full max-w-sm flex-col gap-2 p-4 outline-none" />
+      {/* `bg-transparent` and `pointer-events-none` are load-bearing, not tidying.
+          The viewport carries `.hl` so toasts resolve the product tokens, and
+          `.hl` sets `background-color: var(--hl-bg-canvas)` in `@layer base` — so
+          with no toasts on screen this still painted an opaque 384x32 rectangle
+          in the bottom-right corner of EVERY page, and swallowed clicks there at
+          z-index 600. Neither is visible in a component story, because a story
+          always has a toast in it. Utilities beat `@layer base`, so the
+          `bg-transparent` here wins; each Root re-enables its own pointer
+          events. */}
+      <ToastPrimitive.Viewport className="hl pointer-events-none fixed bottom-0 right-0 z-[var(--hl-z-toast)] flex w-full max-w-sm flex-col gap-2 bg-transparent p-4 outline-none" />
     </ToastPrimitive.Provider>
   )
 }

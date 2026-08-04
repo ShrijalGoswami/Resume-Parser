@@ -27,10 +27,63 @@ export interface DrawerContentProps
   showClose?: boolean
 }
 
+/**
+ * Attribute that survives a re-render. Radix restores focus by holding a
+ * REFERENCE to the node that was focused when the drawer opened — which is
+ * correct until that node is replaced rather than moved. The candidate tables
+ * are virtualized (`useVirtualizer` + `measureElement`), so opening a drawer
+ * re-renders the list and the name button Radix is holding is detached from the
+ * document. Focusing a detached node silently does nothing, so focus fell to
+ * `<body>`: Escape out of a candidate and a keyboard user was at the top of the
+ * page, needing ~15 tabs through the rail to get back to the row they were on.
+ *
+ * Put this on whatever opens a drawer and focus is re-found by query on close,
+ * whether or not the original element instance still exists.
+ */
+export const DRAWER_FOCUS_KEY = 'data-drawer-focus-key'
+
 export const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   DrawerContentProps
->(({ className, children, size = 'candidate', showClose = true, ...props }, ref) => (
+>(({ className, children, size = 'candidate', showClose = true, onCloseAutoFocus, ...props }, ref) => {
+  // Captured on mount — i.e. when the drawer opens — because by the time it
+  // closes `document.activeElement` is inside the drawer.
+  const opener = React.useRef<{ node: HTMLElement | null; key: string | null }>({
+    node: null,
+    key: null,
+  })
+
+  React.useEffect(() => {
+    const active = document.activeElement
+    opener.current =
+      active instanceof HTMLElement
+        ? { node: active, key: active.getAttribute(DRAWER_FOCUS_KEY) }
+        : { node: null, key: null }
+  }, [])
+
+  const restoreFocus = React.useCallback(
+    (event: Event) => {
+      onCloseAutoFocus?.(event)
+      if (event.defaultPrevented) return
+
+      const { node, key } = opener.current
+      // Prefer the original instance; fall back to re-querying by key for the
+      // virtualized case, where the instance is gone but the row is still there.
+      const target =
+        node && node.isConnected
+          ? node
+          : key
+            ? document.querySelector<HTMLElement>(`[${DRAWER_FOCUS_KEY}="${CSS.escape(key)}"]`)
+            : null
+
+      if (!target) return // Let Radix do its default thing rather than guess.
+      event.preventDefault()
+      target.focus()
+    },
+    [onCloseAutoFocus],
+  )
+
+  return (
   <DialogPrimitive.Portal>
     <DialogPrimitive.Overlay
       className={cn(
@@ -47,6 +100,7 @@ export const DrawerContent = React.forwardRef<
         sizeMap[size],
         className,
       )}
+      onCloseAutoFocus={restoreFocus}
       {...props}
     >
       {showClose ? (
@@ -60,7 +114,8 @@ export const DrawerContent = React.forwardRef<
       {children}
     </DialogPrimitive.Content>
   </DialogPrimitive.Portal>
-))
+  )
+})
 DrawerContent.displayName = DialogPrimitive.Content.displayName
 
 /** Sticky header (Design Bible §4.4). */

@@ -267,7 +267,7 @@ export function NeuralBackground({
   lineOpacity = 0.11,
   nodeOpacity = 0.3,
   animationSpeed = 1,
-  accentColor = '#5b5bd6',
+  accentColor = '#6d5ef8',
   parallax = true,
   parallaxStrength = 6,
   scrollResponse = 0.035,

@@ -6,12 +6,25 @@ import { scoreBand, type ScoreBandKey } from '../lib/format'
  * band-colored fill, fine tick marks, the mono number, and a one-word label.
  * Always number + label + color (never color alone).
  */
+/**
+ * THE BAR TAKES THE `-solid` TONE; THE NUMERAL TAKES THE BASE TONE.
+ * ---------------------------------------------------------------------------
+ * They are different colours on purpose. The bar is a graphic — it only has to
+ * clear WCAG's 3:1 non-text floor, so it uses the vivid band colour (cyan,
+ * mint, amber, orange, coral) that carries the brand. The numeral beside it is
+ * text at 4.5:1, which those vivid tones cannot reach on a light canvas, so it
+ * uses the deeper sibling.
+ *
+ * Both used to read the text tone, which made every meter in the product paint
+ * dark teal / olive / brown — technically compliant and visually the muddy
+ * "enterprise" look the palette exists to get away from.
+ */
 const fillFor: Record<ScoreBandKey, string> = {
-  infocus: 'bg-hl-score-infocus',
-  sharp: 'bg-hl-score-sharp',
-  legible: 'bg-hl-score-legible',
-  soft: 'bg-hl-score-soft',
-  outfocus: 'bg-hl-score-outfocus',
+  infocus: 'bg-hl-score-infocus-solid',
+  sharp: 'bg-hl-score-sharp-solid',
+  legible: 'bg-hl-score-legible-solid',
+  soft: 'bg-hl-score-soft-solid',
+  outfocus: 'bg-hl-score-outfocus-solid',
 }
 const textFor: Record<ScoreBandKey, string> = {
   infocus: 'text-hl-score-infocus',

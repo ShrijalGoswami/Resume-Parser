@@ -45,7 +45,12 @@ export function ThemeToggle() {
             className={cn(
               'inline-flex size-7 items-center justify-center rounded-hl-sm outline-none transition-colors',
               active
-                ? 'bg-hl-canvas text-hl-accent-fg shadow-[var(--hl-shadow-xs)]'
+                // `bg-hl-segment-thumb`, not `bg-hl-canvas`: the thumb has to
+                // sit one step LIGHTER than its muted track in both themes.
+                // On dark the canvas is the darkest surface in the ramp, so
+                // the old value made the selected option the darkest thing in
+                // the control — a hole rather than a raised pill.
+                ? 'bg-hl-segment-thumb text-hl-accent-fg shadow-[var(--hl-shadow-xs)]'
                 : 'text-hl-fg-tertiary hover:text-hl-fg',
             )}
           >

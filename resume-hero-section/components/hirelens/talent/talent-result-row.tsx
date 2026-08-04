@@ -6,6 +6,7 @@ import { Card } from '../ui/card'
 import { Avatar } from '../ui/avatar'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
+import { DRAWER_FOCUS_KEY } from '../ui/drawer'
 import { ScoreMeter } from '../domain/score-meter'
 import type { SearchResultItem } from '@/types/search'
 
@@ -59,7 +60,14 @@ export function TalentResultRow({
         />
         <Avatar name={result.name} size={28} />
         <div className="min-w-0 flex-1">
-          <button type="button" onClick={onOpen} className="max-w-full text-left outline-none">
+          <button
+            type="button"
+            onClick={onOpen}
+            // Talent results are virtualized too, so focus is restored by key
+            // rather than by node reference — see DRAWER_FOCUS_KEY.
+            {...{ [DRAWER_FOCUS_KEY]: `candidate-${result.candidate_id}` }}
+            className="max-w-full text-left outline-none"
+          >
             <p className="hl-body-medium truncate hover:underline">{result.name}</p>
           </button>
           {meta.length > 0 ? (

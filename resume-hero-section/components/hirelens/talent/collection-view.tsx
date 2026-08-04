@@ -5,6 +5,7 @@ import { useCollections, type CollectionItem } from '../lib/talent-store'
 import { Card } from '../ui/card'
 import { Avatar } from '../ui/avatar'
 import { Button } from '../ui/button'
+import { DRAWER_FOCUS_KEY } from '../ui/drawer'
 import { EmptyState } from '../states/empty-state'
 
 /** A saved collection's members (localStorage). Snapshots open in the drawer. */
@@ -57,6 +58,7 @@ export function CollectionView({
                 <button
                   type="button"
                   onClick={() => onOpen(item)}
+                  {...{ [DRAWER_FOCUS_KEY]: `candidate-${item.candidateId}` }}
                   className="hl-body-medium min-w-0 flex-1 truncate text-left outline-none hover:underline"
                   disabled={!item.campaignId}
                 >

@@ -40,7 +40,16 @@ export function AppShell({ children, account, ...topBarProps }: AppShellProps) {
           // sparse screen has atmosphere rather than a flat fill.
           className="hl-canvas-wash flex-1 overflow-y-auto outline-none"
         >
-          <div key={pathname} className="hl-route-enter min-h-full">
+          {/* `flex flex-col` is here so a screen can say `flex-1` and actually
+              fill the viewport. `min-h-full` alone gives this wrapper a minimum,
+              not a DEFINITE height, so a child's `h-full` had nothing to resolve
+              against and fell back to its own content height. Talent, Ask and
+              Settings each ended ~195px short of the bottom, leaving their
+              column dividers stopping in mid-air over the canvas — a seam that
+              only shows up once a screen is assembled and under-filled.
+              `min-h-full` is kept rather than `h-full` so tall screens still
+              grow and scroll instead of being pinned to one viewport. */}
+          <div key={pathname} className="hl-route-enter flex min-h-full flex-col">
             {children}
           </div>
         </main>

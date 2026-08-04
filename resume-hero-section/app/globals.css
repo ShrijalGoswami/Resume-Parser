@@ -211,101 +211,192 @@
 
 /* --- Light (default) ---------------------------------------------------- */
 .hl {
-  /* Neutral — Ink & Glass (§3.1) */
-  --hl-bg-canvas: #FCFDFC;
-  --hl-bg-subtle: #F4F6F5;
-  --hl-bg-muted: #EBEEED;
-  --hl-bg-inset: #E1E5E4;
-  --hl-border-subtle: #E9EDEC;
-  --hl-border-default: #DCE1E0;
-  --hl-border-strong: #CBD1D0;
-  --hl-text-primary: #131817;
-  --hl-text-secondary: #545C5A;
-  /* Darkened from #828B89 to reach WCAG 2.1 AA (4.5:1) for normal-size text.
-     The old value measured 3.43:1 on canvas, 3.22:1 on subtle and 3.00:1 on
-     muted — this token carries captions, timestamps and metadata, so it was the
-     most-read failing text in the product. Now 5.24 / 4.92 / 4.57. Same hue and
-     the same recessive role; only lightness moved. */
-  --hl-text-tertiary: #656C6B;
+  /* =====================================================================
+     NEUTRAL — Aurora Ink (§3.1)
+     ---------------------------------------------------------------------
+     The ramp was re-hued on 3 Aug 2026. It used to sit at roughly hue 150
+     (a green-tinted gray), which is what made the product read "cold" and
+     "enterprise" no matter how warm the accent got: neutrals are ~90% of
+     the pixels on any screen, so they, not the accent, set the temperature.
+
+     Every step below is now on the SAME blue-violet hue family (~228) as
+     the accent and the prism gradient. Lightness and the role each step
+     plays are unchanged — this is a hue rotation, not a contrast change,
+     so every surface keeps its position in the stack.
+     ===================================================================== */
+  --hl-bg-canvas: #FBFCFF;
+  /* Table-row hover and header fill land on this step, so it is pinned to the
+     identity's #F8FAFF rather than derived from the ramp arithmetic. */
+  --hl-bg-subtle: #F6F9FF;
+  --hl-bg-muted: #ECF0FB;
+  --hl-bg-inset: #E2E8F7;
+  --hl-border-subtle: #EDF0FA;
+  --hl-border-default: #E0E6F5;
+  --hl-border-strong: #C9D2EA;
+  /* Deep navy-ink rather than near-black. At this lightness the difference
+     is not read as "blue text", it is read as *not harsh* — the same reason
+     Linear and Stripe never set body copy in #000. */
+  --hl-text-primary: #141A2E;
+  --hl-text-secondary: #4A5578;
+  /* Carries captions, timestamps and metadata — the most-read recessive text
+     in the product, so it is held to the full 4.5:1 AA floor rather than the
+     3:1 large-text one. Measures 5.13 / 4.91 / 4.62 on canvas / subtle /
+     muted. Re-hued with the rest of the ramp; the lightness that earned those
+     ratios was preserved deliberately. */
+  --hl-text-tertiary: #626B8A;
   /* Disabled text is intentionally below 4.5:1 — WCAG 1.4.3 exempts inactive
      controls, and lifting it would make disabled read as enabled. */
-  --hl-text-disabled: #AEB5B3;
+  --hl-text-disabled: #A9B1C9;
 
-  /* Accent — Iris (§3.2) */
-  --hl-accent-solid: #5B5BD6;
-  --hl-accent-hover: #4F4FC4;
-  --hl-accent-text: #4A4AC0;
-  --hl-accent-subtle-bg: #EEEEFB;
-  --hl-accent-border: #D9D9F6;
+  /* =====================================================================
+     ACCENT — Iris (§3.2)
+     ---------------------------------------------------------------------
+     TWO TONES, TWO JOBS. `--hl-accent-solid` is the brand violet and is used
+     as a FILL (buttons, rings, indicators, graphics), where WCAG's 3:1
+     non-text floor applies. `--hl-accent-text` is a deliberately deeper
+     sibling at the same hue, used wherever the colour carries TYPE, where
+     the 4.5:1 floor applies.
 
-  /* AI — Prism (§3.3) */
-  --hl-prism-from: #6E5CF0;
-  --hl-prism-mid: #4C8FE0;
-  --hl-prism-to: #2FB8C6;
-  --hl-ai-surface: #F6F8FD;
-  --hl-ai-border: #C9D2F0;
+     They are not interchangeable. The brand violet #6D5EF8 measures 4.44:1
+     on the canvas — under AA for normal text — while white on it measures
+     4.56:1, over AA. So it is correct as a button fill and wrong as a link
+     colour, which is exactly the split below. See the same pattern on every
+     semantic pair further down. */
+  --hl-accent-solid: #6D5EF8;
+  --hl-accent-hover: #5B4CE6;
+  --hl-accent-text: #5847E8;   /* 5.88:1 on canvas, 5.45:1 on its own tint */
+  --hl-accent-subtle-bg: #F0EDFE;
+  --hl-accent-border: #DDD8FB;
+
+  /* Secondary accent (§3.2b) — the soft violet pair. Supporting graphics,
+     the second series in a chart, decorative washes. Never type: #A78BFA
+     measures 2.4:1 on white and is a fill colour only. */
+  --hl-accent-secondary: #A78BFA;
+  --hl-accent-secondary-soft: #C4B5FD;
+
+  /* AI — Prism (§3.3). The brand gradient: violet → blue → cyan. */
+  --hl-prism-from: #6D5EF8;
+  --hl-prism-mid: #4F7CFF;
+  --hl-prism-to: #66D9FF;
+  --hl-ai-surface: #F5F7FF;
+  --hl-ai-border: #D8DFFB;
 
   /* Editorial — theme-invariant Ink surface (the auth/marketing Ink half).
      Defined once and intentionally NOT overridden in dark: this surface is
      always Deep Ink regardless of the active theme. */
-  --hl-editorial-bg: #0B0D0D;
-  --hl-editorial-fg: #EDF1F0;
-  --hl-editorial-muted: rgba(237, 241, 240, 0.55);
-  --hl-editorial-border: rgba(237, 241, 240, 0.12);
-  --hl-editorial-surface: rgba(237, 241, 240, 0.03);
+  --hl-editorial-bg: #0A0C18;
+  --hl-editorial-fg: #EEF0FA;
+  --hl-editorial-muted: rgba(238, 240, 250, 0.55);
+  --hl-editorial-border: rgba(238, 240, 250, 0.12);
+  --hl-editorial-surface: rgba(238, 240, 250, 0.03);
 
-  /* Score / fit — Focus scale (§3.4) */
-  --hl-score-infocus: #0C7C86;
-  --hl-score-infocus-bg: #E4F3F4;
-  --hl-score-sharp: #2E9E86;
-  --hl-score-sharp-bg: #E6F4EE;
-  --hl-score-legible: #B78514;
-  --hl-score-legible-bg: #FBF2D8;
-  --hl-score-soft: #C6702E;
-  --hl-score-soft-bg: #FBEEE1;
-  --hl-score-outfocus: #B4463C;
-  --hl-score-outfocus-bg: #FBEBE8;
+  /* =====================================================================
+     SCORE / FIT — Focus scale (§3.4)
+     ---------------------------------------------------------------------
+     A five-step SEQUENTIAL scale (best → worst fit), not a categorical
+     palette — the order carries the meaning, so the steps must stay
+     monotonic in both hue and lightness. Re-hued into the new family: the
+     good end is now the brand cyan/mint rather than a teal/green that
+     belonged to no one, while the warning end keeps its amber → red run
+     because those readings are conventional and must not be re-invented.
 
-  /* Semantic (§3.5) */
-  --hl-success: #1E7A52;
-  --hl-success-bg: #E7F5EE;
-  /* Nudged from #9A6800: it measured 4.30:1 on its own tint, just short of the
-     4.5:1 AA floor for normal-size text. A 3% darkening reaches 4.52:1 with no
-     perceptible change to the amber. */
-  --hl-warning: #956500;
-  --hl-warning-bg: #FBF1DC;
-  --hl-danger: #B4443A;
-  --hl-danger-bg: #FBEBE8;
-  /* Nudged from #2C6BD6 (4.38:1 on its tint) — same reasoning as --hl-warning. */
-  --hl-info: #2B69D2;
-  --hl-info-bg: #E8F0FD;
+     Each `*-bg` is the vivid tone at ~10-14% over white; each text tone is
+     a deeper sibling that clears 4.5:1 ON ITS OWN TINT. Measured values are
+     noted where they were tuned to reach the floor. */
+  --hl-score-infocus: #0B6E80;      /* 5.31:1 on its tint */
+  --hl-score-infocus-bg: #E4F6FD;
+  --hl-score-sharp: #0A7A4D;        /* 4.93:1 on its tint */
+  --hl-score-sharp-bg: #E4FAF0;
+  --hl-score-legible: #955F00;      /* 4.93:1 on its tint */
+  --hl-score-legible-bg: #FFF4E2;
+  --hl-score-soft: #A54E1A;         /* 5.00:1 on its tint */
+  --hl-score-soft-bg: #FDEEE3;
+  --hl-score-outfocus: #C63434;     /* 4.72:1 on its tint */
+  --hl-score-outfocus-bg: #FFEDED;
+
+  /* The vivid fill tones for the same five steps — meters, bars, chart
+     marks, progress. These are the colours the eye reads as the brand;
+     the text tones above are what keeps the labels legible on them. */
+  --hl-score-infocus-solid: #66D9FF;
+  --hl-score-sharp-solid: #3DDC97;
+  --hl-score-legible-solid: #FFB84D;
+  --hl-score-soft-solid: #FF9052;
+  --hl-score-outfocus-solid: #FF6B6B;
+
+  /* =====================================================================
+     SEMANTIC (§3.5)
+     ---------------------------------------------------------------------
+     Same two-tone contract as the accent. The `-solid` tone is the vivid
+     brand colour and is used as a FILL (dots, bars, meters, icons on a
+     tinted plate). The base tone is the AA-safe sibling used for TYPE.
+
+     The vivid tones are the ones specified for the identity — #3DDC97,
+     #FFB84D, #FF6B6B — and they measure 1.8:1, 1.9:1 and 3.3:1 on white.
+     They are beautiful as fills and unreadable as text, which is why the
+     split exists rather than a single token per role. */
+  --hl-success: #0A7A4D;            /* 4.93:1 on its tint */
+  --hl-success-solid: #3DDC97;
+  --hl-success-bg: #E4FAF0;
+  --hl-warning: #955F00;            /* 4.93:1 on its tint */
+  --hl-warning-solid: #FFB84D;
+  --hl-warning-bg: #FFF4E2;
+  --hl-danger: #C63434;             /* 4.72:1 on its tint; white on it 5.33:1 */
+  --hl-danger-solid: #FF6B6B;
+  --hl-danger-bg: #FFEDED;
+  --hl-info: #2C5FD8;               /* 5.02:1 on its tint */
+  --hl-info-solid: #4F7CFF;
+  --hl-info-bg: #EDF2FF;
 
   /* Confidence (§3.6) — low is neutral, never red */
-  --hl-confidence-high: #1E7A52;
-  --hl-confidence-med: #9A6800;
-  --hl-confidence-low: #82786A;
+  --hl-confidence-high: #0A7A4D;
+  --hl-confidence-med: #955F00;
+  --hl-confidence-low: #6B7391;
+
+  /* =====================================================================
+     CHART SERIES (§3.4b) — categorical, brand-family
+     ---------------------------------------------------------------------
+     Ordered so the first two are maximally distinct (violet vs blue is the
+     pairing most charts actually need) and no two adjacent steps collide
+     for the most common colour-vision deficiencies. Six steps is the cap
+     on purpose: a categorical scale past six stops being readable, and the
+     answer there is a different chart, not a seventh hue. */
+  --hl-chart-1: #6D5EF8;
+  --hl-chart-2: #4F7CFF;
+  --hl-chart-3: #66D9FF;
+  --hl-chart-4: #3DDC97;
+  --hl-chart-5: #A78BFA;
+  --hl-chart-6: #FFB84D;
 
   /* Loading / skeleton (§3.7) */
-  --hl-skeleton-base: #EBEEED;
-  --hl-skeleton-sheen: #F4F6F5;
+  --hl-skeleton-base: #ECF0FB;
+  --hl-skeleton-sheen: #F7F9FE;
 
   /* Elevation (§3.9) */
   /* Elevation. Each step is a *pair*: a tight contact shadow that anchors the
      element to the surface below it, and a wider ambient shadow that gives it
      height. A single blurred shadow reads as a smudge; the pair is what makes
-     Stripe/Linear cards feel like objects rather than outlines. */
+     Stripe/Linear cards feel like objects rather than outlines.
+
+     The shadow ink moved from a near-black green (10,14,13) to slate-navy
+     (30,41,59) with the neutral re-hue. A neutral-black shadow over a
+     blue-tinted canvas reads as dirt; matching the shadow to the surface
+     temperature is what keeps a stack of white cards looking clean. */
   --hl-shadow-xs:
-    0 1px 1px rgba(10, 14, 13, 0.04),
-    0 1px 2px -1px rgba(10, 14, 13, 0.05);
+    0 1px 1px rgba(30, 41, 59, 0.04),
+    0 1px 2px -1px rgba(30, 41, 59, 0.05);
   --hl-shadow-sm:
-    0 1px 2px rgba(10, 14, 13, 0.04),
-    0 4px 8px -2px rgba(10, 14, 13, 0.07);
+    0 1px 2px rgba(30, 41, 59, 0.04),
+    0 4px 10px -2px rgba(30, 41, 59, 0.06);
   --hl-shadow-md:
-    0 2px 4px rgba(10, 14, 13, 0.04),
-    0 12px 24px -6px rgba(10, 14, 13, 0.10);
+    0 2px 4px rgba(30, 41, 59, 0.04),
+    0 12px 40px -8px rgba(30, 41, 59, 0.08);
   --hl-shadow-lg:
-    0 4px 8px rgba(10, 14, 13, 0.05),
-    0 24px 48px -12px rgba(10, 14, 13, 0.16);
+    0 4px 8px rgba(30, 41, 59, 0.05),
+    0 24px 56px -12px rgba(30, 41, 59, 0.14);
+  /* Accent-tinted glow. ONLY for the primary CTA and live AI surfaces — a
+     coloured shadow on an ordinary card reads as a bug, not as premium. */
+  --hl-shadow-glow: 0 6px 20px -4px rgba(109, 94, 248, 0.35);
+  --hl-shadow-glow-strong: 0 8px 28px -4px rgba(109, 94, 248, 0.45);
 
   /* Raised surface — the plane a card sits on, one step above the canvas.
      In light mode the canvas is off-white and cards go pure white, which is
@@ -314,9 +405,99 @@
   /* A 1px inner highlight along a card's top edge. Reads as a lit surface;
      invisible on light, load-bearing on dark. */
   --hl-surface-highlight: rgba(255, 255, 255, 0);
-  /* Ambient page wash — keeps a large empty canvas from reading as dead flat. */
+
+  /* The selected thumb of a segmented control, which rides on a recessed
+     `--hl-bg-muted` track.
+
+     IT NEEDS ITS OWN TOKEN BECAUSE THE RAMP INVERTS BETWEEN THEMES. The
+     thumb has to sit ONE STEP LIGHTER THAN ITS TRACK in both themes — that
+     step is the entire "this one is raised" signal. In light the ramp runs
+     light→dark, so the lightest surface (#FFF) is also the raised one and
+     `--hl-bg-raised` happened to be correct. In dark the ramp runs the other
+     way: the canvas is the DARKEST step, so `--hl-bg-raised` (#12162A) is
+     darker than the muted track (#161A2C) and a thumb painted with it reads
+     as a hole punched in the track rather than a pill sitting on it.
+
+     Segmented controls previously used `bg-hl-canvas`, which made that
+     inversion worse — the selected option was the darkest thing in the
+     control on dark and the lightest on light, i.e. the signal ran backwards
+     between themes. */
+  --hl-segment-thumb: #FFFFFF;
+
+  /* =====================================================================
+     GLASS (§3.9b)
+     ---------------------------------------------------------------------
+     Translucent + blurred. Reserved for surfaces that FLOAT OVER content —
+     modals, drawers, popovers, command palette, sticky headers — where the
+     blur communicates depth and the thing behind it is meant to be sensed.
+
+     It is deliberately NOT the default card. `backdrop-filter` forces a new
+     compositing layer per element, and a recruiter dashboard puts dozens of
+     cards over a scrolling table; at that count the blur costs real frames
+     and, worse, drops text contrast on whatever happens to scroll beneath.
+     Dense data cards stay opaque (`--hl-bg-raised`) and keep their AA
+     ratios by construction. */
+  --hl-glass-bg: rgba(255, 255, 255, 0.82);
+  --hl-glass-bg-strong: rgba(255, 255, 255, 0.92);
+  --hl-glass-border: rgba(109, 94, 248, 0.10);
+  --hl-glass-blur: 18px;
+  --hl-glass-shadow: 0 12px 40px rgba(30, 41, 59, 0.06);
+
+  /* The soft halo around a focused field. This is DECORATION — the visible
+     focus indicator that has to satisfy WCAG 2.4.7/1.4.11 is the 2px accent
+     edge underneath it, which clears 3:1 on its own. That split is why the
+     halo can sit this low and still be correct. */
+  --hl-focus-halo: rgba(109, 94, 248, 0.08);
+
+  /* =====================================================================
+     GRADIENTS (§3.9c)
+     ---------------------------------------------------------------------
+     TWO primary gradients, and the difference between them is compliance,
+     not taste.
+
+     `--hl-gradient-primary` is the identity gradient (#6D5EF8 → #4F7CFF).
+     It is for GRAPHICS: hero art, progress, chart fills, gradient text,
+     selected-nav indicators. Against the canvas both stops clear the 3:1
+     non-text floor.
+
+     `--hl-gradient-cta` is a ~7% deepened cut of the same run, used wherever
+     a gradient sits UNDER WHITE LABEL TEXT. White on #4F7CFF measures
+     3.71:1 — under AA for a 16px semibold button label — while white on the
+     CTA cut measures 5.23:1 → 4.92:1 across its length. Side by side the two
+     are near-indistinguishable; only one of them is legible. */
+  --hl-gradient-primary: linear-gradient(135deg, #6D5EF8 0%, #4F7CFF 100%);
+  --hl-gradient-cta: linear-gradient(135deg, #6355EA 0%, #4166E6 100%);
+  /* THE CTA HOVER DEEPENS. IT MUST NOT BRIGHTEN.
+     ---------------------------------------------------------------------
+     The obvious hover for a gradient button is "same gradient, lighter",
+     and it is wrong here: the label is white, so every step of brightening
+     spends label contrast. A brightened cut of this gradient measured
+     4.28:1 and 4.22:1 — the resting state passes AA and the hover state
+     silently drops below it, which is the worst version of the bug because
+     it only exists while the pointer is on the control.
+
+     So the fill deepens on hover (5.84:1 / 5.44:1) and the "lit up" read is
+     carried entirely by `--hl-shadow-glow`, which the button transitions in
+     at the same time. That is also what the references actually do — the
+     glow is the affordance, the fill is not. */
+  --hl-gradient-cta-hover: linear-gradient(135deg, #5B4CE4 0%, #3A5EE0 100%);
+  --hl-gradient-prism: linear-gradient(120deg, #6D5EF8 0%, #4F7CFF 55%, #66D9FF 100%);
+  --hl-gradient-secondary: linear-gradient(135deg, #A78BFA 0%, #C4B5FD 100%);
+
+  /* =====================================================================
+     AMBIENT PAGE WASH (§3.9d)
+     ---------------------------------------------------------------------
+     Three very soft radial blooms over a vertical white → blue drift. This
+     is what stops a sparse dashboard from reading as a flat sheet, and it
+     is the single largest contributor to the "premium" read — but only
+     while it stays below the threshold of being noticed as colour. The
+     alphas are 0.06-0.08 for exactly that reason; at 0.15 the same
+     composition looks like a consumer app. */
   --hl-canvas-wash:
-    radial-gradient(120% 80% at 50% -20%, rgba(91, 91, 214, 0.045), transparent 60%);
+    radial-gradient(600px circle at 12% 6%, rgba(109, 94, 248, 0.08), transparent 70%),
+    radial-gradient(500px circle at 88% 2%, rgba(102, 217, 255, 0.08), transparent 70%),
+    radial-gradient(720px circle at 62% 96%, rgba(167, 139, 250, 0.06), transparent 70%),
+    linear-gradient(180deg, #FFFFFF 0%, #F8FAFF 40%, #F3F8FF 100%);
 
   /* Radius (§3.9) */
   --hl-radius-sm: 6px;
@@ -344,7 +525,7 @@
   --hl-z-tooltip: 700;
 
   /* Scrim (rack focus) */
-  --hl-scrim: rgba(11, 13, 13, 0.32);
+  --hl-scrim: rgba(16, 20, 40, 0.36);
 
   /* THE spacing scale. One deliberate density for the whole product.
 
@@ -436,66 +617,106 @@
   --border: var(--hl-border-default);
   --input: var(--hl-border-default);
   --ring: var(--hl-accent-solid);
+  /* The shadcn chart slots too, so a base-token chart primitive dropped into
+     the product renders the brand series instead of the stock oklch ramp.
+     `components/workspace/charts.tsx` is the one that matters — it is reused
+     verbatim by the V4 Analytics screen and reads `bg-primary` / `bg-chart-*`. */
+  --chart-1: var(--hl-chart-1);
+  --chart-2: var(--hl-chart-2);
+  --chart-3: var(--hl-chart-3);
+  --chart-4: var(--hl-chart-4);
+  --chart-5: var(--hl-chart-5);
 }
 
 /* --- Dark (§3.1–3.7) ---------------------------------------------------- */
 [data-hl-theme='dark'] .hl {
-  --hl-bg-canvas: #0B0D0D;
-  --hl-bg-subtle: #111413;
-  --hl-bg-muted: #181C1B;
-  --hl-bg-inset: #202523;
-  --hl-border-subtle: #1B201F;
-  --hl-border-default: #272D2C;
-  --hl-border-strong: #38403E;
-  --hl-text-primary: #EDF1F0;
-  --hl-text-secondary: #A3ACAA;
-  /* Lightened from #6B7472 for WCAG 2.1 AA. Was 4.05 / 3.85 / 3.58 on
-     canvas / subtle / muted; now 5.13 / 4.88 / 4.53. */
-  --hl-text-tertiary: #7D8583;
-  --hl-text-disabled: #474F4D;
+  /* Dark is a deep navy-violet, not a neutral charcoal — the same hue family
+     as light, rotated to the bottom of the lightness range. A neutral-gray
+     dark mode under a violet accent is the tell that a palette was designed
+     in light and ported. */
+  --hl-bg-canvas: #0A0C18;
+  --hl-bg-subtle: #0F1220;
+  --hl-bg-muted: #161A2C;
+  --hl-bg-inset: #1E2338;
+  --hl-border-subtle: #191D30;
+  --hl-border-default: #262B45;
+  --hl-border-strong: #373D5E;
+  --hl-text-primary: #EEF0FA;
+  --hl-text-secondary: #A8AFC9;
+  /* Held to the full AA floor for the same reason as its light counterpart.
+     Measures 5.55 / 5.31 / 4.92 on canvas / subtle / muted. */
+  --hl-text-tertiary: #7F88A8;
+  --hl-text-disabled: #454B66;
 
-  /* Darkened from #7C7CF0 so white text on a primary button reaches AA in dark
-     mode: it measured 3.50:1, now 4.56:1. Still 4.71:1 against the dark canvas,
-     so focus rings and the active-nav marker stay above the 3:1 non-text
-     contrast floor (WCAG 1.4.11). */
-  --hl-accent-solid: #6B6BCE;
-  --hl-accent-hover: #8E8EF5;
-  --hl-accent-text: #A9A9F7;
-  --hl-accent-subtle-bg: #1E1E3A;
-  --hl-accent-border: #34356F;
+  /* Brightened for dark while keeping white-label AA: white on this measures
+     4.90:1, and it holds 3.97:1 against the dark canvas so focus rings and the
+     active-nav marker stay above the 3:1 non-text floor (WCAG 1.4.11). */
+  --hl-accent-solid: #6A5AEC;
+  --hl-accent-hover: #7F70FF;
+  --hl-accent-text: #A99CFF;   /* 8.24:1 on canvas, 6.93:1 on its own tint */
+  --hl-accent-subtle-bg: #1E1B3E;
+  --hl-accent-border: #322D6B;
 
-  --hl-prism-from: #9282FF;
-  --hl-prism-mid: #6FA8F5;
-  --hl-prism-to: #57D6E2;
-  --hl-ai-surface: #0E1319;
-  --hl-ai-border: #2A3350;
+  --hl-accent-secondary: #B9A5FF;
+  --hl-accent-secondary-soft: #D2C6FF;
 
-  --hl-score-infocus: #33C2CD;
-  --hl-score-infocus-bg: #0C2B2E;
-  --hl-score-sharp: #4FD6A8;
-  --hl-score-sharp-bg: #0E2A20;
-  --hl-score-legible: #EAC15A;
-  --hl-score-legible-bg: #2A2109;
-  --hl-score-soft: #E89A5E;
-  --hl-score-soft-bg: #2A1B0E;
-  --hl-score-outfocus: #F0847A;
-  --hl-score-outfocus-bg: #2C1512;
+  /* Prism lifts in dark so the gradient still reads against a near-black
+     canvas — the same three hues, one step brighter. */
+  --hl-prism-from: #8B7BFF;
+  --hl-prism-mid: #6C97FF;
+  --hl-prism-to: #7FE2FF;
+  --hl-ai-surface: #0E1226;
+  --hl-ai-border: #2A3160;
 
-  --hl-success: #4FD69B;
-  --hl-success-bg: #0E2A1F;
-  --hl-warning: #F0B84A;
-  --hl-warning-bg: #2A2008;
-  --hl-danger: #F08479;
-  --hl-danger-bg: #2C1512;
-  --hl-info: #79A8F5;
-  --hl-info-bg: #0F1D33;
+  /* On dark the vivid tone IS the accessible tone — #3DDC97 measures 11.7:1
+     on the canvas — so the two-tone split inverts: the base token carries the
+     bright colour and `-solid` matches it. The pair is kept so a component
+     can reference either without knowing which theme is active. */
+  --hl-score-infocus: #7FE2FF;
+  --hl-score-infocus-bg: #0A2733;
+  --hl-score-sharp: #4FE0A8;
+  --hl-score-sharp-bg: #0C2A1E;
+  --hl-score-legible: #FFC46B;
+  --hl-score-legible-bg: #2B2008;
+  --hl-score-soft: #FFA070;
+  --hl-score-soft-bg: #2C1A0E;
+  --hl-score-outfocus: #FF8A80;
+  --hl-score-outfocus-bg: #2E1418;
 
-  --hl-confidence-high: #4FD69B;
-  --hl-confidence-med: #F0B84A;
-  --hl-confidence-low: #9A9184;
+  --hl-score-infocus-solid: #66D9FF;
+  --hl-score-sharp-solid: #3DDC97;
+  --hl-score-legible-solid: #FFB84D;
+  --hl-score-soft-solid: #FF9052;
+  --hl-score-outfocus-solid: #FF6B6B;
 
-  --hl-skeleton-base: #181C1B;
-  --hl-skeleton-sheen: #202423;
+  --hl-success: #4FE0A8;
+  --hl-success-solid: #3DDC97;
+  --hl-success-bg: #0C2A1E;
+  --hl-warning: #FFC46B;
+  --hl-warning-solid: #FFB84D;
+  --hl-warning-bg: #2B2008;
+  --hl-danger: #FF8A80;
+  --hl-danger-solid: #FF6B6B;
+  --hl-danger-bg: #2E1418;
+  --hl-info: #8FAFFF;
+  --hl-info-solid: #4F7CFF;
+  --hl-info-bg: #101B38;
+
+  --hl-confidence-high: #4FE0A8;
+  --hl-confidence-med: #FFC46B;
+  --hl-confidence-low: #8A91AD;
+
+  /* Chart marks lift in dark so a thin bar or line still separates from a
+     near-black plot area. */
+  --hl-chart-1: #8B7BFF;
+  --hl-chart-2: #6C97FF;
+  --hl-chart-3: #7FE2FF;
+  --hl-chart-4: #4FE0A8;
+  --hl-chart-5: #C4B5FD;
+  --hl-chart-6: #FFC46B;
+
+  --hl-skeleton-base: #161A2C;
+  --hl-skeleton-sheen: #1E2338;
 
   /* Dark elevation adds a hairline inset — shadows read weakly on dark (§3.9) */
   /* Dark elevation. Shadows read weakly on dark, so each step carries a
@@ -517,14 +738,49 @@
     0 16px 40px rgba(0, 0, 0, 0.6),
     0 32px 64px -16px rgba(0, 0, 0, 0.55);
 
-  --hl-bg-raised: #141817;
+  /* Accent glow carries further on dark, so the alpha comes down rather than
+     up — the same apparent intensity against a darker field. */
+  --hl-shadow-glow: 0 6px 22px -4px rgba(109, 94, 248, 0.42);
+  --hl-shadow-glow-strong: 0 8px 30px -4px rgba(109, 94, 248, 0.55);
+
+  --hl-bg-raised: #12162A;
   /* On dark this is the whole trick: a lit top edge turns a flat rectangle
      into a surface catching light from above. */
   --hl-surface-highlight: rgba(255, 255, 255, 0.06);
-  --hl-canvas-wash:
-    radial-gradient(120% 80% at 50% -20%, rgba(146, 130, 255, 0.07), transparent 60%);
 
-  --hl-scrim: rgba(0, 0, 0, 0.5);
+  /* One step LIGHTER than the `--hl-bg-muted` (#161A2C) track — the same
+     direction of step the light theme gets from white on #ECF0FB, which is
+     the point of the token. See the light block for why `--hl-bg-raised`
+     cannot serve here. */
+  --hl-segment-thumb: #262B45;
+
+  /* Glass inverts: a dark translucent plate over a dark canvas, with the
+     border doing more work because there is no white to lean on. */
+  --hl-glass-bg: rgba(18, 22, 42, 0.72);
+  --hl-glass-bg-strong: rgba(18, 22, 42, 0.88);
+  --hl-glass-border: rgba(139, 123, 255, 0.18);
+  --hl-glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+
+  /* Lifted on dark — an 8% halo is invisible against a near-black field. */
+  --hl-focus-halo: rgba(139, 123, 255, 0.22);
+
+  /* THE CTA GRADIENT IS NOT OVERRIDDEN ON DARK, DELIBERATELY.
+     ---------------------------------------------------------------------
+     It briefly was, on the reasoning that a dark canvas lets the button use
+     the brighter identity stops. That reasoning is simply wrong: the label
+     contrast is measured against the BUTTON'S OWN FILL, not against the
+     page, so the theme cannot make a fill safer. The identity gradient's
+     blue stop measures 3.71:1 under white in either theme.
+
+     Dark therefore inherits the light AA-tuned cut, and this block sets no
+     `--hl-gradient-cta*` at all. */
+  --hl-canvas-wash:
+    radial-gradient(620px circle at 12% 6%, rgba(139, 123, 255, 0.10), transparent 70%),
+    radial-gradient(520px circle at 88% 2%, rgba(127, 226, 255, 0.07), transparent 70%),
+    radial-gradient(720px circle at 62% 96%, rgba(167, 139, 250, 0.06), transparent 70%),
+    linear-gradient(180deg, #0A0C18 0%, #0C0F1E 45%, #0E1226 100%);
+
+  --hl-scrim: rgba(6, 8, 18, 0.62);
 }
 
 /* --- Tailwind v4 mapping (utilities: bg-hl-*, text-hl-*, border-hl-*, …) --- */
@@ -576,6 +832,8 @@
   --color-hl-subtle: var(--hl-bg-subtle);
   --color-hl-muted: var(--hl-bg-muted);
   --color-hl-inset: var(--hl-bg-inset);
+  /* `bg-hl-segment-thumb` — the selected pill of a segmented control. */
+  --color-hl-segment-thumb: var(--hl-segment-thumb);
   --color-hl-border-subtle: var(--hl-border-subtle);
   --color-hl-border: var(--hl-border-default);
   --color-hl-border-strong: var(--hl-border-strong);
@@ -590,6 +848,8 @@
   --color-hl-accent-fg: var(--hl-accent-text);
   --color-hl-accent-subtle: var(--hl-accent-subtle-bg);
   --color-hl-accent-border: var(--hl-accent-border);
+  --color-hl-accent-2: var(--hl-accent-secondary);
+  --color-hl-accent-2-soft: var(--hl-accent-secondary-soft);
 
   /* AI */
   --color-hl-ai-surface: var(--hl-ai-surface);
@@ -627,6 +887,7 @@
   --color-mkt-subtle: var(--mkt-subtle);
   --color-mkt-muted: var(--mkt-muted);
   --color-mkt-inset: var(--mkt-inset);
+  --color-mkt-raised: var(--mkt-raised);
   --color-mkt-border-subtle: var(--mkt-border-subtle);
   --color-mkt-border: var(--mkt-border);
   --color-mkt-border-strong: var(--mkt-border-strong);
@@ -654,6 +915,11 @@
   --color-mkt-focus-soft: var(--mkt-focus-soft);
   --color-mkt-focus-out: var(--mkt-focus-out);
   --color-mkt-success: var(--mkt-success);
+  --color-mkt-focus-high-solid: var(--mkt-focus-high-solid);
+  --color-mkt-focus-sharp-solid: var(--mkt-focus-sharp-solid);
+  --color-mkt-focus-legible-solid: var(--mkt-focus-legible-solid);
+  --color-mkt-focus-soft-solid: var(--mkt-focus-soft-solid);
+  --color-mkt-focus-out-solid: var(--mkt-focus-out-solid);
 
   /* Ink (deep dark sections — frames 4-5) */
   --color-mkt-ink: var(--mkt-ink);
@@ -695,16 +961,40 @@
   --color-hl-score-soft-bg: var(--hl-score-soft-bg);
   --color-hl-score-outfocus: var(--hl-score-outfocus);
   --color-hl-score-outfocus-bg: var(--hl-score-outfocus-bg);
+  --color-hl-score-infocus-solid: var(--hl-score-infocus-solid);
+  --color-hl-score-sharp-solid: var(--hl-score-sharp-solid);
+  --color-hl-score-legible-solid: var(--hl-score-legible-solid);
+  --color-hl-score-soft-solid: var(--hl-score-soft-solid);
+  --color-hl-score-outfocus-solid: var(--hl-score-outfocus-solid);
 
-  /* Semantic */
+  /* Semantic. The `-solid` alias is the vivid fill tone; the base alias is the
+     AA-safe text tone. `text-hl-success` and `bg-hl-success-solid` are both
+     correct — `text-hl-success-solid` is not. */
   --color-hl-success: var(--hl-success);
+  --color-hl-success-solid: var(--hl-success-solid);
   --color-hl-success-bg: var(--hl-success-bg);
   --color-hl-warning: var(--hl-warning);
+  --color-hl-warning-solid: var(--hl-warning-solid);
   --color-hl-warning-bg: var(--hl-warning-bg);
   --color-hl-danger: var(--hl-danger);
+  --color-hl-danger-solid: var(--hl-danger-solid);
   --color-hl-danger-bg: var(--hl-danger-bg);
   --color-hl-info: var(--hl-info);
+  --color-hl-info-solid: var(--hl-info-solid);
   --color-hl-info-bg: var(--hl-info-bg);
+
+  /* Categorical chart series (violet · blue · cyan · mint · soft-violet · amber) */
+  --color-hl-chart-1: var(--hl-chart-1);
+  --color-hl-chart-2: var(--hl-chart-2);
+  --color-hl-chart-3: var(--hl-chart-3);
+  --color-hl-chart-4: var(--hl-chart-4);
+  --color-hl-chart-5: var(--hl-chart-5);
+  --color-hl-chart-6: var(--hl-chart-6);
+
+  /* Glass */
+  --color-hl-glass: var(--hl-glass-bg);
+  --color-hl-glass-strong: var(--hl-glass-bg-strong);
+  --color-hl-glass-border: var(--hl-glass-border);
 
   /* Confidence */
   --color-hl-confidence-high: var(--hl-confidence-high);
@@ -755,12 +1045,97 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
-  .hl :focus-visible {
-    outline: 2px solid var(--hl-accent-solid);
-    outline-offset: 2px;
-    border-radius: 3px;
+
+  /* SCROLL CHAINING — every nested scroll region contains its own overscroll.
+     -------------------------------------------------------------------------
+     `overscroll-behavior` appeared nowhere in this codebase, and the product
+     has twelve nested scroll containers: the candidate drawer body, the Ask
+     thread and its sidebar, the Talent and Settings rails, the notification
+     list, the command palette list. Without this, reaching the end of any of
+     them hands the remaining scroll to `main` behind it — you scroll a drawer
+     to its last line and the page underneath starts moving. Nothing is broken
+     and it feels careless, which is exactly the class of thing that separates
+     a polished product from a nearly-polished one.
+
+     Keyed off the utility classes rather than a dozen call sites so a scroll
+     region added later inherits the behaviour instead of being remembered.
+     It sits in `@layer base`, so an explicit `overscroll-auto` utility still
+     wins wherever chaining is genuinely wanted. */
+  .hl :is(.overflow-y-auto, .overflow-auto, .overflow-y-scroll, .overflow-scroll) {
+    overscroll-behavior: contain;
   }
 }
+
+/* =========================================================================
+   FOCUS INDICATORS — DELIBERATELY UNLAYERED. DO NOT MOVE THESE INTO A LAYER.
+   -------------------------------------------------------------------------
+   These rules lived in `@layer base` until 3 Aug 2026, and for as long as they
+   did THE PRODUCT HAD NO VISIBLE KEYBOARD FOCUS RING ON ANY BUTTON, NAV LINK
+   OR TAB.
+
+   Why: 60 component files carry Tailwind's `outline-none` utility (usually to
+   suppress the UA ring before re-adding their own treatment). That utility
+   compiles to `.outline-none{outline-style:none}` and lives in Tailwind's
+   UTILITIES layer, which the cascade resolves AFTER `@layer base`. So
+   `outline-style: none` beat `outline: 2px solid …` on every one of those
+   controls. `:focus-visible` still matched, the computed outline-color was
+   still the accent, the outline-width was still 2px — and outline-STYLE was
+   `none`, so nothing painted. Tabbing through the product moved focus
+   invisibly: a WCAG 2.4.7 failure that is invisible to every static check,
+   because each rule is individually correct.
+
+   Found by tabbing through Storybook in a real browser and reading
+   `getComputedStyle(document.activeElement)`. The file already documents this
+   exact layer-precedence trap twice — once for `border-color` on focused
+   fields, once for Material Symbols' unlayered `font-size` — so the mechanism
+   was known; only this consequence was missed.
+
+   UNLAYERED beats every layered rule, including utilities. That is precisely
+   what a focus indicator should do: a component must not be able to opt out of
+   being focusable-visibly by reaching for a convenience utility. The three
+   rules stay in this order and rely on ordinary specificity between
+   themselves — `.hl input:focus-visible` (0,2,1) outranks `.hl :focus-visible`
+   (0,2,0), so fields still take the ring treatment rather than the outline.
+   ========================================================================= */
+.hl :focus-visible {
+  outline: 2px solid var(--hl-accent-solid);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Text fields take a ring rather than an offset outline: a 1px accent ring
+     sits directly on the border line with a soft halo spreading behind it. An
+     outline sitting 2px off a 40px field reads as a second border and visibly
+     shifts the field's apparent size on focus; the ring does not.
+
+     THE RING, NOT `border-color`, IS WHAT YOU SEE. Components carry their
+     border as a utility (`border-hl-border`), and Tailwind utilities live in a
+     later cascade layer than this one — so the declaration below never wins on
+     those. That is deliberate rather than tolerated: it means a focused field
+     in its ERROR variant keeps its red border and merely gains the accent
+     ring, instead of having the error signal overwritten by focus. The
+     declaration is kept for bare `<input>`s that carry no border utility.
+
+     `outline: none` is safe here ONLY because the 1px ring is itself a
+     compliant focus indicator — the accent clears 3:1 against both the field
+     and the canvas. Do not copy this pattern to a control with no ring. */
+  .hl input:focus-visible,
+  .hl textarea:focus-visible,
+  .hl select:focus-visible {
+    outline: none;
+    border-color: var(--hl-accent-solid);
+    box-shadow:
+      0 0 0 1px var(--hl-accent-solid),
+      0 0 0 6px var(--hl-focus-halo);
+  }
+  /* Checkboxes, radios and switches are painted controls, not fields — they
+     keep the standard offset outline. */
+  .hl input[type='checkbox']:focus-visible,
+  .hl input[type='radio']:focus-visible {
+    outline: 2px solid var(--hl-accent-solid);
+    outline-offset: 2px;
+    box-shadow: none;
+  }
 
 @layer components {
   /* =====================================================================
@@ -1228,6 +1603,86 @@
     background-attachment: local;
   }
 
+  /* =====================================================================
+     GLASS
+     ---------------------------------------------------------------------
+     For surfaces that float OVER content — modals, drawers, popovers, the
+     command palette, sticky headers. See the token block for why this is
+     not the default card.
+
+     `backdrop-filter` is applied behind an @supports guard: where it is
+     unavailable the surface falls back to the STRONG (0.92 alpha) plate
+     rather than staying at 0.82, because an unblurred 0.82 panel over a
+     scrolling table is where translucency actually breaks legibility. */
+  .hl-glass {
+    background-color: var(--hl-glass-bg-strong);
+    border: 1px solid var(--hl-glass-border);
+    box-shadow: var(--hl-glass-shadow);
+  }
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .hl-glass {
+      background-color: var(--hl-glass-bg);
+      -webkit-backdrop-filter: blur(var(--hl-glass-blur)) saturate(1.6);
+      backdrop-filter: blur(var(--hl-glass-blur)) saturate(1.6);
+    }
+  }
+  /* A denser plate for glass that carries small type — same material, less
+     of the background coming through. */
+  .hl-glass-strong {
+    background-color: var(--hl-glass-bg-strong);
+    border: 1px solid var(--hl-glass-border);
+    box-shadow: var(--hl-glass-shadow);
+  }
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .hl-glass-strong {
+      -webkit-backdrop-filter: blur(var(--hl-glass-blur)) saturate(1.4);
+      backdrop-filter: blur(var(--hl-glass-blur)) saturate(1.4);
+    }
+  }
+
+  /* =====================================================================
+     GRADIENT SURFACES
+     ---------------------------------------------------------------------
+     `hl-gradient-cta` is the primary-button fill and reads the CTA cut of
+     the gradient, which is tuned so a white label clears AA along its whole
+     length. `hl-gradient-primary` is the identity gradient for GRAPHICS and
+     must not be put under white text — see the token block.
+
+     Gradients are deliberately scarce: CTA, AI, progress, hero art,
+     selected nav, charts. Everything else stays flat. A gradient on every
+     surface is the single fastest way to make a product look cheap. */
+  .hl-gradient-cta {
+    background-image: var(--hl-gradient-cta);
+  }
+  .hl-gradient-cta:hover {
+    background-image: var(--hl-gradient-cta-hover);
+  }
+  .hl-gradient-primary {
+    background-image: var(--hl-gradient-primary);
+  }
+  .hl-gradient-prism {
+    background-image: var(--hl-gradient-prism);
+  }
+  .hl-gradient-secondary {
+    background-image: var(--hl-gradient-secondary);
+  }
+
+  /* Gradient text for AI-authored headings and the wordmark. Kept to the
+     prism run so it never reads as a different brand from the CTA.
+
+     `background-clip: text` makes the text itself the mask, so the colour is
+     no longer a colour a contrast checker can read. Use it on DISPLAY type
+     only (24px+), where the 3:1 large-text floor applies and the gradient
+     comfortably clears it — never on body copy, labels or anything a
+     recruiter has to read at length. */
+  .hl-gradient-text {
+    background-image: var(--hl-gradient-prism);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+  }
+
   /* The nav rail reads as a slightly recessed plane beside the content. */
   .hl-rail {
     background-image: linear-gradient(
@@ -1237,12 +1692,13 @@
     );
   }
 
-  /* The active nav item: a tinted plate with a lit edge, not a flat fill. */
+  /* The active nav item: a soft violet plate with a lit edge, not a flat
+     fill. The gradient indicator itself is the marker span in `left-nav`. */
   .hl-nav-active {
     background-image: linear-gradient(
       to right,
-      color-mix(in srgb, var(--hl-accent-solid) 16%, transparent),
-      color-mix(in srgb, var(--hl-accent-solid) 7%, transparent)
+      color-mix(in srgb, var(--hl-accent-solid) 13%, transparent),
+      color-mix(in srgb, var(--hl-accent-solid) 5%, transparent)
     );
     box-shadow: inset 0 1px 0 0 var(--hl-surface-highlight);
   }
@@ -1557,55 +2013,123 @@
   --mkt-scale: 0.85;
   zoom: var(--mkt-scale);
 
-  /* Light surfaces (frames 2-5) */
-  --mkt-canvas: #fcfdfc;
-  --mkt-subtle: #f4f6f5;
-  --mkt-muted: #ebeeed;
-  --mkt-inset: #e1e5e4;
-  --mkt-border-subtle: #e9edec;
-  --mkt-border: #dce1e0;
-  --mkt-border-strong: #cbd1d0;
+  /* =====================================================================
+     PALETTE — Aurora, 3 Aug 2026
+     ---------------------------------------------------------------------
+     These values were previously transcribed verbatim from the Stitch V4
+     marketing frames, and the block above this one used to say not to
+     change them. THAT INSTRUCTION IS NOW SUPERSEDED for colour only: the
+     brand identity moved to the Aurora palette across the whole product,
+     and a public site on the old Iris/green-neutral scheme would have been
+     a different company's landing page.
 
-  /* Light text */
-  --mkt-fg: #131817;
-  --mkt-fg-secondary: #545c5a;
-  --mkt-fg-tertiary: #828b89;
+     The Stitch frames REMAIN the source of truth for everything else —
+     layout, type, spacing, composition, component structure. Only the
+     colour values below diverge, and they are mirrored 1:1 from the `.hl`
+     product tokens so the two surfaces cannot drift.
+     ===================================================================== */
+
+  /* Light surfaces (frames 2-5) */
+  --mkt-canvas: #fbfcff;
+  --mkt-subtle: #f6f9ff;
+  --mkt-muted: #ecf0fb;
+  --mkt-inset: #e2e8f7;
+  /* The raised plane a card sits on, mirroring `--hl-bg-raised` in the
+     product. The public site had no such step, so every card was painted
+     `--mkt-canvas` — the same colour as the section behind it and the page
+     behind that. Three identical planes meant a card was only ever a 1px
+     outline drawn on the page, which is what made the pricing cards read as
+     a table of rules rather than as four objects to choose between.
+
+     Off-white canvas + pure-white card is the same separation the product
+     already relies on, and it costs no border weight to get. */
+  --mkt-raised: #ffffff;
+  --mkt-border-subtle: #edf0fa;
+  --mkt-border: #e0e6f5;
+  --mkt-border-strong: #c9d2ea;
+
+  /* Light text. `--mkt-fg-tertiary` was #828b89, which measured ~3.4:1 on the
+     canvas — it inherited the pre-AA value the product token had already been
+     fixed away from. Brought onto the AA-safe step with the re-hue. */
+  --mkt-fg: #141a2e;
+  --mkt-fg-secondary: #4a5578;
+  --mkt-fg-tertiary: #626b8a;
 
   /* Accent + AI */
-  --mkt-accent: #5b5bd6;
-  --mkt-accent-text: #4a4ac0;
-  --mkt-accent-bg: #eeeefb;
-  --mkt-ai-bg: #f6f8fd;
+  --mkt-accent: #6d5ef8;
+  --mkt-accent-text: #5847e8;
+  --mkt-accent-bg: #f0edfe;
+  --mkt-ai-bg: #f5f7ff;
 
-  /* Prism spectrum */
-  --mkt-prism-violet: #6e5cf0;
-  --mkt-prism-blue: #4c8fe0;
-  --mkt-prism-cyan: #2fb8c6;
+  /* Prism spectrum — the identity gradient */
+  --mkt-prism-violet: #6d5ef8;
+  --mkt-prism-blue: #4f7cff;
+  --mkt-prism-cyan: #66d9ff;
 
-  /* Focus / score band */
-  --mkt-focus-high: #0c7c86;
-  --mkt-focus-sharp: #2e9e86;
-  --mkt-focus-legible: #b78514;
-  --mkt-focus-soft: #c6702e;
-  --mkt-focus-out: #b4463c;
-  --mkt-success: #1e7a52;
+  /* Focus / score band — text tones, AA on their own tints (see `.hl`) */
+  --mkt-focus-high: #0b6e80;
+  --mkt-focus-sharp: #0a7a4d;
+  --mkt-focus-legible: #955f00;
+  --mkt-focus-soft: #a54e1a;
+  --mkt-focus-out: #c63434;
+  --mkt-success: #0a7a4d;
+
+  /* Vivid fill tones for marks and graphics (never type) */
+  --mkt-focus-high-solid: #66d9ff;
+  --mkt-focus-sharp-solid: #3ddc97;
+  --mkt-focus-legible-solid: #ffb84d;
+  --mkt-focus-soft-solid: #ff9052;
+  --mkt-focus-out-solid: #ff6b6b;
 
   /* Ink — frames 4-5 use the deeper of the two inks */
-  --mkt-ink: #0b0d0d;
+  --mkt-ink: #0a0c18;
 
-  /* Frame 1 dark shell. Frame 2's "Stakes" band shares --mkt-dark-bg (#121414),
+  /* Frame 1 dark shell. Frame 2's "Stakes" band shares --mkt-dark-bg,
      which is deliberately lighter than --mkt-ink. */
-  --mkt-dark-bg: #121414;
-  --mkt-dark-fg: #e2e2e2;
-  --mkt-dark-fg-variant: #c7c4d6;
-  --mkt-dark-surface-variant: #333535;
-  --mkt-dark-outline: #918f9f;
-  --mkt-dark-outline-variant: #464553;
-  --mkt-dark-primary: #c1c1ff;
-  --mkt-primary-container: #5b5bd6;
-  --mkt-inverse-primary: #4e4ec9;
-  --mkt-inverse-surface: #e2e2e2;
-  --mkt-tertiary-container: #a35700;
+  --mkt-dark-bg: #10131f;
+  --mkt-dark-fg: #e8eaf5;
+  --mkt-dark-fg-variant: #c6c9e4;
+  --mkt-dark-surface-variant: #2a2f47;
+  --mkt-dark-outline: #8b90ad;
+  --mkt-dark-outline-variant: #3a3f5e;
+  --mkt-dark-primary: #b9aeff;
+  --mkt-primary-container: #6d5ef8;
+  --mkt-inverse-primary: #5847e8;
+  --mkt-inverse-surface: #e8eaf5;
+  --mkt-tertiary-container: #a54e1a;
+
+  /* Gradients + glass, mirroring the product recipes so a CTA on the landing
+     page and a CTA in the app are the same object. */
+  --mkt-gradient-primary: linear-gradient(135deg, #6d5ef8 0%, #4f7cff 100%);
+  --mkt-gradient-cta: linear-gradient(135deg, #6355ea 0%, #4166e6 100%);
+  /* Deepens on hover, does not brighten — see the product token for why a
+     brightening hover silently drops a white label below AA. */
+  --mkt-gradient-cta-hover: linear-gradient(135deg, #5b4ce4 0%, #3a5ee0 100%);
+  --mkt-gradient-prism: linear-gradient(120deg, #6d5ef8 0%, #4f7cff 55%, #66d9ff 100%);
+  --mkt-glass-bg: rgba(255, 255, 255, 0.82);
+  --mkt-glass-border: rgba(109, 94, 248, 0.10);
+  --mkt-glass-shadow: 0 12px 40px rgba(30, 41, 59, 0.06);
+
+  /* Card elevation. Two steps, and a card gets exactly one of them.
+     ---------------------------------------------------------------------
+     `0 8px 40px rgba(30,41,59,0.0x)` was written inline at five call sites
+     across the frames and the pricing page — at 0.06 in three of them and
+     0.07 in the other two. Nobody chose that difference; it is two people
+     reaching for "a soft card shadow" a month apart. At this blur radius the
+     two are indistinguishable alone and merely inconsistent in a column, so
+     they collapse to one value here.
+
+     `-resting` is the quiet step every card carries so it sits ON the page
+     rather than being drawn on it. `-raised` is for the ONE card in a group
+     that is meant to be picked. If every card in a set has the raised step,
+     the set has no recommendation — it just has a heavier shadow. */
+  --mkt-shadow-card-resting: 0 1px 2px rgba(30, 41, 59, 0.04), 0 4px 16px -4px rgba(30, 41, 59, 0.05);
+  --mkt-shadow-card-raised: 0 8px 40px rgba(30, 41, 59, 0.07);
+  --mkt-canvas-wash:
+    radial-gradient(600px circle at 12% 6%, rgba(109, 94, 248, 0.08), transparent 70%),
+    radial-gradient(500px circle at 88% 2%, rgba(102, 217, 255, 0.08), transparent 70%),
+    radial-gradient(720px circle at 62% 96%, rgba(167, 139, 250, 0.06), transparent 70%),
+    linear-gradient(180deg, #ffffff 0%, #f8faff 40%, #f3f8ff 100%);
 
   /* Radius — Stitch frames: DEFAULT 4px, lg 8px, xl 12px */
   --mkt-radius-lg: 0.5rem;
@@ -1660,6 +2184,54 @@
   .mkt .font-mkt-mono {
     font-variant-ligatures: none;
     font-feature-settings: 'calt' 0, 'liga' 0;
+  }
+
+  /* =====================================================================
+     MARKETING GRADIENT / GLASS / WASH
+     ---------------------------------------------------------------------
+     Deliberately the same recipes as the product's, reading the mirrored
+     `--mkt-*` values. The public site and the app must produce the same
+     object for the same role — a landing-page CTA that does not match the
+     in-app CTA is the seam users notice first after signing up.
+
+     `mkt-gradient-cta` is the AA-tuned cut (white label clears 4.5:1);
+     `mkt-gradient-primary` is the identity gradient for graphics only. The
+     distinction is the same one documented on the product tokens. */
+  .mkt-gradient-cta {
+    background-image: var(--mkt-gradient-cta);
+  }
+  .mkt-gradient-cta:hover {
+    background-image: var(--mkt-gradient-cta-hover);
+  }
+  .mkt-gradient-primary {
+    background-image: var(--mkt-gradient-primary);
+  }
+  .mkt-gradient-prism {
+    background-image: var(--mkt-gradient-prism);
+  }
+  /* Display type only (24px+) — see the product note on `hl-gradient-text`. */
+  .mkt-gradient-text {
+    background-image: var(--mkt-gradient-prism);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+  }
+  .mkt-glass {
+    background-color: rgba(255, 255, 255, 0.92);
+    border: 1px solid var(--mkt-glass-border);
+    box-shadow: var(--mkt-glass-shadow);
+  }
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .mkt-glass {
+      background-color: var(--mkt-glass-bg);
+      -webkit-backdrop-filter: blur(18px) saturate(1.6);
+      backdrop-filter: blur(18px) saturate(1.6);
+    }
+  }
+  .mkt-canvas-wash {
+    background-image: var(--mkt-canvas-wash);
+    background-repeat: no-repeat;
   }
 
   /* =====================================================================
@@ -1729,7 +2301,7 @@
 
   /* --- Prism hairlines (frames 2–5): violet → blue → cyan ---------------- */
   .mkt-prism-hairline {
-    background: linear-gradient(to right, #6e5cf0, #4c8fe0, #2fb8c6);
+    background: linear-gradient(to right, var(--mkt-prism-violet), var(--mkt-prism-blue), var(--mkt-prism-cyan));
   }
 
   /* Vertical prism edge drawn as a pseudo-element so it can hug a rounded
@@ -1744,7 +2316,7 @@
     bottom: 0;
     left: 0;
     width: 1px;
-    background: linear-gradient(to bottom, #6e5cf0, #4c8fe0, #2fb8c6);
+    background: linear-gradient(to bottom, var(--mkt-prism-violet), var(--mkt-prism-blue), var(--mkt-prism-cyan));
   }
 
   /* Frame 3 memo card: prism rule along the bottom of the header block. */
@@ -1758,13 +2330,13 @@
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(to right, #6e5cf0, #4c8fe0, #2fb8c6);
+    background: linear-gradient(to right, var(--mkt-prism-violet), var(--mkt-prism-blue), var(--mkt-prism-cyan));
     opacity: 0.8;
   }
 
   /* Frame 4: prism as text fill, and as a top border-image. */
   .mkt-prism-text {
-    background: linear-gradient(to right, #6e5cf0, #4c8fe0, #2fb8c6);
+    background: linear-gradient(to right, var(--mkt-prism-violet), var(--mkt-prism-blue), var(--mkt-prism-cyan));
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -1772,7 +2344,7 @@
   }
   .mkt-prism-border-top {
     border-top: 1px solid transparent;
-    border-image: linear-gradient(to right, #6e5cf0, #4c8fe0, #2fb8c6) 1;
+    border-image: linear-gradient(to right, var(--mkt-prism-violet), var(--mkt-prism-blue), var(--mkt-prism-cyan)) 1;
   }
 
   /* Frame 4's left prism edge is a real border-image, not the pseudo-element
@@ -1780,7 +2352,7 @@
      content. Kept as a separate class so each frame keeps its own behaviour. */
   .mkt-prism-border-left {
     border-left: 1px solid transparent;
-    border-image: linear-gradient(to bottom, #6e5cf0, #4c8fe0, #2fb8c6) 1;
+    border-image: linear-gradient(to bottom, var(--mkt-prism-violet), var(--mkt-prism-blue), var(--mkt-prism-cyan)) 1;
   }
 
   /* --- Frame 1 iris hairlines (single hue + glow) ----------------------- */
@@ -1788,26 +2360,26 @@
     height: 1px;
     background: linear-gradient(
       90deg,
-      rgba(91, 91, 214, 0.2) 0%,
-      rgba(91, 91, 214, 1) 50%,
-      rgba(91, 91, 214, 0.2) 100%
+      rgba(109, 94, 248, 0.2) 0%,
+      rgba(109, 94, 248, 1) 50%,
+      rgba(109, 94, 248, 0.2) 100%
     );
-    box-shadow: 0 0 10px rgba(91, 91, 214, 0.5);
+    box-shadow: 0 0 10px rgba(109, 94, 248, 0.5);
   }
   .mkt-iris-hairline-vertical {
     width: 1px;
     background: linear-gradient(
       180deg,
-      rgba(91, 91, 214, 0.2) 0%,
-      rgba(91, 91, 214, 1) 50%,
-      rgba(91, 91, 214, 0.2) 100%
+      rgba(109, 94, 248, 0.2) 0%,
+      rgba(109, 94, 248, 1) 50%,
+      rgba(109, 94, 248, 0.2) 100%
     );
-    box-shadow: 0 0 10px rgba(91, 91, 214, 0.5);
+    box-shadow: 0 0 10px rgba(109, 94, 248, 0.5);
   }
 
   /* Frame 1 floating candidate card. */
   .mkt-glass-panel {
-    background: rgba(18, 20, 20, 0.8);
+    background: rgba(16, 19, 31, 0.8);
     backdrop-filter: blur(32px);
     -webkit-backdrop-filter: blur(32px);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1820,9 +2392,9 @@
     z-index: 0;
     pointer-events: none;
     background:
-      radial-gradient(circle at 50% 50%, #6e5cf0 0%, transparent 50%),
-      radial-gradient(circle at 80% 20%, #4c8fe0 0%, transparent 40%),
-      radial-gradient(circle at 20% 80%, #2fb8c6 0%, transparent 40%);
+      radial-gradient(circle at 50% 50%, var(--mkt-prism-violet) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, var(--mkt-prism-blue) 0%, transparent 40%),
+      radial-gradient(circle at 20% 80%, var(--mkt-prism-cyan) 0%, transparent 40%);
     opacity: 0.05;
     filter: blur(80px);
     animation: mkt-breath-aurora 12s ease-in-out infinite;
@@ -1951,8 +2523,8 @@
   }
   .mkt-grid-light {
     background-image:
-      linear-gradient(to right, rgba(19, 24, 23, 0.035) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(19, 24, 23, 0.035) 1px, transparent 1px);
+      linear-gradient(to right, rgba(20, 26, 46, 0.045) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(20, 26, 46, 0.045) 1px, transparent 1px);
     background-size: 28px 28px;
   }
 
@@ -1962,7 +2534,7 @@
     background: radial-gradient(
       ellipse at center,
       transparent 30%,
-      rgba(18, 20, 20, 0.9) 100%
+      rgba(16, 19, 31, 0.9) 100%
     );
   }
 
@@ -1975,7 +2547,7 @@
   }
   .mkt-lift:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 32px rgba(11, 13, 13, 0.06);
+    box-shadow: 0 12px 40px rgba(30, 41, 59, 0.10);
   }
 
   /* --- The compression engine (frame 1) --------------------------------- */
@@ -2047,11 +2619,11 @@
   .mkt-prism-spine {
     background: linear-gradient(
       to bottom,
-      rgba(110, 92, 240, 0) 0%,
-      rgba(110, 92, 240, 0.9) 20%,
-      rgba(76, 143, 224, 0.9) 50%,
-      rgba(47, 184, 198, 0.9) 80%,
-      rgba(47, 184, 198, 0) 100%
+      rgba(109, 94, 248, 0) 0%,
+      rgba(109, 94, 248, 0.9) 20%,
+      rgba(79, 124, 255, 0.9) 50%,
+      rgba(102, 217, 255, 0.9) 80%,
+      rgba(102, 217, 255, 0) 100%
     );
   }
 }
@@ -2073,8 +2645,8 @@
 }
 
 @keyframes mkt-node-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(91, 91, 214, 0.35); opacity: 0.85; }
-  50% { box-shadow: 0 0 0 5px rgba(91, 91, 214, 0); opacity: 1; }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(109, 94, 248, 0.35); opacity: 0.85; }
+  50% { box-shadow: 0 0 0 5px rgba(109, 94, 248, 0); opacity: 1; }
 }
 
 @keyframes mkt-particle {

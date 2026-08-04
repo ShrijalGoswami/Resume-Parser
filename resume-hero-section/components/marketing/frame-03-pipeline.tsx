@@ -106,14 +106,14 @@ export function Frame03Pipeline() {
                 viewBox="0 0 1000 128"
                 aria-hidden="true"
               >
-                <path d="M 50 64 L 950 64" fill="none" stroke="#DCE1E0" strokeWidth="1" />
+                <path d="M 50 64 L 950 64" fill="none" stroke="var(--mkt-border)" strokeWidth="1" />
                 {/* The learning loop, drawn as travelling dashes — the one
                     thing on the rail that is genuinely continuous. */}
                 <path
                   className="mkt-flow"
                   d="M 950 64 C 950 120, 50 120, 50 64"
                   fill="none"
-                  stroke="#B9C0BF"
+                  stroke="var(--mkt-border-strong)"
                   strokeWidth="1"
                 />
               </svg>
@@ -130,7 +130,7 @@ export function Frame03Pipeline() {
                   <div
                     className={
                       stage.prism
-                        ? `mb-2 h-4 w-[2px] bg-gradient-to-b from-[#6E5CF0] to-[#2FB8C6] ${stage.opacity}`
+                        ? `mb-2 h-4 w-[2px] bg-gradient-to-b from-mkt-prism-violet to-mkt-prism-cyan ${stage.opacity}`
                         : 'mb-2 h-4 w-px bg-mkt-border-strong'
                     }
                   />
@@ -210,7 +210,7 @@ export function Frame03Pipeline() {
         </Reveal>
 
         <Reveal delay={100} className="order-1 lg:order-2">
-          <div className="mkt-lift relative overflow-hidden rounded-mkt-xl border border-mkt-border bg-mkt-canvas shadow-[0_8px_40px_rgba(11,13,13,0.04)]">
+          <div className="mkt-lift relative overflow-hidden rounded-mkt-xl border border-mkt-border bg-mkt-raised shadow-[var(--mkt-shadow-card-raised)]">
             <div className="mkt-grid-light pointer-events-none absolute inset-0 opacity-60" aria-hidden="true" />
 
             {/* Console header */}
@@ -334,10 +334,10 @@ export function Frame03Pipeline() {
       <section className="w-full bg-mkt-subtle">
         <div className="mx-auto grid max-w-[1440px] grid-cols-1 items-center gap-16 px-6 py-24 md:px-12 lg:grid-cols-2 lg:gap-20">
           <Reveal className="order-1">
-            <div className="mkt-lift relative overflow-hidden rounded-mkt-xl border border-mkt-border bg-mkt-canvas shadow-[0_8px_40px_rgba(11,13,13,0.04)]">
+            <div className="mkt-lift relative overflow-hidden rounded-mkt-xl border border-mkt-border bg-mkt-raised shadow-[var(--mkt-shadow-card-raised)]">
               <div className="mkt-prism-edge-bottom flex items-center justify-between bg-mkt-canvas px-5 py-4">
                 <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-sm text-[#4C8FE0]">
+                  <span className="material-symbols-outlined text-sm text-mkt-prism-blue">
                     temp_preferences_custom
                   </span>
                   <span className="font-mkt-label text-base font-medium text-mkt-fg">
@@ -512,7 +512,7 @@ export function Frame03Pipeline() {
         </Reveal>
 
         <Reveal delay={100} className="order-1 lg:order-2">
-          <div className="mkt-lift overflow-hidden rounded-mkt-xl border border-mkt-border bg-mkt-canvas shadow-[0_8px_40px_rgba(11,13,13,0.04)]">
+          <div className="mkt-lift overflow-hidden rounded-mkt-xl border border-mkt-border bg-mkt-raised shadow-[var(--mkt-shadow-card-raised)]">
             <div className="mkt-prism-edge-bottom bg-mkt-canvas p-5 md:p-6">
               <div className="mb-4 flex items-start justify-between">
                 <div>

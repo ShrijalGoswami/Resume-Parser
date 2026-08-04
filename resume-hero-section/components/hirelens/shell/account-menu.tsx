@@ -27,12 +27,20 @@ export interface AccountMenuProps {
 }
 
 export function AccountMenu({
-  name = 'Account',
+  name: nameProp,
   email,
   avatarUrl,
   collapsed = false,
 }: AccountMenuProps) {
   const logout = useLogout()
+
+  // A default parameter only fires on `undefined`, and this arrives as an EMPTY
+  // STRING whenever the profile has no full_name (or has not resolved yet). That
+  // slipped straight through: `Avatar` renders '?' for a blank name and the
+  // label rendered nothing, so the account row — bottom-left, on every screen —
+  // degraded to a lone "?" chip beside an empty space. It reads as broken rather
+  // than as loading. Trim-and-fallback covers whitespace-only names too.
+  const name = nameProp?.trim() || 'Account'
 
   return (
     <DropdownMenu>
