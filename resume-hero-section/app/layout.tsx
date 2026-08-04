@@ -1,6 +1,8 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from '@/components/hirelens/theme/theme-provider'
+import { SITE_LOCALE, SITE_NAME, SITE_URL } from '@/lib/seo/site'
+import { SERVICE_DESCRIPTION } from '@/lib/legal'
 import './globals.css'
 
 /**
@@ -24,7 +26,31 @@ import './globals.css'
  * provider renders once into the server HTML and survives every navigation.
  */
 export const metadata: Metadata = {
-  title: 'HireLens',
+  /**
+   * WITHOUT THIS, EVERY ABSOLUTE URL NEXT GENERATES IS WRONG.
+   *
+   * `metadataBase` is what turns a relative `og:image` or canonical into an
+   * absolute one. Absent, Next falls back to `localhost:3000` in development and
+   * warns in production — so an `og:image` added later would silently resolve
+   * to a host nobody else can reach, and the failure only shows up when someone
+   * pastes a link into Slack and gets no card.
+   */
+  metadataBase: new URL(SITE_URL),
+  title: SITE_NAME,
+  /**
+   * The sitewide default. Route groups and pages override it; anything that
+   * does not gets a description rather than none, which is the difference
+   * between a summariser quoting us and a summariser guessing.
+   */
+  description: SERVICE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  openGraph: {
+    siteName: SITE_NAME,
+    locale: SITE_LOCALE,
+    type: 'website',
+    url: SITE_URL,
+  },
+  twitter: { card: 'summary_large_image' },
   icons: {
     icon: [
       { url: '/icon-light-32x32.png', media: '(prefers-color-scheme: light)' },
@@ -33,6 +59,20 @@ export const metadata: Metadata = {
     ],
     apple: '/apple-icon.png',
   },
+}
+
+/**
+ * Viewport and theme colour.
+ *
+ * Split from `metadata` because Next requires it — and the two colours match
+ * the light and dark canvases the product actually paints, so a mobile browser
+ * chrome does not sit in a colour that appears nowhere in the design.
+ */
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#FBFCFF' },
+    { media: '(prefers-color-scheme: dark)', color: '#0A0C18' },
+  ],
 }
 
 export default function RootLayout({

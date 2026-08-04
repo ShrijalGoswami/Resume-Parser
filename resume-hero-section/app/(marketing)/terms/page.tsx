@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   title: 'Terms of Service — HireLens',
   description:
     'The agreement between HireLens and the organizations that use it: what we provide, what you are responsible for, and how either side ends it.',
+  alternates: { canonical: '/terms' },
+  openGraph: { title: 'Terms of Service — HireLens', url: '/terms', type: 'article' },
 }
 
 /**
@@ -40,6 +42,7 @@ export default function TermsPage() {
       title="Terms of Service"
       summary="The agreement between HireLens and your organization. It covers what we provide, what you are responsible for, and how either side can end it."
       updated={POLICY_UPDATED.terms}
+      path="/terms"
     >
       <Clause title="1. Who this agreement is with">
         <P>

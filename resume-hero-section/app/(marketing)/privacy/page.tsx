@@ -14,6 +14,8 @@ export const metadata: Metadata = {
   title: 'Privacy Policy — HireLens',
   description:
     'What personal data HireLens holds, why, where it lives, who else processes it, and how long we keep it — including the résumés of candidates who never signed up.',
+  alternates: { canonical: '/privacy' },
+  openGraph: { title: 'Privacy Policy — HireLens', url: '/privacy', type: 'article' },
 }
 
 /**
@@ -43,6 +45,7 @@ export default function PrivacyPage() {
       title="Privacy Policy"
       summary="What we hold, why we hold it, where it lives and how long it stays — for the people who use HireLens and for the candidates whose résumés pass through it."
       updated={POLICY_UPDATED.privacy}
+      path="/privacy"
     >
       <Clause title="1. Who is responsible for what">
         <P>

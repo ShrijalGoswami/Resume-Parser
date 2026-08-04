@@ -4,12 +4,15 @@ import Link from 'next/link'
 import { MarketingNav } from '@/components/marketing/marketing-nav'
 import { MarketingFooter } from '@/components/marketing/marketing-footer'
 import { Missing } from '@/components/marketing/legal/legal-page'
+import { ContactStructuredData } from '@/components/seo/structured-data-blocks'
 import { CONTACTS, ENTITY, GRIEVANCE_OFFICER, isConfirmed } from '@/lib/legal'
 
 export const metadata: Metadata = {
   title: 'Contact — HireLens',
   description:
     'How to reach HireLens: support, upgrades, enterprise enquiries and privacy requests.',
+  alternates: { canonical: '/contact' },
+  openGraph: { title: 'Contact — HireLens', url: '/contact', type: 'website' },
 }
 
 /**
@@ -137,6 +140,7 @@ export default function ContactPage() {
         </section>
       </main>
       <MarketingFooter />
+      <ContactStructuredData />
     </div>
   )
 }

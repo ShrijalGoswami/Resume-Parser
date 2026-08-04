@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { PricingScreen } from '@/components/marketing/pricing/pricing-screen'
+import { PricingStructuredData } from '@/components/seo/structured-data-blocks'
 
 /**
  * `/pricing` — the public plan comparison.
@@ -12,14 +13,21 @@ export const metadata: Metadata = {
   title: 'Pricing — HireLens',
   description:
     'Every HireLens plan runs the same analysis on every résumé. Compare Free, Plus, Pro and Enterprise — limits, capabilities, and what each tier adds.',
+  alternates: { canonical: '/pricing' },
   openGraph: {
     title: 'Pricing — HireLens',
     description:
       'Priced by what you read, not by who reads it. Compare every HireLens plan side by side.',
+    url: '/pricing',
     type: 'website',
   },
 }
 
 export default function PricingPage() {
-  return <PricingScreen />
+  return (
+    <>
+      <PricingScreen />
+      <PricingStructuredData />
+    </>
+  )
 }

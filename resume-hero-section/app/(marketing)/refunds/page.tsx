@@ -9,6 +9,12 @@ export const metadata: Metadata = {
   title: 'Refund & Cancellation Policy — HireLens',
   description:
     'How to cancel a HireLens subscription, what happens to your data afterwards, and when we refund.',
+  alternates: { canonical: '/refunds' },
+  openGraph: {
+    title: 'Refund & Cancellation Policy — HireLens',
+    url: '/refunds',
+    type: 'article',
+  },
 }
 
 /**
@@ -45,6 +51,7 @@ export default function RefundsPage() {
       title="Refund & Cancellation Policy"
       summary="How to cancel, what happens to your data when you do, and the circumstances in which we refund."
       updated={POLICY_UPDATED.refunds}
+      path="/refunds"
     >
       <Clause title="1. You do not have to buy to evaluate">
         <P>

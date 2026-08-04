@@ -1,3 +1,6 @@
+import type { Metadata } from 'next'
+
+import { HomeStructuredData } from '@/components/seo/structured-data-blocks'
 import { MarketingNav } from '@/components/marketing/marketing-nav'
 import { MarketingFooter } from '@/components/marketing/marketing-footer'
 import { Frame01Hero } from '@/components/marketing/frame-01-hero'
@@ -21,6 +24,16 @@ import { Frame05Conclusion } from '@/components/marketing/frame-05-conclusion'
  *   Frame 4  regret analysis · AI tenets · enterprise trust
  *   Frame 5  customer story · pricing · FAQ · closing
  */
+/**
+ * `alternates.canonical` is the only addition. The homepage is reachable as
+ * `/`, as the site root, and from every preview deployment — declaring which
+ * one is the real address is what stops those being treated as three pages
+ * that happen to be identical.
+ */
+export const metadata: Metadata = {
+  alternates: { canonical: '/' },
+}
+
 export default function HomePage() {
   return (
     <div className="mkt-min-vh flex flex-col bg-mkt-canvas">
@@ -33,6 +46,7 @@ export default function HomePage() {
         <Frame05Conclusion />
       </main>
       <MarketingFooter />
+      <HomeStructuredData />
     </div>
   )
 }

@@ -3,6 +3,7 @@ import * as React from 'react'
 import { MarketingNav } from '@/components/marketing/marketing-nav'
 import { MarketingFooter } from '@/components/marketing/marketing-footer'
 import { LEGAL_ENTITY_CONFIRMED, outstandingLegalFields } from '@/lib/legal'
+import { LegalStructuredData } from '@/components/seo/structured-data-blocks'
 
 /**
  * The shell every policy page renders inside.
@@ -23,12 +24,20 @@ export function LegalPage({
   title,
   summary,
   updated,
+  path,
   children,
 }: {
   title: string
   /** One sentence, in plain language, before the clauses start. */
   summary: string
   updated: string
+  /**
+   * This page's own path, used for the breadcrumb.
+   *
+   * Emitted here rather than in each page so the three policies cannot drift
+   * into describing their position in the site differently.
+   */
+  path: string
   children: React.ReactNode
 }) {
   const outstanding = LEGAL_ENTITY_CONFIRMED ? [] : outstandingLegalFields()
@@ -66,6 +75,7 @@ export function LegalPage({
         </article>
       </main>
       <MarketingFooter />
+      <LegalStructuredData name={title} path={path} />
     </div>
   )
 }
