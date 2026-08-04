@@ -21,14 +21,18 @@ import Link from 'next/link'
  */
 
 const NAV_LINKS = [
-  { label: 'Product', href: '#product' },
-  { label: 'Pricing', href: '#pricing' },
-  { label: 'Customers', href: '#customers' },
-  { label: 'Security', href: '#security' },
+  { label: 'Product', href: '/#product' },
+  // A real route now, not an anchor. The homepage keeps a pricing band, but the
+  // full comparison is its own page — an in-page anchor from another route
+  // would scroll to nothing.
+  { label: 'Pricing', href: '/pricing' },
+  { label: 'Customers', href: '/#customers' },
+  { label: 'Security', href: '/#security' },
 ]
 
 export function MarketingNav() {
   const [onInk, setOnInk] = useState(true)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     // The nav takes its palette from whatever section is currently beneath it,
@@ -106,7 +110,10 @@ export function MarketingNav() {
         {/* Desktop nav */}
         <div className="hidden items-center gap-8 md:flex">
           {NAV_LINKS.map((link) => (
-            <a
+            // `Link`, not `<a>`: Pricing is a route now, and a full page load
+            // between two marketing pages would drop the fonts and the
+            // background field for a beat.
+            <Link
               key={link.label}
               href={link.href}
               // `py-1` is hit area only: 12px uppercase type renders 16px tall,
@@ -115,7 +122,7 @@ export function MarketingNav() {
               className={`-my-1 py-1 mkt-data font-medium uppercase tracking-widest transition-all duration-500 ${label}`}
             >
               {link.label}
-            </a>
+            </Link>
           ))}
         </div>
 
@@ -140,15 +147,95 @@ export function MarketingNav() {
           </Link>
         </div>
 
-        {/* Mobile: a single access affordance — the frames never spec an open
-            mobile menu, so we route rather than render a dead toggle. */}
-        <Link
-          href="/auth/signup"
-          className="bg-mkt-primary-container px-4 py-2 mkt-data font-medium uppercase tracking-widest text-white md:hidden"
+        {/* MOBILE.
+            This was a single "Access" button routing to /auth/signup, on the
+            reasoning that the Stitch frames never specced an open mobile menu.
+            The frames were desktop comps, and their silence was not a decision
+            to have no mobile navigation — the effect was that below 768px
+            Pricing, Customers and Security were unreachable, and an EXISTING
+            CUSTOMER had no way to sign in at all: the only control on screen
+            sent them to signup. Recruiters live on phones between interviews.
+
+            A disclosure, not a route change: same links, same labels, same
+            palette swap as the bar above it. */}
+        <button
+          type="button"
+          onClick={() => setMenuOpen((open) => !open)}
+          aria-expanded={menuOpen}
+          aria-controls="mkt-mobile-menu"
+          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          className={`-mr-2 flex size-11 items-center justify-center transition-colors duration-500 md:hidden ${
+            onInk ? 'text-mkt-dark-fg' : 'text-mkt-fg'
+          }`}
         >
-          Access
-        </Link>
+          {/* Two 1px rules that cross into an X. Cheaper than an icon font the
+              nav does not otherwise load, and it animates for free. */}
+          <span className="relative block h-4 w-5" aria-hidden="true">
+            <span
+              className={`absolute left-0 block h-px w-5 bg-current transition-transform duration-300 ${
+                menuOpen ? 'top-1/2 rotate-45' : 'top-1'
+              }`}
+            />
+            <span
+              className={`absolute left-0 block h-px w-5 bg-current transition-transform duration-300 ${
+                menuOpen ? 'top-1/2 -rotate-45' : 'top-[11px]'
+              }`}
+            />
+          </span>
+        </button>
       </div>
+
+      {/* The panel. Inside <nav> so it inherits the backdrop blur and the
+          ink/canvas swap, and so the whole thing remains one landmark. */}
+      {menuOpen ? (
+        <div
+          id="mkt-mobile-menu"
+          className={`border-t md:hidden ${
+            onInk ? 'border-mkt-dark-outline-variant/10' : 'border-mkt-border-subtle'
+          }`}
+        >
+          <div className="flex flex-col px-6 py-4">
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.label}
+                href={link.href}
+                onClick={() => setMenuOpen(false)}
+                className={`py-3 mkt-data font-medium uppercase tracking-widest transition-colors ${label}`}
+              >
+                {link.label}
+              </Link>
+            ))}
+
+            <div
+              className={`mt-2 flex flex-col gap-3 border-t pt-4 ${
+                onInk ? 'border-mkt-dark-outline-variant/10' : 'border-mkt-border-subtle'
+              }`}
+            >
+              {/* Sign in comes FIRST on mobile. An existing customer opening
+                  the site on a phone is the likeliest visitor to need it, and
+                  it was the one action the old bar made impossible. */}
+              <Link
+                href="/auth/login"
+                onClick={() => setMenuOpen(false)}
+                className={`py-2 mkt-data font-medium uppercase tracking-widest transition-colors ${
+                  onInk
+                    ? 'text-mkt-dark-fg-variant hover:text-mkt-dark-fg'
+                    : 'text-mkt-fg-secondary hover:text-mkt-fg'
+                }`}
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/auth/signup"
+                onClick={() => setMenuOpen(false)}
+                className="bg-mkt-primary-container px-6 py-3 text-center mkt-data font-medium uppercase tracking-widest text-white transition-colors duration-300 hover:bg-mkt-inverse-primary"
+              >
+                Request Access
+              </Link>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </nav>
   )
 }
