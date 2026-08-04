@@ -8,6 +8,8 @@ import { getSupabaseBrowserClient, isSupabaseConfigured } from '@/lib/supabase/c
 import { authErrorMessage } from '@/lib/auth-errors'
 import { Button } from '../ui/button'
 import { AuthField } from './auth-field'
+import { PasswordField } from './password-field'
+import { useFocusOnMount } from './use-focus-on-mount'
 
 /**
  * Login (RC-1 Definitive Login) — email-first progressive: email → Continue,
@@ -29,6 +31,19 @@ export function LoginForm() {
   const [magicLoading, setMagicLoading] = React.useState(false)
   const [magicSent, setMagicSent] = React.useState(false)
   const [ssoLoading, setSsoLoading] = React.useState(false)
+
+  const passwordRef = React.useRef<HTMLInputElement>(null)
+  const magicHeadingRef = useFocusOnMount<HTMLHeadingElement>(magicSent)
+
+  // A rejected sign-in must put focus back on the password, not leave it on a
+  // button still labelled "Sign in". Selected as well as focused, so the next
+  // keystroke replaces the wrong password instead of appending to it.
+  React.useEffect(() => {
+    if (error && step === 'password') {
+      passwordRef.current?.focus()
+      passwordRef.current?.select()
+    }
+  }, [error, step])
 
   function onContinue(event: React.FormEvent) {
     event.preventDefault()
@@ -127,7 +142,9 @@ export function LoginForm() {
   if (magicSent) {
     return (
       <div className="flex flex-col gap-4">
-        <h1 className="hl-display-md">Check your inbox.</h1>
+        <h1 ref={magicHeadingRef} tabIndex={-1} className="hl-display-md outline-none">
+          Check your inbox.
+        </h1>
         <p className="hl-body text-hl-fg-secondary" role="status">
           If an account exists for {email}, we sent a sign-in link. Open it on this device to
           continue.
@@ -220,6 +237,23 @@ export function LoginForm() {
         </div>
       ) : (
         <form onSubmit={onSignIn} className="flex flex-col gap-5">
+          {/* THE EMAIL HAS TO STAY IN THE FORM. This step replaces the email
+              input with a chip, and a password form with no username field is a
+              form no password manager will fill or offer to save — the address
+              is right there on screen, but not as a value it can read. A real
+              text input, carrying the email, taken out of the layout and out of
+              the tab order (managers skip `type="hidden"`). The visible chip
+              below remains the thing a person reads. */}
+          <input
+            type="text"
+            name="username"
+            autoComplete="username"
+            value={email}
+            readOnly
+            tabIndex={-1}
+            aria-hidden
+            className="sr-only"
+          />
           {/* Chosen-identity chip */}
           <div className="flex items-center justify-between gap-2 rounded-hl-md border border-hl-border-subtle bg-hl-subtle px-3 py-2.5">
             <span className="flex min-w-0 items-center gap-2.5 text-hl-fg-secondary">
@@ -237,9 +271,13 @@ export function LoginForm() {
               Edit
             </button>
           </div>
-          <AuthField
+          {/* No live requirement checklist on sign-in, deliberately: this
+              password already exists, and telling someone their *correct*
+              password fails a rule invented after they chose it is both wrong
+              and unactionable. Validation here is the server's answer. */}
+          <PasswordField
+            ref={passwordRef}
             label="Password"
-            type="password"
             autoComplete="current-password"
             required
             autoFocus

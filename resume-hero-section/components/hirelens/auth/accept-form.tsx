@@ -4,8 +4,12 @@ import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { getSupabaseBrowserClient, isSupabaseConfigured } from '@/lib/supabase/client'
+import { authErrorMessage } from '@/lib/auth-errors'
+import { confirmError, isPasswordAcceptable } from '@/lib/password-policy'
 import { Button } from '../ui/button'
 import { AuthField } from './auth-field'
+import { PasswordField } from './password-field'
+import { PasswordRequirements } from './password-requirements'
 
 /**
  * Accept invite (frozen P2 design). The invited user lands here with a session
@@ -22,18 +26,26 @@ export function AcceptInviteForm() {
   const [confirm, setConfirm] = React.useState('')
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  const [touched, setTouched] = React.useState(false)
+  const [confirmTouched, setConfirmTouched] = React.useState(false)
+  const passwordRef = React.useRef<HTMLInputElement>(null)
+
+  const mismatch = confirmError(password, confirm)
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault()
     setError(null)
+    setTouched(true)
+    setConfirmTouched(true)
     if (!configured) {
       setError('Invites aren’t configured yet.')
       return
     }
-    if (password !== confirm) {
-      setError('Passwords don’t match.')
+    if (!isPasswordAcceptable(password)) {
+      passwordRef.current?.focus()
       return
     }
+    if (mismatch) return
     setLoading(true)
     try {
       const supabase = getSupabaseBrowserClient()
@@ -45,9 +57,7 @@ export function AcceptInviteForm() {
       router.replace('/home')
       router.refresh()
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Your invite link may have expired. Ask for a new one.',
-      )
+      setError(authErrorMessage(err, 'Your invite link may have expired. Ask for a new one.'))
       setLoading(false)
     }
   }
@@ -58,7 +68,7 @@ export function AcceptInviteForm() {
       <p className="hl-body text-hl-fg-secondary">
         Set your name and a password to join your team on HireLens.
       </p>
-      <form onSubmit={onSubmit} className="flex flex-col gap-5">
+      <form onSubmit={onSubmit} noValidate className="flex flex-col gap-5">
         <AuthField
           label="Full name"
           autoComplete="name"
@@ -68,28 +78,43 @@ export function AcceptInviteForm() {
           value={name}
           onChange={(event) => setName(event.target.value)}
         />
-        <AuthField
-          label="Password"
-          type="password"
-          autoComplete="new-password"
-          required
-          minLength={8}
-          placeholder="At least 8 characters"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-        />
-        <AuthField
+        <div className="flex flex-col gap-2">
+          <PasswordField
+            ref={passwordRef}
+            label="Password"
+            autoComplete="new-password"
+            required
+            placeholder="At least 8 characters"
+            value={password}
+            invalid={touched && password.length > 0 && !isPasswordAcceptable(password)}
+            describedBy="invite-password-rules"
+            onBlur={() => setTouched(true)}
+            onChange={(event) => setPassword(event.target.value)}
+          />
+          <PasswordRequirements
+            id="invite-password-rules"
+            password={password}
+            showErrors={touched}
+          />
+        </div>
+        <PasswordField
           label="Confirm password"
-          type="password"
           autoComplete="new-password"
           required
-          minLength={8}
           placeholder="Re-enter your password"
           value={confirm}
+          invalid={Boolean(confirmTouched && mismatch)}
+          errorId="invite-confirm-error"
+          onBlur={() => setConfirmTouched(true)}
           onChange={(event) => setConfirm(event.target.value)}
         />
+        {confirmTouched && mismatch ? (
+          <p id="invite-confirm-error" className="hl-body text-hl-danger" role="alert">
+            {mismatch}
+          </p>
+        ) : null}
         {error ? (
-          <p className="hl-body text-[color:var(--hl-danger)]" role="alert">
+          <p className="hl-body text-hl-danger" role="alert">
             {error}
           </p>
         ) : null}

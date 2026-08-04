@@ -5,8 +5,13 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowRight } from 'lucide-react'
 import { getSupabaseBrowserClient, isSupabaseConfigured } from '@/lib/supabase/client'
+import { authErrorMessage } from '@/lib/auth-errors'
+import { isPasswordAcceptable } from '@/lib/password-policy'
 import { Button } from '../ui/button'
 import { AuthField } from './auth-field'
+import { PasswordField } from './password-field'
+import { PasswordRequirements } from './password-requirements'
+import { useFocusOnMount } from './use-focus-on-mount'
 
 /**
  * Signup (frozen P2 design). Uses Supabase `signUp`. If the project returns a
@@ -25,6 +30,10 @@ export function SignupForm() {
   const [sent, setSent] = React.useState(false)
   const [resendLoading, setResendLoading] = React.useState(false)
   const [resent, setResent] = React.useState(false)
+  const [touched, setTouched] = React.useState(false)
+
+  const passwordRef = React.useRef<HTMLInputElement>(null)
+  const sentHeadingRef = useFocusOnMount<HTMLHeadingElement>(sent)
 
   // Verification links route through /auth/callback so the one-time code is
   // exchanged for a session (PKCE) before landing on /home.
@@ -34,8 +43,15 @@ export function SignupForm() {
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault()
     setError(null)
+    setTouched(true)
     if (!configured) {
       setError('Sign-up isn’t configured yet.')
+      return
+    }
+    // Send focus to the field that is actually blocking, rather than leaving the
+    // reader to work out which of three inputs the message refers to.
+    if (!isPasswordAcceptable(password)) {
+      passwordRef.current?.focus()
       return
     }
     setLoading(true)
@@ -54,7 +70,7 @@ export function SignupForm() {
         setSent(true)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
+      setError(authErrorMessage(err, 'We couldn’t create your account. Try again in a moment.'))
       setLoading(false)
     }
   }
@@ -79,7 +95,9 @@ export function SignupForm() {
   if (sent) {
     return (
       <div className="flex flex-col gap-4">
-        <h1 className="hl-display-md">Check your inbox.</h1>
+        <h1 ref={sentHeadingRef} tabIndex={-1} className="hl-display-md outline-none">
+          Check your inbox.
+        </h1>
         <p className="hl-body text-hl-fg-secondary" role="status">
           We sent a confirmation link to {email}. Open it on this device to finish creating your
           account.
@@ -111,7 +129,11 @@ export function SignupForm() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="hl-display-md">Start with HireLens.</h1>
-      <form onSubmit={onSubmit} className="flex flex-col gap-5">
+      {/* `noValidate` hands validation to the checklist below. The browser's own
+          bubble says "Please lengthen this text to 8 characters or more", is not
+          announced to a screen reader, and disappears on the next keystroke —
+          the requirement list is live, described by the field, and stays put. */}
+      <form onSubmit={onSubmit} noValidate className="flex flex-col gap-5">
         <AuthField
           label="Full name"
           autoComplete="name"
@@ -124,24 +146,34 @@ export function SignupForm() {
         <AuthField
           label="Work email"
           type="email"
+          inputMode="email"
           autoComplete="email"
           required
           placeholder="you@company.com"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
         />
-        <AuthField
-          label="Password"
-          type="password"
-          autoComplete="new-password"
-          required
-          minLength={8}
-          placeholder="At least 8 characters"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-        />
+        <div className="flex flex-col gap-2">
+          <PasswordField
+            ref={passwordRef}
+            label="Password"
+            autoComplete="new-password"
+            required
+            placeholder="At least 8 characters"
+            value={password}
+            invalid={touched && password.length > 0 && !isPasswordAcceptable(password)}
+            describedBy="signup-password-rules"
+            onBlur={() => setTouched(true)}
+            onChange={(event) => setPassword(event.target.value)}
+          />
+          <PasswordRequirements
+            id="signup-password-rules"
+            password={password}
+            showErrors={touched}
+          />
+        </div>
         {error ? (
-          <p className="hl-body text-[color:var(--hl-danger)]" role="alert">
+          <p className="hl-body text-hl-danger" role="alert">
             {error}
           </p>
         ) : null}
