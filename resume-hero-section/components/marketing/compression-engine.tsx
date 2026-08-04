@@ -420,8 +420,21 @@ export function CompressionEngine() {
 
           <div className="flex flex-1 flex-col gap-3 px-5 pb-5 md:px-6">
             {SIGNAL.map((candidate, i) => (
-              <article
+              <div
                 key={candidate.name}
+                // NOT `<article>`, and that is a correctness fix rather than a
+                // preference. `<article>` is HTML's strongest "standalone,
+                // quotable content" signal, and these four cards are INVENTED
+                // candidates in a product mock. An extractor that prioritises
+                // article elements — which is most of them — surfaced
+                // "S. Rahman · Staff Backend Engineer · Leadership risk" as
+                // HireLens's primary content.
+                //
+                // That is the same failure the August truth pass removed from
+                // the prose, surviving in a layer nobody reads: the site
+                // stopped claiming fake customers while still marking up fake
+                // people as its most machine-prominent element.
+                //
                 // `min-h-0` matters: without it the flex items refuse to
                 // shrink below their content height and the column spills past
                 // the panel's fixed 600px onto the footer strip.
@@ -507,7 +520,7 @@ export function CompressionEngine() {
                     </dd>
                   </div>
                 </dl>
-              </article>
+              </div>
             ))}
           </div>
         </div>

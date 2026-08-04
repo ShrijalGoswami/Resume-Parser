@@ -184,7 +184,10 @@ export function Frame05Conclusion() {
                     are no stories to read; there is a plan comparison, so the
                     link now says what it does. */}
                 See what each plan includes
-                <span className="material-symbols-outlined ml-1 text-[16px]">
+                {/* Decorative. The ligature is text content, so without this
+                    the link reads "Compare every planarrow_forward" to a
+                    screen reader and to every text extractor. */}
+                <span className="material-symbols-outlined ml-1 text-[16px]" aria-hidden="true">
                   arrow_forward
                 </span>
               </Link>
@@ -363,7 +366,7 @@ export function Frame05Conclusion() {
             className="-my-1 inline-flex items-center py-1 mkt-body-sm text-mkt-fg-tertiary transition-colors hover:text-mkt-fg"
           >
             Compare every plan
-            <span className="material-symbols-outlined ml-1 text-[16px]">
+            <span className="material-symbols-outlined ml-1 text-[16px]" aria-hidden="true">
               arrow_forward
             </span>
           </Link>
@@ -391,7 +394,13 @@ export function Frame05Conclusion() {
                   <span className="mkt-body-lg font-medium text-mkt-fg">
                     {faq.question}
                   </span>
-                  <span className="material-symbols-outlined text-mkt-fg-tertiary">
+                  {/* The button already announces its state via
+                      `aria-expanded`; the ligature would append a literal
+                      "add" to every question. */}
+                  <span
+                    className="material-symbols-outlined text-mkt-fg-tertiary"
+                    aria-hidden="true"
+                  >
                     {isOpen ? 'remove' : 'add'}
                   </span>
                 </button>

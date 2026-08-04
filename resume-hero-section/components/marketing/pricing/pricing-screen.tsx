@@ -56,6 +56,12 @@ export function PricingScreen() {
             <CurrencyToggle value={currency} onChange={setCurrency} />
           </div>
 
+          {/* An `h2` before the plan cards. Their names are `h3`, so without
+              this the outline jumped h1 → h3 and the four plans appeared to be
+              subsections of nothing. `sr-only` because the cards are visually
+              self-evident; the heading exists to make the document structure
+              true, not to add a title nobody asked for. */}
+          <h2 className="sr-only">Plans and prices</h2>
           <PlanCards currency={currency} />
 
           {/* GST-INCLUSIVE, NOT EXCLUSIVE. This read "Prices exclude applicable

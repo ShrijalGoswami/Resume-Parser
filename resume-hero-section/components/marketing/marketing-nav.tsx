@@ -83,6 +83,11 @@ export function MarketingNav() {
     : 'text-mkt-fg-secondary hover:text-mkt-accent'
 
   return (
+    /* `<header>` is the banner landmark. Without it the site had `main`,
+       `nav` and `footer` but nothing identifying the masthead, so assistive
+       tech and document-structure extractors saw navigation floating at the
+       top of the page with no region owning it. */
+    <header>
     <nav
       /* `mkt-fixed-vw` instead of `w-full`: a fixed box measures against the
          viewport, not the zoomed `.mkt` ancestor, so `w-full` would render
@@ -237,5 +242,6 @@ export function MarketingNav() {
         </div>
       ) : null}
     </nav>
+    </header>
   )
 }

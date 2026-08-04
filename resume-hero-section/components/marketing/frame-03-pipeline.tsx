@@ -161,7 +161,10 @@ export function Frame03Pipeline() {
       <section className="mx-auto grid w-full max-w-[1440px] grid-cols-1 items-center gap-16 px-6 py-24 md:px-12 lg:grid-cols-2 lg:gap-20">
         <Reveal className="order-2 flex max-w-xl flex-col gap-6 lg:order-1">
           <div className="mb-2 flex items-center gap-2">
-            <span className="material-symbols-outlined text-sm text-mkt-fg-tertiary">
+            <span
+              className="material-symbols-outlined text-sm text-mkt-fg-tertiary"
+              aria-hidden="true"
+            >
               filter_list
             </span>
             <span className="mkt-label text-mkt-fg-tertiary">
@@ -337,7 +340,10 @@ export function Frame03Pipeline() {
             <div className="mkt-lift relative overflow-hidden rounded-mkt-xl border border-mkt-border bg-mkt-raised shadow-[var(--mkt-shadow-card-raised)]">
               <div className="mkt-prism-edge-bottom flex items-center justify-between bg-mkt-canvas px-5 py-4">
                 <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-sm text-mkt-prism-blue">
+                  <span
+                    className="material-symbols-outlined text-sm text-mkt-prism-blue"
+                    aria-hidden="true"
+                  >
                     temp_preferences_custom
                   </span>
                   <span className="font-mkt-label text-base font-medium text-mkt-fg">
@@ -410,7 +416,7 @@ export function Frame03Pipeline() {
                   <figcaption className="mt-3 flex flex-wrap items-center gap-2 mkt-data text-mkt-fg-tertiary">
                     <span className="inline-flex items-center gap-1 rounded-[0.25rem] border border-mkt-border-subtle px-1.5 py-0.5">
                       Source
-                      <span className="material-symbols-outlined text-[12px]">
+                      <span className="material-symbols-outlined text-[12px]" aria-hidden="true">
                         arrow_outward
                       </span>
                     </span>
@@ -426,7 +432,10 @@ export function Frame03Pipeline() {
 
           <Reveal delay={100} className="order-2 flex max-w-xl flex-col gap-6">
             <div className="mb-2 flex items-center gap-2">
-              <span className="material-symbols-outlined text-sm text-mkt-fg-tertiary">
+              <span
+                className="material-symbols-outlined text-sm text-mkt-fg-tertiary"
+                aria-hidden="true"
+              >
                 search_insights
               </span>
               <span className="mkt-label text-mkt-fg-tertiary">
@@ -451,7 +460,10 @@ export function Frame03Pipeline() {
                 ['Competencies come from your calibration, not a template', 'tune'],
               ].map(([copy, icon]) => (
                 <li key={copy} className="flex items-start gap-3">
-                  <span className="material-symbols-outlined mt-px text-[16px] text-mkt-accent-text">
+                  <span
+                    className="material-symbols-outlined mt-px text-[16px] text-mkt-accent-text"
+                    aria-hidden="true"
+                  >
                     {icon}
                   </span>
                   <span className="mkt-body-sm text-mkt-fg-secondary">
@@ -470,7 +482,10 @@ export function Frame03Pipeline() {
       <section className="mx-auto grid w-full max-w-[1440px] grid-cols-1 items-center gap-16 px-6 py-24 md:px-12 lg:grid-cols-2 lg:gap-20">
         <Reveal className="order-2 flex max-w-xl flex-col gap-6 lg:order-1">
           <div className="mb-2 flex items-center gap-2">
-            <span className="material-symbols-outlined text-sm text-mkt-fg-tertiary">
+            <span
+              className="material-symbols-outlined text-sm text-mkt-fg-tertiary"
+              aria-hidden="true"
+            >
               gavel
             </span>
             <span className="mkt-label text-mkt-fg-tertiary">
@@ -523,7 +538,10 @@ export function Frame03Pipeline() {
                     Generated for Role ID: 884-A · 4 candidates compared
                   </p>
                 </div>
-                <span className="material-symbols-outlined text-xl text-mkt-accent">
+                <span
+                  className="material-symbols-outlined text-xl text-mkt-accent"
+                  aria-hidden="true"
+                >
                   auto_awesome
                 </span>
               </div>
@@ -601,7 +619,10 @@ export function Frame03Pipeline() {
               {/* The decision is still a person's. */}
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-mkt-border-subtle pt-4">
                 <span className="inline-flex items-center gap-1.5 mkt-data text-mkt-fg-secondary">
-                  <span className="material-symbols-outlined text-[14px] text-mkt-success">
+                  <span
+                    className="material-symbols-outlined text-[14px] text-mkt-success"
+                    aria-hidden="true"
+                  >
                     verified_user
                   </span>
                   Awaiting your approval · reversible · logged to the ledger

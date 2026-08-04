@@ -117,7 +117,10 @@ export function Frame04Regret() {
 
               <div className="flex items-center justify-between border-b border-mkt-border-subtle bg-mkt-subtle/50 px-6 py-5 md:px-8">
                 <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-mkt-fg-secondary">
+                  <span
+                    className="material-symbols-outlined text-mkt-fg-secondary"
+                    aria-hidden="true"
+                  >
                     compare_arrows
                   </span>
                   <h3 className="text-base font-medium tracking-wide">
@@ -208,7 +211,7 @@ export function Frame04Regret() {
                       time-to-market in Q3.
                     </p>
                     <div className="flex items-center gap-2 mkt-body-sm text-mkt-fg-tertiary">
-                      <span className="material-symbols-outlined text-[16px]">
+                      <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
                         info
                       </span>
                       <span>AI Confidence Line:</span>
@@ -270,7 +273,7 @@ export function Frame04Regret() {
             {/* Tenet 1 — the prism mark */}
             <Reveal className="group flex flex-col items-start gap-6 border-t border-mkt-border-subtle py-7 md:flex-row md:items-center">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-mkt-lg border border-mkt-border bg-mkt-canvas shadow-sm transition-shadow duration-300 group-hover:shadow-md">
-                <span className="material-symbols-outlined mkt-prism-text">
+                <span className="material-symbols-outlined mkt-prism-text" aria-hidden="true">
                   auto_awesome
                 </span>
               </div>
@@ -295,7 +298,7 @@ export function Frame04Regret() {
             >
               <div className="mkt-prism-border-left flex shrink-0 items-center gap-2 rounded-[0.375rem] bg-mkt-ai-bg px-3 py-2 mkt-body-sm font-medium text-mkt-fg-secondary">
                 Source
-                <span className="material-symbols-outlined text-[14px]">
+                <span className="material-symbols-outlined text-[14px]" aria-hidden="true">
                   arrow_outward
                 </span>
               </div>

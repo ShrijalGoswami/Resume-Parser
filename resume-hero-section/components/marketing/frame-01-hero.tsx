@@ -94,7 +94,14 @@ export function Frame01Hero() {
                   className="group flex items-center gap-2 bg-mkt-primary-container px-7 py-3 mkt-data font-medium uppercase tracking-widest text-white transition-colors duration-300 hover:bg-mkt-inverse-primary"
                 >
                   See it think
-                  <span className="material-symbols-outlined text-sm transition-transform group-hover:translate-x-1">
+                  {/* `aria-hidden` because the ligature IS the text content.
+                      Without it this link's accessible name — and the text
+                      every crawler and LLM extracts — reads
+                      "See it thinkarrow_forward". */}
+                  <span
+                    className="material-symbols-outlined text-sm transition-transform group-hover:translate-x-1"
+                    aria-hidden="true"
+                  >
                     arrow_forward
                   </span>
                 </Link>
