@@ -60,9 +60,33 @@ describe('summaryStats — the four navigation summaries (real fields only)', ()
     expect(stats.every((s) => s.href.startsWith('/'))).toBe(true)
   })
 
-  it('degrades to zeros (never NaN) when analytics is undefined', () => {
+  it('reports UNKNOWN, never zero, when the overview is unavailable', () => {
+    // The failure this replaces: `/analytics/overview` is gated on
+    // `advanced_analytics` (Pro), and the Inbox is where every plan lands. So
+    // every Free and Plus organization opened the product to four confident
+    // zeros — "Open roles 0 · Awaiting review 0" — with a full pipeline.
+    //
+    // Loading, error, denied and ready are four distinct states. A wrong number
+    // is worse than no number, because the reader cannot tell which they got.
     const stats = summaryStats(undefined)
-    expect(stats.every((s) => s.value === 0)).toBe(true)
+    expect(stats.every((s) => s.value === null)).toBe(true)
+    expect(stats.some((s) => s.value === 0)).toBe(false)
+  })
+
+  it('still distinguishes a real zero from an unknown one', () => {
+    // A stage absent from a funnel the server DID return is genuinely zero.
+    // Only the whole response being missing means "we do not know".
+    const stats = summaryStats(overview({ active_campaigns: 0, funnel: [] }))
+    expect(stats.map((s) => s.value)).toEqual([0, 0, 0, 0])
+  })
+
+  it('keeps every summary a navigation link in both states', () => {
+    // The tiles are links first and counters second — they stay reachable when
+    // the count behind them is not.
+    for (const stats of [summaryStats(undefined), summaryStats(overview())]) {
+      expect(stats).toHaveLength(4)
+      expect(stats.every((s) => s.href.startsWith('/'))).toBe(true)
+    }
   })
 })
 

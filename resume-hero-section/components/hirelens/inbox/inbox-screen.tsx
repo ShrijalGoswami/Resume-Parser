@@ -11,6 +11,7 @@ import {
   usePendingRecommendations,
   useUpdateRecommendation,
   useRecentActivity,
+  useActiveRoles,
 } from '../lib/api/hooks'
 import { getCandidate } from '@/services/campaigns-api'
 import { EmptyState } from '../states/empty-state'
@@ -124,6 +125,9 @@ function AuthedInbox() {
   const recs = usePendingRecommendations()
   const activity = useRecentActivity(30)
   const update = useUpdateRecommendation()
+  // Ungated campaign list — the honest test for "has this workspace ever been
+  // used", which decides whether the empty state welcomes or reassures.
+  const roles = useActiveRoles()
 
   const [selected, setSelected] = React.useState<{ roleId: string; candidateId: string } | null>(
     null,
@@ -180,13 +184,36 @@ function AuthedInbox() {
       />
     )
   } else if (recommendations.length === 0 && events.length === 0) {
+    /**
+     * TWO DIFFERENT EMPTIES, and they were being given the same sentence.
+     *
+     * "No work needs your attention" is the steady-state answer: reassuring
+     * when you have roles running and nothing pending. Shown to somebody who
+     * signed up ninety seconds ago it is disorienting — they have just paid
+     * attention to a signup form and expect to be told what to do, and instead
+     * the product says everything is handled. It was also the first sentence in
+     * the entire experience, since there is no onboarding flow: signup lands
+     * straight here.
+     *
+     * `roles.data` distinguishes them. It is the campaigns list — ungated,
+     * already fetched on other screens, and the honest test for "has this
+     * workspace ever been used". While it is loading or errored we keep the
+     * steady-state copy rather than guessing someone is new, because telling a
+     * long-standing customer to create their first role is the worse mistake.
+     */
+    const firstRun = roles.data?.length === 0
+
     body = (
       <EmptyState
         surface
         variant="first-run"
         icon={Plus}
-        title="No work needs your attention"
-        description="When candidates arrive or roles need a decision, they'll show up here."
+        title={firstRun ? 'Start with your first role' : 'No work needs your attention'}
+        description={
+          firstRun
+            ? 'Describe the role you are hiring for, add the résumés you have, and HireLens will read all of them and bring the few worth your time into focus.'
+            : "When candidates arrive or roles need a decision, they'll show up here."
+        }
         action={
           <div className="flex flex-wrap items-center justify-center gap-2">
             <Button variant="primary" asChild>
@@ -194,11 +221,16 @@ function AuthedInbox() {
                 <Plus aria-hidden /> Create role
               </Link>
             </Button>
-            <Button variant="secondary" asChild>
-              <Link href="/roles">
-                <Upload aria-hidden /> Upload candidates
-              </Link>
-            </Button>
+            {/* A brand-new workspace has nothing to upload candidates INTO, so
+                the second button would lead to an empty roles list. Offer it
+                only once a role exists. */}
+            {!firstRun ? (
+              <Button variant="secondary" asChild>
+                <Link href="/roles">
+                  <Upload aria-hidden /> Upload candidates
+                </Link>
+              </Button>
+            ) : null}
           </div>
         }
       />
