@@ -8,11 +8,25 @@ import Link from 'next/link'
  * four-link nav on the right. 48px side padding, 64px vertical, max-w-[1280px].
  */
 
+/**
+ * REAL ROUTES, NOT ANCHORS.
+ *
+ * All four of these used to be `#terms`, `#privacy`, `#security` and `#contact`
+ * — fragment links to sections that existed on no page at all, except
+ * `#security`, which existed only on the homepage and therefore resolved to
+ * nothing from `/pricing`. So every link in the footer of every public page was
+ * dead, including the two a customer is most likely to want before paying.
+ *
+ * Security keeps its anchor because it genuinely is a homepage section, but it
+ * is now absolute (`/#security`) so it works from `/pricing` and the policy
+ * pages rather than silently doing nothing.
+ */
 const FOOTER_LINKS = [
-  { label: 'Terms', href: '#terms' },
-  { label: 'Privacy', href: '#privacy' },
-  { label: 'Security', href: '#security' },
-  { label: 'Contact', href: '#contact' },
+  { label: 'Terms', href: '/terms' },
+  { label: 'Privacy', href: '/privacy' },
+  { label: 'Refunds', href: '/refunds' },
+  { label: 'Security', href: '/#security' },
+  { label: 'Contact', href: '/contact' },
 ]
 
 export function MarketingFooter() {
@@ -30,9 +44,12 @@ export function MarketingFooter() {
             © 2024 HireLens Inc. Precision in Recruitment.
           </p>
         </div>
-        <nav className="flex gap-8">
+        {/* `flex-wrap` and a smaller gap: five real routes no longer fit one
+            line on a narrow viewport, and the row was overflowing rather than
+            wrapping. */}
+        <nav className="flex flex-wrap justify-center gap-x-6 gap-y-2 md:justify-end md:gap-x-8">
           {FOOTER_LINKS.map((link) => (
-            <a
+            <Link
               key={link.label}
               href={link.href}
               // `py-1.5` is hit area only. At 12px type these links were 16px
@@ -42,7 +59,7 @@ export function MarketingFooter() {
               className="-my-1.5 py-1.5 mkt-body-sm tracking-wide text-mkt-fg-tertiary transition-colors hover:text-mkt-fg"
             >
               {link.label}
-            </a>
+            </Link>
           ))}
         </nav>
       </div>

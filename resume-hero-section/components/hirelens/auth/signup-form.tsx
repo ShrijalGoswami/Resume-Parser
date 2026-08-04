@@ -149,8 +149,31 @@ export function SignupForm() {
           Create account
           <ArrowRight />
         </Button>
+        {/* THESE HAVE TO BE LINKS. This line was plain text naming two
+            documents that did not exist on any route — you cannot bind someone
+            to terms you have not published, and a consent line pointing at
+            nothing is unenforceable as well as discourteous. `target="_blank"`
+            so reading them does not discard a half-filled form. */}
         <p className="hl-caption font-hl-mono leading-relaxed text-hl-fg-tertiary">
-          By continuing you agree to the Terms &amp; Privacy Policy.
+          By continuing you agree to our{' '}
+          <a
+            href="/terms"
+            target="_blank"
+            rel="noreferrer"
+            className="text-hl-accent-fg outline-none hover:underline"
+          >
+            Terms
+          </a>{' '}
+          and{' '}
+          <a
+            href="/privacy"
+            target="_blank"
+            rel="noreferrer"
+            className="text-hl-accent-fg outline-none hover:underline"
+          >
+            Privacy Policy
+          </a>
+          .
         </p>
       </form>
       <p className="hl-body text-hl-fg-tertiary">
