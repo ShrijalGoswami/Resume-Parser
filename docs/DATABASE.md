@@ -27,6 +27,21 @@
 > (`create ... if not exists`, `do $$ ... exception when duplicate_object`). Never
 > edit a shipped migration — add a new numbered file.
 
+> **This table covers the original schema only (0001–0004).** There are **27**
+> migrations in `supabase/migrations/`; the table above was not extended as
+> later ones landed. Rather than reproduce a list that would go stale the same
+> way, treat the directory as the source of truth and see:
+>
+> | Range | Introduced | Documented in |
+> |---|---|---|
+> | 0005–0015 | Product schema growth | the migration files |
+> | 0016–0021 | Monetization: plan state, atomic usage counters, org scoping, grants | [MONETIZATION_ARCHITECTURE.md](./MONETIZATION_ARCHITECTURE.md) |
+> | 0022–0027 | Billing: provider-neutral columns, events, payments, invoices, reconciliation, persisted `billing_state` | [MIGRATION_ROLLBACK_NOTES.md](./MIGRATION_ROLLBACK_NOTES.md), [HANDOFF.md](./HANDOFF.md) §4 |
+>
+> **0001–0026 are applied to production. 0027 is written and not yet applied.**
+> The `subscriptions` and `billing_*` tables are likewise absent from the Tables
+> section below; `HANDOFF.md` §3–§4 is authoritative for them.
+
 ---
 
 ## Entity Relationship Diagram

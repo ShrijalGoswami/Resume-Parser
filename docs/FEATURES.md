@@ -112,8 +112,15 @@
 | Billing / subscriptions | 🗓️ | Plans, metering, invoices | Orgs, provider | P2 |
 | Usage metering | 🗓️ | Track LLM/analysis usage per tenant | Analytics | P2 |
 
-> **Payments are not implemented.** No billing code, provider integration, or
-> pricing exists in the repository today.
+> **No payment has ever been processed** — but the statement that used to sit
+> here ("no billing code, provider integration, or pricing exists") is out of
+> date. Pricing is published at `/pricing`, entitlements are enforced
+> server-side, and the Razorpay billing domain, adapter, repository, service and
+> routes all exist and are tested offline.
+>
+> What is missing is the gateway itself: the Razorpay Subscriptions API is
+> unavailable to this account, so no subscription has ever been created.
+> See [`HANDOFF.md`](./HANDOFF.md) §5A and [`BILLING_TODO.md`](./BILLING_TODO.md).
 
 ## Analytics
 

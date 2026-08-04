@@ -19,6 +19,179 @@ All notable changes to HireLens are documented here. Format based on
 
 ---
 
+## Unreleased (Phase 4 Step 4 · Razorpay integration) — 2026-08-04
+
+**Code complete, and no payment has been processed.** There is no Razorpay
+account, no credentials and no plans, so the one objective that needs a gateway —
+a real test-mode charge — is blocked on paperwork rather than code. Everything
+below is tested against a fake provider and an in-memory repository.
+
+### Added
+
+- **`POST /billing/subscriptions`** — checkout. Owner-only. Refuses founding
+  organizations, Enterprise (contracted offline), Free (not a purchase), a
+  currency the gateway cannot settle, and an organization already on the plan.
+  Grants nothing: the mandate is not yet authorized, so the organization sits in
+  `pending_activation`.
+- **`POST /billing/subscriptions/verify`** — verifies the browser callback so the
+  UI can stop spinning. Its response carries `plan_active: false` **always**, and
+  the field exists to say so out loud. Only a webhook grants a plan.
+- **`POST /billing/subscriptions/cancel`** — gateway first, row second. If the
+  gateway refuses, nothing local changed and the customer is still subscribed.
+- **`POST /billing/webhook/razorpay`** — unauthenticated by necessity (Razorpay
+  carries no session; its identity is the HMAC over the raw body), insert-first
+  idempotency on the `(provider, event_id)` composite key, and a re-fetch from
+  the API before anything is decided.
+- **`app/billing/service.py`** — the lifecycle. **`app/billing/repository.py`** —
+  persistence, including reconstructing the eight-value `BillingState` from the
+  five-value persisted status.
+- **Boot-time plan-binding check** — asserts the gateway charges what the pricing
+  page advertises. Fatal in production: a mismatch between what a customer is
+  shown and what leaves their card should fail a deploy, not a card.
+
+### Fixed
+
+- **A gateway outage would have refused to boot the entire product.**
+  `verify_bindings()` folds a failed plan fetch into the same list as a genuine
+  price mismatch, so an unreachable Razorpay looked identical to a misbound plan
+  — and the new production check would have taken the whole service down for
+  every customer, including those who never touch billing. Transport failures
+  are now tracked separately and downgrade the check to "unverified" instead.
+  Caught by its own test before it ever ran.
+
+### Architecture
+
+- The route layer briefly named the gateway's own callback field names; the
+  existing boundary guard rejected it, correctly. The callback body is now an
+  opaque map that passes through to the adapter, which is the only layer that
+  knows a gateway's vocabulary.
+- All four billing routes are classified in `test_monetization_audit.py` as
+  reaching no paid value, with the reason recorded: **billing is how an
+  organization acquires a plan**, so gating it on an entitlement would be a lock
+  on the door to the shop. RBAC protects them instead.
+
+### Tests
+
+Backend **335 → 430** (+95). None needs a network, credentials, or the gateway.
+
+---
+
+## Unreleased (V4 · Product polish) — 2026-08-04
+
+**Uncommitted working-tree state.** Everything here is written and tested; none
+of it has been seen in a browser. Full detail in [docs/HANDOFF.md](./docs/HANDOFF.md) §8A.
+
+### Removed — claims the product could not keep
+
+A first-paying-recruiter audit of the whole surface found that the shopfront was
+making nine claims that were not true. None was malicious; every one was written
+by someone reasonable filling a slot in a design comp, which is exactly why
+review would not have caught them and why they are now asserted against by test.
+
+- **Four invented customer logos** (Vertex, Nexus, Omni, Meridian) and **two
+  fabricated testimonials** — one attributed to "Head of Talent, Vertex", one to
+  "Sarah Jenkins, VP of Engineering" with a stock portrait attached to a person
+  who does not exist. HireLens has no reference customers. The five image assets
+  were deleted, not merely unreferenced — they were still live at their public
+  URLs.
+- **Four measured-sounding outcomes** (−38% time-to-decision, 4.1× more of the
+  pile reviewed, 100% of decisions with evidence, zero regretted hires over two
+  quarters) and a customer story claiming two roles filled in nine days. Nothing
+  was measured. Replaced with properties of the analysis that are true on every
+  run and checkable in a free account.
+- **SOC 2 Type II, "audited annually, report on request".** No audit exists and
+  there is no report to send anyone who asks — an invitation for an enterprise
+  buyer to request a document that does not exist, in writing.
+- **"Data residency: US, EU, or your own region."** The entire deployment is one
+  Supabase project in `ap-southeast-1`, so the claim was false in all three
+  branches.
+- **SSO/SAML with Okta, Entra and Google Workspace**, and an "immutable" audit
+  trail. SSO is unbuilt; there is no admin audit trail at all — its absence is a
+  tracked hardening item.
+- **"We integrate with major ATS platforms."** `integrations` is an unbuilt Pro
+  capability.
+- **"Our models are continuously audited for bias"** and a claim to obscure
+  demographic identifiers during screening. Neither exists. This was the most
+  serious of the nine: a published bias audit is a regulated artefact for hiring
+  technology (NYC Local Law 144 requires an annual one for automated employment
+  decision tools; the EU AI Act classifies CV screening as high-risk), so
+  claiming one that has not been performed is worse than performing none.
+
+`tests/marketing-claims.test.ts` keeps each of these out by name, with the reason
+recorded beside the assertion.
+
+### Added
+
+- **Four legal routes** — `/terms`, `/privacy`, `/refunds`, `/contact` — with a
+  shared `.mkt` policy shell. The footer's five links were previously *all* dead
+  fragment anchors, and the signup consent line named two documents that had
+  never been published, unlinked.
+  **They render a "Draft — not yet in force" banner** until `lib/legal.ts` is
+  filled with facts no codebase can know (registered entity, jurisdiction, named
+  Grievance Officer per DPDP Act 2023 §13). A test refuses to let
+  `LEGAL_ENTITY_CONFIRMED` be flipped while a placeholder remains — the same
+  `confirmed` idiom `lib/pricing.ts` uses for an unpriced market.
+  **This blocks Razorpay merchant activation**, which requires all four
+  published.
+- **Mobile navigation on the public site.** Below 768px the bar rendered exactly
+  one control — an "Access" button to signup — so Pricing, Customers and Security
+  were unreachable and *an existing customer had no way to sign in at all*.
+- **Drag-and-drop résumé upload.** The target was a dashed rectangle with an
+  upload glyph and nothing handled a drop; dragging files onto it caused the
+  browser to navigate away and open the PDF, destroying the dialog and any staged
+  files.
+- **Upload rejection feedback.** Files that were not PDF/Word under 10MB were
+  discarded silently, so twelve selected files could become eight with no error
+  and no count. Rejections are now named individually, with type and size
+  distinguished because the remedies differ.
+- **An upgrade CTA in Settings ▸ Billing**, derived from the catalog — and never
+  shown to a `founding` organization, whose ruleset grants everything while its
+  plan slug normalizes to `free`.
+
+### Fixed
+
+- **The Inbox showed four confident zeros to every non-Pro customer.**
+  `/analytics/overview` is gated on `advanced_analytics` (Pro) and the Inbox is
+  the landing route for every plan, so a Free or Plus organization opened the
+  product to "Open roles 0 · Awaiting review 0 · Interviews pending 0 · Offers
+  outstanding 0" with a full pipeline. Counts are now nullable and render an em
+  dash when unknown, and the request is skipped once the plan gate *resolves* to
+  denied — which also stops an entitlement-denial event being recorded every time
+  someone merely opened the screen.
+- **The upgrade dialog rendered a broken sentence at the highest-intent click in
+  the funnel.** A pricing-card click passed no feature and no metric, the dialog
+  ran its denial template anyway, and produced the heading "This feature is on
+  Plus" over the sentence "Plus includes ." — a word and a full stop.
+- **USD was advertised but cannot be charged.** Razorpay settles INR; a US
+  visitor was auto-detected into USD, quoted $19, and walked into a signup funnel
+  ending at a gateway that cannot serve them. Paid plans in an unchargeable
+  market now route to sales. Free is exempt, so evaluation still works.
+- **"Prices exclude applicable taxes"** contradicted the GST-inclusive billing
+  domain and the `net + tax = total` CHECK on `billing_invoices`; the first
+  invoice ever issued would have disagreed with the pricing page.
+- **The Enterprise notes contradicted the comparison table on the same page**,
+  claiming audit logs were "available to every plan to read" while the
+  catalog-derived table beside them showed "—" for Free, Plus and Pro.
+- **Every `mailto:` terminus** now routes to `/contact`. A `mailto:` does nothing
+  for anyone on webmail without a registered protocol handler, and fails
+  silently — so the customer concludes they were ignored.
+- **The homepage and `/pricing` gave different privacy answers**; the homepage
+  hedged with "without explicit consent", implying a consent mechanism that does
+  not exist.
+- **A brand-new signup was told "No work needs your attention"** — the
+  steady-state message — as the first sentence in the entire product.
+- **The homepage plan cards** still carried the `min-h-[2.75rem]` bug `/pricing`
+  had already fixed, leaving Plus's price and feature list ~21px above its
+  neighbours.
+
+### Tests
+
+Frontend **296 → 363** (29 files). Backend unchanged at **335** — no backend code
+was touched; the figure differs from the previously documented 320 only because
+uncommitted copilot suites were not counted before.
+
+---
+
 ## [4.3.0] — 2026-07-26 — Release Candidate 1 · Architecture Freeze
 
 **The V4 architecture is frozen as of this release.** It is the baseline for all

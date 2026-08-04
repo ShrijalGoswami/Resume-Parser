@@ -1,12 +1,15 @@
 # HireLens Monetization — Release Candidate Checklist
 
-**Created:** 1 Aug 2026 · **Updated:** 1 Aug 2026 (added §6 Pricing experience)
+**Created:** 1 Aug 2026 · **Updated:** 4 Aug 2026 (§2 counts, §6.7 CTA routes,
+new §6A Legal pages and §6B Product polish)
 **Status:** NOT STARTED · **Gate:** nothing ships until every P0 box here is
 ticked by a human who ran it
 
 **Nothing in this document has been verified in a browser.** That includes the
-whole of §6, which covers a pricing page whose currency preference, accordion
-and upgrade dialog are all behaviour that only exists after hydration.
+whole of §6, §6A and §6B — a pricing page whose currency preference, accordion
+and upgrade dialog are all post-hydration behaviour; four brand-new policy
+routes; a mobile disclosure menu; and a drag-and-drop target. None of those can
+be evidenced by a passing test.
 
 This is the **single document** to follow before calling HireLens monetization
 production-ready. It exists so validation happens once, completely, in one
@@ -56,7 +59,14 @@ abandoned run. Do not tick anything on someone else's behalf.
 
 Automated — cheap, run first, and stop if any fail.
 
-- [ ] `cd backend && .venv/Scripts/python.exe -m pytest -q` → **140 passed**
+- [ ] `cd backend && .venv/Scripts/python.exe -m pytest -q` → **493 passed**
+      (140 when this checklist was written, then 320, 335, 430; the working tree
+      has gained the billing-layer, copilot, Step 4 and grace-sweep suites since
+      — see `HANDOFF.md` §1)
+- [ ] Boot the service and read the log: `Razorpay plan bindings verified:
+      plus, pro`. **A mismatch is fatal in production by design** — the gateway
+      charging something the pricing page does not show is the worst defect this
+      integration can produce
 - [ ] `python -m scripts.export_catalog_snapshot` reports **already up to date**
       (a diff here means the catalog changed without the mirror)
 - [ ] `python -m tests.test_catalog_snapshot_parity` → PASSED
@@ -86,7 +96,7 @@ Enforcement posture:
 
 Automated.
 
-- [ ] `npx vitest run` → **296 passed**, 23 files
+- [ ] `npx vitest run` → **363 passed**, 29 files
 - [ ] `npx tsc --noEmit` → clean
 - [ ] `npx eslint .` → **exactly 4 errors**, all `react-hooks/refs` in
       `components/marketing/NeuralBackground.tsx` (known debt, `HANDOFF.md` §11.1).
@@ -102,6 +112,13 @@ they ran, they are the ones that fail silently if deleted):
 - [ ] One-visual-language guards: no screen renders `GateState reason="plan"`,
       hardcodes `"Upgrade to <tier>"`, or invents an "available on the … plan" sentence
 - [ ] Three-questions guard: every shared upgrade surface renders what / why / what-changes
+- [ ] **Truthful-marketing guard** (`tests/marketing-claims.test.ts`, 13 assertions):
+      no invented customer, testimonial, outcome metric, security certification,
+      data-residency promise, SSO provider list, ATS-integration claim or bias-audit
+      claim survives on the public site. **If one of these fails, the fix is to
+      delete the claim — not to relax the test** (`HANDOFF.md` §8A)
+- [ ] **Legal-config guard** (`tests/legal.test.ts`): `LEGAL_ENTITY_CONFIRMED`
+      cannot be true while any placeholder remains in `lib/legal.ts`
 
 ---
 
@@ -253,6 +270,10 @@ quoting a number nobody agreed to.
 - [ ] Read `lib/pricing.ts` and check every rendered figure against it, in both
       currencies. Expected today: Plus **₹999 / $19**, Pro **₹2,499 / $49**,
       Free renders "Free", Enterprise renders "Custom"
+- [ ] The line under the cards reads **"Prices include GST"** — not "exclude
+      applicable taxes". The advertised figure IS the amount charged
+      (`net + tax = total`, enforced by CHECK on `billing_invoices`), so the old
+      wording would have been contradicted by the first invoice ever issued
 - [ ] "/month" appears on paid tiers only — never on Free or Enterprise
 - [ ] **No yearly or annual option appears anywhere.** The schema carries a
       yearly field, but `YEARLY_BILLING_ENABLED` is false and the backend has no
@@ -285,11 +306,18 @@ quoting a number nobody agreed to.
 
 ### 6.7 CTA behaviour — signed out vs signed in
 
+**In INR** (the market checkout can actually serve):
+
 - [ ] **Signed out:** Free → "Start free", Plus/Pro → "Start with …", all to
       `/auth/signup`
-- [ ] **Signed out:** Enterprise → "Talk to sales" (mail client opens)
+- [ ] **Signed out:** Enterprise → "Talk to sales" → **`/contact`**, a real page.
+      *(Was a bare `mailto:`, which does nothing at all for anyone on webmail
+      without a registered protocol handler and fails silently when it fails.)*
 - [ ] **Signed in:** Plus/Pro → the **upgrade dialog opens on the pricing page**,
       and it is the *same* dialog a lock or quota wall opens in the product
+- [ ] The dialog heading reads **"Move to Pro"**, not "This feature is on Pro",
+      and no sentence in it ends in a bare full stop *(the plan-level copy path
+      — `HANDOFF.md` §8A)*
 - [ ] The dialog answers all three questions: what is locked · why want it ·
       what changes if you upgrade
 - [ ] Dialog traps focus, closes on `Esc`, and returns focus to the CTA
@@ -297,7 +325,17 @@ quoting a number nobody agreed to.
       own `.hl` scope, so confirm no unstyled or half-styled panel
 - [ ] **Signed in:** Free → "Go to HireLens", not an offer to upgrade downward
 - [ ] No CTA is a dead button. There is no checkout yet; the honest route is
-      "Contact us to upgrade"
+      "Contact us to upgrade" → `/contact`, and the dialog states that a person
+      applies the change, usually the same working day
+
+**In USD** (quoted, but not chargeable — Razorpay settles INR):
+
+- [ ] Switch to USD: **Plus and Pro CTAs become "Talk to sales" → `/contact`**,
+      and no signup funnel is offered
+- [ ] **Free is still "Start free"** — nothing is collected for it, so a US
+      visitor can still evaluate the product
+- [ ] A line under the cards explains why, naming the currency
+- [ ] Switch back to INR: the self-serve CTAs return
 
 ### 6.8 Currency must not touch entitlements
 
@@ -320,6 +358,234 @@ The single most important check in this section.
       badge
 - [ ] No layout shift when the currency preference resolves after hydration
 - [ ] No console errors or hydration warnings on `/pricing` or the homepage
+
+---
+
+## 6A. Legal pages and public-site truthfulness (P0)
+
+> **These pages did not exist before 4 Aug 2026.** The footer's five links were
+> all dead fragment anchors and the signup consent line named two documents that
+> had never been published. Detail and rationale in `HANDOFF.md` §8A.
+
+### 6A.1 The blocker — do this before anything else in this section
+
+- [ ] **`resume-hero-section/lib/legal.ts` is filled in.** Registered entity
+      name, registration number, registered office, governing jurisdiction, tax
+      registration, and a named Grievance Officer (DPDP Act 2023 §13 requires a
+      named person, not a shared alias)
+- [ ] Counsel has read all four pages
+- [ ] `LEGAL_ENTITY_CONFIRMED` flipped to `true`, and `npx vitest run
+      tests/legal.test.ts` still passes
+- [ ] The **"Draft — not yet in force"** banner is gone from all four pages
+
+**Until every box above is ticked, the policies bind nobody and Razorpay
+merchant activation will not accept them.** This is a paperwork blocker, not a
+code one.
+
+### 6A.2 The pages themselves
+
+- [ ] `/terms`, `/privacy`, `/refunds`, `/contact` all render
+- [ ] Every footer link resolves — from the homepage, from `/pricing`, **and from
+      a policy page** (`#security` was the one that silently did nothing off the
+      homepage; it is now `/#security`)
+- [ ] Signup consent line hyperlinks Terms and Privacy, and both open in a new
+      tab without discarding a half-filled form
+- [ ] Contact addresses are **selectable text**, not only `mailto:` links
+- [ ] Policy pages are readable on mobile (720px measure, one column)
+
+### 6A.3 Mail actually arrives — the one nobody will think to check
+
+- [ ] `hirelens.app` has **MX records**
+- [ ] Send a real message to `support@hirelens.app` and confirm **a human
+      receives it**
+- [ ] Same for `sales@hirelens.app`
+
+> If these fail, `/contact` is a dead end, and the entire upgrade funnel —
+> every lock, every quota wall, every 402, the pricing page and the Enterprise
+> CTA — terminates in nothing. An unmonitored support address is worse than
+> none: it turns "we never replied" into "they wrote and we never knew."
+
+### 6A.4 Nothing untrue has come back
+
+- [ ] No customer logo, testimonial, named person or outcome metric appears
+      anywhere on the public site that corresponds to a real, consenting customer
+- [ ] No security certification is claimed (no SOC 2, no ISO 27001)
+- [ ] No data-residency choice is offered — the honest answer is Singapore, one
+      region
+- [ ] No SSO provider list, no ATS-integration claim, no bias-audit claim
+- [ ] The homepage and `/pricing` give the **same** privacy answer
+
+---
+
+## 6B. Product polish — the 4 Aug fixes (P0/P1)
+
+### 6B.1 Inbox never shows a number it does not know (P0)
+
+The failure being guarded: `/analytics/overview` is gated on `advanced_analytics`
+(Pro), and the Inbox is where **every** plan lands. Every Free and Plus
+organization was opening the product to four confident zeros.
+
+- [ ] On a **FREE v1** org with at least one role and one candidate: the four
+      summary tiles read **"—"**, never `0`
+- [ ] The tiles are still **links**, and each still navigates
+- [ ] Network panel: **no request to `/analytics/overview` fires** once the plan
+      gate has resolved to denied
+- [ ] Server logs show **no entitlement-denial event** generated merely by
+      opening the Inbox
+- [ ] On a **PRO** org the same tiles show real numbers
+- [ ] On a PRO org with a genuinely empty pipeline they show `0` — a real zero
+      must still read as zero
+- [ ] Screen reader announces "count unavailable" on a `—` tile
+
+### 6B.2 First run (P1)
+
+- [ ] Brand-new signup, zero roles → heading reads **"Start with your first
+      role"**, and the only CTA is "Create role"
+- [ ] Same org after creating a role, with nothing pending → heading returns to
+      "No work needs your attention" and "Upload candidates" reappears
+
+### 6B.3 Mobile navigation on the public site (P1)
+
+- [ ] At **390px** the marketing bar shows a menu control
+- [ ] Opening it reveals Product, Pricing, Customers, Security
+- [ ] **"Sign in" is present and reaches `/auth/login`** — this is the specific
+      regression: an existing customer previously had no route into the product
+      from a phone
+- [ ] Choosing a destination closes the panel
+- [ ] The panel follows the ink/canvas palette swap like the bar above it
+- [ ] Keyboard: the control is reachable and toggles; `aria-expanded` flips
+
+### 6B.4 Upload: drag-and-drop and rejection feedback (P1)
+
+- [ ] **Drag résumés onto the drop zone → they are added.** *(Before: nothing
+      happened, and the browser navigated away to open the PDF, destroying the
+      dialog and any staged files.)*
+- [ ] The zone highlights while a drag is over it, and un-highlights on leave
+- [ ] Drop a mixed selection (PDF + PNG + a >10MB PDF): the valid files are
+      added and **the rejected ones are named individually with their reason**
+- [ ] A too-big file says its size and the limit; a wrong-type file says so —
+      the two messages are different, because the remedies are
+- [ ] Clicking the zone still opens the file picker
+- [ ] Quota truncation still behaves (§3) — the two notices coexist without
+      contradicting each other
+
+### 6B.5 Settings ▸ Billing (P1)
+
+- [ ] A FREE org sees an **"Upgrade to Plus"** button and a "Compare plans" link
+- [ ] It opens the same dialog every lock opens
+- [ ] A PRO org is offered **Pro → Enterprise**, not Plus
+- [ ] An ENTERPRISE org is offered nothing
+- [ ] **A `founding` org is offered nothing.** ← the one that matters: founding
+      is a *ruleset* whose plan slug normalizes to `free`, so a slug-based CTA
+      would offer the grandfathered customers strictly less than they have
+- [ ] A member without `org.manage` sees no CTA
+- [ ] The note no longer says self-serve upgrade "arrives with the pricing
+      release" — that release shipped
+
+---
+
+## 6C. Razorpay Test Mode — the first payment (P0)
+
+> **NOTHING IN THIS SECTION HAS EVER RUN.** No Razorpay account exists, no
+> credentials are set, and no plans have been created. Phase 4 Step 4 is code
+> complete and blocked here. Every box is a real-gateway action.
+
+### 6C.1 Prerequisites
+
+- [ ] Razorpay account created and **KYC complete**
+- [ ] §6A.1 done — Razorpay activation requires the four published legal pages
+- [ ] Two **Test Mode** plans created at ₹999 and ₹2,499, **GST-inclusive**.
+      Plans are immutable: a wrong amount means a new plan, never an edit
+- [ ] `RAZORPAY_KEY_ID` (`rzp_test_…`), `RAZORPAY_KEY_SECRET`,
+      `RAZORPAY_WEBHOOK_SECRET`, `RAZORPAY_PLAN_PLUS_INR`, `RAZORPAY_PLAN_PRO_INR` set
+- [ ] Boot log reads `Razorpay plan bindings verified: plus, pro`
+- [ ] Webhook registered at `POST /api/v1/billing/webhook/razorpay` for all ten
+      events in `mapping.HANDLED_EVENTS`
+
+### 6C.2 The happy path, on a throwaway v1 organization
+
+- [ ] Owner starts checkout → `pending_activation`, **no paid access yet**
+- [ ] The modal opens with the right plan and the right amount
+- [ ] Authorize the mandate with a Razorpay test card
+- [ ] `subscription.activated` arrives → organization is `active` and the plan
+      is live
+- [ ] **The plan became active because of the WEBHOOK, not the callback** —
+      confirm by completing a checkout with the browser closed immediately after
+      payment
+- [ ] `billing_events` has the event with status `processed`
+- [ ] `billing_payments` has the charge
+- [ ] `subscriptions.plan_version` incremented; the client picked up the change
+
+### 6C.3 Idempotency — redeliver from the dashboard
+
+- [ ] Redeliver the same event → response says `duplicate`
+- [ ] **Nothing changed**: no second payment row, no extra `plan_version` bump
+- [ ] Redeliver an event whose first attempt failed → it IS reprocessed
+      (a row that exists but is not `processed` must not be skipped)
+
+### 6C.4 The unhappy paths
+
+- [ ] A forged signature → **400**, and nothing is written
+- [ ] A failed charge → `past_due`, and **the team keeps working**
+- [ ] Cancel at period end → access retained until the period ends
+- [ ] A founding organization is refused checkout, and a webhook aimed at one is
+      refused without writing
+
+### 6C.5 What is still missing after all of the above
+
+- [ ] **A trigger for the grace sweep** — §6D. It is built and tested; nothing
+      runs it, so no organization is ever suspended
+- [ ] Reconciliation worker (BILL-6), Enterprise activation path (BILL-3)
+
+---
+
+## 6D. Grace sweep — suspension for non-payment (P0)
+
+> Built 5 Aug 2026 (BILL-2). Requires migration 0027, which is applied.
+> **The sweep is the only thing in the product that withdraws paid access**, so
+> the checks below are weighted heavily toward what it must NOT do.
+
+### 6D.1 Before it can run at all
+
+- [ ] **A trigger exists.** Nothing invokes the sweep today. Recommended: a
+      daily cron running `python -m scripts.grace_sweep --apply`. Options and
+      trade-offs are in that script's docstring
+- [ ] Whoever owns it knows it is **dry-run by default** and needs `--apply`
+- [ ] Its output goes somewhere a human reads — exit code 2 means stalled
+      dunning that needs investigation
+
+### 6D.2 It suspends the right organizations
+
+On a throwaway v1 org, set `billing_state='grace'` and a past
+`grace_period_ends_at`:
+
+- [ ] `python -m scripts.grace_sweep` (no flag) lists it and **writes nothing**
+- [ ] `--apply` suspends it; `billing_state='suspended'`, `status='canceled'`
+- [ ] The org loses paid access on the very next request (no cached context)
+- [ ] `plan_version` incremented, so an open client refetches
+- [ ] An audit row exists: `billing.subscription_suspended`, with
+      `reason='grace_period_elapsed'` and no user attributed
+
+### 6D.3 It suspends nobody else — the important half
+
+- [ ] A **founding** org in grace past its deadline is **not** suspended
+- [ ] A **manual (Enterprise)** org in grace past its deadline is **not** suspended
+- [ ] `payment_failed` past its deadline is **not** suspended, and is reported
+      as stalled — the gateway has not said retries are exhausted, and our own
+      clock must not overrule it
+- [ ] `active`, `free`, `pending_activation`, `trialing`, `cancelled` and
+      `suspended` are all untouched
+- [ ] A grace period that has **not** elapsed is untouched
+
+### 6D.4 Safe to run repeatedly
+
+- [ ] Run `--apply` twice: the second run suspends nothing and writes **no
+      second audit row**
+- [ ] Run it ten times: still exactly one suspension, one audit row
+- [ ] Simulate a customer paying mid-sweep (move the row to `active` between
+      runs): the suspension is dropped, not forced
+- [ ] Two sweeps overlapping do not produce two suspensions or two
+      `plan_version` bumps
 
 ---
 
@@ -407,9 +673,14 @@ Phase 2 touched shared surfaces. Confirm nothing that used to work stopped.
 - [ ] Monitoring: alerting on 402 rate exists, so a misfiring quota is visible
       *before* a customer reports it
 - [ ] Support briefed: there is **no self-service upgrade**; CTAs route to
-      `support@hirelens.app`, and plan changes are made with `scripts/set_org_plan.py`
-- [ ] Pricing page still **not** shipped, and no marketing surface contradicts the
-      enforced matrix (the old frame said "Team $499 / Business $999")
+      `/contact`, and plan changes are made with `scripts/set_org_plan.py`.
+      The dialog now promises "usually the same working day" — **make sure
+      someone can honour that** before it ships
+- [ ] No marketing surface contradicts the enforced matrix (the old frame said
+      "Team $499 / Business $999"; the Enterprise notes said audit logs were on
+      every plan)
+- [ ] `lib/legal.ts` filled and `LEGAL_ENTITY_CONFIRMED` true (§6A.1)
+- [ ] `hirelens.app` mail confirmed reaching a human (§6A.3)
 - [ ] Commit history structured and reviewed — the work is still uncommitted by
       deliberate decision
 
@@ -439,6 +710,10 @@ No box may be ticked by someone who did not run it.
 | §4 Monetization | | | | |
 | §5 Upgrade flows | | | | |
 | §6 Pricing experience | | | | |
+| §6A Legal pages | | | | |
+| §6B Product polish | | | | |
+| §6C Razorpay Test Mode | | | | |
+| §6D Grace sweep | | | | |
 | §7 Responsive | | | | |
 | §8 Accessibility | | | | |
 | §9 Performance | | | | |
@@ -455,7 +730,14 @@ No box may be ticked by someone who did not run it.
 
 Verified without a browser, so it does not need re-running:
 
-- Backend 140 tests · frontend 296 tests · `tsc` clean
+- Backend 335 tests · frontend 363 tests · `tsc` clean · `next build` clean
+  across 28 routes (the four policy pages prerender static)
+- The truthful-marketing guard: 13 assertions keeping nine specific false claims
+  off the public site by name
+- Upload partitioning: accepted/rejected split, the 10MB boundary, and the
+  type-vs-size distinction, unit-tested away from the DOM
+- Settings ▸ Billing: the founding organization is never offered an upgrade,
+  proven against a `founding` ruleset with a `free` plan slug
 - Catalog parity proven by deliberate mutation in both directions
 - Live schema reads: 68/68 `founding`, 0 orgs without a subscription, both RPCs callable
 - 24 concurrent `increment_usage` calls → 24, zero lost updates

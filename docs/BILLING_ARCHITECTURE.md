@@ -1,7 +1,14 @@
 # HireLens — Billing & Subscription Architecture
 
-**Phase 4 · Design only · 1 Aug 2026**
-**Status:** Proposed. No billing code exists. Nothing in this document is built.
+**Phase 4 · 1 Aug 2026 · Status updated 5 Aug 2026**
+**Status:** **Largely built.** This was "Proposed. No billing code exists" until
+Step 4 shipped the domain, adapter, repository, service and routes. What is
+*not* built is listed in §16 and, item by item, in
+[`BILLING_TODO.md`](./BILLING_TODO.md).
+
+**No payment has ever been processed**, and the Razorpay Subscriptions API is
+currently unavailable to this account — see [`HANDOFF.md`](./HANDOFF.md) §5A.
+
 **Supersedes:** the Stripe-first draft of the same date, withdrawn before any
 implementation. Razorpay is now the only provider for V1.
 
@@ -445,7 +452,7 @@ acknowledging fast avoids it.
 | `subscription.charged` | Confirm the new period; clear any past-due state |
 | `subscription.pending` | Payment failed — enter dunning (§9) |
 | `subscription.halted` | Retries exhausted — still `past_due`, still working (§9) |
-| `subscription.cancelled` | Resolve to Free at period end (§8.2) |
+| `subscription.cancelled` | Resolve to Free at period end (§8.2). **Terminal at Razorpay** — resubscribing creates a NEW subscription; see `supports_gateway_reactivation` |
 | `subscription.completed` | Cycle count exhausted — renew (§4.1), never expire |
 | `subscription.updated` | Re-fetch and re-derive |
 | `payment.failed` | Recorded; dunning is driven by subscription state, not this |
@@ -484,7 +491,7 @@ five values `subscriptions.status` already pins.
 | `active` | `active` | Full plan access |
 | `pending` | `past_due` | **Full access retained** (§2.3) |
 | `halted` | `past_due` | **Full access retained** — retries exhausted, still a conversation |
-| `paused` | `past_due` | Conservative: keep access, surface the state |
+| `paused` | **`active`** | **CORRECTED 1 Aug 2026.** Access retained, NO dunning. `past_due` opens a grace window and the sweep would then suspend a customer who merely paused, with no failed payment in their history. Surfaced as an informational integrity event instead |
 | `cancelled` | `canceled` | Resolves to Free |
 | `expired` | `canceled` | |
 | `completed` | *(renew)* | Cycle count exhausted — never an expiry (§4.1) |
@@ -700,16 +707,26 @@ in production mode, with UPI Autopay and with a card. The RC checklist gains a
 
 Each step is independently reviewable and leaves the product working.
 
-| # | Step | Ships |
-|---|---|---|
-| 1 | Migrations 0022–0023; provider-neutral columns; `billing_events` | Schema only, nothing reads it |
-| 2 | `app/billing/domain/` — models, port, state machine, **fake provider** | Fully unit-testable with no gateway |
-| 3 | `providers/razorpay/` — client, plan bindings, mapping, signatures | Adapter, no routes |
-| 4 | Webhook endpoint: verify, record, **ignore everything** | Observability first — see real events before acting on them |
-| 5 | Event processing + audit + plan writes | Plans can change from the gateway |
-| 6 | Subscription-start route + founding guard + India guard | Customers can buy |
-| 7 | Wire `UpgradeDialog`'s `onCheckout`; resolve §12 | The CTA becomes real — one handler, as designed |
-| 8 | Reconciliation job + alerting | Drift becomes visible |
+| # | Step | Ships | Status |
+|---|---|---|---|
+| 1 | Migrations 0022–0023; provider-neutral columns; `billing_events` | Schema only, nothing reads it | ✅ applied |
+| 2 | `app/billing/domain/` — models, port, state machine, **fake provider** | Fully unit-testable with no gateway | ✅ |
+| 3 | `providers/razorpay/` — client, plan bindings, mapping, signatures | Adapter, no routes | ✅ |
+| 4 | Webhook endpoint: verify, record, **ignore everything** | Observability first — see real events before acting on them | ✅ built, never fed a real event |
+| 5 | Event processing + audit + plan writes | Plans can change from the gateway | ✅ offline-tested only |
+| 6 | Subscription-start route + founding guard + India guard | Customers can buy | ✅ route exists; **gateway unavailable** |
+| 7 | Wire `UpgradeDialog`'s `onCheckout`; resolve §12 | The CTA becomes real — one handler, as designed | ⛔ not started — deliberately not built against an API that has never answered |
+| 8 | Reconciliation job + alerting | Drift becomes visible | ⛔ BILL-6 |
+
+Steps 4–6 shipped in a different order than planned (checkout before a
+record-and-ignore observation window), because the gateway has never delivered
+an event to observe.
+
+Two things not in this table have since been resolved: **migration 0027**, which
+makes the eight-value state survive a database round trip, is applied; and the
+**grace sweep** is built (`app/billing/grace.py`). The sweep still has **no
+trigger**, so no organization is suspended — see BILL-T1 in
+[`BILLING_TODO.md`](./BILLING_TODO.md).
 | 9 | Settings ▸ Billing: invoices, cancel, payment method (§4.3) | Self-serve, since there is no hosted portal |
 | 10 | Dunning surfaces + grace period | Failure states become humane |
 | 11 | RC checklist §14; full manual pass | Ready to charge |

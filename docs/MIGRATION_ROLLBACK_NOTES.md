@@ -1,6 +1,8 @@
-# Migration Rollback Notes — 0022–0026 (Billing foundation)
+# Migration Rollback Notes — 0022–0027 (Billing)
 
-**Written:** 1 Aug 2026 · **Applied to** `vmqhigckfkedkwfkvnij` **on 1 Aug 2026**
+**Written:** 1 Aug 2026 · **Updated:** 5 Aug 2026 (0027)
+**0022–0026 applied to** `vmqhigckfkedkwfkvnij` **on 1 Aug 2026**
+**0027 written 5 Aug 2026 — NOT YET APPLIED**
 
 There are no automatic down-migrations. This repo's rule, from
 [`ROLLBACK.md`](./ROLLBACK.md), is *roll back **code** freely; roll back the
@@ -14,13 +16,19 @@ you — **whether reversing is even the right move.**
 
 ## The short version
 
-All five are **additive**. None drops a table, column or constraint; none
+All six are **additive**. None drops a table, column or constraint; none
 deletes or rewrites a row. The only `DROP`s are `TRIGGER`/`POLICY IF EXISTS`
-immediately recreated, which is this repo's idempotency idiom.
+immediately recreated, which is this repo's idempotency idiom. 0027 is the only
+one that writes to existing rows, and it is a partial, conservative backfill of
+a column it just created.
 
-**Nothing reads these objects yet.** No billing code exists. Until Phase 4
-Step 2 ships, the entire set can be left in place after a code rollback with
-zero runtime effect — and that is almost always the right choice.
+**Billing code now reads 0022–0026.** That statement was "nothing reads these
+objects yet" when this document was written, and it is no longer true — Phase 4
+Step 4 shipped the repository, service and routes. Reversing 0022–0026 is
+therefore a code-and-schema operation now, not a free one.
+
+**0027 is the exception and remains free to leave or drop**, because the
+application tolerates its column being absent by design (see its section).
 
 | | Reversible | Data at risk on reversal | When you would |
 |---|---|---|---|
@@ -29,6 +37,7 @@ zero runtime effect — and that is almost always the right choice.
 | 0024 | Yes | Payment records | Never, once billing is live |
 | 0025 | Yes | Invoices — **statutory records** | Never |
 | 0026 | Yes | Reconciliation history | Low risk any time |
+| 0027 | Yes, freely | None — `status` stays authoritative | Any time; the code degrades cleanly |
 
 ---
 
@@ -237,8 +246,11 @@ the next run rebuilds from the gateway.
 
 If Phase 4 is abandoned entirely and the schema must return to its 0021 state:
 
-1. **Confirm no billing code is deployed.** With none, there is no urgency —
-   leaving the objects is safe, and doing nothing is the lowest-risk option.
+1. **Confirm no billing code is deployed.** This was written when none existed.
+   **It now does** (Phase 4 Step 4), so check first: with billing deployed,
+   reversing 0022–0026 breaks the repository's reads outright rather than being
+   a no-op. Roll the code back to before Step 4 in the same operation, or leave
+   the objects — which remains the lowest-risk option.
 2. **Export everything first**, `billing_invoices` and manual `billing_payments`
    above all.
 3. Drop in reverse dependency order: `0026 → 0025 → 0024 → 0023`, then reverse
@@ -256,6 +268,52 @@ hand-written teardown restores whatever the person writing it remembered. See
 
 ---
 
+## 0027 — `subscriptions.billing_state` (written 5 Aug 2026, NOT YET APPLIED)
+
+### What it does
+
+Adds one nullable column plus a CHECK, and backfills only the rows whose
+`status` maps to exactly one state (`active`, `trialing`, `incomplete`).
+`past_due` and `canceled` are left null on purpose — there is no honest way to
+recover which of their two/three states a historical row was in, and guessing is
+the defect this migration exists to remove.
+
+### Rolling it back
+
+**The cheapest rollback in this whole document, and it is not "drop the
+column".** The application already tolerates the column being absent: it probes
+once, logs `APPLY MIGRATION 0027`, and reconstructs state from `status` exactly
+as it did before. So:
+
+1. **Do nothing.** An unused nullable column costs nothing and breaks nothing.
+
+If it genuinely must go:
+
+```sql
+alter table public.subscriptions drop constraint if exists subscriptions_billing_state_chk;
+alter table public.subscriptions drop column if exists billing_state;
+```
+
+No data is lost that is not derivable — `status` remains authoritative and is
+untouched by this migration. What you lose is the ability to tell
+`payment_failed` from `grace` and `free` from `cancelled`, i.e. you return to
+BILL-1.
+
+### Why the code was written to survive both states of the schema
+
+There is no Supabase CLI and no SQL-exec RPC in this project, so migrations are
+applied by hand and code deploys on its own schedule. A read naming a column the
+database does not have fails the whole query, so without tolerance the gap
+between deploy and migration would stop billing reading subscriptions at all.
+The write path is guarded for the same reason and matters more: refusing to
+record an activation because an enrichment column is missing would leave a
+customer who has paid without their plan.
+
+Verified against production on 5 Aug 2026 with the column absent — reads and
+writes both succeeded, one warning logged.
+
+---
+
 ## What was verified before applying (1 Aug 2026)
 
 - Dry run listed exactly 0022–0026, confirming 0016–0021 already applied.
@@ -267,3 +325,21 @@ hand-written teardown restores whatever the person writing it remembered. See
   (grep, whole repo).
 - `Subscription` is `ConfigDict(extra="ignore")`, so `SELECT *` gaining columns
   cannot break deserialization.
+
+---
+
+## What was verified before writing 0027 (5 Aug 2026)
+
+- The column does **not** exist in production — probed directly, `42703`.
+- **No CLI and no SQL-exec RPC** are available in this project (`exec_sql`,
+  `execute_sql`, `sql` all absent), so this migration must be applied by hand in
+  the Supabase SQL editor. That is why the code was written to survive both
+  states of the schema rather than assuming a deploy order.
+- Reads and writes were exercised against production with the column absent:
+  both succeeded, one warning logged, no behaviour change beyond the known
+  BILL-1 imprecision.
+- The backfill touches only `active` / `trialing` / `incomplete` rows. In
+  production today that is at most 3 subscription rows, all of which are
+  unambiguous.
+- No CHECK is added to an existing column, and `status` is not modified — so no
+  currently-valid row can become invalid.
