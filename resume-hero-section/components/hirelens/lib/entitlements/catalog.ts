@@ -55,6 +55,28 @@ export const PLAN_LABELS: Record<PlanKey, string> = {
 }
 
 /**
+ * WHAT A TIER IS FOR, in one sentence, in the product's own voice.
+ *
+ * Distinct from `PLAN_POSITIONING` in `lib/pricing.ts`, which says the same
+ * thing in a sales voice for the marketing pages. This set is what an upgrade
+ * surface INSIDE the product says, where a sales voice would be wrong — the
+ * customer is already here, already working, and has just been stopped.
+ *
+ * It exists because the upgrade dialog had nothing to say when the request was
+ * about a tier rather than a specific locked capability. It fell through to the
+ * feature template with no feature and rendered "This feature is on Plus".
+ *
+ * No money, deliberately: this file decides nothing commercial and a test
+ * asserts it stays that way.
+ */
+export const PLAN_BLURBS: Record<PlanKey, string> = {
+  free: 'Enough of the real analysis to judge whether it is worth anything to you.',
+  plus: 'For one recruiter running their own roles end to end.',
+  pro: 'Adds the intelligence layer — search, copilot, analytics, and shared memory across the team.',
+  enterprise: 'Your own models, your own sign-on, and rules set by your organization.',
+}
+
+/**
  * Pre-catalog slugs still present on live subscription rows.
  *
  * These must never fall through to `free`. An organization that bought

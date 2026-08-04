@@ -28,6 +28,26 @@ export interface UpgradeRequest {
   metric?: string | null
   /** The tier the CTA offered — already reconciled against the catalog. */
   requiredPlan?: PlanKey | null
+  /**
+   * WHERE THE REQUEST CAME FROM, because it changes what there is to say.
+   *
+   * `lock`  — something was refused. There is a subject: a feature key or a
+   *           metric that ran out, and the dialog can name it.
+   * `plan`  — nobody was refused anything. The customer walked up to a price
+   *           card and asked about a TIER. There is no feature and no metric,
+   *           and there was never going to be one.
+   *
+   * This exists because the pricing page had no way to say so. Its cards called
+   * `upgrade({ requiredPlan })` with neither of the other two fields, the
+   * dialog assumed a denial had occurred, and the feature-shaped template ran
+   * with the feature missing — producing the heading "This feature is on Plus"
+   * over the sentence "Plus includes ." at the single highest-intent click in
+   * the funnel.
+   *
+   * Defaulting to `lock` keeps every existing call site correct: locks, quota
+   * walls and 402 handlers all pass a subject and all predate this field.
+   */
+  origin?: 'lock' | 'plan'
 }
 
 export type UpgradeHandler = (request: UpgradeRequest) => void

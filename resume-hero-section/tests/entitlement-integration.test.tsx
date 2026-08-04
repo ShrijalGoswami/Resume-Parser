@@ -248,6 +248,13 @@ describe('one visual language', () => {
     return !ALLOWED.some((dir) => rel.startsWith(dir))
   })
 
+  /** Source with comments removed — see the note on the hand-written-copy test. */
+  const rendered = (file: string) =>
+    readFileSync(file, 'utf-8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '')
+      .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
+
   it('no screen renders a plan gate directly', () => {
     // `GateState reason="plan"` is the raw primitive. Screens must reach for
     // FeatureLock or QuotaLock so the sentence, glyph and CTA stay identical
@@ -262,8 +269,14 @@ describe('one visual language', () => {
   it('no screen hand-writes upgrade copy', () => {
     // "Upgrade to Pro" typed into a component is the same defect as
     // `if (plan === 'PRO')`, and it goes stale silently when a feature moves.
+    //
+    // Comments stripped, matching the file-scanning tests in pricing.test.tsx
+    // and for the same reason: a component's prose may quote the hardcoded
+    // string it is explaining why NOT to use, and that explanation is the thing
+    // most likely to stop the next person reinstating it. Only rendered code is
+    // the subject here — a JSX comment reaches no customer.
     const offenders = files.filter((f) =>
-      /Upgrade to (Free|Plus|Pro|Enterprise|Growth)/.test(readFileSync(f, 'utf-8')),
+      /Upgrade to (Free|Plus|Pro|Enterprise|Growth)/.test(rendered(f)),
     )
     expect(offenders.map((f) => f.slice(root.length + 1))).toEqual([])
   })

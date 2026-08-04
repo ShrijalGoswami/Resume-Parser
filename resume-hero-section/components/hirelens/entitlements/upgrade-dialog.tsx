@@ -13,6 +13,7 @@ import {
 } from '../ui/dialog'
 import { Button } from '../ui/button'
 import {
+  PLAN_BLURBS,
   PLAN_LABELS,
   featureBlurb,
   featureLabel,
@@ -61,48 +62,88 @@ function alsoIncluded(plan: PlanKey, exclude: string | null | undefined): string
     .map((f) => f.label)
 }
 
+/** Everything the tier adds, for the plan-level case where nothing was
+ *  refused and the whole tier IS the subject. */
+function tierAdds(plan: PlanKey): string[] {
+  return featuresForPlan(plan)
+    .filter((f) => f.minPlan === plan)
+    .map((f) => f.label)
+}
+
 export function UpgradeDialog({ request, onOpenChange, onCheckout }: UpgradeDialogProps) {
   const open = request !== null
   const plan = request?.requiredPlan ?? null
   const feature = request?.feature ?? null
   const metric = request?.metric ?? null
 
-  // 1. What is locked.
+  /**
+   * A PLAN-LEVEL REQUEST IS NOT A DENIAL, and it cannot borrow the denial copy.
+   *
+   * Every sentence below is built around a subject — the feature that was
+   * locked, or the allowance that ran out. Arriving from a price card there is
+   * no subject and there never was one: the customer chose a tier, nothing
+   * refused them anything.
+   *
+   * Run through the feature template anyway, that produced a heading reading
+   * "This feature is on Plus" and, because `featureLabel('')` falls back to the
+   * key it was given, the sentence "Plus includes ." — a word and a full stop,
+   * rendered in the accent panel with a sparkle beside it, at the moment
+   * somebody had decided to spend money.
+   *
+   * `origin` is inferred as well as read: any request with no feature and no
+   * metric is a plan-level one whatever it claims, so a caller that forgets the
+   * field still gets sensible copy rather than the broken sentence.
+   */
+  const planLevel = request !== null && !feature && !metric && plan !== null
+
+  // 1. What is locked — or, at plan level, what is being bought.
   const subject = feature
     ? featureLabel(feature)
     : metric
       ? metricLabel(metric)
-      : 'This feature'
+      : plan
+        ? PLAN_LABELS[plan]
+        : 'This feature'
 
   // 2. Why you would want it.
   const why = feature
     ? featureBlurb(feature)
     : metric && plan
       ? `You've reached your ${metricLabel(metric)} limit.`
-      : ''
+      : planLevel && plan
+        ? PLAN_BLURBS[plan]
+        : ''
 
   // 3. What changes if you upgrade.
   const outcome = metric
     ? upgradeValueLine(metric, plan)
-    : plan
-      ? `${PLAN_LABELS[plan]} includes ${featureLabel(feature ?? '')}.`
-      : null
+    : planLevel && plan
+      ? `${PLAN_LABELS[plan]} gives you ${planAllowanceOf('resumes', plan)}.`
+      : plan && feature
+        ? `${PLAN_LABELS[plan]} includes ${featureLabel(feature)}.`
+        : null
 
-  const extras = plan ? alsoIncluded(plan, feature) : []
+  // At plan level the whole tier is the subject, so list all of it rather than
+  // the three-item teaser that makes sense beside a specific lock.
+  const extras = plan ? (planLevel ? tierAdds(plan) : alsoIncluded(plan, feature)) : []
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="md">
         <DialogHeader>
           <DialogTitle>
-            {/* A feature and an allowance need different sentences. "résumés is
-                on Plus" is what one shared template produces, and it is not
-                English — a quota is a quantity, so it asks for MORE. */}
+            {/* A feature, an allowance and a whole tier need three different
+                sentences. "résumés is on Plus" is what one shared template
+                produces, and it is not English — a quota is a quantity, so it
+                asks for MORE. A tier is not a thing you are missing at all, so
+                it does not "go on" anything; you move to it. */}
             {!plan
               ? `${subject} isn't in your plan`
-              : metric && !feature
-                ? `More ${subject} are on ${PLAN_LABELS[plan]}`
-                : `${subject} is on ${PLAN_LABELS[plan]}`}
+              : planLevel
+                ? `Move to ${PLAN_LABELS[plan]}`
+                : metric && !feature
+                  ? `More ${subject} are on ${PLAN_LABELS[plan]}`
+                  : `${subject} is on ${PLAN_LABELS[plan]}`}
           </DialogTitle>
           {why ? <DialogDescription>{why}</DialogDescription> : null}
         </DialogHeader>
@@ -141,6 +182,19 @@ export function UpgradeDialog({ request, onOpenChange, onCheckout }: UpgradeDial
               {PLAN_LABELS[plan]} gives you {planAllowanceOf(metric as MetricKey, plan)}.
             </p>
           ) : null}
+
+          {/* WHAT ACTUALLY HAPPENS NEXT.
+              There is no checkout, so the honest answer is that a person
+              applies the change — and saying so is what stops "Contact us to
+              upgrade" reading as a brush-off. Stated once, here, rather than
+              left for the customer to infer from a button. */}
+          {!onCheckout ? (
+            <p className="hl-caption text-hl-fg-tertiary">
+              Self-serve checkout isn&rsquo;t live yet. Tell us and we&rsquo;ll move you across
+              — usually the same working day, and nothing you&rsquo;ve already analysed is
+              affected.
+            </p>
+          ) : null}
         </div>
 
         <DialogFooter>
@@ -152,13 +206,24 @@ export function UpgradeDialog({ request, onOpenChange, onCheckout }: UpgradeDial
               {plan ? `Upgrade to ${PLAN_LABELS[plan]}` : 'Upgrade'}
             </Button>
           ) : (
-            // No checkout yet. Saying so — and giving the one route that does
-            // work — beats a button that silently does nothing, which is how a
-            // customer concludes the product is broken rather than unfinished.
+            /**
+             * No checkout yet, so this leads to a page rather than a `mailto:`.
+             *
+             * It WAS a bare `mailto:support@hirelens.app`. That does nothing at
+             * all for anyone working from webmail without a registered protocol
+             * handler — most recruiters — and when it fails it fails silently,
+             * so the customer concludes they were ignored rather than that
+             * their browser dropped the click. It was also the terminus of the
+             * entire upgrade funnel: every lock, every quota wall and every 402
+             * in the product ended there.
+             *
+             * `/contact` states the address as selectable text and says what
+             * happens after you write, so copying always works even when
+             * clicking does not. A full navigation is correct — it crosses out
+             * of the `.hl` scope into the public site.
+             */
             <Button variant="primary" asChild>
-              <a href="mailto:support@hirelens.app?subject=Upgrade%20my%20plan">
-                Contact us to upgrade
-              </a>
+              <a href="/contact">Contact us to upgrade</a>
             </Button>
           )}
         </DialogFooter>

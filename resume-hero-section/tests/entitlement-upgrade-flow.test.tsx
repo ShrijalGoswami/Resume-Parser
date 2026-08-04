@@ -166,9 +166,21 @@ describe('the upgrade dialog answers all three questions', () => {
   it('offers a route that works rather than a button that does nothing', () => {
     // There is no self-service checkout yet. A dead primary button is how a
     // customer concludes the product is broken rather than unfinished.
+    //
+    // `/contact`, NOT a `mailto:`. This is the terminus of the entire upgrade
+    // funnel — every lock, quota wall and 402 in the product arrives here — and
+    // a `mailto:` does nothing at all for anyone on webmail without a
+    // registered protocol handler, which is most recruiters. When it fails it
+    // fails silently, so the customer concludes they were ignored rather than
+    // that their browser dropped the click.
     openWith({ feature: 'ai_copilot', requiredPlan: 'pro' })
     const cta = screen.getByRole('link', { name: 'Contact us to upgrade' })
-    expect(cta).toHaveAttribute('href', expect.stringContaining('mailto:'))
+    expect(cta).toHaveAttribute('href', '/contact')
+  })
+
+  it('says what happens after you write, so the CTA is not a brush-off', () => {
+    openWith({ feature: 'ai_copilot', requiredPlan: 'pro' })
+    expect(screen.getByText(/same working day/i)).toBeInTheDocument()
   })
 
   it('uses checkout once it exists, with no other change', () => {
