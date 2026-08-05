@@ -11,8 +11,13 @@ project stands.
 
 > **Starting a session? Read in this order.**
 > §1 (repository state, and how to run it) → §12 (what is done, what is verified,
-> what is blocked) → §11 (**the next milestone: AI Provider Architecture**) →
-> §9 (standing rules you must not break).
+> what is blocked) → §11 (**the active milestone: AI Architecture &
+> Multi-Provider Foundation**) → §11.3 (the roadmap — the task list) →
+> §13 (phase progress) → §9 and **§9A** (standing rules you must not break).
+>
+> **Working on the AI milestone?** §11 is the plan, §11.3 is the task list,
+> §9A is the rules, §13 is the status of record. Update §11.3 and §13 the moment
+> a task completes — nowhere else.
 >
 > If you are about to touch billing, read §5A **first** — it is blocked, and
 > five specific shortcuts around that blocker are forbidden by decision.
@@ -31,14 +36,23 @@ project stands.
 > now sharing the reset flow's session-validation architecture rather than
 > owning a second copy of it. Preceded by AI discoverability (§8C).
 >
-> **The AI Provider Architecture milestone (§11) has started, with an
-> investigation rather than implementation.** It is independent of the Razorpay
-> blocker. The investigation's conclusion is that **the abstraction is further
-> along than §11 assumed** — the gateway, provider registry, health routing and
-> fallback chain already exist — so the work is generalisation and hardening, not
-> a rewrite. One item was acted on: **`GAB-D1` (§8E)**, a blocking governance gate
-> failure that put a model vendor's name on every exported PDF. Fixed, verified
-> against generated PDFs, and now **guarded by tests in both codebases**.
+> **The active milestone is AI Architecture & Multi-Provider Foundation (§11),
+> and no implementation code has been written for it.** The investigation is
+> complete; the plan, the roadmap and the rules are recorded in §11, §11.3 and
+> §9A. Implementation proceeds **task by task**, each reviewed before the next
+> begins, with §11.3 and §13 updated as each completes.
+>
+> The investigation's conclusion: **the architecture is substantially correct —
+> build on it, do not replace it.** The gateway, provider registry, health
+> routing and fallback chain already exist and six providers are implemented.
+> `AIOrchestrator`'s *structure* is vendor-neutral; only its *calibration* is
+> Groq-shaped. The remaining work is proof and calibration, with one genuine
+> design gap (capability profiles, Phase 3).
+>
+> One item was acted on ahead of the milestone: **`GAB-D1` (§8E)**, a blocking
+> governance gate failure that put a model vendor's name on every exported PDF.
+> Fixed, verified against generated PDFs, and now **guarded by tests in both
+> codebases**. It is not Phase 0 work.
 
 ---
 
@@ -47,10 +61,10 @@ project stands.
 | | |
 |---|---|
 | **Branch** | `manus-ui-v1` |
-| **Latest commit** | `65a43dd` — *docs: close the authentication UX milestone* |
-| **Working tree** | **clean** — `GAB-D1` committed (§8E) |
+| **Latest code commit** | `be405f3` — *fix(export): take the model vendor's name off documents that leave the building* (§8E). **HEAD is the docs commit on top of it**, `docs(handoff): start AI architecture milestone` — this row deliberately names the last commit that changed behaviour, because a row naming its own commit can never be written accurately |
+| **Working tree** | **clean** |
 | **Last milestone** | Authentication — **COMPLETE and browser-verified** (§8D) |
-| **Next milestone** | **AI Provider Architecture** — investigation **done**; `GAB-D1` fixed out of it (§8E, §11) |
+| **Active milestone** | **AI Architecture & Multi-Provider Foundation** (§11) — planned; **implementation not started**. Rules: §9A · Roadmap: §11.3 · Progress: §13 |
 | **Backend tests** | **504 passed** (493 + 11 export-attribution guards, 5 Aug 2026) |
 | **Frontend tests** | **455 passed**, 33 files (450 + 5 export-attribution guards, 5 Aug 2026) |
 | **`tsc --noEmit`** | clean |
@@ -58,12 +72,12 @@ project stands.
 | **`next build`** | succeeds; 40 routes (36 static, 4 dynamic) |
 
 > **On the test counts.** Frontend went 363 → 410 → 442 → 450 → 455; backend
-> 493 → 504. The last step on both is `GAB-D1`'s export-attribution guards (§8E).
-> The
-> discoverability milestone added `tests/discoverability.test.ts` (30) and
-> matcher-coverage assertions in `tests/proxy.test.ts` (17); the auth milestone
-> added `tests/password-policy.test.ts` (9) and `tests/auth-password-ux.test.tsx`
-> (30). No backend code changed in either, so 493 stood until §8E.
+> 493 → 504. The discoverability milestone added `tests/discoverability.test.ts`
+> (30) and matcher-coverage assertions in `tests/proxy.test.ts` (17); the auth
+> milestone added `tests/password-policy.test.ts` (9) and
+> `tests/auth-password-ux.test.tsx` (30). No backend code changed in either, so
+> 493 stood until `GAB-D1` (§8E) added the export-attribution guards — 11 backend
+> and 5 frontend, the last step on both counts.
 
 ### Working tree
 
@@ -1413,6 +1427,59 @@ Never break these. Each is a specific failure that was designed out.
 
 ---
 
+## 9A. AI Architecture Rules
+
+**Permanent. These govern the AI Architecture & Multi-Provider Foundation
+milestone (§11) and everything built on top of it afterwards.** They extend §9
+rather than replacing it — §9 rules 5, 6 and 7 were written for the billing
+provider layer and transfer to this one verbatim.
+
+Read this section **before writing any code under §11**. Several of these rules
+forbid the approach that will look obvious at the time.
+
+1. **Never rewrite the orchestrator.** `orchestrator.run` is the correct
+   long-term boundary and is proven to be the single funnel every backend LLM
+   call goes through. It is extended, calibrated and fixed — never replaced.
+   Its structure is already vendor-neutral; only its calibration is Groq-shaped.
+2. **Never let business logic import provider SDKs.** `app/ai/providers/` is the
+   only package that may import a vendor SDK, and imports stay lazy so an
+   unconfigured provider costs nothing.
+3. **AI providers remain interchangeable.** No `if provider == …` anywhere. A
+   new provider is a subclass plus a registry entry — an addition, never an
+   audit of everything else.
+4. **Billing architecture is frozen.** `app/billing/**` is out of scope for this
+   milestone and paused on an external blocker (§5A, §11A). Do not touch it, and
+   do not borrow its code — borrow its *pattern*.
+5. **Authentication architecture is frozen.** The shared emailed-link session
+   architecture (§8D) is complete and browser-verified. Nothing in the AI
+   milestone has any reason to reach into it.
+6. **Prompt text must never change during provider migration.** Prompt text *is*
+   behaviour. Changing it in the same milestone that changes providers makes a
+   quality regression undiagnosable — you would not know which change moved the
+   output. Prompt work is a separate, later milestone with its own evaluation.
+7. **Deterministic scoring always stays outside the LLM.** Every number — ATS
+   score, match score, ranking, similarity — is computed in `app/nlp/*`. The
+   model writes prose and produces no scores. This invariant is the foundation
+   of the disclaimer wording in §11.5 and is the strongest asset in the codebase.
+8. **AI explanations are never authoritative.** The model recommends; a person
+   decides; the decision is recorded and reversible. Grounding is computed by
+   the **server** from its own attribution — a model may never claim its answer
+   was grounded.
+9. **Unknown provider behaviour must fail loudly.** Never guessed. An unknown
+   error, status or finish reason is surfaced, not mapped to the nearest
+   convenient meaning. Guessing "transient" burns a daily quota; guessing "fatal"
+   takes down a working feature.
+10. **Capability metadata must be declared, never inferred.** A provider and a
+    model declare what they support; routing reads those declarations. Nothing
+    infers a capability from a provider's name — and a declaration that nothing
+    reads is decorative, which is exactly the state `can_json` is in today (C6).
+11. **Every completed task updates this document immediately.** The roadmap in
+    §11.3 and the progress table in §13 — not a new notes file, not a commit
+    message, not chat history. A milestone that tracks itself anywhere else stops
+    being trackable by the next session.
+
+---
+
 ## 10. Known technical debt
 
 | # | Item | Status |
@@ -1437,106 +1504,247 @@ Items 4, 7 and 8 are tracked with three more in
 
 ---
 
-## 11. Next milestone — AI Provider Architecture
+## 11. Active milestone — AI Architecture & Multi-Provider Foundation
 
-**This is where tomorrow starts.** It is independent of the Razorpay blocker, so
-nothing here is waiting on the gateway. Billing's own resumption plan is §11A,
-below, and remains paused.
-
-> ### The architecture investigation is DONE (5 Aug 2026). Read this before planning.
+> ## IMPLEMENTATION HAS NOT STARTED.
 >
-> **Headline: this section understates what already exists.** `app/ai/gateway/`
-> already has a provider registry, a model registry, logical roles, per-provider
-> config, a health state machine with cooldowns and auto-recovery, a fallback
-> chain, usage/cost accounting and an audited runtime provider switch with a
-> Settings UI on it. Six providers are implemented. Goals 1, 2, 3 and 6 below are
-> substantially built. **A rewrite is the wrong move.** The real remaining work is
-> narrower and different: make the declared capabilities load-bearing (nothing
-> reads `can_json` / `supports_tools` today), add the missing fake provider, add
-> local runtime control and a credential seam, add provenance, and build the
-> disclaimer system.
+> **The investigation is complete. No AI implementation code has been written.**
+> The only change made under this milestone so far is `GAB-D1` (§8E) — a
+> governance gate failure that was fixed on its own because it blocked review of
+> report generation. It is **not** Phase 0 work and does not appear in the
+> roadmap.
 >
-> The investigation's findings live in the session review, not in this repo. The
-> one item acted on so far is **`GAB-D1` (§8E)** — pulled out of the disclaimer
-> phase and fixed on its own, because it was a *blocking gate failure* that
-> terminated any review touching report generation.
->
-> Three things worth carrying into planning, each verified in the code:
-> **(a)** `orchestrator.run` really is the single funnel — every backend LLM call
-> goes through it. **(b)** `AI_DISABLED_PROVIDERS` does not disable anything —
-> `gateway.fallback_chain()` never filters it and the orchestrator retains
-> unhealthy providers as a last resort, so a "disabled" provider still serves
-> traffic while the admin UI shows it as off. **(c)** `byo_ai` — "Bring Your Own
-> AI" — is a catalogued, priced Enterprise feature with an entitlement check and
-> **no implementation at all**; `tests/test_feature_flag_enforcement.py` records
-> it as *"Phase 4 — no credential endpoints yet"*. Given rule 21, that is the same
-> class of defect as the nine claims removed on 4 Aug, still shipping.
->
-> Read the existing AI path first and report on it before writing anything.
-> There is a working system here — `orchestrator.run` is the single funnel every
-> backend LLM call already goes through — and the goal is to generalise it
-> without breaking a product that currently works. An investigation that finds
-> the abstraction already half-present is a better outcome than a rewrite that
-> ignores it.
+> Everything below is the plan. Implementation happens **task by task**, in
+> roadmap order, each one reviewed and approved before the next begins. **Every
+> completed task updates this document immediately** (§9A, rule 11) — the
+> roadmap in §11.3 and the progress table in §13, not a new notes file.
 
-### The problem
+This milestone is independent of the Razorpay blocker, so nothing here is
+waiting on the gateway. Billing's own resumption plan is §11A, below, and
+remains paused.
 
-Every model call in the product goes to Groq, on a free tier capped at roughly
-100k tokens/day, with no fallback. The vendor is not *hardcoded everywhere* —
-the orchestrator saw to that — but the system has never had to answer the
-questions a second provider asks: who chooses the model, when, and on what
-basis? What does a caller say when it needs *reasoning* rather than
-`llama-3.3-70b`? What happens when a provider is down, rate-limited, or simply
-more expensive than the answer is worth?
+**Read §9A before writing any code under this milestone.** Those rules are
+permanent and several of them forbid the obvious approach.
 
-### Goals
+### 11.1 What the investigation found
 
-| # | Goal | What it means |
+Completed 5 Aug 2026, tracing every AI workflow independently from UI to
+response. The conclusion is deliberately anticlimactic:
+
+> **The architecture is substantially correct. Build on it; do not replace it.**
+> `AIOrchestrator` is the right long-term boundary — no vendor branching, no SDK
+> import, callers pass a capability and a schema and receive a validated object
+> or a typed error. **The orchestrator's structure is vendor-neutral; its
+> calibration is Groq-shaped.** A second provider will not break the
+> abstraction — it will expose that the abstraction has only ever been exercised
+> against one implementation.
+
+**More exists than the milestone name suggests.** `app/ai/gateway/`
+already has a provider registry, a model registry, logical roles, per-provider
+config, a health state machine with cooldowns and auto-recovery, a fallback
+chain, usage/cost accounting, and an audited runtime provider switch with a
+Settings UI on it. **Six providers are implemented** (Groq, Gemini, Anthropic,
+OpenAI, OpenRouter, Kimi). Goals 1, 2, 3 and 6 below are substantially built.
+The remaining work is **proof and calibration, not design** — with one genuine
+exception (capability profiles, Phase 3).
+
+**The AI surface, complete:** eight live LLM capabilities, all through
+`orchestrator.run`, plus one embeddings path that never touches the LLM.
+Prediction (`app/prediction/`) and organizational knowledge (`app/knowledge/`)
+are **fully deterministic** — no LLM, no embeddings. A ninth capability,
+`RESUME_SUMMARIZATION`, is declared in the enum with no prompt and no caller;
+it would raise if requested.
+
+### 11.2 The findings that drive the roadmap
+
+Each was verified in code, not inferred. The IDs are referenced by the roadmap.
+
+**Coupling and correctness**
+
+| ID | Finding |
+|---|---|
+| **C1** | **Quota classification exists only for Groq.** `groq_provider.py` sets `is_quota`, and the orchestrator refuses to retry quota errors. Anthropic and Gemini never set it, so a daily-quota exhaustion there is treated as transient and retried — burning a budget that will not clear today |
+| **C2** | **Error classification is substring matching on `str(exc)`.** `anthropic_provider.py` tests `"rate" in msg`, which also matches "generate". Typed SDK exceptions exist and are unused |
+| **C3** | **`AI_DISABLED_PROVIDERS` disables nothing.** `fallback_chain()` never filters it and the orchestrator keeps unhealthy providers as a last resort, so a "disabled" provider still serves traffic while the admin UI shows it off. `AI_GATEWAY.md` claims "never routed" |
+| **C4** | **`AI_DEFAULT_MODEL` is a Groq model used as the cross-provider last resort.** A new provider with an incomplete `role_models` map gets handed a Llama model name |
+| **C5** | **Per-provider `default_model` outranks an explicit call-site `model=`.** Documented precedence is inverted at `orchestrator.py`; usage records the model actually used, so the override is invisible |
+| **C6** | **No provider requests native JSON mode.** `can_json` / `supports_json` are declared everywhere and read by **nothing**. Structured output is prompt-instructed, then retried up to 6× with an identical prompt and no repair instruction |
+| **C7** | **Token budgets live in business logic and are never validated against the model.** `_MAX_TOKENS = 4096` is hardcoded in the comparison and interview services; nothing checks it against the model's declared `max_output_tokens` |
+| **C8** | **`is_llm_configured` is `bool(GROQ_API_KEY)`.** Run OpenAI-only and `/health` reports `llm: not_configured` while serving AI correctly |
+| **C9** | **Nothing validates `AI_PROVIDER` or the fallback chain at startup.** Capability routing gets fatal validation; the primary provider gets none |
+| **C10** | **Credentials are read from process-global settings inside each provider**, and `GroqProvider._client` is a class attribute cached for process lifetime — key rotation needs a restart. This is the line that blocks BYO AI |
+| **C11** | **Embeddings have provenance and nothing enforces it at read time.** `SupabaseVectorStore.search()` compares the query vector against every stored vector regardless of which model produced it; auto-index fires only when a campaign has **zero** embeddings. Because `hashing` and `text-embedding-3-small` are both 1536-dim, switching produces same-length, semantically unrelated vectors — no error, just meaningless cosine. Mitigated to ~28% of the score by hybrid ranking (`0.72 × lexical + 0.28 × embedding`), which is worse in one way: nobody notices |
+| **C12** | **`byo_ai` — "Bring Your Own AI" — is catalogued, priced and entitlement-checked with no implementation.** `tests/test_feature_flag_enforcement.py` records it as *"Phase 4 — no credential endpoints yet"*. Under rule 21 this is the same class of defect as the nine claims removed on 4 Aug, still shipping |
+
+**Naming leaks** (cosmetic individually; deferred to one mechanical commit at the
+end): `GroqExplanation`, `GroqMatchAnalysis`, `GroqBatchAnalysis` are response
+model names on public endpoints and appear in the OpenAPI document.
+`Groq` in `app/nlp/skill_normalizer.py` and `extractor.py` is **correct and must
+stay** — candidates list it on their résumés.
+
+**Answers to the three questions this milestone was opened with**
+
+1. **Is `AIOrchestrator` the right boundary?** Yes. Caveat: `run()` accepts
+   `provider=` / `model=` strings. No business caller uses them — only tests —
+   so the boundary is *conventionally* rather than *structurally* enforced.
+   Closing that is a signature change, not a redesign.
+2. **How far does configuration already support local runtime control?**
+   The mechanism exists; the ergonomics do not. `.env.local` is read **once at
+   import**, so every change needs a restart. There is **no local provider**
+   (`OpenAICompatProvider` has a configurable `base_url` and would cover Ollama /
+   LM Studio / vLLM in ~15 lines). **Free vs paid Groq is not expressible** —
+   both are `GROQ_API_KEY` and the tier lives in the key. The one runtime switch
+   that exists is **production-global, process-local and unguarded by
+   environment**.
+3. **Where do usage accounting and cost reporting belong?** The orchestration
+   layer, where they already are. Only the orchestrator knows that a call was
+   attempt 4 of 6 for one logical request, which capability asked, and whether a
+   failover occurred — `_CapCounter` already separates `runs` from
+   `provider_calls`. Two corrections: the tracker is **in-memory and dies with
+   the process**, and **cost silently reads zero for unpriced models**
+   (OpenRouter and Kimi have no prices seeded). Unpriced must mean *unknown*,
+   never zero — the same distinction §8A already enforces for quota meters.
+
+### 11.3 Roadmap
+
+**This is the task list. Update it the moment a task completes.**
+`☐` not started · `◐` in progress · `☑` done and verified.
+
+```
+Phase 0
+☐ Evaluation Harness
+☐ Fake Provider
+☐ Golden Dataset
+
+Phase 1
+☐ Provider Bug Fixes
+☐ Disabled Provider Fix
+☐ Retry Classification
+☐ Provider Validation
+☐ Default Model Fix
+☐ Native JSON Support
+
+Phase 2
+☐ Credential Resolver
+☐ Local Provider
+☐ Local Runtime Override
+
+Phase 3
+☐ Capability Profiles
+☐ Intelligent Provider Selection
+☐ Token Budget Validation
+
+Phase 4
+☐ Usage Persistence
+☐ AI Provenance
+☐ Cost Tracking
+
+Phase 5
+☐ AI Disclaimer System
+
+Phase 6
+☐ Multi Provider Live Testing
+☐ Paid Groq
+☐ OpenAI
+☐ Gemini
+☐ Anthropic
+```
+
+**What each task is for**, so a future session does not have to reconstruct it:
+
+| Task | Closes | Note |
 |---|---|---|
-| 1 | **Provider abstraction** | a port, in the shape of `BillingProvider` (§3) — the domain names capabilities, never vendors |
-| 2 | **Model abstraction** | callers ask for a *capability tier*, not a model string. `llama-3.3-70b-versatile` must not appear in business logic |
-| 3 | **Runtime configuration** | which provider and model serve which task, changeable without a deploy |
-| 4 | **Paid Groq support** | the immediate practical unblock — the free tier's daily cap is a real ceiling on real usage |
-| 5 | **Local model selection** | run against a local model for development and evaluation without touching a paid endpoint |
-| 6 | **Future providers** | OpenAI, Gemini, Anthropic, OpenRouter — each an *addition*, never an audit of everything else |
-| 7 | **AI disclaimer system** | what the product must say, and where, about output being model-generated |
+| Evaluation Harness · Golden Dataset | R1 | ~30 résumés × 3 JDs with stored expected-shape assertions. **Without this, "we switched provider and quality dropped" is undetectable until a customer says so.** It is the prerequisite that makes Phase 3 safe |
+| Fake Provider | — | `providers/fake.py`, registered. The one genuinely missing piece. `app/billing/providers/fake.py` is the reference: a port with a working fake is testable; a port without one is decorative. Collapses three ad-hoc test fakes |
+| Provider Bug Fixes | C2, C8 | Typed errors; `is_llm_configured` means "any reasoning provider configured" |
+| Disabled Provider Fix | C3 | Prove it by injecting a violation, the way the billing boundaries were proven |
+| Retry Classification | C1 | Quota vs transient, per provider, with `retry_after` where the vendor sends one |
+| Provider Validation | C9 | Same strictness capability routing already has |
+| Default Model Fix | C4, C5 | Drop the Groq-shaped global default; restore documented precedence |
+| Native JSON Support | C6 | Request JSON mode where `can_json`; add a repair instruction to the JSON retry |
+| Credential Resolver | C10, C12 | Providers receive a key instead of reading settings. **Build the seam, not the BYO feature** |
+| Local Provider · Local Runtime Override | goal 5 | `LocalProvider` + a gitignored dev-only file, live-reloaded, inert unless `ENVIRONMENT` is development. Production stays environment-driven |
+| Capability Profiles · Intelligent Provider Selection | goal 2 | **The only genuine design work.** Capabilities declare requirements (json, context, latency, cost, quality floor, data sensitivity); the selector matches them against declared provider/model capabilities — which is what finally makes `can_json` load-bearing |
+| Token Budget Validation | C7 | Budgets move out of business logic and are checked against the model |
+| Usage Persistence · Cost Tracking | §11.2 Q3 | Per-request rows; unpriced = unknown, never zero |
+| AI Provenance | — | Migration 0028, additive and nullable, following the 0027 pattern. **Phase 5 depends on it** — an honest disclaimer needs to know what generated the output |
+| AI Disclaimer System | goal 7 | Derived from the execution record, never typed per screen |
+| Multi Provider Live Testing | goals 4, 6 | Config only — no code. Enable the fallback chain and drive a **real** failover; watch `total_retries` and `total_fallbacks`, do not merely record them. Needs each provider's key in Render, the container **and** the CI staging gate (`.github/workflows/release-gate.yml` currently provisions `STAGING_GROQ_API_KEY` only, so a single-provider eval would pass silently) |
+| Paid Groq | goal 4 | The practical unblock — the free tier's ~100k tokens/day is a real ceiling. **Note there is no way to express "this key is paid" today**: free and paid are both `GROQ_API_KEY` and the tier lives in the key, so nothing can reason about which ceiling applies. Decide whether that needs modelling before R2 (retry amplification) meets a metered account |
+| OpenAI | goal 6 | Already implemented (`openai_compat.py`); this task is keys, eval parity and cost pricing, not code |
+| Gemini | goal 6 | Implemented. **Highest JSON-compliance risk** (C6) and its quota is misclassified today (C1) — both must be closed in Phase 1 first |
+| Anthropic | goal 6 | Implemented. Same quota misclassification as Gemini (C1), plus the over-broad `"rate" in msg` match (C2) |
 
-**The point of all seven:** prepare the platform for multiple AI providers
-**without coupling business logic to any vendor.**
+**C11 (vector store read-time model enforcement) is not in a phase.** It is
+independent of the provider work and can be done in Phase 1 or 2 — search
+quality only improves.
 
-### Why goal 7 is not a footnote
+**Explicitly NOT in this milestone**, so they are not rediscovered as surprises:
+streaming (nothing in the repo streams today, and streaming a *validated
+structured* response is a separate contract), per-organization BYO AI, and a
+database-backed configuration layer. Environment + the startup-validated
+capability table + a dev-only local file covers every stated requirement, and a
+DB config layer would add a failure mode where the service cannot decide how to
+answer because Postgres is slow.
 
-HireLens is a hiring product. CV screening is high-risk under the EU AI Act, and
-NYC Local Law 144 governs automated employment decision tools. A disclaimer
-system is not decoration — it is the same category of obligation as the bias-audit
-claim the marketing audit had to remove (§8A), and it interacts with which
-provider processed which candidate's data. Design it with the provider layer,
-not after it.
+### 11.4 Blast radius and risk
 
-### What the investigation should cover before anything is built
+| Phase | Behaviour-visible? | Blast radius |
+|---|---|---|
+| 0 | no | **None** — nothing in the request path |
+| 1 | narrowly — disabled actually disables; quota stops being retried on two providers | **Low**, one named test per fix; the Groq path is unchanged |
+| 2 | no in production — the env resolver stays the default | **Low**; prod `config_snapshot()` must be byte-identical |
+| 3 | behind a flag; off = today's resolution | **Medium** — the only phase that changes model selection. Gated on eval parity |
+| 4 | no | **Low-medium**; additive migration |
+| 5 | **yes — this is the visible one** | **Medium**; requires browser verification, not green tests |
+| 6 | yes | **Medium**; first real failover, needs retry-amplification alerting |
 
-1. **What `orchestrator.run` already is.** Every backend LLM call goes through
-   it (batch analysis included), with QA-mode caching and instrumentation. Start
-   from what it already abstracts, and name precisely what it does not.
-2. **Where model identity currently leaks.** Every place a model string, a token
-   budget, or a Groq-specific behaviour is named outside the orchestrator.
-3. **What "capability tier" should mean** for this product's actual call sites —
-   they are not interchangeable, and the tiers should come from the calls, not
-   from a vendor's marketing page.
-4. **Where runtime configuration lives.** Environment, database, or a config
-   module — and what happens on a bad value.
-5. **The failure model.** Note the existing decision that **429 is not retried**
-   and Groq has no fallback; a provider layer changes what that should mean.
-6. **What the disclaimer system must assert**, and on which surfaces.
+| # | Risk | Likelihood | Impact |
+|---|---|---|---|
+| R1 | **Silent quality regression on switch.** Prompts tuned against Llama-3.3-70b for months; no eval harness exists yet | High | High |
+| R2 | **Retry amplification on a paid key** — up to 18 provider calls per logical request (3 network × 3 JSON × 2 schema), unalerted | Medium | High |
+| R3 | **Semantic search silently degrades** on an embedding-provider change (C11) | Medium | High |
+| R4 | **JSON compliance collapse** on a non-Llama model (C6), presenting as latency and cost rather than errors | High | Medium |
+| R5 | **Quota misclassification** burns a daily budget on Gemini/Anthropic (C1) | High once live | Medium |
+| R6 | **`byo_ai` sold and unbuilt** (C12) reaches a real Enterprise customer | Low now | High |
+| R7 | **Injection defences calibrated against one model family.** `ground_claims()` is model-independent; `scrub()`'s phrase list is not | Medium | High |
+| R8 | **`AI_DISABLED_PROVIDERS` believed to work** during an incident (C3) | Low | High |
+| R9 | **Runtime override disagrees across workers** — it is a module-level global | Certain past one worker | Medium |
+| R10 | **Phase 5 changes what customers read.** Green tests prove nothing about a rendered disclaimer | Certain | Medium |
 
-### Standing rules that already apply to this work
+### 11.5 Goals this milestone must satisfy
 
-The billing layer solved the same shape of problem, and rules 5–7 in §9 were
-written for it. They transfer verbatim: **the domain never imports a provider
-SDK**, **capabilities are declared rather than inferred from a provider name**,
-and **unknown states fail loudly rather than being guessed**. Reuse the pattern;
-do not reinvent it. `app/billing/providers/fake.py` is the reference for why a
-port with a working fake is testable and a port without one is decorative.
+| # | Goal | State |
+|---|---|---|
+| 1 | **Provider abstraction** — a port in the shape of `BillingProvider` (§3) | **built**; needs a fake to be proven |
+| 2 | **Model abstraction** — callers ask for a capability tier, not a model string | **partial** — roles exist but are hand-picked; Phase 3 |
+| 3 | **Runtime configuration** — provider/model per task, changeable without a deploy | **built** (`AI_CAPABILITY_MODELS`, inert by default, strictly validated at boot) |
+| 4 | **Paid Groq support** | Phase 6 — the free tier's ~100k tokens/day is a real ceiling |
+| 5 | **Local model selection** | **not built** — Phase 2 |
+| 6 | **Future providers** — each an addition, never an audit | **built** — six exist |
+| 7 | **AI disclaimer system** | **not built** — Phase 5 |
+
+**Why goal 7 is not a footnote.** HireLens is a hiring product. CV screening is
+high-risk under the EU AI Act, and NYC Local Law 144 governs automated
+employment decision tools. A disclaimer system is the same category of
+obligation as the bias-audit claim the marketing audit had to remove (§8A), and
+it interacts with which provider processed which candidate's data.
+
+**Where disclaimers belong** (audited 5 Aug; placement only, nothing added). The
+product discloses *uncertainty* well and *provenance* nowhere. `AIAnswer` is
+mounted by eight surfaces, so **one insertion point covers most of them**; two
+bypass it and need their own — **Decision Intelligence**
+(`analyst-brief.tsx`, `decision-memo.tsx`) and **Interview Intelligence**
+(`interviews-screen.tsx`).
+
+| Tier | Where | Says |
+|---|---|---|
+| 1 | Inline, persistent, on any surface where model output informs a candidate-level decision: Deep Review · Triage · Decision Intelligence · Comparison · Interview pack | *"AI-generated. Scores are calculated by HireLens. This narrative was written by a language model and can be wrong or incomplete. Review the evidence before deciding."* The first sentence is **true in this codebase** and almost no competitor can say it |
+| 2 | Attached to the artifact — **every export**. The legally significant one: a PDF outlives the session and gets forwarded | Contains AI-generated analysis · scores computed by HireLens · not a hiring decision · date. **No vendor name** — GAB-D1 forbids relocating it there |
+| 3 | Conversational, **once per thread**, not per message. Keep the existing grounding note unchanged; it answers a different question | *"HireLens AI can be wrong. It answers from your organization's data where it can, and tells you when it can't."* |
+| 4 | `/privacy` and `/llms.txt` — which third-party model providers process customer and candidate data | A DPDP Act / GDPR Art. 13 obligation that gets **harder** with four providers. Write it while there is one. Generate the list from the registry so it cannot drift |
+| 5 | Candidate-facing notice | **Out of scope** — candidates never touch the product and the LL144 obligation is the employer's. Tracked, not built, alongside the unperformed bias audit already recorded in `/llms.txt` |
+
 
 ---
 
@@ -1550,7 +1758,9 @@ returns 401 for this account (§5A). Do not start anything below until that is
 resolved — building against an API that has never answered means guessing at its
 shape and discovering the mismatch at a worse moment.
 
-(The AI Provider milestone above needs none of this and is not blocked by it.)
+(The AI Architecture milestone above needs none of this and is not blocked by
+it. Rule 4 in §9A cuts the other way too: **that milestone must not touch
+`app/billing/**`.**)
 
 ### The one action that unblocks everything
 
@@ -1642,7 +1852,7 @@ itself it is closer to shipping than it is:
 Billing trigger (BILL-T1)     ░░░░░░░░░░  deliberately deferred (§5A)
 Enterprise activation         ░░░░░░░░░░  no code path at all (BILL-3)
 Reconciliation worker         ░░░░░░░░░░  table exists, nothing writes it (BILL-6)
-AI Provider Architecture      █░░░░░░░░░  investigation DONE; GAB-D1 fixed (§8E, §11)
+AI Architecture (§11)         ░░░░░░░░░░  ACTIVE — planned, 0 of 6 phases started
 RC checklist                  ░░░░░░░░░░  0 of 267 boxes ticked
 Production payments           ░░░░░░░░░░  none ever processed
 ```
@@ -1682,6 +1892,33 @@ Three things are still true and all three gate the release:
 
 ---
 
+## 13. AI milestone progress
+
+**This table is the milestone's status of record.** Update it as each task
+completes (§9A, rule 11) — do not add new progress notes elsewhere, and do not
+create a second tracking file. It pairs with the task checkboxes in §11.3.
+
+Status vocabulary, deliberately the same three words §12 uses:
+**Not Started** · **In Progress** · **Complete** — where *Complete* means
+implemented **and** verified, never merely written.
+
+| Phase | Status | Notes |
+|--------|--------|-------|
+| **Phase 0** — Evaluation Harness · Fake Provider · Golden Dataset | Not Started | The prerequisite for everything after it. No eval harness exists today, so R1 (silent quality regression on a provider switch) is currently unmanaged |
+| **Phase 1** — Provider Bug Fixes · Disabled Provider · Retry Classification · Provider Validation · Default Model · Native JSON | Not Started | Closes C1–C6, C8, C9. Behaviour-visible narrowly; the Groq path is unchanged |
+| **Phase 2** — Credential Resolver · Local Provider · Local Runtime Override | Not Started | Closes C10 and delivers goal 5. Build the credential **seam**, not the BYO feature (C12) |
+| **Phase 3** — Capability Profiles · Intelligent Provider Selection · Token Budget Validation | Not Started | The only genuine design work in the milestone. Closes C7 and goal 2. **Gated on Phase 0's eval parity** |
+| **Phase 4** — Usage Persistence · AI Provenance · Cost Tracking | Not Started | Migration 0028, additive and nullable. **Phase 5 depends on this** |
+| **Phase 5** — AI Disclaimer System | Not Started | The customer-visible phase. Requires browser verification, not green tests |
+| **Phase 6** — Multi Provider Live Testing · Paid Groq · OpenAI · Gemini · Anthropic | Not Started | Config only, but needs each provider's key in Render, the container **and** the CI staging gate |
+| **C11** — vector-store read-time model enforcement | Not Started | Not in a phase; independent of the provider work. Do it in Phase 1 or 2 — search quality only improves |
+
+**Not part of this milestone**, recorded here so it is not mistaken for
+outstanding work: **`GAB-D1`** (§8E) is **Complete** — it was a governance gate
+failure fixed on its own before Phase 0 began.
+
+---
+
 ## Document map
 
 | Document | What it holds |
@@ -1695,6 +1932,8 @@ Three things are still true and all three gate the release:
 | [OPERATIONAL_HARDENING_BACKLOG.md](./OPERATIONAL_HARDENING_BACKLOG.md) | PITR, audit trail, retention (OPS-1…6) |
 | [GOVERNANCE_ALIGNMENT_BACKLOG.md](./GOVERNANCE_ALIGNMENT_BACKLOG.md) | 12 positioning/attribution items (GAB-*). **`GAB-D1` done (§8E); no open gate failures.** `GAB-D2` and the PDF `title=` drift remain |
 | [MIGRATION_ROLLBACK_NOTES.md](./MIGRATION_ROLLBACK_NOTES.md) | Per-migration rollback for 0022–0027 |
+| [AI_ARCHITECTURE.md](./AI_ARCHITECTURE.md) · [AI_GATEWAY.md](./AI_GATEWAY.md) · [AI_PIPELINE.md](./AI_PIPELINE.md) | The AI layer as built. **Each has drifted from the code** — `AI_GATEWAY.md` documents a `raw` field on `ProviderResponse` that was deliberately removed, and says rate-limits are "not retried" when transient 429s are retried twice. Reconciling them is Phase 1 work; until then **§11 is authoritative, not these** |
+| [TRUTHFUL_AI.md](./TRUTHFUL_AI.md) | The AI-honesty contract §11.5's disclaimer tiers are built to satisfy |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) · [DATABASE.md](./DATABASE.md) · [API.md](./API.md) · [SECURITY.md](./SECURITY.md) | The product itself |
 | [decisions/](./decisions/) | 18 ADRs |
 | [archive/](./archive/) | Finished work. Not authoritative |
