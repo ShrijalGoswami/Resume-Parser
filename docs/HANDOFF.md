@@ -65,7 +65,7 @@ project stands.
 | **Working tree** | **clean** |
 | **Last milestone** | Authentication — **COMPLETE and browser-verified** (§8D) |
 | **Active milestone** | **AI Architecture & Multi-Provider Foundation** (§11) — planned; **implementation not started**. Rules: §9A · Roadmap: §11.3 · Progress: §13 |
-| **Backend tests** | **532 passed** (504 + 28 evaluation-harness tests, 6 Aug 2026) |
+| **Backend tests** | **574 passed** (532 + 42 fake-provider / golden-dataset tests, 6 Aug 2026) |
 | **Frontend tests** | **455 passed**, 33 files (450 + 5 export-attribution guards, 5 Aug 2026) |
 | **`tsc --noEmit`** | clean |
 | **`eslint .`** | **exactly 4 errors — all known debt** (§10 item 1). A 5th is a regression |
@@ -665,7 +665,7 @@ Existing product variables are unchanged: `SUPABASE_URL`,
 
 ### Verified
 
-- Backend **532** tests, frontend **455** tests, `tsc` clean, `next build`
+- Backend **574** tests, frontend **455** tests, `tsc` clean, `next build`
   succeeds across 40 routes — including the four policy routes and the five
   agent files (`robots.txt`, `sitemap.xml`, `llms.txt`, `humans.txt`,
   `.well-known/security.txt`), all of which prerender as static.
@@ -1477,6 +1477,27 @@ forbid the approach that will look obvious at the time.
     §11.3 and the progress table in §13 — not a new notes file, not a commit
     message, not chat history. A milestone that tracks itself anywhere else stops
     being trackable by the next session.
+12. **`FakeProvider` is the reference implementation of the provider contract —
+    permanent architecture, not testing infrastructure.**
+    `app/ai/providers/fake_provider.py` is a first-class provider used for
+    deterministic evaluation. It ships in `app/`, registers exactly like every
+    other provider, and is maintained to the same standard as Groq, OpenAI,
+    Gemini, Anthropic, OpenRouter and any local model — all of which must satisfy
+    **exactly the same contract it does**.
+
+    **Judge a new provider against `FakeProvider`, never against Groq.** Groq is
+    one vendor's behaviour that this codebase happened to grow around; the fake
+    is the contract stated deliberately. Measuring a newcomer against Groq is how
+    one vendor's quirks become the definition of "a provider".
+
+    **If a future provider needs something the interface does not offer, review
+    the interface first — not the fake.** Concretely: when a provider cannot be
+    implemented without changing `LLMProvider`, and `FakeProvider` could not
+    support that change, the change is almost certainly a vendor-specific
+    abstraction wearing a general name. Either the contract genuinely needs to
+    grow — in which case **`FakeProvider` grows with it, in the same commit** —
+    or the provider adapts. Weakening the fake to accommodate a vendor is how
+    provider-specific abstraction creeps back in after the work of removing it.
 
 ---
 
@@ -1611,10 +1632,11 @@ stay** — candidates list it on their résumés.
 `☐` not started · `◐` in progress · `☑` done and verified.
 
 ```
-Phase 0
+Phase 0  ── COMPLETE ──
 ☑ Evaluation Harness          6 Aug 2026 — app/ai/evaluation/ · 28 tests
-☐ Fake Provider
-☐ Golden Dataset
+☑ Fake Provider               6 Aug 2026 — app/ai/providers/fake_provider.py
+☑ Golden Dataset              6 Aug 2026 — app/ai/evaluation/golden/ · 6 cases
+                              Fake + dataset share 42 tests
 
 Phase 1
 ☐ Provider Bug Fixes
@@ -1766,6 +1788,19 @@ not relitigate them by accident.**
 | **D0.9** | **Only `AIError` is recorded as an observation.** Anything else propagates | §9A rule 9. A `TypeError` from a malformed case is a defect in the case, not a provider result, and recording it would poison the dataset |
 | **D0.10** | **`run_id` + `case_id` are the comparison keys** | Task 3 must issue **stable** `case_id`s: comparing two providers means joining their runs on `case_id`, so a regenerated id silently breaks every historical comparison |
 
+#### Phase 0 · Fake Provider + Golden Dataset (6 Aug 2026)
+
+| # | Decision | Why it binds later tasks |
+|---|---|---|
+| **D0.11** | **The fake is a normal provider** — `app/ai/providers/fake_provider.py`, one entry in `providers/registry.py`, one spec in `gateway/provider_registry.py`, one model in `model_registry.py`. `AI_PROVIDER=fake` then drives gateway → health → per-provider config → retry ladder → provider → usage tracker | §9A rule 3: a provider is "a subclass plus a registry entry". **The registry is the injection seam, not the harness** (D0.2) — a fake reached by a shortcut would make every later phase's evidence worthless |
+| **D0.11a** | **It is permanent architecture, not test scaffolding, and it is now the REFERENCE IMPLEMENTATION of the provider contract.** Promoted to a standing rule — **§9A rule 12** | Every future provider satisfies the same contract the fake does, and is judged against **the fake, not Groq**. If a provider cannot be built without changing `LLMProvider` in a way the fake could not support, the **interface** is reviewed first — that is the check that stops vendor-specific abstractions creeping back in |
+| **D0.12** | **The fake refuses to construct when `ENVIRONMENT=production`** | A fake that silently answers real customers is worse than an outage: the product would look like it was working while every candidate assessment was fabricated. §5A already forbids this for billing |
+| **D0.13** | **Its model is registered with NO pricing**, so `estimate_cost` returns `None` | A run reporting "$0.00 spent" reads as a real measurement. Unknown must stay unknown — the same rule §8A enforces for quota meters |
+| **D0.14** | **An unregistered prompt raises `AIConfigError`; the fake never invents an answer** | **This closed a real false green.** Several capability schemas (`GroqBatchAnalysis`) default *every* field, so a marker object VALIDATES — a batch case reported success while measuring nothing. `AIConfigError` is non-retryable, so a missing registration fails once instead of burning the ladder three times |
+| **D0.15** | **`fingerprint()` normalises the per-call injection nonce out of the prompt** | `untrusted.fence()` embeds fresh randomness on every render so a résumé cannot close its own fence. Without normalisation **no fenced capability could ever be prompt-keyed** — `batch_candidate` silently fell through to the marker above. Genuine prompt-text changes still change the fingerprint, which is what keeps §9A rule 6 detectable |
+| **D0.16** | **The dataset is `cases.json` — data, not code.** Adding a case is a JSON edit; the loader validates every `expected_output` against the **real production schema** and fails loudly on a duplicate id, unknown capability or unsatisfiable output | A dataset that silently loses a case reports a better pass rate than reality |
+| **D0.17** | **Coupling runs one way only:** the golden loader knows the fake exists (to register answers); the fake imports nothing from `app/ai/evaluation/`. Both directions are asserted over the **AST**, not the raw text | Two guards were first written as substring checks and fired on their own documentation. A guard that flags prose gets deleted for being noise |
+
 **A limitation recorded rather than worked around.** On failure
 `orchestrator.run` raises an `AIError` carrying no `AIExecution`, so
 provider/model/attempt counts are unavailable. The harness records the gateway's
@@ -1881,7 +1916,7 @@ itself it is closer to shipping than it is:
 Billing trigger (BILL-T1)     ░░░░░░░░░░  deliberately deferred (§5A)
 Enterprise activation         ░░░░░░░░░░  no code path at all (BILL-3)
 Reconciliation worker         ░░░░░░░░░░  table exists, nothing writes it (BILL-6)
-AI Architecture (§11)         █░░░░░░░░░  ACTIVE — Phase 0: 1 of 3 tasks done
+AI Architecture (§11)         ██░░░░░░░░  ACTIVE — Phase 0 COMPLETE (3/3); Phase 1 next
 RC checklist                  ░░░░░░░░░░  0 of 267 boxes ticked
 Production payments           ░░░░░░░░░░  none ever processed
 ```
@@ -1896,7 +1931,7 @@ Marketing / policy pages      ░░░░░░░░░░  built 4 Aug, never
 Product screens built 4–5 Aug ░░░░░░░░░░  drop zone, dialogs, Inbox states
 ```
 
-**Tests:** backend 532 · frontend 455 (33 files) · `tsc` clean · `next build`
+**Tests:** backend 574 · frontend 455 (33 files) · `tsc` clean · `next build`
 clean, 40 routes · eslint exactly 4 known errors.
 
 **The honest summary:** the server side is real and verified. The public surface
@@ -1933,7 +1968,7 @@ implemented **and** verified, never merely written.
 
 | Phase | Status | Notes |
 |--------|--------|-------|
-| **Phase 0** — Evaluation Harness · Fake Provider · Golden Dataset | In Progress | **Evaluation Harness ☑ 6 Aug 2026** (`app/ai/evaluation/`, 28 tests, offline). Fake Provider and Golden Dataset not started. R1 stays open until a dataset exists — the harness makes measurement *possible*, it does not measure anything yet |
+| **Phase 0** — Evaluation Harness · Fake Provider · Golden Dataset | **Complete** (6 Aug 2026) | 70 tests, ~1.3s, fully offline. `AI_PROVIDER=fake` drives the real stack end to end and the golden dataset runs 6/6 through it. **R1 is now measurable rather than closed** — a baseline can be captured; nothing has been compared yet, which is Phase 6's job |
 | **Phase 1** — Provider Bug Fixes · Disabled Provider · Retry Classification · Provider Validation · Default Model · Native JSON | Not Started | Closes C1–C6, C8, C9. Behaviour-visible narrowly; the Groq path is unchanged |
 | **Phase 2** — Credential Resolver · Local Provider · Local Runtime Override | Not Started | Closes C10 and delivers goal 5. Build the credential **seam**, not the BYO feature (C12) |
 | **Phase 3** — Capability Profiles · Intelligent Provider Selection · Token Budget Validation | Not Started | The only genuine design work in the milestone. Closes C7 and goal 2. **Gated on Phase 0's eval parity** |

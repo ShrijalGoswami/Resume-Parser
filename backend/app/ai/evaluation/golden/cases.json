@@ -1,0 +1,158 @@
+{
+  "_readme": [
+    "Golden evaluation dataset. DATA, NOT CODE — add a case by editing this file.",
+    "",
+    "case_id is STABLE AND IMMUTABLE. Provider comparisons join historical runs on",
+    "it, so renaming or renumbering one silently disconnects every past result that",
+    "referenced it. Add new ids freely; never reuse or rewrite an existing one.",
+    "A test pins the known ids: additions pass, renames and removals fail.",
+    "",
+    "Ids read <capability-short>-<nnn>. The number is a counter, not a rank.",
+    "",
+    "Every case must be a FAITHFUL reproduction of a real call: the same capability",
+    "and the same `variables` a capability service passes. `expected_output` must",
+    "satisfy that capability's real production schema — the loader validates this",
+    "and refuses to load a dataset that does not.",
+    "",
+    "difficulty: trivial | typical | hard  — how much judgement a correct answer",
+    "needs, NOT how long the prompt is.",
+    "category: free text, used to slice a run afterwards."
+  ],
+  "cases": [
+    {
+      "case_id": "copilot-001",
+      "capability": "recruiter_copilot",
+      "description": "Plain question about one candidate, fully answerable from the supplied context.",
+      "category": "grounded-qa",
+      "difficulty": "trivial",
+      "variables": {
+        "context": "Candidate: Priya Raman. Role: Senior Backend Engineer. ATS score 82. Eight years in payments infrastructure. Skills: Python, PostgreSQL, Kafka, Kubernetes. Notable: rebuilt a ledger service to 40k writes/sec.",
+        "available_sources": ["Candidate record", "Résumé"],
+        "history_text": "",
+        "question": "Is this candidate a fit for a senior backend role?",
+        "intent": "candidate_assessment"
+      },
+      "expected_output": {
+        "answer": "Priya Raman is a strong fit for a senior backend role. Eight years in payments infrastructure and a ledger rebuilt to 40k writes/sec are directly relevant to the requirement.",
+        "summary": "Strong fit — deep payments and distributed-systems experience.",
+        "strengths": ["Eight years in payments infrastructure", "Proven high-throughput ledger work", "Core stack matches: Python, PostgreSQL, Kafka"],
+        "weaknesses": ["No evidence of frontend or full-stack breadth"],
+        "recommendations": ["Advance to a systems-design interview", "Probe the ledger rebuild for depth of ownership"],
+        "confidence": 82,
+        "reasoning_summary": "Grounded in the candidate record and résumé supplied in context.",
+        "followups": ["What were the failure modes of the ledger rebuild?", "How does she compare to the other shortlisted candidates?"]
+      },
+      "metadata": {"grounded": true}
+    },
+    {
+      "case_id": "copilot-002",
+      "capability": "recruiter_copilot",
+      "description": "Question the supplied context cannot answer — the honest reply is to say so, not to guess.",
+      "category": "grounded-qa",
+      "difficulty": "hard",
+      "variables": {
+        "context": "Candidate: Priya Raman. Role: Senior Backend Engineer. ATS score 82.",
+        "available_sources": ["Candidate record"],
+        "history_text": "",
+        "question": "What were her salary expectations in her last role?",
+        "intent": "candidate_assessment"
+      },
+      "expected_output": {
+        "answer": "The candidate record does not contain salary expectations, so I cannot answer that from your data.",
+        "summary": "Not answerable from the available sources.",
+        "strengths": [],
+        "weaknesses": [],
+        "recommendations": ["Ask the candidate directly", "Record compensation expectations on the candidate profile"],
+        "confidence": 0,
+        "reasoning_summary": "No compensation data in the supplied context.",
+        "followups": ["What is in her record today?"]
+      },
+      "metadata": {"grounded": true, "tests": "refusal-under-missing-data"}
+    },
+    {
+      "case_id": "resume-analysis-001",
+      "capability": "resume_analysis",
+      "description": "Explanation layer over a deterministic ATS score. The model must explain, never re-score.",
+      "category": "explanation",
+      "difficulty": "typical",
+      "variables": {
+        "resume_json": "{\"name\": \"Priya Raman\", \"skills\": [\"Python\", \"PostgreSQL\", \"Kafka\", \"Kubernetes\"], \"experience\": [{\"role\": \"Senior Backend Engineer\", \"company\": \"Ledgerworks\", \"description\": [\"Rebuilt the core ledger to sustain 40k writes/sec\"]}], \"education\": [{\"degree\": \"BE Computer Science\", \"institution\": \"Anna University\"}]}",
+        "ats_score": 82,
+        "breakdown_json": "{\"keywords\": 22, \"formatting\": 19, \"experience\": 23, \"skills\": 18}"
+      },
+      "expected_output": {
+        "candidate_summary": "A senior backend engineer with eight years in payments infrastructure, strongest in high-throughput data systems. The résumé is well structured and keyword-dense for backend roles.",
+        "strengths": ["Demonstrated high-throughput systems work", "Clear, quantified achievements", "Core backend stack is current"],
+        "areas_for_improvement": ["No public links or portfolio", "Education section is sparse"],
+        "career_recommendations": ["Add measurable outcomes to every role, not just the most recent", "Include links to talks or open-source work"],
+        "interview_readiness": "Ready for a senior systems-design interview; prepare depth on the ledger rebuild.",
+        "recommended_roles": ["Senior Backend Engineer", "Staff Engineer, Platform", "Payments Infrastructure Engineer"]
+      },
+      "metadata": {"scores_are_deterministic": true}
+    },
+    {
+      "case_id": "job-matching-001",
+      "capability": "job_matching",
+      "description": "Résumé against a JD with a genuine gap, so missing_skills must not be empty.",
+      "category": "matching",
+      "difficulty": "typical",
+      "variables": {
+        "job_description": "Senior Backend Engineer. Required: Python, PostgreSQL, Kubernetes, and production experience with Go. Nice to have: Kafka.",
+        "resume_json": "{\"name\": \"Priya Raman\", \"skills\": [\"Python\", \"PostgreSQL\", \"Kafka\", \"Kubernetes\"], \"experience\": [{\"role\": \"Senior Backend Engineer\", \"company\": \"Ledgerworks\", \"description\": [\"Rebuilt the core ledger to sustain 40k writes/sec\"]}]}"
+      },
+      "expected_output": {
+        "matching_skills": ["Python", "PostgreSQL", "Kubernetes", "Kafka"],
+        "missing_skills": ["Go"],
+        "experience_relevance": "Highly relevant: eight years of backend work with direct high-throughput ledger ownership.",
+        "relevant_projects": ["Core ledger rebuild to 40k writes/sec"],
+        "less_relevant_projects": [],
+        "candidate_strengths": ["Deep payments and distributed-systems experience", "Quantified delivery", "Stack overlap on three of four required skills"],
+        "areas_for_improvement": ["No production Go experience evidenced", "No exposure to the team's Go services"],
+        "hiring_recommendation": "Recommend Interview",
+        "recommendation_explanation": "Strong on three of four required skills; the Go gap is the only substantive risk and is learnable for an engineer at this level."
+      },
+      "metadata": {"tests": "gap-must-be-reported"}
+    },
+    {
+      "case_id": "batch-candidate-001",
+      "capability": "batch_candidate",
+      "description": "The single JD-aware analysis behind batch ranking — the product's main intake path.",
+      "category": "intake",
+      "difficulty": "typical",
+      "variables": {
+        "job_description": "Backend Engineer. Required: Python, PostgreSQL. Nice to have: Kubernetes.",
+        "resume_json": "{\"name\": \"Arun Mehta\", \"skills\": [\"Python\", \"PostgreSQL\", \"Django\"], \"experience\": [{\"role\": \"Backend Engineer\", \"company\": \"Cartwheel\", \"description\": [\"Built order-management APIs serving 2M requests/day\"]}]}"
+      },
+      "expected_output": {
+        "candidate_summary": "A backend engineer with solid Python and PostgreSQL experience and proven API delivery at moderate scale.",
+        "matching_skills": ["Python", "PostgreSQL"],
+        "missing_skills": ["Kubernetes"],
+        "relevant_projects": ["Order-management APIs serving 2M requests/day"],
+        "less_relevant_projects": [],
+        "strengths": ["Directly matching core stack", "Quantified API scale"],
+        "weaknesses": ["No container orchestration evidenced"],
+        "experience_relevance": "Directly relevant to the required backend responsibilities.",
+        "hiring_recommendation": "Recommend Interview",
+        "recommendation_explanation": "Meets both required skills with quantified delivery; the Kubernetes gap is a nice-to-have only.",
+        "interview_questions": ["How did you handle schema migrations on the order tables?", "Walk through a production incident you owned."]
+      },
+      "metadata": {}
+    },
+    {
+      "case_id": "agent-reasoning-001",
+      "capability": "agent_reasoning",
+      "description": "Prioritise detected pipeline situations into a recruiter briefing.",
+      "category": "prioritisation",
+      "difficulty": "trivial",
+      "variables": {
+        "situations": "- [urgent] Offer expiring in 24h — Priya Raman has an unaccepted offer expiring tomorrow\n- [high] Stalled candidate — Arun Mehta has been in Interview for 14 days with no activity\n- [medium] Unreviewed pile — 12 new candidates on Senior Backend Engineer"
+      },
+      "expected_output": {
+        "headline": "3 items need attention, 1 urgent",
+        "priorities": ["Chase the expiring offer for Priya Raman", "Unblock Arun Mehta's stalled interview", "Review the 12 new Senior Backend Engineer candidates"],
+        "summary": "One offer expires within 24 hours and is the only irreversible item; the stalled interview is the next-most costly to leave. The unreviewed pile is routine."
+      },
+      "metadata": {"tests": "ordering-by-irreversibility"}
+    }
+  ]
+}

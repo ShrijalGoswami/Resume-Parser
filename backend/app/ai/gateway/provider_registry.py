@@ -79,9 +79,14 @@ def _ensure_seeded() -> None:
     from app.ai.providers.groq_provider import GroqProvider
     from app.ai.providers.gemini_provider import GeminiProvider
     from app.ai.providers.anthropic_provider import AnthropicProvider
+    from app.ai.providers.fake_provider import FakeProvider
     from app.ai.providers.openai_compat import KimiProvider, OpenAIProvider, OpenRouterProvider
 
-    for cls in (GroqProvider, GeminiProvider, AnthropicProvider,
+    # The fake is specced like any other provider. Without a spec here the
+    # gateway could not resolve a model for it and `_role_model()` would fall
+    # through to AI_DEFAULT_MODEL — which is a Groq model name (C4), i.e. the
+    # fake would report itself as answering with llama-3.3-70b.
+    for cls in (GroqProvider, GeminiProvider, AnthropicProvider, FakeProvider,
                 OpenAIProvider, OpenRouterProvider, KimiProvider):
         register_provider_spec(_spec_from_class(cls))
     # Non-LLM embeddings provider (no completion class) — declared inline.

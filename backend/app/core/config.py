@@ -192,6 +192,19 @@ class Settings(BaseSettings):
     AI_CAPABILITY_MODELS: dict = {}
     AI_ENABLE_CAPABILITY_ROUTING: bool = False
 
+    # ── Fake provider (offline evaluation — app/ai/providers/fake_provider) ──
+    # Selected with AI_PROVIDER=fake. These pick its behaviour WITHOUT editing
+    # provider code, so a reviewer can reproduce a timeout or a malformed-JSON
+    # response from the environment alone. Ignored unless the fake is selected,
+    # and the provider refuses to construct at all when ENVIRONMENT=production.
+    #   AI_FAKE_BEHAVIOUR: success | invalid_json | schema_mismatch | empty |
+    #                      unicode_edge | timeout | rate_limit | quota |
+    #                      provider_error | config_error
+    AI_FAKE_BEHAVIOUR: str = "success"
+    AI_FAKE_LATENCY_MS: int = 0               # simulated latency per call
+    AI_FAKE_PROMPT_TOKENS: int = 0            # 0 → derive deterministically from length
+    AI_FAKE_COMPLETION_TOKENS: int = 0        # 0 → derive deterministically from length
+
     # ── Integration Platform (V6 / Sprint 11) ────────────────────────────────
     # Fernet key used to encrypt integration credentials (OAuth refresh tokens are
     # NEVER stored in plaintext). If unset, a stable key is derived from the JWT

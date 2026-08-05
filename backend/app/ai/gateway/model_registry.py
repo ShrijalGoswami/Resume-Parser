@@ -102,6 +102,12 @@ def _seed() -> None:
         # ── Local / dependency-free embedding ─────────────────────────────
         ModelSpec("hashing-v1", "hashing", purpose="embeddings", cost_tier="cheap",
                   supports_json=False, supports_embeddings=True, dimensions=1536),
+        # ── Offline evaluation (app/ai/providers/fake_provider.py) ────────
+        # Deliberately NO pricing: `estimate_cost` then returns None, so an
+        # evaluation run reports cost as UNKNOWN rather than as zero. A fake
+        # that reported "$0.00 spent" would read as a real measurement.
+        ModelSpec("fake-deterministic-v1", "fake", cost_tier="cheap",
+                  context_window=131072, max_output_tokens=32768),
     ]
     for s in seeds:
         register_model(s)
