@@ -65,7 +65,7 @@ project stands.
 | **Working tree** | **clean** |
 | **Last milestone** | Authentication — **COMPLETE and browser-verified** (§8D) |
 | **Active milestone** | **AI Architecture & Multi-Provider Foundation** (§11) — planned; **implementation not started**. Rules: §9A · Roadmap: §11.3 · Progress: §13 |
-| **Backend tests** | **504 passed** (493 + 11 export-attribution guards, 5 Aug 2026) |
+| **Backend tests** | **532 passed** (504 + 28 evaluation-harness tests, 6 Aug 2026) |
 | **Frontend tests** | **455 passed**, 33 files (450 + 5 export-attribution guards, 5 Aug 2026) |
 | **`tsc --noEmit`** | clean |
 | **`eslint .`** | **exactly 4 errors — all known debt** (§10 item 1). A 5th is a regression |
@@ -665,7 +665,7 @@ Existing product variables are unchanged: `SUPABASE_URL`,
 
 ### Verified
 
-- Backend **504** tests, frontend **455** tests, `tsc` clean, `next build`
+- Backend **532** tests, frontend **455** tests, `tsc` clean, `next build`
   succeeds across 40 routes — including the four policy routes and the five
   agent files (`robots.txt`, `sitemap.xml`, `llms.txt`, `humans.txt`,
   `.well-known/security.txt`), all of which prerender as static.
@@ -1612,7 +1612,7 @@ stay** — candidates list it on their résumés.
 
 ```
 Phase 0
-☐ Evaluation Harness
+☑ Evaluation Harness          6 Aug 2026 — app/ai/evaluation/ · 28 tests
 ☐ Fake Provider
 ☐ Golden Dataset
 
@@ -1746,6 +1746,35 @@ bypass it and need their own — **Decision Intelligence**
 | 5 | Candidate-facing notice | **Out of scope** — candidates never touch the product and the LL144 obligation is the employer's. Tracked, not built, alongside the unperformed bias audit already recorded in `/llms.txt` |
 
 
+### 11.6 Decisions taken during implementation
+
+**A running log. Append as tasks complete — later tasks depend on these and must
+not relitigate them by accident.**
+
+#### Phase 0 · Evaluation Harness (6 Aug 2026) — `app/ai/evaluation/`
+
+| # | Decision | Why it binds later tasks |
+|---|---|---|
+| **D0.1** | **The harness WRAPS the orchestrator; it never hooks inside it.** It calls `orchestrator.run(...)` exactly as a capability service does and reads the `AIExecution` already returned | §9A rule 1. The cheapest way to break that rule is "just one" instrumentation hook. Any future instrumentation goes outside too |
+| **D0.2** | **The injection seam is `runner`**, a callable defaulting to `orchestrator.run`. Tests pass a stub | **Task 2 (Fake Provider) slots in one layer LOWER** — at the provider registry — and the harness will not notice. Do not wire the fake into the harness; wire it into the registry |
+| **D0.3** | **Records carry facts, never verdicts.** No score, no `passed`, no ranking on `EvalRecord` or `EvalReport` | **Task 3 (Golden Dataset) brings the first scorer.** Scoring is a Protocol (`scoring.py`) applied *after* a run, over stored records — so re-scoring never re-runs model calls, which is what stops people avoiding a change of mind because it costs tokens. A test asserts no concrete scorer ships |
+| **D0.4** | **Persistence is append-only JSONL, gitignored** (`backend/eval-runs/`), not a database table | No migration is forced before Phase 0 can finish — **Phase 4 owns `0028`**. Records contain model output, which is derived from candidate résumés, so committing them would put candidate-derived text into version control where it outlives a deletion request |
+| **D0.5** | **`json_valid` is tri-state.** `None` = no response was produced; `False` = the model answered and it was not JSON; a **schema mismatch records `True`** — the JSON parsed, the shape was wrong | This is the classification the harness exists for. Collapsing it makes a provider that times out indistinguishable from one that cannot follow a format instruction, and those have opposite fixes. Pinned by a test, and the guard was watched failing |
+| **D0.6** | **Token counts are recorded; cost is not.** No price is looked up, stored or implied | Cost is Phase 4. Token counts are facts the execution already carries, and "provider B was slower" is unreadable without them |
+| **D0.7** | **`output_bytes` measures the serialized *validated object*, not raw provider text** | `run()` does not expose raw text and D0.1 forbids reaching in for it. It is a faithful measure of what business logic received, and a proxy — not a substitute — for response size |
+| **D0.8** | **`EvalRecord.schema_version`** is stamped on every record | A field whose *meaning* changes must not be silently compared across runs. Bump it when semantics move, never when a field is merely added |
+| **D0.9** | **Only `AIError` is recorded as an observation.** Anything else propagates | §9A rule 9. A `TypeError` from a malformed case is a defect in the case, not a provider result, and recording it would poison the dataset |
+| **D0.10** | **`run_id` + `case_id` are the comparison keys** | Task 3 must issue **stable** `case_id`s: comparing two providers means joining their runs on `case_id`, so a regenerated id silently breaks every historical comparison |
+
+**A limitation recorded rather than worked around.** On failure
+`orchestrator.run` raises an `AIError` carrying no `AIExecution`, so
+provider/model/attempt counts are unavailable. The harness records the gateway's
+*intended* primary and labels it `provider_source="intended"` — never passing an
+intention off as an observation. **Making the orchestrator attach execution
+metadata to its exceptions would fix this properly and is a candidate for
+Phase 1**; it was not done here because this task may not modify the
+orchestrator.
+
 ---
 
 ## 11A. Billing — PAUSED, and what unpauses it
@@ -1852,7 +1881,7 @@ itself it is closer to shipping than it is:
 Billing trigger (BILL-T1)     ░░░░░░░░░░  deliberately deferred (§5A)
 Enterprise activation         ░░░░░░░░░░  no code path at all (BILL-3)
 Reconciliation worker         ░░░░░░░░░░  table exists, nothing writes it (BILL-6)
-AI Architecture (§11)         ░░░░░░░░░░  ACTIVE — planned, 0 of 6 phases started
+AI Architecture (§11)         █░░░░░░░░░  ACTIVE — Phase 0: 1 of 3 tasks done
 RC checklist                  ░░░░░░░░░░  0 of 267 boxes ticked
 Production payments           ░░░░░░░░░░  none ever processed
 ```
@@ -1867,7 +1896,7 @@ Marketing / policy pages      ░░░░░░░░░░  built 4 Aug, never
 Product screens built 4–5 Aug ░░░░░░░░░░  drop zone, dialogs, Inbox states
 ```
 
-**Tests:** backend 504 · frontend 455 (33 files) · `tsc` clean · `next build`
+**Tests:** backend 532 · frontend 455 (33 files) · `tsc` clean · `next build`
 clean, 40 routes · eslint exactly 4 known errors.
 
 **The honest summary:** the server side is real and verified. The public surface
@@ -1904,7 +1933,7 @@ implemented **and** verified, never merely written.
 
 | Phase | Status | Notes |
 |--------|--------|-------|
-| **Phase 0** — Evaluation Harness · Fake Provider · Golden Dataset | Not Started | The prerequisite for everything after it. No eval harness exists today, so R1 (silent quality regression on a provider switch) is currently unmanaged |
+| **Phase 0** — Evaluation Harness · Fake Provider · Golden Dataset | In Progress | **Evaluation Harness ☑ 6 Aug 2026** (`app/ai/evaluation/`, 28 tests, offline). Fake Provider and Golden Dataset not started. R1 stays open until a dataset exists — the harness makes measurement *possible*, it does not measure anything yet |
 | **Phase 1** — Provider Bug Fixes · Disabled Provider · Retry Classification · Provider Validation · Default Model · Native JSON | Not Started | Closes C1–C6, C8, C9. Behaviour-visible narrowly; the Groq path is unchanged |
 | **Phase 2** — Credential Resolver · Local Provider · Local Runtime Override | Not Started | Closes C10 and delivers goal 5. Build the credential **seam**, not the BYO feature (C12) |
 | **Phase 3** — Capability Profiles · Intelligent Provider Selection · Token Budget Validation | Not Started | The only genuine design work in the milestone. Closes C7 and goal 2. **Gated on Phase 0's eval parity** |

@@ -236,3 +236,10 @@ __marimo__/
 # Generated OpenAPI snapshots — regenerate with the app, never commit.
 openapi.tmp.json
 openapi*.tmp.json
+
+# AI evaluation runs (app/ai/evaluation → JsonlEvalStore). Artifacts of a run,
+# not source. They also carry model OUTPUT, which is derived from candidate
+# résumés, so committing them would put candidate-derived text into version
+# control — where it outlives any deletion request.
+backend/eval-runs/
+eval-runs/
