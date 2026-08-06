@@ -37,7 +37,7 @@ project stands.
 > owning a second copy of it. Preceded by AI discoverability (§8C).
 >
 > **The active milestone is AI Architecture & Multi-Provider Foundation (§11).
-> Phase 0 is complete (3/3) and Phase 1 is in progress (4 of 6).** The plan, the
+> Phase 0 is complete (3/3) and Phase 1 is in progress (5 of 6).** The plan, the
 > roadmap and the rules are recorded in §11, §11.3 and §9A. Implementation
 > proceeds **task by task**, each reviewed before the next begins, with §11.3 and
 > §13 updated as each completes.
@@ -61,18 +61,18 @@ project stands.
 | | |
 |---|---|
 | **Branch** | `manus-ui-v1` |
-| **Latest code commit** | `fbc07b2` — *feat(ai): validate provider configuration* (§11.3 Phase 1 task 4; decisions D1.21–D1.27), on top of `136340b` *refactor(ai): centralize retry classification* (task 3; D1.13–D1.20), `561003a` *fix(ai): prevent routing to disabled providers* (task 2; D1.7–D1.12) and `913426f` *refactor(ai): centralize provider error classification* (task 1; D1.1–D1.6). **HEAD is the docs commit on top of them** — this row deliberately names the last commit that changed behaviour, because a row naming its own commit can never be written accurately |
+| **Latest code commit** | `e0889df` — *refactor(ai): make model resolution deterministic* (§11.3 Phase 1 task 5; decisions D1.28–D1.35), on top of `fbc07b2` *feat(ai): validate provider configuration* (task 4; D1.21–D1.27), `136340b` *refactor(ai): centralize retry classification* (task 3; D1.13–D1.20), `561003a` *fix(ai): prevent routing to disabled providers* (task 2; D1.7–D1.12) and `913426f` *refactor(ai): centralize provider error classification* (task 1; D1.1–D1.6). **HEAD is the docs commit on top of them** — this row deliberately names the last commit that changed behaviour, because a row naming its own commit can never be written accurately |
 | **Working tree** | **clean** |
 | **Last milestone** | Authentication — **COMPLETE and browser-verified** (§8D) |
-| **Active milestone** | **AI Architecture & Multi-Provider Foundation** (§11) — **Phase 0 complete (3/3), Phase 1 in progress (4/6)**. Rules: §9A · Roadmap: §11.3 · Progress: §13 |
-| **Backend tests** | **714 passed** (682 + 32 provider-validation, 6 Aug 2026) |
+| **Active milestone** | **AI Architecture & Multi-Provider Foundation** (§11) — **Phase 0 complete (3/3), Phase 1 in progress (5/6)**. Rules: §9A · Roadmap: §11.3 · Progress: §13 |
+| **Backend tests** | **736 passed** (714 + 22 model-resolution, 6 Aug 2026) |
 | **Frontend tests** | **455 passed**, 33 files (450 + 5 export-attribution guards, 5 Aug 2026) |
 | **`tsc --noEmit`** | clean |
 | **`eslint .`** | **exactly 4 errors — all known debt** (§10 item 1). A 5th is a regression |
 | **`next build`** | succeeds; 40 routes (36 static, 4 dynamic) |
 
 > **On the test counts.** Frontend went 363 → 410 → 442 → 450 → 455; backend
-> 493 → 504 → 574 → 611 → 627 → 682 → 714. The discoverability milestone added `tests/discoverability.test.ts`
+> 493 → 504 → 574 → 611 → 627 → 682 → 714 → 736. The discoverability milestone added `tests/discoverability.test.ts`
 > (30) and matcher-coverage assertions in `tests/proxy.test.ts` (17); the auth
 > milestone added `tests/password-policy.test.ts` (9) and
 > `tests/auth-password-ux.test.tsx` (30). No backend code changed in either, so
@@ -83,15 +83,16 @@ project stands.
 > (`tests/test_provider_bug_fixes.py`), **+16** for task 2
 > (`tests/test_disabled_provider.py`) and **+55** for task 3
 > (`tests/test_retry_classification.py`, plus five net in the task-1 file that
-> D1.4 required C1 to update) and **+32** for task 4
-> (`tests/test_provider_validation.py`).
+> D1.4 required C1 to update), **+32** for task 4
+> (`tests/test_provider_validation.py`) and **+22** for task 5
+> (`tests/test_model_resolution.py`).
 
 ### Working tree
 
 **Clean.** Everything through the authentication UX milestone is committed, and
 so is `GAB-D1` (§8E) — the model vendor's name removed from every exported PDF,
 plus the two guards that now keep it out. So is all of Phase 0, and so are
-**Phase 1 tasks 1, 2, 3 and 4** (`913426f`, `561003a`, `136340b`, `fbc07b2`) —
+**Phase 1 tasks 1–5** (`913426f`, `561003a`, `136340b`, `fbc07b2`, `e0889df`) —
 each committed on its own, with its own decisions recorded in §11.6.
 
 One thing to expect rather than rediscover: `docs/qa/RUNTIME_VALIDATION_A4.md`
@@ -679,7 +680,7 @@ Existing product variables are unchanged: `SUPABASE_URL`,
 
 ### Verified
 
-- Backend **714** tests, frontend **455** tests, `tsc` clean, `next build`
+- Backend **736** tests, frontend **455** tests, `tsc` clean, `next build`
   succeeds across 40 routes — including the four policy routes and the five
   agent files (`robots.txt`, `sitemap.xml`, `llms.txt`, `humans.txt`,
   `.well-known/security.txt`), all of which prerender as static.
@@ -1645,6 +1646,55 @@ forbid the approach that will look obvious at the time.
     every other test called the validator directly. **Validation needs a guard on
     its wiring, not only on its logic.**
 
+16. **Model resolution has exactly one authoritative decision path. Providers
+    expose facts; model resolution decides precedence. Providers never decide
+    precedence.**
+
+    Added 6 Aug 2026 with Phase 1 task 5 (`e0889df`). `gateway._role_model()` is
+    that path. A provider declares the models it serves per role; which
+    declaration — or which piece of configuration — actually wins is decided
+    there, and nowhere else. No provider and no caller re-orders the ladder.
+
+    **Three properties this must never lose:**
+
+    - **Unknown models fail loudly.** A model is never invented and never
+      substituted. When no rule applies, resolution raises. A guessed name
+      arrives at a real vendor as *their* error, which is the hardest kind to
+      trace back to our own configuration.
+    - **Provider defaults never leak across providers.** A model declared by one
+      provider belongs to that provider. A provider with an incomplete role map
+      gets a refusal, never a neighbour's model name. That was C4, and the global
+      `AI_DEFAULT_MODEL` behind it is removed rather than repointed.
+    - **Call-site intent has the highest precedence.** When a caller pins both
+      provider and model, that is the most specific instruction in the system: it
+      wins outright and nothing is resolved on its behalf. That was C5 — a config
+      file beat an explicit `model=`, and the execution record then showed the
+      config's answer, so the override was invisible as well as ignored.
+
+    The ladder, most specific first: call-site `model=` → capability routing →
+    per-provider `default_model` → per-role env override → the provider's own
+    `role_models` → raise. Every selection records **which rung applied**
+    (`ModelSelection.source`), because "the model is wrong" is unanswerable
+    without knowing which of five settings produced it, and those five are edited
+    by different people in different places.
+
+    **If a future provider cannot fit this precedence ladder, review the
+    abstraction before adding provider-specific routing.** The ladder is
+    deliberately short and provider-neutral; a vendor that appears to need its own
+    rung is nearly always asking for a *fact* it has not declared yet. Add the
+    fact. A branch keyed on a provider's name is forbidden by rule 3.
+
+    This is the third rule of the same shape — 13 for what a failure *is*, 14 for
+    what is *done* about it, 15 for the *configuration* around it, and now 16 for
+    *which model*. In every case the provider states facts and something else,
+    once, decides what they mean.
+
+    Enforced rather than stated: `tests/test_model_resolution.py` walks the
+    ladder one rung at a time, asserts C5 on the model the provider **actually
+    received** (the defect was that the selection and the call disagreed, so
+    asserting on the selection alone would have passed against the broken code),
+    and pins the refusal C4 replaced the leak with.
+
 ---
 
 ## 10. Known technical debt
@@ -1675,7 +1725,7 @@ Items 4, 7 and 8 are tracked with three more in
 
 > ## IMPLEMENTATION IS UNDER WAY — §11.3 and §13 are the status of record.
 >
-> **Phase 0 is complete (3/3) and Phase 1 is in progress (4/6).** This banner
+> **Phase 0 is complete (3/3) and Phase 1 is in progress (5/6).** This banner
 > read "IMPLEMENTATION HAS NOT STARTED" until 6 Aug 2026; it was left behind by
 > the session that finished Phase 0 and is corrected here rather than trusted.
 > `GAB-D1` (§8E) remains **outside** the milestone — a governance gate failure
@@ -2177,7 +2227,7 @@ itself it is closer to shipping than it is:
 Billing trigger (BILL-T1)     ░░░░░░░░░░  deliberately deferred (§5A)
 Enterprise activation         ░░░░░░░░░░  no code path at all (BILL-3)
 Reconciliation worker         ░░░░░░░░░░  table exists, nothing writes it (BILL-6)
-AI Architecture (§11)         ████░░░░░░  ACTIVE — Phase 0 COMPLETE (3/3); Phase 1 (4/6)
+AI Architecture (§11)         █████░░░░░  ACTIVE — Phase 0 COMPLETE (3/3); Phase 1 (5/6)
 RC checklist                  ░░░░░░░░░░  0 of 267 boxes ticked
 Production payments           ░░░░░░░░░░  none ever processed
 ```
@@ -2192,7 +2242,7 @@ Marketing / policy pages      ░░░░░░░░░░  built 4 Aug, never
 Product screens built 4–5 Aug ░░░░░░░░░░  drop zone, dialogs, Inbox states
 ```
 
-**Tests:** backend 714 · frontend 455 (33 files) · `tsc` clean · `next build`
+**Tests:** backend 736 · frontend 455 (33 files) · `tsc` clean · `next build`
 clean, 40 routes · eslint exactly 4 known errors.
 
 **The honest summary:** the server side is real and verified. The public surface
@@ -2230,7 +2280,7 @@ implemented **and** verified, never merely written.
 | Phase | Status | Notes |
 |--------|--------|-------|
 | **Phase 0** — Evaluation Harness · Fake Provider · Golden Dataset | **Complete** (6 Aug 2026) | 70 tests, ~1.3s, fully offline. `AI_PROVIDER=fake` drives the real stack end to end and the golden dataset runs 6/6 through it. **R1 is now measurable rather than closed** — a baseline can be captured; nothing has been compared yet, which is Phase 6's job |
-| **Phase 1** — Shared Provider Classifier · Disabled Provider · Retry Classification · Provider Validation · Default Model · Native JSON | **In Progress** (4 of 6 complete) | Closes C1–C6, C8, C9. Behaviour-visible narrowly; **the Groq path is unchanged throughout**. **Shared Provider Classifier** `913426f` — C2 + C8, 37 tests, §9A rule 13. **Disabled Provider Fix** `561003a` — C3, 16 tests, **R8 retired**. **Retry Classification** `136340b` — C1, 50 tests, **R5 retired**, §9A rule 14. **Provider Validation** `fbc07b2` — **C9, 32 tests, §9A rule 15**. Each was committed on its own and each had its guards watched failing against the pre-fix code. Backend 574 → 611 → 627 → 682 → 714. Next: **Default Model Fix (C4, C5)**, not started |
+| **Phase 1** — Shared Provider Classifier · Disabled Provider · Retry Classification · Provider Validation · Default Model Resolution · Native JSON | **In Progress** (5 of 6 complete) | Closes C1–C6, C8, C9. Behaviour-visible narrowly; **the Groq path is unchanged throughout**. **Shared Provider Classifier** `913426f` — C2 + C8, 37 tests, §9A rule 13. **Disabled Provider Fix** `561003a` — C3, 16 tests, **R8 retired**. **Retry Classification** `136340b` — C1, 50 tests, **R5 retired**, §9A rule 14. **Provider Validation** `fbc07b2` — C9, 32 tests, §9A rule 15. **Default Model Resolution** `e0889df` — **C4 + C5, 22 tests, §9A rule 16**. Each was committed on its own and each had its guards watched failing against the pre-fix code. Backend 574 → 611 → 627 → 682 → 714 → 736. Next: **Native JSON Support (C6)**, not started |
 | **Phase 2** — Credential Resolver · Local Provider · Local Runtime Override | Not Started | Closes C10 and delivers goal 5. Build the credential **seam**, not the BYO feature (C12) |
 | **Phase 3** — Capability Profiles · Intelligent Provider Selection · Token Budget Validation | Not Started | The only genuine design work in the milestone. Closes C7 and goal 2. **Gated on Phase 0's eval parity** |
 | **Phase 4** — Usage Persistence · AI Provenance · Cost Tracking | Not Started | Migration 0028, additive and nullable. **Phase 5 depends on this** |
