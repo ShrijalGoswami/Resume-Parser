@@ -26,6 +26,12 @@ from app.ai.gateway.usage import usage_tracker
 from app.ai.gateway.health import health_manager, HealthState
 from app.ai.gateway.model_registry import ModelSpec, get_model, register_model
 from app.ai.gateway.provider_registry import ProviderSpec, get_provider_spec
+from app.ai.gateway.validation import (
+    AIConfigurationError,
+    ConfigProblem,
+    check_provider_configuration,
+    validate_ai_configuration,
+)
 
 __all__ = [
     "ModelRole",
@@ -48,4 +54,8 @@ __all__ = [
     "register_model",
     "ProviderSpec",
     "get_provider_spec",
+    "AIConfigurationError",
+    "ConfigProblem",
+    "check_provider_configuration",
+    "validate_ai_configuration",
 ]

@@ -180,6 +180,26 @@ async def custom_swagger_ui_html():
     )
 
 
+def _llm_dependency_state() -> str:
+    """`configured` · `misconfigured` · `not_configured` — three distinct answers.
+
+    `misconfigured` is the one C9 added, and the distinction is operational: a
+    missing API key means AI is switched off and everything else works, while a
+    misconfiguration means the configuration names something that cannot work.
+    Reporting both as `not_configured` sent an operator looking for a key that
+    was never the problem.
+
+    Liveness is deliberately NOT folded in here. Whether a provider is answering
+    right now is `provider_health` on the admin snapshot; a probe that fails on a
+    provider's temporary outage is worse than no probe.
+    """
+    from app.ai.gateway.validation import FATAL, check_provider_configuration
+
+    if any(p.severity == FATAL for p in check_provider_configuration()):
+        return "misconfigured"
+    return "configured" if settings.is_llm_configured else "not_configured"
+
+
 # GET is the documented health contract. HEAD is registered separately and kept
 # out of the schema: a single handler serving both methods made FastAPI derive an
 # operationId per method from the same function name, colliding ("Duplicate
@@ -206,7 +226,7 @@ async def health_check(check: str | None = None):
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "uptime_seconds": uptime_seconds,
         "dependencies": {
-            "llm": "configured" if settings.is_llm_configured else "not_configured",
+            "llm": _llm_dependency_state(),
             "persistence": "configured" if supabase_available() else "not_configured",
             "auth": "configured" if settings.is_auth_configured else "not_configured",
         },

@@ -1684,7 +1684,7 @@ Each was verified in code, not inferred. The IDs are referenced by the roadmap.
 | **C6** | **No provider requests native JSON mode.** `can_json` / `supports_json` are declared everywhere and read by **nothing**. Structured output is prompt-instructed, then retried up to 6× with an identical prompt and no repair instruction |
 | **C7** | **Token budgets live in business logic and are never validated against the model.** `_MAX_TOKENS = 4096` is hardcoded in the comparison and interview services; nothing checks it against the model's declared `max_output_tokens` |
 | **C8** | **`is_llm_configured` is `bool(GROQ_API_KEY)`.** Run OpenAI-only and `/health` reports `llm: not_configured` while serving AI correctly |
-| **C9** | **Nothing validates `AI_PROVIDER` or the fallback chain at startup.** Capability routing gets fatal validation; the primary provider gets none |
+| **C9** | ~~**Nothing validates `AI_PROVIDER` or the fallback chain at startup.**~~ **CLOSED 6 Aug 2026** — `app/ai/gateway/validation.py`. Capability routing gets fatal validation; the primary provider now gets it too |
 | **C10** | **Credentials are read from process-global settings inside each provider**, and `GroqProvider._client` is a class attribute cached for process lifetime — key rotation needs a restart. This is the line that blocks BYO AI |
 | **C11** | **Embeddings have provenance and nothing enforces it at read time.** `SupabaseVectorStore.search()` compares the query vector against every stored vector regardless of which model produced it; auto-index fires only when a campaign has **zero** embeddings. Because `hashing` and `text-embedding-3-small` are both 1536-dim, switching produces same-length, semantically unrelated vectors — no error, just meaningless cosine. Mitigated to ~28% of the score by hybrid ranking (`0.72 × lexical + 0.28 × embedding`), which is worse in one way: nobody notices |
 | **C12** | **`byo_ai` — "Bring Your Own AI" — is catalogued, priced and entitlement-checked with no implementation.** `tests/test_feature_flag_enforcement.py` records it as *"Phase 4 — no credential endpoints yet"*. Under rule 21 this is the same class of defect as the nine claims removed on 4 Aug, still shipping |
@@ -1740,7 +1740,9 @@ Phase 1
 ☑ Retry Classification        6 Aug 2026 — 136340b · providers declare vocabulary
                               C1 · 50 tests · R5 retired · §9A rule 14
                               violation injected and watched fail
-☐ Provider Validation
+☑ Provider Validation         6 Aug 2026 — app/ai/gateway/validation.py
+                              C9 · 32 tests · fatal only for closed sets
+                              violation injected and watched fail
 ☐ Default Model Fix
 ☐ Native JSON Support
 
@@ -1812,7 +1814,7 @@ answer because Postgres is slow.
 | Phase | Behaviour-visible? | Blast radius |
 |---|---|---|
 | 0 | no | **None** — nothing in the request path |
-| 1 | narrowly — disabled actually disables; quota stops being retried on Gemini; three providers start honouring Retry-After | **Low**, one named test per fix; **the Groq path is unchanged** — its marker list is preserved verbatim |
+| 1 | narrowly — disabled actually disables; quota stops being retried on Gemini; three providers start honouring Retry-After; a misconfigured chain now fails the deploy instead of every request | **Low**, one named test per fix; **the Groq path is unchanged** — its marker list is preserved verbatim |
 | 2 | no in production — the env resolver stays the default | **Low**; prod `config_snapshot()` must be byte-identical |
 | 3 | behind a flag; off = today's resolution | **Medium** — the only phase that changes model selection. Gated on eval parity |
 | 4 | no | **Low-medium**; additive migration |
@@ -1970,6 +1972,27 @@ the doc drift noted in the document map is now one step wider: the gateway docs
 describe a classifier that no longer exists. **Reconciling them is still Phase 1
 work and still unstarted** — §11 remains authoritative over `AI_GATEWAY.md`,
 `AI_ARCHITECTURE.md` and `AI_PIPELINE.md`.
+
+#### Phase 1 · Provider Validation (6 Aug 2026) — C9
+
+| # | Decision | Why it binds later tasks |
+|---|---|---|
+| **D1.21** | **The validator is PURE — findings, never repairs, never raises.** `check_provider_configuration()` returns a `list[ConfigProblem]`; `validate_ai_configuration()` is the only thing that turns a finding into a refusal | Borrowed from `app/billing/invariants.py` (§9A rule 4 says borrow the *pattern*, not the code). It is what lets `/health` and the admin snapshot reach the **same verdict** as the startup gate without either re-implementing the other — and it is called from surfaces where an exception would take down the very page that reports the problem |
+| **D1.22** | **Fatal is reserved for CLOSED SETS.** A provider name outside the registry can never work, whatever else is true, so it fails a deploy rather than every request afterwards | The rule for the next person adding a check: if a wrong-looking value could legitimately be right in some deployment, it is a warning. If it is drawn from a finite list this repo owns, it is fatal |
+| **D1.23** | **Three things are deliberately NOT fatal** — a missing API key, a fully-disabled chain, and an unregistered role-model override | Each would make the fix worse than the finding. Running without AI is supported (parsing, auth and candidates work). A fully-disabled chain is the **incident lever task 2 built** — turning "AI is off" into "the service will not start" inverts it. And `model_registry.py` documents that unknown models still work, so a typo and a model released last week are indistinguishable from here. **Do not "tighten" these later without changing those three facts first** |
+| **D1.24** | **Registered ≠ usable for reasoning, and the message says which.** `AI_PROVIDER=hashing` reports *"registered but does not support reasoning (declares: embeddings)"*, not *"unknown provider"* | The first draft intersected the two registries, which made a real provider report as unknown and would have sent an operator hunting a typo that was not there. Capability is read off the declared spec (§9A rule 10), never guessed from the name |
+| **D1.25** | **Configuration and liveness are two axes, reported separately.** `config_snapshot()` now carries `configuration` (configured · misconfigured · not_configured · disabled) beside the existing `health` | Collapsing them is how a vendor's bad afternoon gets diagnosed as a config error, and how a config error gets waited out. **A provider outage may never reach the startup gate** — a service that refuses to restart because a vendor is down has turned their outage into ours. Pinned by a named test |
+| **D1.26** | **`/health` gained `llm: misconfigured`** as a third value beside `configured` and `not_configured` | A missing key means AI is switched off; a misconfiguration means the configuration names something that cannot work. Reporting both as `not_configured` sent an operator looking for a key that was never the problem |
+| **D1.27** | **All fatal problems are reported at once**, not one per boot | Fixing configuration by rediscovering the next failure after each redeploy is how a ten-minute fix becomes an hour |
+
+**The guard that this task nearly shipped without.** Injecting a violation —
+commenting the validator out of `validate_startup()` — broke **nothing**: all 29
+tests called `validate_ai_configuration()` directly, so they stayed green while
+the check was disconnected from boot entirely. That is C3's failure mode exactly:
+a correct mechanism that nothing calls. `TestStartupActuallyCallsTheValidator`
+drives `validate_startup()` itself and was watched failing under that injection.
+**Any future validation added here needs a test on the wiring, not only on the
+logic.**
 
 ---
 

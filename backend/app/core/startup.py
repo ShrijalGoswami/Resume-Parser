@@ -87,15 +87,26 @@ def validate_startup() -> None:
                 " and ".join(missing),
             )
 
-    # 4. Capability→model routing — FATAL on misconfiguration (unknown model,
-    # un-inferable/unregistered provider, missing key, invalid capability).
-    from app.ai.gateway.capability_routing import RoutingConfigError, validate_capability_routing
+    # 4. AI configuration — FATAL on a configuration error, in ONE call (C9).
+    #
+    # Covers the provider chain (unknown names, a provider that cannot reason,
+    # the fake in production) and the capability→model routing table. Fatal is
+    # reserved for closed sets: a provider name outside the registry can never
+    # work, so it should fail a deploy rather than every request afterwards.
+    #
+    # NOT fatal, deliberately: a missing API key, an entirely disabled chain, or
+    # an unregistered role-model override. Each is either a supported state or an
+    # operator's own choice, and refusing to boot would take the whole product
+    # down over a feature that is merely off. Those are logged as warnings by the
+    # validator and reported in `config_snapshot()`. See `app/ai/gateway/validation.py`.
+    from app.ai.gateway.capability_routing import RoutingConfigError
+    from app.ai.gateway.validation import AIConfigurationError, validate_ai_configuration
     try:
-        validate_capability_routing()
+        validate_ai_configuration()
         if settings.AI_CAPABILITY_MODELS:
             logger.info("Capability→model routing validated (enabled=%s).",
                         settings.AI_ENABLE_CAPABILITY_ROUTING)
-    except RoutingConfigError as e:
+    except (AIConfigurationError, RoutingConfigError) as e:
         raise StartupError(str(e)) from e
 
     # Billing integrity: every active organization must have exactly one

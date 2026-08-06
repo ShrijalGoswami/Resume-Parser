@@ -182,7 +182,13 @@ def config_snapshot() -> dict:
     }
     emb_provider, emb_model, emb_dims = resolve_embedding()
     from app.ai.gateway.health import health_manager
+    from app.ai.gateway.validation import check_provider_configuration, configuration_state
     health = health_manager.snapshot()
+    # Two independent axes, reported separately on purpose (C9). `configuration`
+    # answers "could this ever work as configured"; `health` answers "is it
+    # answering right now". Collapsing them is how a temporary outage gets
+    # diagnosed as a config error, and a config error gets waited out.
+    problems = check_provider_configuration()
     providers = []
     for spec in available_provider_specs():
         key_setting = spec.api_key_setting
@@ -194,6 +200,7 @@ def config_snapshot() -> dict:
             "context_window": spec.context_window,
             "max_output_tokens": spec.max_output_tokens,
             "key_configured": configured,   # bool only — never the key itself
+            "configuration": configuration_state(spec.name, problems),
             "health": (health.get(spec.name, {}).get("state") or "healthy"),
         })
     return {
@@ -206,4 +213,10 @@ def config_snapshot() -> dict:
         "embeddings": {"provider": emb_provider, "model": emb_model, "dimensions": emb_dims},
         "providers": providers,
         "provider_health": health,
+        # Findings, not a verdict — severity included so an operator can see what
+        # would have stopped a deploy and what merely needs a look.
+        "configuration_problems": [
+            {"severity": p.severity, "setting": p.setting, "message": p.message}
+            for p in problems
+        ],
     }
