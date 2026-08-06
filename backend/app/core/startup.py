@@ -47,12 +47,23 @@ def validate_startup() -> None:
         )
 
     # 3. LLM configuration — non-fatal; parsing endpoints still work without it.
-    if settings.is_llm_configured:
-        logger.info("Groq LLM is configured. AI analysis endpoints enabled.")
+    # Reported per provider, not per key: naming GROQ_API_KEY here was the visible
+    # half of C8, and it told an operator running any other provider to go and set
+    # a variable their deployment does not use.
+    from app.ai.gateway.gateway import configured_reasoning_providers, fallback_chain
+
+    configured = configured_reasoning_providers()
+    if configured:
+        logger.info(
+            "Reasoning provider(s) configured: %s. AI analysis endpoints enabled.",
+            ", ".join(configured),
+        )
     else:
         logger.warning(
-            "GROQ_API_KEY is not configured. LLM analysis endpoints "
-            "(/ats-analysis, /match-analysis) will return 503 until it is set."
+            "No configured reasoning provider (chain: %s). LLM analysis endpoints "
+            "(/ats-analysis, /match-analysis) will return 503 until one of their "
+            "API keys is set.",
+            ", ".join(s.provider for s in fallback_chain()) or "none",
         )
 
     # 3b. Persistence/auth — non-fatal, because a stateless deployment (public

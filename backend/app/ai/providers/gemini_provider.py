@@ -10,8 +10,9 @@ from __future__ import annotations
 
 from app.ai.gateway.roles import ModelRole
 from app.ai.providers.base import LLMProvider
+from app.ai.providers.errors import classify_vendor_error
 from app.ai.schemas.base import ProviderResponse, TokenUsage
-from app.ai.utils.errors import AIConfigError, AIProviderError, AIRateLimitError, AITimeoutError
+from app.ai.utils.errors import AIConfigError, AIProviderError
 from app.core.config import settings
 
 
@@ -69,11 +70,9 @@ class GeminiProvider(LLMProvider):
             finish_reason=finish or None,
         )
 
+    # `sdk="google"`: google-generativeai raises through `google.api_core`, not
+    # its own namespace. `is_quota` is deliberately not passed — Gemini quota
+    # exhaustion is still retried as a transient rate limit (C1, next task).
     @staticmethod
     def _classify(exc: Exception) -> AIProviderError:
-        msg = str(exc).lower()
-        if "timeout" in msg or "deadline" in msg:
-            return AITimeoutError(str(exc))
-        if "rate" in msg or "429" in msg or "quota" in msg or "resource has been exhausted" in msg:
-            return AIRateLimitError(str(exc))
-        return AIProviderError(str(exc))
+        return classify_vendor_error(exc, sdk="google")

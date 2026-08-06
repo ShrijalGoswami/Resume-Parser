@@ -262,8 +262,17 @@ class Settings(BaseSettings):
 
     @property
     def is_llm_configured(self) -> bool:
-        key = self.GROQ_API_KEY
-        return bool(key) and key != "gsk_placeholder_key"
+        """True when ANY provider in the active reasoning chain is configured.
+
+        This used to be `bool(GROQ_API_KEY)` (C8) — one vendor's key standing in
+        for "can this service reason at all", which reported an OpenAI-only
+        deployment as `llm: not_configured` while it served every AI request
+        correctly. The question belongs to the gateway, which owns the chain;
+        the import is deferred because the AI layer reads this module.
+        """
+        from app.ai.gateway.gateway import is_reasoning_configured
+
+        return is_reasoning_configured()
 
     @property
     def temp_upload_path(self) -> Path:

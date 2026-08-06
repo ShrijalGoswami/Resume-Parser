@@ -230,12 +230,16 @@ def layer_a() -> None:
 
 # ── LAYER B — live provider smoke (one real Groq call) ───────────────────────
 def layer_b() -> None:
-    if not settings.is_llm_configured:
+    # Groq's own answer, not `settings.is_llm_configured` — that now means "any
+    # provider in the chain is configured" (C8), which would send this Groq-only
+    # smoke at a provider whose key is absent.
+    from app.ai.providers.groq_provider import GroqProvider
+
+    if not GroqProvider().is_configured():
         record("L", "Live Groq smoke — real provider path", "SKIPPED",
                "External Dependency: GROQ_API_KEY not configured")
         return
     try:
-        from app.ai.providers.groq_provider import GroqProvider
         resp = GroqProvider().complete(
             system="You are a test harness. Reply with the single word: ok.",
             user="Reply with ok.", model=settings.AI_DEFAULT_MODEL,

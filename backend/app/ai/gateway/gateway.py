@@ -92,6 +92,41 @@ def fallback_chain(role: ModelRole = ModelRole.DEFAULT_REASONING) -> list[ModelS
     return [resolve(role, provider=p) for p in chain]
 
 
+def configured_reasoning_providers(
+    role: ModelRole = ModelRole.DEFAULT_REASONING,
+) -> list[str]:
+    """The providers in the active chain that have what they need to run.
+
+    "Configured" is each provider's own answer (`LLMProvider.is_configured`),
+    read from its declared key setting — never inferred from a provider's name
+    (§9A rule 10). A provider that cannot even be constructed (the fake, in
+    production) is not configured, which is the honest reading.
+    """
+    from app.ai.providers.registry import get_provider
+
+    configured: list[str] = []
+    for selection in fallback_chain(role):
+        try:
+            provider = get_provider(selection.provider)
+        except AIConfigError:
+            continue
+        if provider.is_configured():
+            configured.append(selection.provider)
+    return configured
+
+
+def is_reasoning_configured() -> bool:
+    """True when SOMETHING in the active chain can serve a reasoning request.
+
+    This is what `/health` and the startup log mean by "the LLM is configured".
+    It used to be `bool(GROQ_API_KEY)` (C8), so an OpenAI-only deployment
+    reported `llm: not_configured` while answering every AI request correctly —
+    a health signal that is wrong in the direction that gets a working service
+    rolled back.
+    """
+    return bool(configured_reasoning_providers())
+
+
 def resolve_embedding() -> tuple[str, str, int]:
     """(provider, model, dimensions) for the configured embedding provider."""
     provider = (settings.EMBEDDING_PROVIDER or "hashing").lower()

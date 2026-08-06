@@ -11,12 +11,13 @@ Wraps every vendor exception in the AI error hierarchy.
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from app.ai.gateway.roles import ModelRole
 from app.ai.providers.base import LLMProvider
+from app.ai.providers.errors import classify_vendor_error, is_quota_exhaustion, retry_after_of
 from app.ai.schemas.base import ProviderResponse, TokenUsage
-from app.ai.utils.errors import AIConfigError, AIProviderError, AIRateLimitError, AITimeoutError
+from app.ai.utils.errors import AIConfigError, AIProviderError
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -83,31 +84,19 @@ class GroqProvider(LLMProvider):
             finish_reason=getattr(choice, "finish_reason", None),
         )
 
+    # The placeholder key is a Groq-specific fact, and the provider is the source
+    # of truth for its own configuration. It used to live in
+    # `Settings.is_llm_configured` as well, which is how "is the LLM configured?"
+    # came to mean "is Groq configured?" (C8).
+    def is_configured(self) -> bool:
+        key = (settings.GROQ_API_KEY or "").strip()
+        return bool(key) and key != _PLACEHOLDER_KEY
+
     @staticmethod
     def _classify(exc: Exception) -> AIProviderError:
-        msg = str(exc).lower()
-        if "timeout" in msg or "timed out" in msg:
-            return AITimeoutError(str(exc))
-        if "rate limit" in msg or "429" in msg or "too many requests" in msg or "quota" in msg:
-            is_quota = any(k in msg for k in ("per day", "tpd", "rpd", "daily", "quota"))
-            return AIRateLimitError(str(exc), retry_after=_retry_after_of(exc), is_quota=is_quota)
-        return AIProviderError(str(exc))
-
-
-def _retry_after_of(exc: Exception) -> Optional[float]:
-    """Best-effort parse of a Retry-After (seconds) from the vendor exception's
-    HTTP response headers. Returns None when absent/unparseable."""
-    resp = getattr(exc, "response", None)
-    headers = getattr(resp, "headers", None)
-    if not headers:
-        return None
-    try:
-        raw = headers.get("retry-after") or headers.get("Retry-After")
-    except Exception:  # pragma: no cover — non-mapping headers
-        return None
-    if not raw:
-        return None
-    try:
-        return max(0.0, float(raw))
-    except (TypeError, ValueError):  # pragma: no cover — HTTP-date form, ignore
-        return None
+        return classify_vendor_error(
+            exc,
+            sdk="groq",
+            is_quota=is_quota_exhaustion(str(exc)),
+            retry_after=retry_after_of(exc),
+        )

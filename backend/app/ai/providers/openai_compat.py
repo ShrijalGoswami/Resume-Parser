@@ -13,8 +13,9 @@ from __future__ import annotations
 
 from app.ai.gateway.roles import ModelRole
 from app.ai.providers.base import LLMProvider
+from app.ai.providers.errors import classify_vendor_error, is_quota_exhaustion
 from app.ai.schemas.base import ProviderResponse, TokenUsage
-from app.ai.utils.errors import AIConfigError, AIProviderError, AIRateLimitError, AITimeoutError
+from app.ai.utils.errors import AIConfigError, AIProviderError
 from app.core.config import settings
 
 
@@ -62,15 +63,11 @@ class OpenAICompatProvider(LLMProvider):
             finish_reason=getattr(choice, "finish_reason", None),
         )
 
+    # Every provider in this family (OpenAI, OpenRouter, Kimi) raises the `openai`
+    # SDK's exception types, whatever endpoint it is pointed at.
     @staticmethod
     def _classify(exc: Exception) -> AIProviderError:
-        msg = str(exc).lower()
-        if "timeout" in msg or "timed out" in msg:
-            return AITimeoutError(str(exc))
-        if "rate limit" in msg or "429" in msg or "too many requests" in msg or "quota" in msg:
-            is_quota = any(k in msg for k in ("per day", "tpd", "rpd", "daily", "quota"))
-            return AIRateLimitError(str(exc), is_quota=is_quota)
-        return AIProviderError(str(exc))
+        return classify_vendor_error(exc, sdk="openai", is_quota=is_quota_exhaustion(str(exc)))
 
 
 class OpenAIProvider(OpenAICompatProvider):

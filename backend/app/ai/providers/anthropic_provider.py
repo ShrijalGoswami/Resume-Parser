@@ -9,8 +9,9 @@ from __future__ import annotations
 
 from app.ai.gateway.roles import ModelRole
 from app.ai.providers.base import LLMProvider
+from app.ai.providers.errors import classify_vendor_error
 from app.ai.schemas.base import ProviderResponse, TokenUsage
-from app.ai.utils.errors import AIConfigError, AIProviderError, AIRateLimitError, AITimeoutError
+from app.ai.utils.errors import AIConfigError, AIProviderError
 from app.core.config import settings
 
 
@@ -70,11 +71,9 @@ class AnthropicProvider(LLMProvider):
             finish_reason=getattr(resp, "stop_reason", None),
         )
 
+    # `is_quota` is deliberately not passed: Anthropic quota exhaustion is still
+    # classified as a transient rate limit and retried (C1). Closing that finding
+    # is the Retry Classification task, and it is one argument here.
     @staticmethod
     def _classify(exc: Exception) -> AIProviderError:
-        msg = str(exc).lower()
-        if "timeout" in msg or "timed out" in msg:
-            return AITimeoutError(str(exc))
-        if "rate" in msg or "429" in msg or "overloaded" in msg:
-            return AIRateLimitError(str(exc))
-        return AIProviderError(str(exc))
+        return classify_vendor_error(exc, sdk="anthropic")
