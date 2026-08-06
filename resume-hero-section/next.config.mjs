@@ -3,6 +3,9 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // The framework and its version, announced on every response. Free
+  // reconnaissance, no benefit to us.
+  poweredByHeader: false,
   // Container builds only. `standalone` emits a self-contained server bundle so
   // the runtime image needs no node_modules, which is the difference between a
   // ~200MB image and a ~1GB one. It is opt-in via the env var rather than always
@@ -20,6 +23,63 @@ const nextConfig = {
   // Legacy routes with no complete V4 replacement (/insights, /reports, /agent,
   // /knowledge, /predictions) are NOT redirected and stay reachable through the
   // "Classic" nav group.
+  // ── Security headers ────────────────────────────────────────────────────────
+  // The app previously emitted NONE of these — the only header it set was
+  // X-Powered-By, which is the one worth removing. The backend has had a strict
+  // set since it was written; the frontend, which is what a browser actually
+  // loads, had nothing.
+  //
+  // Every header here is behaviour-neutral: none of them restricts what the page
+  // may load, so none can break Supabase Auth, API calls, PDF export or file
+  // downloads. That is the entire selection criterion for this change.
+  //
+  // WHAT IS DELIBERATELY ABSENT
+  //
+  // Content-Security-Policy — not here, not even Report-Only. CSP is the header
+  // that matters most for this product (it renders model-generated prose) and
+  // it is the only one that can break the app, in two specific ways:
+  //   * connect-src must name the Supabase project URL, or login and session
+  //     refresh fail;
+  //   * connect-src must name the API host, or every analysis, Ask AI,
+  //     comparison and export call fails while pages still render — which looks
+  //     like an AI outage, not a header bug.
+  // Both values are environment-specific and neither is knowable from this file.
+  // A Report-Only policy with the wrong origins reports noise that gets ignored,
+  // which is worse than no policy at all. It ships when the production origins
+  // are supplied, as Report-Only first.
+  //
+  // Strict-Transport-Security — production-only and not settable safely from
+  // here: emitting it in dev pins localhost to https in the developer's browser
+  // for the max-age. It belongs at the edge (Vercel/proxy), which knows the
+  // scheme. The backend already sets it, correctly gated on a TLS request.
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          // Clickjacking. The authenticated surface advances and rejects
+          // candidates; those actions must not be frameable.
+          { key: 'X-Frame-Options', value: 'DENY' },
+          // Stops a browser second-guessing Content-Type on an uploaded or
+          // exported file and executing it as something else.
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          // URLs carry roleId and candidateId. Without this, the full path —
+          // i.e. who is being evaluated — leaks in the Referer of any outbound
+          // link. strict-origin-when-cross-origin keeps same-origin navigation
+          // and analytics intact, which is why it is preferred here over the
+          // backend's blanket no-referrer.
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          // Denies capabilities the app never uses, so a future injected script
+          // cannot ask for them either.
+          {
+            key: 'Permissions-Policy',
+            value: 'geolocation=(), microphone=(), camera=(), payment=(), usb=()',
+          },
+        ],
+      },
+    ]
+  },
+
   async redirects() {
     return [
       // Search → Talent (Talent is a superset: semantic search + similar +
