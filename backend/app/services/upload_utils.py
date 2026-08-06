@@ -70,11 +70,16 @@ async def save_upload_to_temp(file: UploadFile) -> Path:
     tmp_dir = settings.temp_upload_path
     try:
         tmp_dir.mkdir(parents=True, exist_ok=True)
-    except Exception as e:
+    except Exception:
+        # The exception is logged with its traceback and NOT returned (A6). It
+        # carries absolute filesystem paths and OS permission detail — useful in
+        # the log, free reconnaissance in a response body. Everywhere else in
+        # this service a 500 says only "Internal server error"; these two call
+        # sites were the exception, and there is no reason for them to be.
         logger.exception("Could not create temp upload directory")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Could not create upload directory: {str(e)}",
+            detail="Could not process the upload. Please try again.",
         )
 
     file_path = tmp_dir / f"{uuid.uuid4().hex}{file_ext}"
@@ -102,12 +107,12 @@ async def save_upload_to_temp(file: UploadFile) -> Path:
     except HTTPException:
         file_path.unlink(missing_ok=True)
         raise
-    except Exception as e:
+    except Exception:
         file_path.unlink(missing_ok=True)
         logger.exception("Error saving uploaded file")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error saving file: {str(e)}",
+            detail="Could not process the upload. Please try again.",
         )
 
     if bytes_written == 0:
