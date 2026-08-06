@@ -36,11 +36,11 @@ project stands.
 > now sharing the reset flow's session-validation architecture rather than
 > owning a second copy of it. Preceded by AI discoverability (§8C).
 >
-> **The active milestone is AI Architecture & Multi-Provider Foundation (§11),
-> and no implementation code has been written for it.** The investigation is
-> complete; the plan, the roadmap and the rules are recorded in §11, §11.3 and
-> §9A. Implementation proceeds **task by task**, each reviewed before the next
-> begins, with §11.3 and §13 updated as each completes.
+> **The active milestone is AI Architecture & Multi-Provider Foundation (§11).
+> Phase 0 is complete (3/3) and Phase 1 is in progress (1 of 6).** The plan, the
+> roadmap and the rules are recorded in §11, §11.3 and §9A. Implementation
+> proceeds **task by task**, each reviewed before the next begins, with §11.3 and
+> §13 updated as each completes.
 >
 > The investigation's conclusion: **the architecture is substantially correct —
 > build on it, do not replace it.** The gateway, provider registry, health
@@ -61,29 +61,38 @@ project stands.
 | | |
 |---|---|
 | **Branch** | `manus-ui-v1` |
-| **Latest code commit** | `be405f3` — *fix(export): take the model vendor's name off documents that leave the building* (§8E). **HEAD is the docs commit on top of it**, `docs(handoff): start AI architecture milestone` — this row deliberately names the last commit that changed behaviour, because a row naming its own commit can never be written accurately |
+| **Latest code commit** | `913426f` — *refactor(ai): centralize provider error classification* (§11.3 Phase 1 task 1; decisions D1.1–D1.6). **HEAD is the docs commit on top of it** — this row deliberately names the last commit that changed behaviour, because a row naming its own commit can never be written accurately |
 | **Working tree** | **clean** |
 | **Last milestone** | Authentication — **COMPLETE and browser-verified** (§8D) |
-| **Active milestone** | **AI Architecture & Multi-Provider Foundation** (§11) — planned; **implementation not started**. Rules: §9A · Roadmap: §11.3 · Progress: §13 |
-| **Backend tests** | **574 passed** (532 + 42 fake-provider / golden-dataset tests, 6 Aug 2026) |
+| **Active milestone** | **AI Architecture & Multi-Provider Foundation** (§11) — **Phase 0 complete (3/3), Phase 1 in progress (1/6)**. Rules: §9A · Roadmap: §11.3 · Progress: §13 |
+| **Backend tests** | **611 passed** (574 + 37 provider-bug-fix tests, 6 Aug 2026) |
 | **Frontend tests** | **455 passed**, 33 files (450 + 5 export-attribution guards, 5 Aug 2026) |
 | **`tsc --noEmit`** | clean |
 | **`eslint .`** | **exactly 4 errors — all known debt** (§10 item 1). A 5th is a regression |
 | **`next build`** | succeeds; 40 routes (36 static, 4 dynamic) |
 
 > **On the test counts.** Frontend went 363 → 410 → 442 → 450 → 455; backend
-> 493 → 504. The discoverability milestone added `tests/discoverability.test.ts`
+> 493 → 504 → 574 → 611. The discoverability milestone added `tests/discoverability.test.ts`
 > (30) and matcher-coverage assertions in `tests/proxy.test.ts` (17); the auth
 > milestone added `tests/password-policy.test.ts` (9) and
 > `tests/auth-password-ux.test.tsx` (30). No backend code changed in either, so
 > 493 stood until `GAB-D1` (§8E) added the export-attribution guards — 11 backend
-> and 5 frontend, the last step on both counts.
+> and 5 frontend, the last step on the frontend count. Backend then moved twice
+> more, both in the AI milestone: **+70** for Phase 0 (evaluation harness, fake
+> provider, golden dataset) and **+37** for Phase 1 task 1
+> (`tests/test_provider_bug_fixes.py`).
 
 ### Working tree
 
 **Clean.** Everything through the authentication UX milestone is committed, and
 so is `GAB-D1` (§8E) — the model vendor's name removed from every exported PDF,
-plus the two guards that now keep it out.
+plus the two guards that now keep it out. So is all of Phase 0, and so is
+**Phase 1 task 1** (`913426f`).
+
+One thing to expect rather than rediscover: `docs/qa/RUNTIME_VALIDATION_A4.md`
+and `RUNTIME_VALIDATION_PROVIDERS.md` **rewrite themselves** whenever
+`tests/test_ai_reliability.py` or `tests/test_provider_contract.py` is run. A
+dirty tree containing only those two files is a suite that ran, not an edit.
 
 Note on the counts: the fix itself moved **no** test, because nothing asserted on
 the old footer. That is the finding, not a footnote — **the string was never
@@ -665,7 +674,7 @@ Existing product variables are unchanged: `SUPABASE_URL`,
 
 ### Verified
 
-- Backend **574** tests, frontend **455** tests, `tsc` clean, `next build`
+- Backend **611** tests, frontend **455** tests, `tsc` clean, `next build`
   succeeds across 40 routes — including the four policy routes and the five
   agent files (`robots.txt`, `sitemap.xml`, `llms.txt`, `humans.txt`,
   `.well-known/security.txt`), all of which prerender as static.
@@ -1499,6 +1508,42 @@ forbid the approach that will look obvious at the time.
     or the provider adapts. Weakening the fake to accommodate a vendor is how
     provider-specific abstraction creeps back in after the work of removing it.
 
+13. **`app/ai/providers/errors.py` is the single source of truth for provider
+    error semantics. No provider implementation may classify errors directly.**
+
+    Added 6 Aug 2026 with Phase 1 task 1 (`913426f`). Every provider — Groq,
+    OpenAI, Gemini, Anthropic, OpenRouter, Kimi, the local provider of Phase 2,
+    and every provider added after them — supplies only its own **vocabulary**:
+    status mapping, Retry-After extraction, quota detection. The decision about
+    what a failure *means* is delegated to `classify_vendor_error`.
+
+    **What a failure means is decided in one place; what a vendor calls it is
+    the vendor's business.**
+
+    This is not tidiness. The four `_classify` staticmethods this rule replaced
+    were the same ladder written four times, and they had already drifted into
+    four different word lists — which is how one of them came to report every
+    error message containing "generate" as a rate limit (C2), for months, on the
+    path that decides whether to spend more of a metered budget. **A rule that
+    lives in four places is a rule that is true in three.**
+
+    **If a future provider cannot fit this abstraction, review the abstraction
+    before adding provider-specific branching.** A provider that appears to need
+    its own classifier is nearly always signalling that this one is missing a
+    vocabulary hook — add the hook, and every provider gets it. Per-vendor
+    branching is forbidden by rule 3, and is precisely how provider-specific
+    abstraction returns after the work of removing it. The check is the one
+    rule 12 already applies to `LLMProvider` and `FakeProvider`: **review the
+    contract first, not the implementation straining against it.**
+
+    Enforced rather than stated:
+    `TestEveryProviderClassifiesThroughTheSharedLadder` in
+    `backend/tests/test_provider_bug_fixes.py` asserts every provider routes
+    through the shared classifier, so a fifth private copy fails the suite
+    instead of drifting quietly for a year. The same note heads `errors.py`
+    itself, because the person about to add a vendor branch is reading that
+    file, not this one.
+
 ---
 
 ## 10. Known technical debt
@@ -1527,13 +1572,14 @@ Items 4, 7 and 8 are tracked with three more in
 
 ## 11. Active milestone — AI Architecture & Multi-Provider Foundation
 
-> ## IMPLEMENTATION HAS NOT STARTED.
+> ## IMPLEMENTATION IS UNDER WAY — §11.3 and §13 are the status of record.
 >
-> **The investigation is complete. No AI implementation code has been written.**
-> The only change made under this milestone so far is `GAB-D1` (§8E) — a
-> governance gate failure that was fixed on its own because it blocked review of
-> report generation. It is **not** Phase 0 work and does not appear in the
-> roadmap.
+> **Phase 0 is complete (3/3) and Phase 1 is in progress (1/6).** This banner
+> read "IMPLEMENTATION HAS NOT STARTED" until 6 Aug 2026; it was left behind by
+> the session that finished Phase 0 and is corrected here rather than trusted.
+> `GAB-D1` (§8E) remains **outside** the milestone — a governance gate failure
+> fixed on its own because it blocked review of report generation. It is not
+> Phase 0 work and does not appear in the roadmap.
 >
 > Everything below is the plan. Implementation happens **task by task**, in
 > roadmap order, each one reviewed and approved before the next begins. **Every
@@ -1639,7 +1685,9 @@ Phase 0  ── COMPLETE ──
                               Fake + dataset share 42 tests
 
 Phase 1
-☐ Provider Bug Fixes
+☑ Provider Bug Fixes          6 Aug 2026 — 913426f · app/ai/providers/errors.py
+                              C2 (typed classification) + C8 (is_llm_configured)
+                              37 tests · COMPLETE (implemented and verified)
 ☐ Disabled Provider Fix
 ☐ Retry Classification
 ☐ Provider Validation
@@ -1810,6 +1858,25 @@ metadata to its exceptions would fix this properly and is a candidate for
 Phase 1**; it was not done here because this task may not modify the
 orchestrator.
 
+#### Phase 1 · Provider Bug Fixes (6 Aug 2026) — C2, C8
+
+| # | Decision | Why it binds later tasks |
+|---|---|---|
+| **D1.1** | **One classifier for every provider — `app/ai/providers/errors.py`.** The four `_classify` staticmethods were the same ladder written four times over four different word lists, and the duplication is what produced C2: only anthropic's copy had `"rate" in msg` | A new provider does not write its own ladder. **Promoted to a standing rule — §9A rule 13**, so it binds every provider added after this one, not just the six that exist. `TestEveryProviderClassifiesThroughTheSharedLadder` asserts every provider routes through it, so a fifth copy fails the suite instead of drifting |
+| **D1.2** | **Classification order is type → HTTP status → text.** A status code is authoritative: when one is present the message is not consulted at all, so a 400 whose body mentions a quota is a provider error | This is what "typed SDK exceptions exist and are unused" (C2) actually meant. Text matching still exists, as a last resort for an exception carrying neither — deleting it would misclassify every non-SDK failure |
+| **D1.3** | **No SDK is imported to classify.** A vendor exception can only exist if its module is already imported, so the classes are read from `sys.modules` and matched with a real `isinstance` | §9A rule 2 (lazy imports; an unconfigured provider costs nothing) survives, and the tests run on a machine with none of the six vendors' packages installed — which is this one: only `groq` is present |
+| **D1.4** | **Quota semantics are unchanged, deliberately.** `is_quota` and `retry_after` are passed IN by each provider, exactly as today: Groq and the OpenAI-compatible family detect quota, Anthropic and Gemini do not | **C1 (Retry Classification) is the next task and must stay measurable.** Silently fixing quota here would have made its "before" identical to its "after". `TestQuotaSemanticsAreUnchanged` pins today's behaviour *including the gap*, and names itself as the test C1 must update in the same commit |
+| **D1.5** | **`is_llm_configured` now asks the gateway, not `GROQ_API_KEY`** — "is any provider in the active chain configured", where each provider answers for itself from its declared key setting (§9A rule 10) | Every later phase reads this. A fallback counts only when `AI_ENABLE_FALLBACK` is on, because a chain that cannot be walked cannot answer. **Phase 2's credential resolver replaces where a provider's key comes from, not this question** |
+| **D1.6** | **The Groq placeholder-key check moved into `GroqProvider.is_configured()`** | It lived in `core/config.py` as well, which is how "is the LLM configured?" came to mean "is Groq configured?" in the first place. Vendor-specific facts belong to the vendor's provider |
+
+**One risk this task surfaced, recorded rather than acted on.** `AI_GATEWAY.md`
+already claimed rate limits were "not retried", and this task makes the
+*classification* correct without touching what the orchestrator does with it. So
+the doc drift noted in the document map is now one step wider: the gateway docs
+describe a classifier that no longer exists. **Reconciling them is still Phase 1
+work and still unstarted** — §11 remains authoritative over `AI_GATEWAY.md`,
+`AI_ARCHITECTURE.md` and `AI_PIPELINE.md`.
+
 ---
 
 ## 11A. Billing — PAUSED, and what unpauses it
@@ -1916,7 +1983,7 @@ itself it is closer to shipping than it is:
 Billing trigger (BILL-T1)     ░░░░░░░░░░  deliberately deferred (§5A)
 Enterprise activation         ░░░░░░░░░░  no code path at all (BILL-3)
 Reconciliation worker         ░░░░░░░░░░  table exists, nothing writes it (BILL-6)
-AI Architecture (§11)         ██░░░░░░░░  ACTIVE — Phase 0 COMPLETE (3/3); Phase 1 next
+AI Architecture (§11)         ███░░░░░░░  ACTIVE — Phase 0 COMPLETE (3/3); Phase 1 (1/6)
 RC checklist                  ░░░░░░░░░░  0 of 267 boxes ticked
 Production payments           ░░░░░░░░░░  none ever processed
 ```
@@ -1931,7 +1998,7 @@ Marketing / policy pages      ░░░░░░░░░░  built 4 Aug, never
 Product screens built 4–5 Aug ░░░░░░░░░░  drop zone, dialogs, Inbox states
 ```
 
-**Tests:** backend 574 · frontend 455 (33 files) · `tsc` clean · `next build`
+**Tests:** backend 611 · frontend 455 (33 files) · `tsc` clean · `next build`
 clean, 40 routes · eslint exactly 4 known errors.
 
 **The honest summary:** the server side is real and verified. The public surface
@@ -1969,7 +2036,7 @@ implemented **and** verified, never merely written.
 | Phase | Status | Notes |
 |--------|--------|-------|
 | **Phase 0** — Evaluation Harness · Fake Provider · Golden Dataset | **Complete** (6 Aug 2026) | 70 tests, ~1.3s, fully offline. `AI_PROVIDER=fake` drives the real stack end to end and the golden dataset runs 6/6 through it. **R1 is now measurable rather than closed** — a baseline can be captured; nothing has been compared yet, which is Phase 6's job |
-| **Phase 1** — Provider Bug Fixes · Disabled Provider · Retry Classification · Provider Validation · Default Model · Native JSON | Not Started | Closes C1–C6, C8, C9. Behaviour-visible narrowly; the Groq path is unchanged |
+| **Phase 1** — Provider Bug Fixes · Disabled Provider · Retry Classification · Provider Validation · Default Model · Native JSON | **In Progress** (1 of 6 complete) | Closes C1–C6, C8, C9. Behaviour-visible narrowly; the Groq path is unchanged. **Provider Bug Fixes — Complete** (6 Aug 2026, `913426f`): C2 and C8 closed, 37 tests, and the two headline guards were watched failing against the old code. Backend 574 → 611. Next: **Disabled Provider Fix (C3)**, not started |
 | **Phase 2** — Credential Resolver · Local Provider · Local Runtime Override | Not Started | Closes C10 and delivers goal 5. Build the credential **seam**, not the BYO feature (C12) |
 | **Phase 3** — Capability Profiles · Intelligent Provider Selection · Token Budget Validation | Not Started | The only genuine design work in the milestone. Closes C7 and goal 2. **Gated on Phase 0's eval parity** |
 | **Phase 4** — Usage Persistence · AI Provenance · Cost Tracking | Not Started | Migration 0028, additive and nullable. **Phase 5 depends on this** |
