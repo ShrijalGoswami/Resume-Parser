@@ -38,13 +38,28 @@ def validate_startup() -> None:
             f"Set TEMP_UPLOAD_DIR to a writable path."
         ) from e
 
-    # 2. CORS — fail closed on the insecure wildcard in production. A prod
-    # deployment must pin ALLOWED_ORIGINS to its frontend domain(s).
-    if settings.ENVIRONMENT == "production" and "*" in settings.allowed_origins:
-        raise RuntimeError(
-            "CORS is set to allow all origins ('*') in production. "
-            "Set ALLOWED_ORIGINS to your explicit frontend domain(s) before deploying."
-        )
+    # 2. CORS — fail closed in production. A prod deployment must pin
+    # ALLOWED_ORIGINS to its frontend domain(s).
+    #
+    # TWO failure modes, not one (A2). The wildcard was already refused here;
+    # what was not, until now, was the variable being *absent* — which used to
+    # resolve to "*" through the old default and so never reached this check at
+    # all. Both are now the same refusal, because "explicitly insecure" and
+    # "accidentally insecure" are the same outage and the second is likelier.
+    if settings.ENVIRONMENT == "production":
+        origins = settings.allowed_origins
+        if not origins:
+            raise RuntimeError(
+                "ALLOWED_ORIGINS is not set in production. Set it to your explicit "
+                "frontend domain(s) (comma-separated) before deploying. There is "
+                "deliberately no default — an unset value must not silently allow "
+                "every origin."
+            )
+        if "*" in origins:
+            raise RuntimeError(
+                "CORS is set to allow all origins ('*') in production. "
+                "Set ALLOWED_ORIGINS to your explicit frontend domain(s) before deploying."
+            )
 
     # 3. LLM configuration — non-fatal; parsing endpoints still work without it.
     # Reported per provider, not per key: naming GROQ_API_KEY here was the visible

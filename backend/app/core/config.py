@@ -68,8 +68,14 @@ class Settings(BaseSettings):
     # the cause is found. It is deliberately not a per-feature switch: a partial
     # enforcement state is harder to reason about than either extreme.
     ENTITLEMENT_ENFORCEMENT: str = "on"
-    # Comma-separated list of allowed CORS origins, or "*" for any (no credentials).
-    ALLOWED_ORIGINS: str = "*"
+    # Comma-separated list of allowed CORS origins. Deliberately EMPTY by default
+    # (A2): the default used to be "*", so a deployment that simply forgot this
+    # variable served every origin. A safe posture must not depend on remembering
+    # a setting — an omission has to fail, not silently widen access.
+    #
+    # What "unset" now means is decided in `allowed_origins` below, and it differs
+    # by environment: convenience in development, refusal in production.
+    ALLOWED_ORIGINS: str = ""
     # Deployment environment label ("development", "staging", "production").
     ENVIRONMENT: str = "development"
     # Root log level. Default INFO matches the behaviour this was extracted from,
@@ -134,6 +140,30 @@ class Settings(BaseSettings):
     # incomplete `role_models` map was handed a Llama. A model now comes from
     # the provider that will serve it, or the request is refused. A deployment
     # still setting it is warned by `app/ai/gateway/validation.py`.
+    # ── AI cost budget (S-5) — the ONLY ceiling on paid model invocations ──
+    # The retry ladder's bounds MULTIPLY (3 network x 3 JSON x 2 schema = 18 per
+    # provider, times the failover chain). This caps the product for one logical
+    # request, across every provider. 8 lets any single ladder exhaust (3) and
+    # still leaves room for a repair round and a failover attempt, while cutting
+    # the theoretical worst case by more than half. Policy: app/ai/utils/budget.py
+    AI_MAX_PROVIDER_CALLS_PER_REQUEST: int = 8
+
+    # Bytes (as MB) a container file may decompress to, checked before the parser
+    # opens it (A3). A DOCX is a ZIP: the 10MB upload cap bounds the file on disk,
+    # not what it expands to in memory, and ordinary prose already reaches 300:1.
+    # 100MB is far above any real résumé and far below a bomb. Policy and the
+    # reasoning live in app/ai/utils/limits.py with every other input limit.
+    AI_MAX_ARCHIVE_UNCOMPRESSED_MB: int = 100
+
+    # ── AI input limits (S-4) — the ONLY place these numbers live ────────
+    # Policy and enforcement are in `app/ai/utils/limits.py`; these are the
+    # values. Two ceilings on purpose: document_* bounds memory and parsing
+    # work, prompt_variable bounds what a vendor is paid to read, and the
+    # second is much lower than the first.
+    AI_MAX_DOCUMENT_CHARS: int = 200_000      # ~66 dense pages; refuses beyond
+    AI_MAX_DOCUMENT_PAGES: int = 100          # cheaper signal, known before concat
+    AI_MAX_JOB_DESCRIPTION_CHARS: int = 20_000  # unchanged from the batch route
+    AI_MAX_PROMPT_VARIABLE_CHARS: int = 60_000  # ~15k tokens per untrusted value
     AI_TEMPERATURE: float = 0.2
     AI_MAX_TOKENS: int = 2048
     AI_TIMEOUT_SECONDS: int = 30
@@ -258,7 +288,22 @@ class Settings(BaseSettings):
 
     @property
     def allowed_origins(self) -> list[str]:
-        return [o.strip() for o in self.ALLOWED_ORIGINS.split(",") if o.strip()]
+        """Configured origins, or the environment-appropriate meaning of "unset".
+
+        An explicit list always wins. When nothing is configured (A2):
+
+        * **development / staging** get `["*"]`, so a local frontend on any port
+          works with no setup — the behaviour every developer already relies on.
+        * **production** gets `[]`, which `validate_startup` refuses to boot on.
+          Returning the empty list rather than raising here matters: this is a
+          property read during request handling and by `/health`, and a
+          configuration error should surface once at startup, not as a 500 on
+          whichever endpoint happened to touch it first.
+        """
+        explicit = [o.strip() for o in self.ALLOWED_ORIGINS.split(",") if o.strip()]
+        if explicit:
+            return explicit
+        return [] if self.ENVIRONMENT == "production" else ["*"]
 
     @property
     def max_file_size_bytes(self) -> int:
