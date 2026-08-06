@@ -89,13 +89,48 @@ class AIOrchestrator:
         else:
             selections = fallback_chain(role)
 
+        # DISABLED is not a health state to fall back to — it is an instruction.
+        # `fallback_chain()` already excludes disabled providers, but the pinned
+        # paths above (an explicit `provider=`/`model=`, or capability routing)
+        # never touch the chain, so the invariant is enforced here as well, at the
+        # point where routing is actually decided. This filter must come BEFORE
+        # the healthy/unhealthy split: a disabled provider is not available, so it
+        # used to land in `unhealthy` and get called as a last resort — which is
+        # exactly how a provider an operator had switched off kept serving
+        # traffic while the admin UI showed it as DISABLED (C3).
+        routable = [s for s in selections if not health_manager.is_disabled(s.provider)]
+
         # Health-aware ordering: try providers currently HEALTHY first; keep
         # unhealthy ones only as a last resort (so we never hard-fail purely on
         # stale health). This is what stops us re-calling a known-down provider.
-        healthy = [s for s in selections if health_manager.is_available(s.provider)]
-        unhealthy = [s for s in selections if not health_manager.is_available(s.provider)]
+        healthy = [s for s in routable if health_manager.is_available(s.provider)]
+        unhealthy = [s for s in routable if not health_manager.is_available(s.provider)]
         ordered = healthy + unhealthy
-        primary = selections[0].provider if selections else ""
+        primary = routable[0].provider if routable else ""
+
+        if not ordered:
+            # Every candidate was disabled. Say so, name the list, and fail
+            # NON-retryably: this is a configuration with no answer, not an
+            # outage, and retrying it burns a ladder that cannot succeed.
+            #
+            # `selections` is empty when the chain itself filtered everything out
+            # and non-empty when a PINNED provider was disabled. The two are
+            # different mistakes and the message distinguishes them, because the
+            # person reading it is deciding which setting to change.
+            from app.core.config import settings as _settings
+
+            disabled = ", ".join(sorted(_settings.disabled_providers)) or "empty"
+            pinned = ", ".join(s.provider for s in selections)
+            cause = (
+                f"the pinned provider(s) ({pinned}) are disabled"
+                if pinned
+                else "every provider in the configured chain is disabled"
+            )
+            raise AIConfigError(
+                f"No routable AI provider for capability '{capability.value}': {cause}. "
+                f"AI_DISABLED_PROVIDERS={disabled}. Remove one from that list, or "
+                f"configure a provider that is not on it."
+            )
 
         last_error: Optional[AIError] = None
         for selection in ordered:

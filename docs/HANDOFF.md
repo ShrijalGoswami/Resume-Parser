@@ -1688,7 +1688,8 @@ Phase 1
 ☑ Provider Bug Fixes          6 Aug 2026 — 913426f · app/ai/providers/errors.py
                               C2 (typed classification) + C8 (is_llm_configured)
                               37 tests · COMPLETE (implemented and verified)
-☐ Disabled Provider Fix
+☑ Disabled Provider Fix       6 Aug 2026 — gateway.fallback_chain + orchestrator
+                              C3 · 16 tests · violation injected and watched fail
 ☐ Retry Classification
 ☐ Provider Validation
 ☐ Default Model Fix
@@ -1778,7 +1779,7 @@ answer because Postgres is slow.
 | R5 | **Quota misclassification** burns a daily budget on Gemini/Anthropic (C1) | High once live | Medium |
 | R6 | **`byo_ai` sold and unbuilt** (C12) reaches a real Enterprise customer | Low now | High |
 | R7 | **Injection defences calibrated against one model family.** `ground_claims()` is model-independent; `scrub()`'s phrase list is not | Medium | High |
-| R8 | **`AI_DISABLED_PROVIDERS` believed to work** during an incident (C3) | Low | High |
+| R8 | ~~**`AI_DISABLED_PROVIDERS` believed to work** during an incident (C3)~~ **RETIRED 6 Aug 2026** — it works now, and a call counter proves a disabled provider is never called | — | — |
 | R9 | **Runtime override disagrees across workers** — it is a module-level global | Certain past one worker | Medium |
 | R10 | **Phase 5 changes what customers read.** Green tests prove nothing about a rendered disclaimer | Certain | Medium |
 
@@ -1868,6 +1869,21 @@ orchestrator.
 | **D1.4** | **Quota semantics are unchanged, deliberately.** `is_quota` and `retry_after` are passed IN by each provider, exactly as today: Groq and the OpenAI-compatible family detect quota, Anthropic and Gemini do not | **C1 (Retry Classification) is the next task and must stay measurable.** Silently fixing quota here would have made its "before" identical to its "after". `TestQuotaSemanticsAreUnchanged` pins today's behaviour *including the gap*, and names itself as the test C1 must update in the same commit |
 | **D1.5** | **`is_llm_configured` now asks the gateway, not `GROQ_API_KEY`** — "is any provider in the active chain configured", where each provider answers for itself from its declared key setting (§9A rule 10) | Every later phase reads this. A fallback counts only when `AI_ENABLE_FALLBACK` is on, because a chain that cannot be walked cannot answer. **Phase 2's credential resolver replaces where a provider's key comes from, not this question** |
 | **D1.6** | **The Groq placeholder-key check moved into `GroqProvider.is_configured()`** | It lived in `core/config.py` as well, which is how "is the LLM configured?" came to mean "is Groq configured?" in the first place. Vendor-specific facts belong to the vendor's provider |
+
+#### Phase 1 · Disabled Provider Fix (6 Aug 2026) — C3
+
+| # | Decision | Why it binds later tasks |
+|---|---|---|
+| **D1.7** | **`DISABLED` is an instruction, not a health state to fall back to.** The orchestrator now filters disabled providers **before** the healthy/unhealthy split, not after | The bug was one line of ordering: a disabled provider is not *available*, so it fell into `unhealthy`, which the orchestrator deliberately keeps "as a last resort". Every future change to that ordering must keep the filter first — "last resort" may never mean "the one we were told not to call" |
+| **D1.8** | **The filter is applied in TWO places on purpose** — `fallback_chain()` and the orchestrator | Not redundancy. The chain covers configured routing; the orchestrator covers the **pinned** paths (an explicit call-site `provider=`/`model=`, and capability→model routing), which never touch the chain. Filtering only the chain would have left two open doors, and both are pinned by their own test |
+| **D1.9** | **Disabling every candidate raises `AIConfigError`, not `AIProviderError`.** Non-retryable, and the message distinguishes "the whole chain is disabled" from "the pinned provider is disabled" | A configuration with no answer is not an outage. Retryable would burn the ladder — and on a metered key, budget — against a state that cannot improve without an edit. §9A rule 9: surfaced, never guessed |
+| **D1.10** | **The runtime admin switch refuses a disabled provider.** `set_active_provider` raises; `/admin/provider` already maps `AIConfigError` → 400 | An in-memory override must not outrank a deployment decision. Without this the switch would report success and change nothing, because the chain would refuse to route there anyway — the same class of lie C3 was |
+| **D1.11** | **`resolve()` was deliberately NOT filtered** | It answers "what model would provider P use for role R", not "route here". `config_snapshot()["roles"]` reads it, and blanking those entries would hide the configuration an operator is trying to inspect. Routing decisions go through `fallback_chain()` and the orchestrator, and those are filtered |
+| **D1.12** | **Merely-unhealthy providers are still a last resort, unchanged** | The fix had one obvious over-reach available — treating unhealthy like disabled — which would let stale health hard-fail a request on its own. `test_an_unhealthy_provider_is_still_a_last_resort` exists to fail if a later task takes it |
+
+**`AI_GATEWAY.md:85` needed no edit:** its claim that a `DISABLED` provider is
+"never routed" was false when written and is true now. The rest of that document
+is still drifted, and reconciling it is still later Phase 1 work.
 
 **One risk this task surfaced, recorded rather than acted on.** `AI_GATEWAY.md`
 already claimed rate limits were "not retried", and this task makes the

@@ -47,11 +47,26 @@ def active_provider() -> str:
 
 
 def set_active_provider(name: str) -> str:
-    """Runtime switch (admin) — immediately affects every AI feature. Server-side."""
+    """Runtime switch (admin) — immediately affects every AI feature. Server-side.
+
+    Refuses a provider that is disabled by configuration. The admin switch is an
+    in-memory override and `AI_DISABLED_PROVIDERS` is a deployment decision; if
+    the switch could win, an operator who took a provider out during an incident
+    could have it put back by anyone with the Settings screen open — and the
+    chain would silently refuse to route there anyway, so the switch would appear
+    to succeed and change nothing.
+    """
     global _provider_override
+    from app.ai.gateway.health import health_manager
+
     key = (name or "").strip().lower()
     if get_provider_spec(key) is None:
         raise AIConfigError(f"Unknown provider '{name}'.")
+    if health_manager.is_disabled(key):
+        raise AIConfigError(
+            f"Provider '{key}' is disabled by AI_DISABLED_PROVIDERS and cannot be "
+            f"made active. Remove it from that list to route to it again."
+        )
     _provider_override = key
     logger.info("AI gateway: active reasoning provider switched to '%s'", key)
     return key
@@ -83,11 +98,24 @@ def resolve(role: ModelRole = ModelRole.DEFAULT_REASONING, *, provider: Optional
 
 
 def fallback_chain(role: ModelRole = ModelRole.DEFAULT_REASONING) -> list[ModelSelection]:
-    """The ordered [primary, ...fallbacks] selections for a role (configurable)."""
-    chain = [active_provider()]
+    """The ordered [primary, ...fallbacks] selections for a role (configurable).
+
+    **Providers in `AI_DISABLED_PROVIDERS` are excluded, including the primary.**
+    Disabling is the lever an operator pulls during an incident, so it has to
+    outrank the configured order — otherwise the one setting that exists to take
+    a provider out of rotation is the one setting that cannot (C3).
+
+    The list can therefore be EMPTY: disabling every provider in the chain is a
+    configuration with no answer, and the orchestrator says so rather than
+    routing to a provider it was told not to.
+    """
+    from app.ai.gateway.health import health_manager
+
+    chain = [p for p in [active_provider()] if not health_manager.is_disabled(p)]
     if settings.AI_ENABLE_FALLBACK:
         for p in settings.fallback_providers:
-            if p not in chain and get_provider_spec(p) is not None:
+            if p not in chain and get_provider_spec(p) is not None \
+                    and not health_manager.is_disabled(p):
                 chain.append(p)
     return [resolve(role, provider=p) for p in chain]
 
