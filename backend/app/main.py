@@ -44,12 +44,32 @@ async def lifespan(app: FastAPI):
     logger.info("HireLens API shutting down.")
 
 
+# ── API documentation surface (A1) ───────────────────────────────────────────
+# The interactive docs publish every route, parameter and schema this service
+# has. That is exactly what you want while building it and exactly what you do
+# not want facing the internet: it is free reconnaissance for anyone deciding
+# where to push.
+#
+# `docs_url=None` alone was NOT enough, and that was the defect. It disables
+# FastAPI's built-in handler, but the custom `/docs` route further down re-served
+# Swagger UI unconditionally, and `redoc_url` / `openapi_url` were never set at
+# all — so they kept their framework defaults and answered 200 in production.
+# Three doors, one of them closed.
+#
+# All three are now gated on the same flag, so they can only ever be open or
+# closed together. Development is unchanged.
+DOCS_ENABLED = settings.ENVIRONMENT != "production"
+
 app = FastAPI(
     title="AI Resume Parser API",
     description="Backend API for AI-powered Resume Parsing and Analysis",
     version=APP_VERSION,
     lifespan=lifespan,
+    # Always None: when docs are enabled they are served by the custom handler
+    # below (which pins the Swagger UI asset versions).
     docs_url=None,
+    redoc_url="/redoc" if DOCS_ENABLED else None,
+    openapi_url="/openapi.json" if DOCS_ENABLED else None,
 )
 
 # ── Middleware (executed in reverse registration order for requests) ──────────
@@ -169,15 +189,24 @@ app.include_router(
 app.include_router(billing.router, prefix="/api/v1")
 
 
-@app.get("/docs", include_in_schema=False)
-async def custom_swagger_ui_html():
-    return get_swagger_ui_html(
-        openapi_url=app.openapi_url,
-        title=app.title + " - Swagger UI",
-        oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
-        swagger_js_url="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.18.2/swagger-ui-bundle.js",
-        swagger_css_url="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.18.2/swagger-ui.css",
-    )
+# Registered only outside production (A1). Not registering the route is what
+# makes production return a genuine 404 — a handler that exists and returns 403
+# still confirms the endpoint is there.
+#
+# This also retires A7 with no separate change: the Swagger UI assets load from
+# a third-party CDN (cdnjs), and a route that is never registered never fetches
+# them. The CDN is now reachable only from a developer's own machine.
+if DOCS_ENABLED:
+
+    @app.get("/docs", include_in_schema=False)
+    async def custom_swagger_ui_html():
+        return get_swagger_ui_html(
+            openapi_url=app.openapi_url,
+            title=app.title + " - Swagger UI",
+            oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
+            swagger_js_url="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.18.2/swagger-ui-bundle.js",
+            swagger_css_url="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.18.2/swagger-ui.css",
+        )
 
 
 def _llm_dependency_state() -> str:
