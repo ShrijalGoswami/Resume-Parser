@@ -61,33 +61,37 @@ project stands.
 | | |
 |---|---|
 | **Branch** | `manus-ui-v1` |
-| **Latest code commit** | `913426f` — *refactor(ai): centralize provider error classification* (§11.3 Phase 1 task 1; decisions D1.1–D1.6). **HEAD is the docs commit on top of it** — this row deliberately names the last commit that changed behaviour, because a row naming its own commit can never be written accurately |
+| **Latest code commit** | `136340b` — *refactor(ai): centralize retry classification* (§11.3 Phase 1 task 3; decisions D1.13–D1.20), on top of `561003a` *fix(ai): prevent routing to disabled providers* (task 2; D1.7–D1.12) and `913426f` *refactor(ai): centralize provider error classification* (task 1; D1.1–D1.6). **HEAD is the docs commit on top of them** — this row deliberately names the last commit that changed behaviour, because a row naming its own commit can never be written accurately |
 | **Working tree** | **clean** |
 | **Last milestone** | Authentication — **COMPLETE and browser-verified** (§8D) |
-| **Active milestone** | **AI Architecture & Multi-Provider Foundation** (§11) — **Phase 0 complete (3/3), Phase 1 in progress (1/6)**. Rules: §9A · Roadmap: §11.3 · Progress: §13 |
-| **Backend tests** | **611 passed** (574 + 37 provider-bug-fix tests, 6 Aug 2026) |
+| **Active milestone** | **AI Architecture & Multi-Provider Foundation** (§11) — **Phase 0 complete (3/3), Phase 1 in progress (3/6)**. Rules: §9A · Roadmap: §11.3 · Progress: §13 |
+| **Backend tests** | **682 passed** (611 + 16 disabled-provider + 55 retry-classification, 6 Aug 2026) |
 | **Frontend tests** | **455 passed**, 33 files (450 + 5 export-attribution guards, 5 Aug 2026) |
 | **`tsc --noEmit`** | clean |
 | **`eslint .`** | **exactly 4 errors — all known debt** (§10 item 1). A 5th is a regression |
 | **`next build`** | succeeds; 40 routes (36 static, 4 dynamic) |
 
 > **On the test counts.** Frontend went 363 → 410 → 442 → 450 → 455; backend
-> 493 → 504 → 574 → 611. The discoverability milestone added `tests/discoverability.test.ts`
+> 493 → 504 → 574 → 611 → 627 → 682. The discoverability milestone added `tests/discoverability.test.ts`
 > (30) and matcher-coverage assertions in `tests/proxy.test.ts` (17); the auth
 > milestone added `tests/password-policy.test.ts` (9) and
 > `tests/auth-password-ux.test.tsx` (30). No backend code changed in either, so
 > 493 stood until `GAB-D1` (§8E) added the export-attribution guards — 11 backend
 > and 5 frontend, the last step on the frontend count. Backend then moved twice
 > more, both in the AI milestone: **+70** for Phase 0 (evaluation harness, fake
-> provider, golden dataset) and **+37** for Phase 1 task 1
-> (`tests/test_provider_bug_fixes.py`).
+> provider, golden dataset), **+37** for Phase 1 task 1
+> (`tests/test_provider_bug_fixes.py`), **+16** for task 2
+> (`tests/test_disabled_provider.py`) and **+55** for task 3
+> (`tests/test_retry_classification.py`, plus five net in the task-1 file that
+> D1.4 required C1 to update).
 
 ### Working tree
 
 **Clean.** Everything through the authentication UX milestone is committed, and
 so is `GAB-D1` (§8E) — the model vendor's name removed from every exported PDF,
-plus the two guards that now keep it out. So is all of Phase 0, and so is
-**Phase 1 task 1** (`913426f`).
+plus the two guards that now keep it out. So is all of Phase 0, and so are
+**Phase 1 tasks 1, 2 and 3** (`913426f`, `561003a`, `136340b`) — each committed
+on its own, with its own decisions recorded in §11.6.
 
 One thing to expect rather than rediscover: `docs/qa/RUNTIME_VALIDATION_A4.md`
 and `RUNTIME_VALIDATION_PROVIDERS.md` **rewrite themselves** whenever
@@ -674,7 +678,7 @@ Existing product variables are unchanged: `SUPABASE_URL`,
 
 ### Verified
 
-- Backend **611** tests, frontend **455** tests, `tsc` clean, `next build`
+- Backend **682** tests, frontend **455** tests, `tsc` clean, `next build`
   succeeds across 40 routes — including the four policy routes and the five
   agent files (`robots.txt`, `sitemap.xml`, `llms.txt`, `humans.txt`,
   `.well-known/security.txt`), all of which prerender as static.
@@ -1544,6 +1548,48 @@ forbid the approach that will look obvious at the time.
     itself, because the person about to add a vendor branch is reading that
     file, not this one.
 
+14. **Retry policy is part of the provider contract. Providers declare
+    vocabulary; the base provider determines retry semantics. A provider may
+    never override retry classification.**
+
+    Added 6 Aug 2026 with Phase 1 task 3 (`136340b`). It extends rule 13 from
+    *what a failure is* to *what is done about it*, because the second question
+    is the expensive one: retrying is what spends a budget.
+
+    A provider declares exactly two things — `sdk_namespace`, which SDK raises
+    its exceptions, and `quota_markers`, its vendor's own words for a ceiling
+    that will not clear today. `LLMProvider._classify` and
+    `app/ai/providers/errors.py` do the rest: transient or terminal, retryable or
+    not, and how long to wait.
+
+    **The retry policy must remain identical across every provider.** Not
+    similar — identical. Groq, OpenAI, Gemini, Anthropic, OpenRouter, Kimi, the
+    local provider of Phase 2 and every provider added afterwards run the same
+    ladder, the same bounds and the same backoff. Anything that differs between
+    them is vocabulary, and vocabulary is data.
+
+    This is not symmetry for its own sake. Retry behaviour is the one part of
+    the provider layer that can spend money and take a feature down, and it is
+    the part nobody looks at until an incident. Four copies of it were four
+    different policies: two never classified quota at all, so an exhausted daily
+    budget was retried five times over (C1), and three discarded a `Retry-After`
+    the vendor had explicitly sent, so they retried too early to succeed. **A
+    retry policy that varies per provider is a policy nobody has read in full.**
+
+    **If a future provider cannot express its retry behaviour through vocabulary
+    alone, review the abstraction before adding provider-specific retry logic.**
+    The likely answer is that the vocabulary is missing a hook — add the hook,
+    and every provider gets it. The unlikely answer is that the contract needs to
+    grow, in which case it grows for everyone in the same commit, exactly as
+    rule 12 requires of `FakeProvider`. What is never the answer is a branch.
+
+    Enforced rather than stated:
+    `tests/test_retry_classification.py::TestProvidersDeclareVocabularyOnly`
+    asserts that no provider — including `FakeProvider` — carries `_classify` in
+    its own `vars()`. The guard fails on the override itself, not on a symptom of
+    it, which is the difference between catching this in review and catching it
+    in an incident.
+
 ---
 
 ## 10. Known technical debt
@@ -1685,13 +1731,15 @@ Phase 0  ── COMPLETE ──
                               Fake + dataset share 42 tests
 
 Phase 1
-☑ Provider Bug Fixes          6 Aug 2026 — 913426f · app/ai/providers/errors.py
-                              C2 (typed classification) + C8 (is_llm_configured)
-                              37 tests · COMPLETE (implemented and verified)
-☑ Disabled Provider Fix       6 Aug 2026 — gateway.fallback_chain + orchestrator
-                              C3 · 16 tests · violation injected and watched fail
-☑ Retry Classification        6 Aug 2026 — providers declare vocabulary only
-                              C1 · 50 tests · violation injected and watched fail
+☑ Shared Provider Classifier  6 Aug 2026 — 913426f · app/ai/providers/errors.py
+  (roadmap name: "Provider     C2 (typed classification) + C8 (is_llm_configured)
+   Bug Fixes")                 37 tests · §9A rule 13
+☑ Disabled Provider Fix       6 Aug 2026 — 561003a · gateway + orchestrator
+                              C3 · 16 tests · R8 retired
+                              violation injected and watched fail
+☑ Retry Classification        6 Aug 2026 — 136340b · providers declare vocabulary
+                              C1 · 50 tests · R5 retired · §9A rule 14
+                              violation injected and watched fail
 ☐ Provider Validation
 ☐ Default Model Fix
 ☐ Native JSON Support
@@ -2044,7 +2092,7 @@ Marketing / policy pages      ░░░░░░░░░░  built 4 Aug, never
 Product screens built 4–5 Aug ░░░░░░░░░░  drop zone, dialogs, Inbox states
 ```
 
-**Tests:** backend 611 · frontend 455 (33 files) · `tsc` clean · `next build`
+**Tests:** backend 682 · frontend 455 (33 files) · `tsc` clean · `next build`
 clean, 40 routes · eslint exactly 4 known errors.
 
 **The honest summary:** the server side is real and verified. The public surface

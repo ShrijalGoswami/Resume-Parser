@@ -17,6 +17,36 @@ Contract (every provider exposes the same surface):
     supports_json()  supports_streaming()  supports_reasoning()
     supports_vision()  supports_tools()  supports_embeddings()
     model_name()  context_window()
+
+RETRY POLICY IS PART OF THIS CONTRACT (§9A rule 14)
+---------------------------------------------------
+**Providers declare vocabulary. This base class determines retry semantics. A
+provider may never override retry classification.**
+
+A provider declares exactly two things about failure — `sdk_namespace` (which
+SDK raises its exceptions) and `quota_markers` (its vendor's own words for a
+ceiling that will not clear today). `_classify` below, and
+`app/ai/providers/errors.py`, decide the rest: transient or terminal, retryable
+or not, and how long to wait.
+
+**The retry policy must remain identical across every provider.** Not similar —
+identical. Every provider runs the same ladder, the same bounds and the same
+backoff. Anything that differs between them is vocabulary, and vocabulary is
+data.
+
+That is not symmetry for its own sake. Retrying is what spends a budget and what
+takes a feature down, and it is the part nobody reads until an incident. The four
+per-provider copies this replaced were four different policies: two never
+classified daily quota at all, so an exhausted budget was retried five times over
+(C1), and three discarded a `Retry-After` the vendor had explicitly sent. A retry
+policy that varies per provider is a policy nobody has read in full.
+
+**If a future provider cannot express its retry behaviour through vocabulary
+alone, review this abstraction before adding provider-specific retry logic.**
+Usually the vocabulary is missing a hook — add the hook and every provider gets
+it. Occasionally the contract must grow, in which case it grows for everyone in
+the same commit, exactly as rule 12 requires of `FakeProvider`. A per-vendor
+branch is never the answer.
 """
 
 from __future__ import annotations
@@ -117,7 +147,8 @@ class LLMProvider(ABC):
     def _classify(cls, exc: Exception) -> AIProviderError:
         """Turn a raw vendor exception into the AI error hierarchy.
 
-        **Providers must not override this** (§9A rule 13). Everything a vendor
+        **Providers must not override this** (§9A rules 13 and 14 — see the
+        module docstring: retry policy is part of the contract). Everything a vendor
         differs by is declared above as vocabulary; the decision is made once, in
         `app/ai/providers/errors.py`. This method exists on the base rather than
         four times over precisely because the four copies it replaced drifted
