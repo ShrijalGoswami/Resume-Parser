@@ -37,7 +37,7 @@ project stands.
 > owning a second copy of it. Preceded by AI discoverability (§8C).
 >
 > **The active milestone is AI Architecture & Multi-Provider Foundation (§11).
-> Phase 0 is complete (3/3) and Phase 1 is in progress (1 of 6).** The plan, the
+> Phase 0 is complete (3/3) and Phase 1 is in progress (4 of 6).** The plan, the
 > roadmap and the rules are recorded in §11, §11.3 and §9A. Implementation
 > proceeds **task by task**, each reviewed before the next begins, with §11.3 and
 > §13 updated as each completes.
@@ -61,18 +61,18 @@ project stands.
 | | |
 |---|---|
 | **Branch** | `manus-ui-v1` |
-| **Latest code commit** | `136340b` — *refactor(ai): centralize retry classification* (§11.3 Phase 1 task 3; decisions D1.13–D1.20), on top of `561003a` *fix(ai): prevent routing to disabled providers* (task 2; D1.7–D1.12) and `913426f` *refactor(ai): centralize provider error classification* (task 1; D1.1–D1.6). **HEAD is the docs commit on top of them** — this row deliberately names the last commit that changed behaviour, because a row naming its own commit can never be written accurately |
+| **Latest code commit** | `fbc07b2` — *feat(ai): validate provider configuration* (§11.3 Phase 1 task 4; decisions D1.21–D1.27), on top of `136340b` *refactor(ai): centralize retry classification* (task 3; D1.13–D1.20), `561003a` *fix(ai): prevent routing to disabled providers* (task 2; D1.7–D1.12) and `913426f` *refactor(ai): centralize provider error classification* (task 1; D1.1–D1.6). **HEAD is the docs commit on top of them** — this row deliberately names the last commit that changed behaviour, because a row naming its own commit can never be written accurately |
 | **Working tree** | **clean** |
 | **Last milestone** | Authentication — **COMPLETE and browser-verified** (§8D) |
-| **Active milestone** | **AI Architecture & Multi-Provider Foundation** (§11) — **Phase 0 complete (3/3), Phase 1 in progress (3/6)**. Rules: §9A · Roadmap: §11.3 · Progress: §13 |
-| **Backend tests** | **682 passed** (611 + 16 disabled-provider + 55 retry-classification, 6 Aug 2026) |
+| **Active milestone** | **AI Architecture & Multi-Provider Foundation** (§11) — **Phase 0 complete (3/3), Phase 1 in progress (4/6)**. Rules: §9A · Roadmap: §11.3 · Progress: §13 |
+| **Backend tests** | **714 passed** (682 + 32 provider-validation, 6 Aug 2026) |
 | **Frontend tests** | **455 passed**, 33 files (450 + 5 export-attribution guards, 5 Aug 2026) |
 | **`tsc --noEmit`** | clean |
 | **`eslint .`** | **exactly 4 errors — all known debt** (§10 item 1). A 5th is a regression |
 | **`next build`** | succeeds; 40 routes (36 static, 4 dynamic) |
 
 > **On the test counts.** Frontend went 363 → 410 → 442 → 450 → 455; backend
-> 493 → 504 → 574 → 611 → 627 → 682. The discoverability milestone added `tests/discoverability.test.ts`
+> 493 → 504 → 574 → 611 → 627 → 682 → 714. The discoverability milestone added `tests/discoverability.test.ts`
 > (30) and matcher-coverage assertions in `tests/proxy.test.ts` (17); the auth
 > milestone added `tests/password-policy.test.ts` (9) and
 > `tests/auth-password-ux.test.tsx` (30). No backend code changed in either, so
@@ -83,15 +83,16 @@ project stands.
 > (`tests/test_provider_bug_fixes.py`), **+16** for task 2
 > (`tests/test_disabled_provider.py`) and **+55** for task 3
 > (`tests/test_retry_classification.py`, plus five net in the task-1 file that
-> D1.4 required C1 to update).
+> D1.4 required C1 to update) and **+32** for task 4
+> (`tests/test_provider_validation.py`).
 
 ### Working tree
 
 **Clean.** Everything through the authentication UX milestone is committed, and
 so is `GAB-D1` (§8E) — the model vendor's name removed from every exported PDF,
 plus the two guards that now keep it out. So is all of Phase 0, and so are
-**Phase 1 tasks 1, 2 and 3** (`913426f`, `561003a`, `136340b`) — each committed
-on its own, with its own decisions recorded in §11.6.
+**Phase 1 tasks 1, 2, 3 and 4** (`913426f`, `561003a`, `136340b`, `fbc07b2`) —
+each committed on its own, with its own decisions recorded in §11.6.
 
 One thing to expect rather than rediscover: `docs/qa/RUNTIME_VALIDATION_A4.md`
 and `RUNTIME_VALIDATION_PROVIDERS.md` **rewrite themselves** whenever
@@ -678,7 +679,7 @@ Existing product variables are unchanged: `SUPABASE_URL`,
 
 ### Verified
 
-- Backend **682** tests, frontend **455** tests, `tsc` clean, `next build`
+- Backend **714** tests, frontend **455** tests, `tsc` clean, `next build`
   succeeds across 40 routes — including the four policy routes and the five
   agent files (`robots.txt`, `sitemap.xml`, `llms.txt`, `humans.txt`,
   `.well-known/security.txt`), all of which prerender as static.
@@ -1590,6 +1591,60 @@ forbid the approach that will look obvious at the time.
     it, which is the difference between catching this in review and catching it
     in an incident.
 
+15. **Provider validation owns configuration correctness. Providers expose facts;
+    validation decides whether the configuration is acceptable.**
+
+    Added 6 Aug 2026 with Phase 1 task 4 (`fbc07b2`). It completes the pattern
+    rules 13 and 14 begin: a provider declares *what it is* — its key setting,
+    its capabilities, its models, its retry vocabulary — and never judges the
+    deployment around it. `app/ai/gateway/validation.py` makes that judgement,
+    once, for every provider.
+
+    **Three properties this must never lose:**
+
+    - **Validation never repairs configuration.** It returns findings. A
+      validator that quietly corrected a value would hide the mistake it exists
+      to reveal, and would leave the operator holding a wrong mental model of
+      their own deployment. This is §9 rule 12's *"no silent repair"* applied to
+      configuration instead of subscriptions.
+    - **Validation never performs network calls.** Nothing here contacts a
+      provider, and nothing here may start to. It must be safe to call on every
+      `/health` request, and at boot on a machine with no egress.
+    - **Configuration correctness and provider availability are independent
+      concepts.** Whether a configuration could ever work, and whether a vendor
+      is answering right now, are different questions with different fixes,
+      different owners and different urgencies. Availability lives in
+      `health.py` and `provider_health`; it may never be consulted here.
+
+    **A provider outage must never become a startup configuration failure.** A
+    service that refuses to restart because a vendor is having a bad afternoon
+    has converted someone else's incident into its own, at the worst possible
+    moment — during theirs. It is also the failure that looks most like progress
+    while you are making it: adding a health probe to startup validation feels
+    like extra rigour and is actually a new outage mode. That is why nothing in
+    this module probes anything.
+
+    **If a future provider requires provider-specific validation behaviour,
+    extend the validation contract rather than branching around it.** Add a fact
+    for the provider to declare and a check that reads it, so every provider is
+    validated by one code path. A branch keyed on a provider's name is forbidden
+    by rule 3 and is exactly how the per-vendor drift behind C1 and C2 returns.
+
+    A companion rule for what is *fatal*: reserve it for **closed sets**. A name
+    outside a registry this repo owns can never work and should fail a deploy. A
+    value that could legitimately be right in some deployment — a missing key, a
+    deliberately disabled chain, a model released last week — is reported, never
+    refused. Getting this backwards takes the whole product down over a feature
+    that is merely switched off.
+
+    Enforced rather than stated: `tests/test_provider_validation.py` pins the
+    fatal/warning split, the four-way health state, the purity contract, and —
+    the one that nearly did not get written — `TestStartupActuallyCallsTheValidator`,
+    which drives the real startup path. Commenting the validator out of
+    `validate_startup()` broke **no test** until that class existed, because
+    every other test called the validator directly. **Validation needs a guard on
+    its wiring, not only on its logic.**
+
 ---
 
 ## 10. Known technical debt
@@ -1620,7 +1675,7 @@ Items 4, 7 and 8 are tracked with three more in
 
 > ## IMPLEMENTATION IS UNDER WAY — §11.3 and §13 are the status of record.
 >
-> **Phase 0 is complete (3/3) and Phase 1 is in progress (1/6).** This banner
+> **Phase 0 is complete (3/3) and Phase 1 is in progress (4/6).** This banner
 > read "IMPLEMENTATION HAS NOT STARTED" until 6 Aug 2026; it was left behind by
 > the session that finished Phase 0 and is corrected here rather than trusted.
 > `GAB-D1` (§8E) remains **outside** the milestone — a governance gate failure
@@ -2100,7 +2155,7 @@ itself it is closer to shipping than it is:
 Billing trigger (BILL-T1)     ░░░░░░░░░░  deliberately deferred (§5A)
 Enterprise activation         ░░░░░░░░░░  no code path at all (BILL-3)
 Reconciliation worker         ░░░░░░░░░░  table exists, nothing writes it (BILL-6)
-AI Architecture (§11)         ███░░░░░░░  ACTIVE — Phase 0 COMPLETE (3/3); Phase 1 (1/6)
+AI Architecture (§11)         ████░░░░░░  ACTIVE — Phase 0 COMPLETE (3/3); Phase 1 (4/6)
 RC checklist                  ░░░░░░░░░░  0 of 267 boxes ticked
 Production payments           ░░░░░░░░░░  none ever processed
 ```
@@ -2115,7 +2170,7 @@ Marketing / policy pages      ░░░░░░░░░░  built 4 Aug, never
 Product screens built 4–5 Aug ░░░░░░░░░░  drop zone, dialogs, Inbox states
 ```
 
-**Tests:** backend 682 · frontend 455 (33 files) · `tsc` clean · `next build`
+**Tests:** backend 714 · frontend 455 (33 files) · `tsc` clean · `next build`
 clean, 40 routes · eslint exactly 4 known errors.
 
 **The honest summary:** the server side is real and verified. The public surface
@@ -2153,7 +2208,7 @@ implemented **and** verified, never merely written.
 | Phase | Status | Notes |
 |--------|--------|-------|
 | **Phase 0** — Evaluation Harness · Fake Provider · Golden Dataset | **Complete** (6 Aug 2026) | 70 tests, ~1.3s, fully offline. `AI_PROVIDER=fake` drives the real stack end to end and the golden dataset runs 6/6 through it. **R1 is now measurable rather than closed** — a baseline can be captured; nothing has been compared yet, which is Phase 6's job |
-| **Phase 1** — Provider Bug Fixes · Disabled Provider · Retry Classification · Provider Validation · Default Model · Native JSON | **In Progress** (1 of 6 complete) | Closes C1–C6, C8, C9. Behaviour-visible narrowly; the Groq path is unchanged. **Provider Bug Fixes — Complete** (6 Aug 2026, `913426f`): C2 and C8 closed, 37 tests, and the two headline guards were watched failing against the old code. Backend 574 → 611. Next: **Disabled Provider Fix (C3)**, not started |
+| **Phase 1** — Shared Provider Classifier · Disabled Provider · Retry Classification · Provider Validation · Default Model · Native JSON | **In Progress** (4 of 6 complete) | Closes C1–C6, C8, C9. Behaviour-visible narrowly; **the Groq path is unchanged throughout**. **Shared Provider Classifier** `913426f` — C2 + C8, 37 tests, §9A rule 13. **Disabled Provider Fix** `561003a` — C3, 16 tests, **R8 retired**. **Retry Classification** `136340b` — C1, 50 tests, **R5 retired**, §9A rule 14. **Provider Validation** `fbc07b2` — **C9, 32 tests, §9A rule 15**. Each was committed on its own and each had its guards watched failing against the pre-fix code. Backend 574 → 611 → 627 → 682 → 714. Next: **Default Model Fix (C4, C5)**, not started |
 | **Phase 2** — Credential Resolver · Local Provider · Local Runtime Override | Not Started | Closes C10 and delivers goal 5. Build the credential **seam**, not the BYO feature (C12) |
 | **Phase 3** — Capability Profiles · Intelligent Provider Selection · Token Budget Validation | Not Started | The only genuine design work in the milestone. Closes C7 and goal 2. **Gated on Phase 0's eval parity** |
 | **Phase 4** — Usage Persistence · AI Provenance · Cost Tracking | Not Started | Migration 0028, additive and nullable. **Phase 5 depends on this** |
