@@ -129,7 +129,11 @@ class Settings(BaseSettings):
     # Centralized AI configuration consumed by app.ai.config.AIConfig. Defaults
     # preserve the historical Groq behavior exactly (llama-3.3-70b, temp 0.2).
     AI_DEFAULT_PROVIDER: str = "groq"
-    AI_DEFAULT_MODEL: str = "llama-3.3-70b-versatile"
+    # NOTE: `AI_DEFAULT_MODEL` was REMOVED (C4). It was one vendor's model
+    # name used as the cross-provider last resort, so any provider with an
+    # incomplete `role_models` map was handed a Llama. A model now comes from
+    # the provider that will serve it, or the request is refused. A deployment
+    # still setting it is warned by `app/ai/gateway/validation.py`.
     AI_TEMPERATURE: float = 0.2
     AI_MAX_TOKENS: int = 2048
     AI_TIMEOUT_SECONDS: int = 30

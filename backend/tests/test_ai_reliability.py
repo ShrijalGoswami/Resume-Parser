@@ -242,12 +242,12 @@ def layer_b() -> None:
     try:
         resp = GroqProvider().complete(
             system="You are a test harness. Reply with the single word: ok.",
-            user="Reply with ok.", model=settings.AI_DEFAULT_MODEL,
+            user="Reply with ok.", model=GroqProvider().model_name(),
             temperature=0.0, max_tokens=8, timeout_seconds=20,
         )
         ok = bool(resp.text and resp.text.strip())
         record("L", "Live Groq smoke — real provider path", "PASS" if ok else "FAIL",
-               f"model={settings.AI_DEFAULT_MODEL}, tokens={resp.usage.total_tokens}"
+               f"model={GroqProvider().model_name()}, tokens={resp.usage.total_tokens}"
                if ok else "empty response")
     except AIRateLimitError as e:
         record("L", "Live Groq smoke — real provider path", "SKIPPED",
@@ -282,7 +282,8 @@ def write_report() -> None:
     L.append("## 1. Environment")
     L.append("")
     L.append(f"- **Environment:** `{settings.ENVIRONMENT}`")
-    L.append(f"- **Provider:** `{settings.reasoning_provider}` · model `{settings.AI_DEFAULT_MODEL}`")
+    from app.ai.gateway import resolve
+    L.append(f"- **Provider:** `{settings.reasoning_provider}` · model `{resolve().model}`")
     L.append(f"- **Date/time:** {ts}")
     L.append(f"- **Totals:** {n_pass} PASS · {n_fail} FAIL · {n_skip} SKIPPED")
     L.append(f"- **Overall:** {'✅ PASS' if overall == 'PASS' else '❌ FAIL'}")

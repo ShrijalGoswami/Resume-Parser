@@ -157,6 +157,8 @@ def check_provider_configuration() -> list[ConfigProblem]:
     problems += _check_environment(primary, settings.fallback_providers)
     problems += _check_routable_chain(primary)
     problems += _check_role_models()
+    problems += _check_provider_default_models()
+    problems += _check_removed_settings()
     problems += _check_credentials()
     return problems
 
@@ -289,9 +291,9 @@ def _check_environment(primary: str, fallbacks: Iterable[str]) -> list[ConfigPro
 def _check_routable_chain(primary: str) -> list[ConfigProblem]:
     """Warn when nothing is left to route to — see the module docstring for why
     this is a warning and not a refusal to boot."""
-    from app.ai.gateway.gateway import fallback_chain
+    from app.ai.gateway.gateway import routable_providers
 
-    if fallback_chain():
+    if routable_providers():
         return []
     disabled = ", ".join(sorted(settings.disabled_providers)) or "none"
     return [ConfigProblem(
@@ -328,12 +330,75 @@ def _check_role_models() -> list[ConfigProblem]:
     return out
 
 
+def _check_provider_default_models() -> list[ConfigProblem]:
+    """`AI_PROVIDERS[p].default_model` is now a resolution input at a higher
+    precedence than the role override (C5), so it gets the same scrutiny they do.
+
+    Warnings for the same reason (D1.23): the model registry tolerates unknown
+    models by design, so a typo and a model released last week are
+    indistinguishable from here.
+    """
+    from app.ai.gateway.provider_config import canonical_provider
+
+    raw = settings.AI_PROVIDERS or {}
+    if not isinstance(raw, dict):
+        return []
+    out = []
+    for key, overrides in raw.items():
+        if not isinstance(overrides, dict):
+            continue
+        name = str(overrides.get("default_model") or overrides.get("model") or "").strip()
+        if not name:
+            continue
+        provider = canonical_provider(key)
+        spec = get_model(name)
+        if spec is None:
+            out.append(ConfigProblem(
+                WARNING, "AI_PROVIDERS",
+                f"'{provider}'.default_model is '{name}', which is not in the "
+                f"model registry, so it has no metadata or pricing. This is "
+                f"tolerated — check it is not a typo.",
+                provider=provider,
+            ))
+        elif spec.provider != provider:
+            out.append(ConfigProblem(
+                WARNING, "AI_PROVIDERS",
+                f"'{provider}'.default_model is '{name}', which is registered to "
+                f"provider '{spec.provider}'. It will be sent to '{provider}', "
+                f"which is unlikely to recognise it.",
+                provider=provider,
+            ))
+    return out
+
+
+def _check_removed_settings() -> list[ConfigProblem]:
+    """Report settings this codebase no longer reads.
+
+    Silently ignoring a variable an operator deliberately set is the failure this
+    whole module exists to prevent — a removed setting is invisible otherwise,
+    because `Settings` is configured with `extra="ignore"`. Read from the process
+    environment rather than from `Settings`, precisely because the field is gone.
+    """
+    import os
+
+    if not (os.environ.get("AI_DEFAULT_MODEL") or "").strip():
+        return []
+    return [ConfigProblem(
+        WARNING, "AI_DEFAULT_MODEL",
+        "this setting was removed (C4) and is no longer read. It was one "
+        "vendor's model name used as the cross-provider last resort, so any "
+        "provider with an incomplete role map was handed it. Set the model on "
+        "the provider that will serve it — AI_PROVIDERS['<provider>']"
+        ".default_model — or leave it to the provider's own declared default.",
+    )]
+
+
 def _check_credentials() -> list[ConfigProblem]:
     """Warn when nothing in the chain has a credential. Not fatal: running
     without AI is a configuration this product supports."""
-    from app.ai.gateway.gateway import fallback_chain
+    from app.ai.gateway.gateway import routable_providers
 
-    chain = [s.provider for s in fallback_chain()]
+    chain = routable_providers()
     if not chain or _configured_chain():
         return []
     return [ConfigProblem(

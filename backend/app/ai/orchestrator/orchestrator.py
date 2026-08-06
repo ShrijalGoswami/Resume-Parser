@@ -24,9 +24,9 @@ import time
 from typing import Optional, Type, TypeVar
 
 from app.ai.config import get_ai_config
-from app.ai.gateway import ModelRole, cost_of, fallback_chain, resolve, usage_tracker
+from app.ai.gateway import ModelRole, active_provider, cost_of, fallback_chain, resolve, usage_tracker
 from app.ai.gateway.capability_routing import model_route_for
-from app.ai.gateway.gateway import ModelSelection
+from app.ai.gateway.gateway import ModelSelection, ModelSource
 from app.ai.gateway.health import health_manager, kind_for_error
 from app.ai.gateway.provider_config import get_provider_config
 from app.ai.prompts.registry import get_prompt
@@ -84,8 +84,21 @@ class AIOrchestrator:
         # Provider + model come from the Gateway. An explicit/routed provider or
         # model pins a single selection; otherwise the configurable fallback chain.
         if effective_provider or effective_model:
-            base = resolve(role, provider=effective_provider)
-            selections = [ModelSelection(provider=(effective_provider or base.provider), model=(effective_model or base.model), role=role)]
+            provider_name = (effective_provider or active_provider()).lower()
+            if effective_model:
+                # A pinned model is the MOST specific instruction there is, so it
+                # is recorded as such and nothing downstream may override it (C5).
+                # The gateway is NOT asked to resolve a model here: the answer is
+                # already known, and asking anyway would make a request fail over
+                # a role the pinned provider happens not to declare (C4's raise).
+                selected_model = effective_model
+                source = ModelSource.CALL_SITE if model else ModelSource.CAPABILITY_ROUTING
+            else:
+                base = resolve(role, provider=provider_name)
+                selected_model, source = base.model, base.source
+            selections = [ModelSelection(
+                provider=provider_name, model=selected_model, role=role, source=source,
+            )]
         else:
             selections = fallback_chain(role)
 
@@ -178,7 +191,12 @@ class AIOrchestrator:
         # each falling back to the global AI_* defaults. Behaviour is unchanged when
         # AI_PROVIDERS is empty.
         pcfg = get_provider_config(selection.provider)
-        model_name = pcfg.default_model or selection.model
+        # The gateway already decided the model, including this provider's own
+        # `default_model` at its correct precedence. Re-applying it here is what
+        # made an explicit call-site `model=` silently lose to a config file
+        # (C5), and it meant the model was chosen in two places that did not
+        # know about each other. Retry/timeout policy still comes from `pcfg`.
+        model_name = selection.model
         timeout = timeout_override or pcfg.timeout_seconds
         # QA-mode duplicate-prompt detection (no-op in production).
         fingerprint = hashlib.sha256(

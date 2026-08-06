@@ -50,7 +50,7 @@ def validate_startup() -> None:
     # Reported per provider, not per key: naming GROQ_API_KEY here was the visible
     # half of C8, and it told an operator running any other provider to go and set
     # a variable their deployment does not use.
-    from app.ai.gateway.gateway import configured_reasoning_providers, fallback_chain
+    from app.ai.gateway.gateway import configured_reasoning_providers, routable_providers
 
     configured = configured_reasoning_providers()
     if configured:
@@ -63,7 +63,7 @@ def validate_startup() -> None:
             "No configured reasoning provider (chain: %s). LLM analysis endpoints "
             "(/ats-analysis, /match-analysis) will return 503 until one of their "
             "API keys is set.",
-            ", ".join(s.provider for s in fallback_chain()) or "none",
+            ", ".join(routable_providers()) or "none",
         )
 
     # 3b. Persistence/auth — non-fatal, because a stateless deployment (public

@@ -8,10 +8,64 @@ chain from configuration. No feature knows or cares which vendor answered.
 Selection precedence (reasoning):
   1. runtime admin override (in-memory) — one switch updates the whole platform
   2. AI_PROVIDER / AI_DEFAULT_PROVIDER (env)
-Model precedence for a role:
-  1. per-role env override (e.g. DEFAULT_REASONING_MODEL)
-  2. the provider's registered default model for that role
-  3. AI_DEFAULT_MODEL (last-resort back-compat)
+
+MODEL RESOLUTION HAS EXACTLY ONE AUTHORITATIVE DECISION PATH (§9A rule 16)
+---------------------------------------------------------------------------
+**Providers expose facts. Model resolution decides precedence. Providers never
+decide precedence.** A provider declares the models it serves per role;
+`_role_model()` below decides which declaration — or which piece of
+configuration — actually wins. No provider, and no caller, gets to re-order that
+ladder.
+
+Three properties this must never lose:
+
+  * **Unknown models fail loudly.** A model is never invented and never
+    substituted. When no rule applies, resolution raises rather than reaching for
+    something plausible — a guessed name arrives at a real vendor as *their*
+    error, which is the hardest kind to trace back to our configuration.
+  * **Provider defaults never leak across providers.** A model declared by one
+    provider is that provider's, and a provider with an incomplete role map gets
+    a refusal, never a neighbour's model name. This is C4, and the global
+    `AI_DEFAULT_MODEL` that caused it has been removed rather than repointed.
+  * **Call-site intent has the highest precedence.** When a caller pins both
+    provider and model, that is the most specific instruction in the system: it
+    wins outright, and nothing is resolved on its behalf. This is C5 — a config
+    file used to beat an explicit `model=`, and the record then showed the
+    config's answer, so the override was invisible as well as ignored.
+
+**If a future provider cannot fit this precedence ladder, review the abstraction
+before adding provider-specific routing.** The ladder is deliberately short and
+provider-neutral; a vendor that seems to need its own rung is nearly always
+asking for a *fact* it has not declared yet. Add the fact. A branch keyed on a
+provider's name is forbidden by §9A rule 3.
+
+MODEL PRECEDENCE — ONE DECISION PATH (C4/C5)
+--------------------------------------------
+`_role_model()` is the only place a model is chosen. Most specific wins:
+
+  1. explicit call-site `model=`          → `ModelSource.CALL_SITE`
+  2. capability→model routing             → `ModelSource.CAPABILITY_ROUTING`
+  3. per-provider `AI_PROVIDERS[p].default_model` → `ModelSource.PROVIDER_DEFAULT`
+  4. per-role env override (DEFAULT_REASONING_MODEL, …) → `ModelSource.ROLE_OVERRIDE`
+  5. the provider's own declared `role_models[role]`    → `ModelSource.PROVIDER_ROLE`
+  6. nothing — `AIConfigError`, naming the provider and the role
+
+1 and 2 are resolved by the orchestrator before it calls in here, because only
+the caller knows it pinned something; 3–5 are decided here. Every selection
+records WHICH of these applied, so "why did it use that model" is answerable
+from `config_snapshot()` rather than by reading this docstring.
+
+Two things this ordering is deliberate about:
+
+* **The per-provider default outranks the per-role override** (3 above 4). The
+  role override is provider-agnostic and can easily name a model the provider
+  cannot serve; the per-provider default names its provider explicitly. This
+  also preserves the relative order those two already had.
+* **There is no cross-provider last resort.** `AI_DEFAULT_MODEL` used to sit at
+  the bottom and was a Groq model name, so any provider with an incomplete
+  `role_models` map was handed a Llama (C4). Guessing a model is worse than
+  refusing: the request reaches a real vendor with a model it has never heard of,
+  and the error comes back as the vendor's, not ours.
 
 Nothing here holds secrets; only the NAME of the key setting is surfaced.
 """
@@ -20,6 +74,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from enum import Enum
 from typing import Optional
 
 from app.ai.gateway.model_registry import estimate_cost, get_model
@@ -34,11 +89,26 @@ logger = logging.getLogger("app.ai")
 _provider_override: Optional[str] = None
 
 
+class ModelSource(str, Enum):
+    """Why this model was chosen. The five inputs kept distinct on purpose —
+    they are edited in different places by different people, and "the model is
+    wrong" is unanswerable without knowing which one applied."""
+
+    CALL_SITE = "call_site"                    # an explicit `model=` argument
+    CAPABILITY_ROUTING = "capability_routing"  # AI_CAPABILITY_MODELS
+    PROVIDER_DEFAULT = "provider_default"      # AI_PROVIDERS[provider].default_model
+    ROLE_OVERRIDE = "role_override"            # DEFAULT_REASONING_MODEL, …
+    PROVIDER_ROLE = "provider_role"            # the provider's own role_models
+
+
 @dataclass(frozen=True)
 class ModelSelection:
     provider: str
     model: str
     role: ModelRole
+    #: Which rule produced `model`. Defaulted so existing construction sites
+    #: stay valid; the orchestrator sets it explicitly when it pins a model.
+    source: ModelSource = ModelSource.PROVIDER_ROLE
 
 
 def active_provider() -> str:
@@ -77,24 +147,71 @@ def clear_override() -> None:
     _provider_override = None
 
 
-def _role_model(provider: str, role: ModelRole) -> str:
+def _role_model(provider: str, role: ModelRole) -> tuple[str, ModelSource]:
+    """The one decision path for "which model". See the module docstring.
+
+    Returns the model AND the rule that chose it. Raises `AIConfigError` when no
+    rule applies — a model is never invented, because a guessed name reaches a
+    real vendor and comes back as their error rather than our misconfiguration.
+    """
+    from app.ai.gateway.provider_config import get_provider_config
+
+    # 3. Per-provider default: names its provider explicitly, so it outranks the
+    #    provider-agnostic role override below.
+    provider_default = (get_provider_config(provider).default_model or "").strip()
+    if provider_default:
+        return provider_default, ModelSource.PROVIDER_DEFAULT
+
+    # 4. Per-role env override, global across providers.
     setting = ROLE_MODEL_SETTING.get(role)
     if setting:
         override = (getattr(settings, setting, "") or "").strip()
         if override:
-            return override
+            return override, ModelSource.ROLE_OVERRIDE
+
+    # 5. What the provider itself declares for this role (its own DEFAULT_REASONING
+    #    is the internal fallback — a provider's own default, never another's).
     spec = get_provider_spec(provider)
     if spec:
         model = spec.default_model(role)
         if model:
-            return model
-    return settings.AI_DEFAULT_MODEL
+            return model, ModelSource.PROVIDER_ROLE
+
+    # 6. Nothing applies. Say so, name both, and stop.
+    raise AIConfigError(
+        f"No model configured for provider '{provider}' in role '{role.value}'. "
+        f"Declare it in the provider's `role_models`, set "
+        f"{ROLE_MODEL_SETTING.get(role, 'the role override')}, or give the "
+        f"provider a `default_model` in AI_PROVIDERS."
+    )
 
 
 def resolve(role: ModelRole = ModelRole.DEFAULT_REASONING, *, provider: Optional[str] = None) -> ModelSelection:
-    """Resolve a logical role to a concrete (provider, model)."""
+    """Resolve a logical role to a concrete (provider, model, source)."""
     prov = (provider or active_provider()).lower()
-    return ModelSelection(provider=prov, model=_role_model(prov, role), role=role)
+    model, source = _role_model(prov, role)
+    return ModelSelection(provider=prov, model=model, role=role, source=source)
+
+
+def routable_providers() -> list[str]:
+    """The ordered provider NAMES a request may be routed to — no model resolved.
+
+    Split out from `fallback_chain()` because two callers need the chain without
+    needing a model: `configured_reasoning_providers()` (which asks about keys)
+    and the configuration validator (which must never raise — §9A rule 15).
+    Since C4 removed the cross-provider last resort, resolving a model can fail,
+    and a health surface asking "which providers are in play" must not inherit
+    that failure.
+    """
+    from app.ai.gateway.health import health_manager
+
+    chain = [p for p in [active_provider()] if not health_manager.is_disabled(p)]
+    if settings.AI_ENABLE_FALLBACK:
+        for p in settings.fallback_providers:
+            if p not in chain and get_provider_spec(p) is not None \
+                    and not health_manager.is_disabled(p):
+                chain.append(p)
+    return chain
 
 
 def fallback_chain(role: ModelRole = ModelRole.DEFAULT_REASONING) -> list[ModelSelection]:
@@ -109,15 +226,7 @@ def fallback_chain(role: ModelRole = ModelRole.DEFAULT_REASONING) -> list[ModelS
     configuration with no answer, and the orchestrator says so rather than
     routing to a provider it was told not to.
     """
-    from app.ai.gateway.health import health_manager
-
-    chain = [p for p in [active_provider()] if not health_manager.is_disabled(p)]
-    if settings.AI_ENABLE_FALLBACK:
-        for p in settings.fallback_providers:
-            if p not in chain and get_provider_spec(p) is not None \
-                    and not health_manager.is_disabled(p):
-                chain.append(p)
-    return [resolve(role, provider=p) for p in chain]
+    return [resolve(role, provider=p) for p in routable_providers()]
 
 
 def configured_reasoning_providers(
@@ -133,13 +242,13 @@ def configured_reasoning_providers(
     from app.ai.providers.registry import get_provider
 
     configured: list[str] = []
-    for selection in fallback_chain(role):
+    for name in routable_providers():
         try:
-            provider = get_provider(selection.provider)
+            provider = get_provider(name)
         except AIConfigError:
             continue
         if provider.is_configured():
-            configured.append(selection.provider)
+            configured.append(name)
     return configured
 
 
@@ -175,11 +284,21 @@ def cost_of(model: str, prompt_tokens: int, completion_tokens: int) -> Optional[
 def config_snapshot() -> dict:
     """Admin-safe view of the active configuration (NO secrets)."""
     prov = active_provider()
-    roles = {
-        role.value: {"provider": sel.provider, "model": sel.model}
-        for role in ModelRole if role is not ModelRole.EMBEDDINGS
-        for sel in [resolve(role)]
-    }
+    # `source` answers "why this model", which is the half of C5 that was
+    # invisible: usage recorded the model actually used and nothing recorded the
+    # rule that picked it. A role that cannot resolve reports the reason rather
+    # than taking the whole snapshot down — this is an admin surface.
+    roles = {}
+    for role in ModelRole:
+        if role is ModelRole.EMBEDDINGS:
+            continue
+        try:
+            sel = resolve(role)
+            roles[role.value] = {"provider": sel.provider, "model": sel.model,
+                                 "source": sel.source.value}
+        except AIConfigError as exc:
+            roles[role.value] = {"provider": prov, "model": None,
+                                 "source": None, "error": str(exc)}
     emb_provider, emb_model, emb_dims = resolve_embedding()
     from app.ai.gateway.health import health_manager
     from app.ai.gateway.validation import check_provider_configuration, configuration_state
@@ -207,7 +326,10 @@ def config_snapshot() -> dict:
         "active_provider": prov,
         "override_active": _provider_override is not None,
         "fallback_enabled": settings.AI_ENABLE_FALLBACK,
-        "fallback_chain": [s.provider for s in fallback_chain()],
+        # Names only: this line never needed a model, and resolving one can now
+        # fail (C4). An admin surface must not break on the configuration it exists
+        # to display.
+        "fallback_chain": routable_providers(),
         "disabled_providers": sorted(settings.disabled_providers),
         "roles": roles,
         "embeddings": {"provider": emb_provider, "model": emb_model, "dimensions": emb_dims},

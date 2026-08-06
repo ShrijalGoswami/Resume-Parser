@@ -1734,8 +1734,8 @@ Each was verified in code, not inferred. The IDs are referenced by the roadmap.
 | **C1** | **Quota classification exists only for Groq.** `groq_provider.py` sets `is_quota`, and the orchestrator refuses to retry quota errors. Anthropic and Gemini never set it, so a daily-quota exhaustion there is treated as transient and retried — burning a budget that will not clear today |
 | **C2** | **Error classification is substring matching on `str(exc)`.** `anthropic_provider.py` tests `"rate" in msg`, which also matches "generate". Typed SDK exceptions exist and are unused |
 | **C3** | **`AI_DISABLED_PROVIDERS` disables nothing.** `fallback_chain()` never filters it and the orchestrator keeps unhealthy providers as a last resort, so a "disabled" provider still serves traffic while the admin UI shows it off. `AI_GATEWAY.md` claims "never routed" |
-| **C4** | **`AI_DEFAULT_MODEL` is a Groq model used as the cross-provider last resort.** A new provider with an incomplete `role_models` map gets handed a Llama model name |
-| **C5** | **Per-provider `default_model` outranks an explicit call-site `model=`.** Documented precedence is inverted at `orchestrator.py`; usage records the model actually used, so the override is invisible |
+| **C4** | ~~**`AI_DEFAULT_MODEL` is a Groq model used as the cross-provider last resort.**~~ **CLOSED 6 Aug 2026** — the setting is removed; a provider with no model for a role now raises rather than borrowing another vendor's |
+| **C5** | ~~**Per-provider `default_model` outranks an explicit call-site `model=`.**~~ **CLOSED 6 Aug 2026** — one decision path in `gateway._role_model()`; the orchestrator consumes it. `ModelSelection.source` records which rule applied |
 | **C6** | **No provider requests native JSON mode.** `can_json` / `supports_json` are declared everywhere and read by **nothing**. Structured output is prompt-instructed, then retried up to 6× with an identical prompt and no repair instruction |
 | **C7** | **Token budgets live in business logic and are never validated against the model.** `_MAX_TOKENS = 4096` is hardcoded in the comparison and interview services; nothing checks it against the model's declared `max_output_tokens` |
 | **C8** | **`is_llm_configured` is `bool(GROQ_API_KEY)`.** Run OpenAI-only and `/health` reports `llm: not_configured` while serving AI correctly |
@@ -1798,7 +1798,9 @@ Phase 1
 ☑ Provider Validation         6 Aug 2026 — app/ai/gateway/validation.py
                               C9 · 32 tests · fatal only for closed sets
                               violation injected and watched fail
-☐ Default Model Fix
+☑ Default Model Resolution    6 Aug 2026 — gateway._role_model is the one path
+  (roadmap name: "Default      C4 + C5 · 22 tests · AI_DEFAULT_MODEL removed
+   Model Fix")                 violation injected and watched fail
 ☐ Native JSON Support
 
 Phase 2
@@ -2048,6 +2050,26 @@ a correct mechanism that nothing calls. `TestStartupActuallyCallsTheValidator`
 drives `validate_startup()` itself and was watched failing under that injection.
 **Any future validation added here needs a test on the wiring, not only on the
 logic.**
+
+#### Phase 1 · Default Model Resolution (6 Aug 2026) — C4, C5
+
+| # | Decision | Why it binds later tasks |
+|---|---|---|
+| **D1.28** | **`gateway._role_model()` is the ONE decision path**, and it returns the model *and* the rule that chose it. The orchestrator consumes the result and no longer re-derives anything | The model used to be chosen in two files that did not know about each other, which is the whole of C5: `pcfg.default_model or selection.model` silently beat an explicit call-site `model=`. **Phase 3's intelligent selection extends this function — it does not add a second one** |
+| **D1.29** | **Precedence, most specific first:** call-site `model=` → capability routing → per-provider `default_model` → per-role env override → the provider's own `role_models` → **raise** | Only one relative order changed (the pinned model moved above the per-provider default, which is C5). Everything else keeps the order it already had, so this is a fix rather than a re-shuffle |
+| **D1.30** | **The per-provider default stays ABOVE the per-role override** | The role override is provider-agnostic and can name a model the provider cannot serve — C4's bug one level up. The per-provider default names its provider explicitly. C9 already warns when a role override names a model from a provider outside the chain |
+| **D1.31** | **There is no cross-provider last resort, and `AI_DEFAULT_MODEL` is DELETED** — not merely unread | Guessing a model is worse than refusing: the request reaches a real vendor with a name it has never heard of, so the failure arrives as *their* error. Deleting rather than ignoring matters because `Settings` uses `extra="ignore"`, so a leftover value would be invisible. `AIConfig.default_model` went with it — written, never read |
+| **D1.32** | **A deployment still setting `AI_DEFAULT_MODEL` is warned by the C9 validator**, read from `os.environ` since the field no longer exists | Silently ignoring a variable an operator deliberately set is the exact failure §9A rule 15 exists to prevent. Removing a setting is only safe if the removal is *announced* |
+| **D1.33** | **`ModelSelection.source` records which rule applied**, and `config_snapshot()["roles"]` surfaces it | The other half of C5: usage recorded the model used and nothing recorded *why*, so an ignored override was invisible in the record as well as in the call. Five sources, kept distinct because they are edited by different people in different places |
+| **D1.34** | **`routable_providers()` splits the provider chain from model resolution** | Since resolution can now raise, every caller asking a chain-shaped question that does not need a model — `configured_reasoning_providers()`, the C9 validator, `config_snapshot()`'s chain, the startup log — asks by NAME. **§9A rule 15 says the validator may never raise**, and this is what keeps that true now that models can fail to resolve |
+| **D1.35** | **A call pinning BOTH provider and model resolves nothing** | Surfaced by the provider-contract suite, not by unit tests: the orchestrator resolved a base model it then discarded. Harmless while resolution always returned something; once C4 let it raise, a fully-pinned call started failing over a role the pinned provider happens not to declare. Do not compute what you will not use |
+
+**A note for whoever adds a provider.** A provider now needs **both** registrations
+to be routable: a class in `providers/registry.py` *and* a `ProviderSpec` in
+`gateway/provider_registry.py`. That was always true; before C4 a missing spec
+merely mislabelled every record with another vendor's model name, and now it
+raises. C9's validator reports the reverse case (spec without a class); this one
+is caught by resolution itself.
 
 ---
 

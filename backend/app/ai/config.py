@@ -16,7 +16,6 @@ from app.core.config import settings
 @dataclass(frozen=True)
 class AIConfig:
     default_provider: str
-    default_model: str
     temperature: float
     max_tokens: int
     timeout_seconds: int
@@ -37,7 +36,6 @@ def get_ai_config() -> AIConfig:
     """Resolve the active AI configuration from settings."""
     return AIConfig(
         default_provider=settings.AI_DEFAULT_PROVIDER,
-        default_model=settings.AI_DEFAULT_MODEL,
         temperature=settings.AI_TEMPERATURE,
         max_tokens=settings.AI_MAX_TOKENS,
         timeout_seconds=settings.AI_TIMEOUT_SECONDS,

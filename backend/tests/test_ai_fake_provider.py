@@ -118,9 +118,10 @@ class TestRegistration:
         assert get_provider("fake").is_configured() is True
 
     def test_the_gateway_has_a_spec_and_resolves_its_own_model(self):
-        # Without a ProviderSpec the gateway falls through to AI_DEFAULT_MODEL,
-        # which is a GROQ model name (C4) — the fake would report answering with
-        # llama-3.3-70b and every record would be mislabelled.
+        # Without a ProviderSpec the gateway cannot resolve a model for the
+        # fake at all. Before C4 it fell through to AI_DEFAULT_MODEL — a GROQ
+        # model name — and every record was mislabelled as llama-3.3-70b; now it
+        # raises instead. Either way the spec is what makes this correct.
         spec = get_provider_spec("fake")
         assert spec is not None
         selection = resolve()

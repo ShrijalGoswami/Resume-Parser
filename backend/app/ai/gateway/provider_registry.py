@@ -83,9 +83,10 @@ def _ensure_seeded() -> None:
     from app.ai.providers.openai_compat import KimiProvider, OpenAIProvider, OpenRouterProvider
 
     # The fake is specced like any other provider. Without a spec here the
-    # gateway could not resolve a model for it and `_role_model()` would fall
-    # through to AI_DEFAULT_MODEL — which is a Groq model name (C4), i.e. the
-    # fake would report itself as answering with llama-3.3-70b.
+    # gateway cannot resolve a model for it at all: since C4 removed the
+    # cross-provider last resort, `_role_model()` now RAISES rather than handing
+    # it another vendor's model name. Either way a missing spec is a defect —
+    # this one just fails loudly instead of mislabelling every record.
     for cls in (GroqProvider, GeminiProvider, AnthropicProvider, FakeProvider,
                 OpenAIProvider, OpenRouterProvider, KimiProvider):
         register_provider_spec(_spec_from_class(cls))
