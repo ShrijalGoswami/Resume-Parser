@@ -30,7 +30,28 @@ export async function proxy(request: NextRequest) {
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   // Stateless mode: no auth configured → let everything through.
-  if (!url || !anonKey) return NextResponse.next();
+  //
+  // FAIL CLOSED IN PRODUCTION (A4). This branch exists so the public,
+  // account-free app keeps working with no Supabase project attached, and that
+  // is a configuration this product deliberately supports — locally. In
+  // production the overwhelmingly likelier cause of a missing env var is that
+  // someone forgot it, and the symptom is silent: every protected route renders
+  // to anonymous visitors.
+  //
+  // The backend independently returns 401 on all of them, so no records follow.
+  // That is defence in depth working, not a reason to leave the outer layer
+  // open — the whole point of two layers is that neither is trusted to be the
+  // only one.
+  if (!url || !anonKey) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        'Supabase environment variables are missing in production. ' +
+          'Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY. ' +
+          'Refusing to serve protected routes unauthenticated.'
+      );
+    }
+    return NextResponse.next();
+  }
 
   // Dev-only: drop a session carried over from a previous server run. Applied to
   // `request.cookies` before the Supabase client reads them, so `getUser()` below
