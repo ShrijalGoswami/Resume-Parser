@@ -1,6 +1,7 @@
 import docx
 import logging
 from pathlib import Path
+from app.ai.utils.limits import enforce_archive
 from app.parser.base import BaseParser
 from app.parser.exceptions import ParserError
 
@@ -16,10 +17,21 @@ class DocxParser(BaseParser):
         if not file_path.exists():
             raise ParserError(f"DOCX file does not exist at: {file_path}")
 
+        # A DOCX is a ZIP archive, and python-docx decompresses all of it before
+        # returning. Every check upstream — extension, magic bytes, the 10MB
+        # upload cap — measures the file on disk, so a small archive that expands
+        # to gigabytes passes all of them and exhausts memory here (A3).
+        #
+        # Deliberately OUTSIDE the try/except below: that block converts anything
+        # it catches into a generic "Failed to parse DOCX document", and a refusal
+        # that names the size is worth more to the operator reading the log than
+        # one that says the file was unparseable.
+        enforce_archive(file_path, name=file_path.name)
+
         try:
             # Selected DOCX parser
             logger.info("Parser selected: DocxParser")
-            
+
             # Open document
             doc = docx.Document(file_path)
             

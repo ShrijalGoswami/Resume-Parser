@@ -4,6 +4,7 @@ from app.parser.base import BaseParser
 from app.parser.pdf import PDFParser
 from app.parser.docx import DocxParser
 from app.parser.exceptions import ParserError
+from app.ai.utils.limits import ArchiveTooLargeError, DocumentTooLargeError, enforce_document
 from app.ai.utils.untrusted import scrub
 
 logger = logging.getLogger(__name__)
@@ -47,8 +48,28 @@ class ParserFactory:
         parser = cls.get_parser(file_path)
         parser_name = parser.__class__.__name__
 
-        # Execute parsing (which performs page count and text extraction)
-        text, page_count = parser.parse(file_path)
+        # Execute parsing (which performs page count and text extraction).
+        # `ArchiveTooLargeError` is raised INSIDE the parser, before it opens the
+        # file, because the memory ceiling has to be checked before decompression
+        # (A3). It is translated here for the same reason `DocumentTooLargeError`
+        # is below: every caller of this factory already handles `ParserError`,
+        # and a refusal the routes do not recognise becomes a 500 instead of the
+        # 400 it is.
+        try:
+            text, page_count = parser.parse(file_path)
+        except ArchiveTooLargeError as exc:
+            logger.warning("Extraction refused: %s", exc)
+            raise ParserError(str(exc)) from exc
+
+        # Resource ceiling, refused rather than clipped (S-4). The upload cap
+        # is 10MB of FILE; a 10MB PDF can carry megabytes of text over hundreds
+        # of pages, and nothing bounded that. Enforced here because this is
+        # already the single chokepoint every parser passes through.
+        try:
+            enforce_document(text, page_count, name=file_path.name)
+        except DocumentTooLargeError as exc:
+            logger.warning("Extraction refused: %s", exc)
+            raise ParserError(str(exc)) from exc
 
         # Single chokepoint for untrusted document text. Résumés are authored by
         # the candidate being evaluated, so instruction-like lines are stripped
