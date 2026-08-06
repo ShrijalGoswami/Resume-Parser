@@ -137,6 +137,15 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers.setdefault(
             "Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'"
         )
+        # Authenticated responses carry candidate records and hiring decisions;
+        # nothing here is safe for a shared cache to keep (A9). Well-behaved
+        # caches already decline to store responses to Authorization-bearing
+        # requests, so this states the intent rather than changing behaviour.
+        #
+        # `setdefault`, like every header above it: a route that deliberately
+        # sets its own Cache-Control keeps it. That is what makes this safe to
+        # apply blanket — it cannot silently make a cacheable endpoint uncached.
+        response.headers.setdefault("Cache-Control", "no-store")
         # HSTS instructs browsers never to talk to this host over plaintext again.
         # Only sent for requests that actually arrived over TLS (directly or via a
         # terminating proxy) — emitting it on a local http:// dev server would pin
@@ -195,6 +204,27 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         "/api/v1/copilot/chat": (30, 60),
         "/api/v1/export-report": (30, 60),
         "/api/v1/export-match-report": (30, 60),
+        # Agent scan reasons over a whole campaign — the most expensive single
+        # call in the product, and it was unlimited (A5).
+        "/api/v1/agent/scan": (10, 60),
+    }
+
+    # path SUFFIX -> (max POSTs, window seconds).
+    #
+    # The authenticated LLM endpoints carry resource IDs mid-path
+    # (/campaigns/{id}/candidates/{id}/interview), so the prefix table above
+    # cannot reach them — which is precisely why they were unlimited (A5).
+    # Matching the trailing segment is the smallest change that covers them;
+    # the limiter itself is untouched, and the distributed-counter problem
+    # remains S-6.
+    #
+    # Being authenticated is not a rate limit. It bounds WHO can spend, not how
+    # fast, and every one of these paths is a paid Groq call.
+    _SUFFIX_LIMITS = {
+        "/compare": (20, 60),
+        "/interview": (20, 60),
+        "/resume": (30, 60),          # upload + analysis; "/resume-url" is a GET
+        "/embeddings/reindex": (5, 60),
     }
     _MAX_KEYS = 50_000  # hard memory bound for the abuse case
 
@@ -206,6 +236,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     def _rule(self, path: str):
         for prefix, limit in self._LIMITS.items():
             if path.startswith(prefix):
+                return limit
+        for suffix, limit in self._SUFFIX_LIMITS.items():
+            if path.endswith(suffix):
                 return limit
         return None
 
