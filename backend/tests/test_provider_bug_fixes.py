@@ -38,7 +38,7 @@ from app.ai.gateway.gateway import (
 from app.ai.providers.anthropic_provider import AnthropicProvider
 from app.ai.providers.errors import (
     classify_vendor_error,
-    is_quota_exhaustion,
+    matches_quota_vocabulary,
     retry_after_of,
 )
 from app.ai.providers.gemini_provider import GeminiProvider
@@ -153,35 +153,59 @@ class TestTextFallbackIsWordAnchored:
         assert type(classify_vendor_error(RuntimeError("boom"), sdk="groq")) is AIProviderError
 
 
-class TestQuotaSemanticsAreUnchanged:
-    """C1 is the NEXT task. This task must not move quota behaviour by accident —
-    a silent change here would make the Retry Classification task's evidence
-    meaningless, because its 'before' would already be its 'after'."""
+class TestQuotaSemanticsPerProvider:
+    """Was `TestQuotaSemanticsAreUnchanged`, which pinned today's behaviour
+    INCLUDING the C1 gap and named itself as the test C1 must update in the same
+    commit (D1.4). C1 is now closed, so this class asserts what it asserted for
+    Groq and the OpenAI family — those lists are preserved verbatim — and the two
+    cases that used to record the gap now assert it is shut. The C1 guards proper
+    live in `tests/test_retry_classification.py`."""
 
-    def test_groq_still_marks_a_daily_ceiling_as_quota(self):
+    def test_groq_marks_a_daily_ceiling_as_quota(self):
         exc = RuntimeError("Rate limit reached: 100000 tokens per day (TPD)")
         result = GroqProvider._classify(exc)
         assert isinstance(result, AIRateLimitError)
         assert result.is_quota is True
         assert result.retryable is False
 
-    def test_groq_still_treats_a_per_minute_limit_as_retryable(self):
+    def test_groq_treats_a_per_minute_limit_as_retryable(self):
         result = GroqProvider._classify(RuntimeError("Rate limit reached: 30 requests per minute"))
         assert isinstance(result, AIRateLimitError)
         assert result.is_quota is False
         assert result.retryable is True
 
-    def test_openai_family_still_detects_quota(self):
+    def test_openai_family_detects_quota(self):
         result = OpenAIProvider._classify(RuntimeError("You exceeded your current quota"))
         assert isinstance(result, AIRateLimitError)
         assert result.is_quota is True
 
-    @pytest.mark.parametrize("provider", [AnthropicProvider, GeminiProvider])
-    def test_anthropic_and_gemini_still_do_not_detect_quota(self, provider):
-        """Recorded, not endorsed: this IS C1, and it is open. When Retry
-        Classification closes it, this test is the one that must be updated in
-        the same commit — deliberately, not by surprise."""
-        result = provider._classify(RuntimeError("Rate limit reached: quota exhausted for the day"))
+    def test_gemini_now_detects_a_daily_ceiling(self):
+        """THE C1 CHANGE. This assertion is inverted from what it was: Gemini
+        used to retry an exhausted daily budget five times over."""
+        result = GeminiProvider._classify(
+            RuntimeError("429 Quota exceeded for quota metric 'requests per day'")
+        )
+        assert isinstance(result, AIRateLimitError)
+        assert result.is_quota is True
+        assert result.retryable is False
+
+    def test_gemini_still_retries_a_per_minute_limit(self):
+        """The other half of C1, and the reason Gemini's marker list is narrower
+        than Groq's: Google says "quota" for a per-minute limit too, so a shared
+        list would have abandoned a request about to succeed."""
+        result = GeminiProvider._classify(
+            RuntimeError("429 Quota exceeded for quota metric 'requests per minute'")
+        )
+        assert isinstance(result, AIRateLimitError)
+        assert result.is_quota is False
+        assert result.retryable is True
+
+    def test_anthropic_declares_no_daily_quota_vocabulary(self):
+        """Anthropic's 429s are per-minute buckets that reset within the minute,
+        so retrying them is correct. The empty marker list is a declaration, not
+        the gap C1 closed — what Anthropic gained is Retry-After (below)."""
+        assert AnthropicProvider.quota_markers == ()
+        result = AnthropicProvider._classify(RuntimeError("429 rate_limit_error"))
         assert isinstance(result, AIRateLimitError)
         assert result.is_quota is False
 
@@ -191,9 +215,15 @@ class TestQuotaSemanticsAreUnchanged:
         result = GroqProvider._classify(exc)
         assert result.retry_after == 12.0
 
-    def test_quota_markers_are_the_ones_that_were_already_there(self):
-        assert is_quota_exhaustion("tokens per day") is True
-        assert is_quota_exhaustion("30 requests per minute") is False
+    def test_groq_and_openai_marker_lists_are_preserved_verbatim(self):
+        """The pre-C1 expression, character for character. Groq's is the only
+        list ever exercised against a live account; C1 had no business tuning it
+        while closing a gap on a different provider."""
+        original = ("per day", "tpd", "rpd", "daily", "quota")
+        assert GroqProvider.quota_markers == original
+        assert OpenAIProvider.quota_markers == original
+        assert matches_quota_vocabulary("tokens per day", original) is True
+        assert matches_quota_vocabulary("30 requests per minute", original) is False
 
     def test_retry_after_of_tolerates_an_exception_without_a_response(self):
         assert retry_after_of(RuntimeError("no response attached")) is None
@@ -201,9 +231,20 @@ class TestQuotaSemanticsAreUnchanged:
 
 class TestEveryProviderClassifiesThroughTheSharedLadder:
     """The duplication WAS the defect: four copies drifted into four word lists,
-    and one of them grew the "generate" bug. A new provider that writes its own
-    ladder reintroduces exactly that, so this asserts the shared classifier is
-    what every provider uses."""
+    one grew the "generate" bug (C2) and two silently stopped classifying quota
+    (C1). `_classify` now lives ONCE, on `LLMProvider`, so the structural guard
+    below is the load-bearing one — a provider that overrides it has taken back
+    the decision §9A rule 13 centralised."""
+
+    @pytest.mark.parametrize(
+        "provider", [GroqProvider, AnthropicProvider, GeminiProvider, OpenAIProvider]
+    )
+    def test_no_provider_owns_its_own_classifier(self, provider):
+        assert "_classify" not in vars(provider), (
+            f"{provider.__name__} overrides _classify. Providers declare "
+            f"vocabulary (sdk_namespace, quota_markers); the decision stays in "
+            f"app/ai/providers/errors.py — §9A rule 13."
+        )
 
     @pytest.mark.parametrize(
         "provider", [GroqProvider, AnthropicProvider, GeminiProvider, OpenAIProvider]

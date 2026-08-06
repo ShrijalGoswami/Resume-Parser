@@ -10,9 +10,8 @@ from __future__ import annotations
 
 from app.ai.gateway.roles import ModelRole
 from app.ai.providers.base import LLMProvider
-from app.ai.providers.errors import classify_vendor_error
 from app.ai.schemas.base import ProviderResponse, TokenUsage
-from app.ai.utils.errors import AIConfigError, AIProviderError
+from app.ai.utils.errors import AIConfigError
 from app.core.config import settings
 
 
@@ -20,6 +19,14 @@ class GeminiProvider(LLMProvider):
     name = "gemini"
     display_name = "Google Gemini"
     api_key_setting = "GEMINI_API_KEY"
+    # google-generativeai raises through google.api_core, not its own namespace.
+    sdk_namespace = "google"
+    # NARROWER THAN GROQ'S ON PURPOSE. Google phrases both windows the same way —
+    # "Quota exceeded for quota metric 'Generate Content API requests per minute'"
+    # is a PER-MINUTE limit that clears in seconds. Including the bare word
+    # "quota" here, as Groq's list does, would stop retrying a request that was
+    # about to succeed. Only day-scoped wording means "not today".
+    quota_markers = ("per day", "perday", "per-day", "daily", "/day")
     can_json = True
     can_stream = True
     can_reason = True
@@ -70,9 +77,3 @@ class GeminiProvider(LLMProvider):
             finish_reason=finish or None,
         )
 
-    # `sdk="google"`: google-generativeai raises through `google.api_core`, not
-    # its own namespace. `is_quota` is deliberately not passed — Gemini quota
-    # exhaustion is still retried as a transient rate limit (C1, next task).
-    @staticmethod
-    def _classify(exc: Exception) -> AIProviderError:
-        return classify_vendor_error(exc, sdk="google")

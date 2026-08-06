@@ -5,8 +5,9 @@ THIS FILE IS THE SINGLE SOURCE OF TRUTH FOR PROVIDER ERROR SEMANTICS
 --------------------------------------------------------------------
 **No provider implementation may classify errors directly.** Groq, OpenAI,
 Gemini, Anthropic, OpenRouter, Kimi, the local provider and every provider added
-after them supply only their own *vocabulary* — status mapping, Retry-After
-extraction, quota detection — and delegate the decision to
+after them supply only their own *vocabulary* — which SDK raises their
+exceptions (`sdk_namespace`) and what their vendor's words for an exhausted daily
+ceiling are (`quota_markers`) — and delegate every decision to
 `classify_vendor_error` here. What a failure MEANS is decided in one place; what
 a vendor CALLS it is the vendor's business.
 
@@ -59,21 +60,33 @@ its module is already imported, so the classes are looked up in `sys.modules`
 and matched with a real `isinstance`. An SDK that is not installed simply has no
 entry, and classification falls through to the status code and then the text.
 
-WHAT THIS FILE DELIBERATELY DOES NOT DECIDE
--------------------------------------------
-**Whether a rate limit is daily-quota exhaustion.** That is C1 (Retry
-Classification), a separate task. `is_quota` and `retry_after` are passed IN by
-the caller, so every provider keeps exactly the quota behaviour it has today —
-Groq and the OpenAI-compatible family detect quota, Anthropic and Gemini do not.
-Closing C1 means passing those two arguments from two more providers, and
-nothing here has to change to allow it.
+RETRY CLASSIFICATION LIVES HERE TOO (C1)
+----------------------------------------
+Whether a rate limit is **transient** (per-minute; clears in seconds; retry with
+backoff) or **daily-quota exhaustion** (will not clear today; never retry) is
+decided here, from vocabulary the provider *declares*. It used to be decided by
+each provider and handed in as a finished verdict, which is how two of the four
+came to skip the question entirely: Anthropic and Gemini never set `is_quota`, so
+an exhausted daily budget was retried five times over on the way to failing.
+
+The split is the same one rule 13 draws everywhere else:
+
+    the provider says what its vendor CALLS things  (`quota_markers`)
+    this file decides what that MEANS               (`is_quota`, retryable)
+
+Vocabulary genuinely differs and cannot be shared. Groq says "tokens per day
+(TPD)". Google says "Quota exceeded for quota metric …" for a **per-minute**
+limit as well as a daily one, so the bare word "quota" — which is a correct
+daily-quota marker for Groq — would abandon a Gemini request that would have
+succeeded thirty seconds later. One shared word list cannot be right for both,
+which is why the list belongs to the provider and the decision does not.
 """
 
 from __future__ import annotations
 
 import re
 import sys
-from typing import Optional
+from typing import Optional, Sequence
 
 from app.ai.utils.errors import AIProviderError, AIRateLimitError, AITimeoutError
 
@@ -111,29 +124,49 @@ def classify_vendor_error(
     exc: Exception,
     *,
     sdk: str,
-    is_quota: bool = False,
-    retry_after: Optional[float] = None,
+    quota_markers: Sequence[str] = (),
 ) -> AIProviderError:
     """Map a raw vendor exception onto the AI error hierarchy.
 
-    `sdk` names which SDK's exception types to consider — it selects a lookup
-    table, never a code path (§9A rule 3: no `if provider == …`).
+    Both arguments are **vocabulary, not verdicts**: `sdk` selects which SDK's
+    exception types to consider, and `quota_markers` are the vendor's own phrases
+    for a ceiling that will not clear today. Neither selects a code path
+    (§9A rule 3: no `if provider == …`) — every provider runs these same steps.
 
-    `is_quota` and `retry_after` are the caller's, not this function's: see the
-    module docstring. They apply only when the result is a rate limit.
+    The retry decision follows from the classification and nothing else:
+
+      * timeout / transient provider error → retryable, bounded network retries
+      * rate limit, no quota marker matched → retryable, bounded rate-limit
+        retries, honouring `Retry-After` when the vendor sent one
+      * rate limit, quota marker matched    → **NOT retryable**; the orchestrator
+        fails over to the next provider instead of spending the ladder
+
+    Deterministic by construction: the same exception always classifies the same
+    way. There is no sampling, no clock and no state.
     """
     kind = _typed_kind(exc, sdk) or _status_kind(exc) or _text_kind(exc)
     message = str(exc)
     if kind == "timeout":
         return AITimeoutError(message)
     if kind == "rate_limit":
-        return AIRateLimitError(message, retry_after=retry_after, is_quota=is_quota)
+        return AIRateLimitError(
+            message,
+            retry_after=retry_after_of(exc),
+            is_quota=matches_quota_vocabulary(message, quota_markers),
+        )
     return AIProviderError(message)
 
 
 def retry_after_of(exc: Exception) -> Optional[float]:
     """Best-effort parse of a Retry-After (seconds) from the vendor exception's
-    HTTP response headers. Returns None when absent or unparseable."""
+    HTTP response headers. Returns None when absent or unparseable.
+
+    Called for every rate limit, from every provider — "where the vendor sends
+    one" is answered by looking, not by a per-provider opt-in. The httpx-based
+    SDKs (groq, openai, anthropic) attach the header and get an exact wait;
+    google-generativeai does not expose one this way and gets `None`, which
+    falls back to jittered backoff. A provider that ignores a wait time the
+    vendor explicitly stated retries too early and is refused again."""
     resp = getattr(exc, "response", None)
     headers = getattr(resp, "headers", None)
     if not headers:
@@ -150,16 +183,21 @@ def retry_after_of(exc: Exception) -> Optional[float]:
         return None
 
 
-def is_quota_exhaustion(message: str) -> bool:
-    """True when a rate-limit message names a DAILY ceiling rather than a
-    per-minute one.
+def matches_quota_vocabulary(message: str, markers: Sequence[str]) -> bool:
+    """True when a rate-limit message contains one of the provider's own phrases
+    for a ceiling that will not clear today.
 
-    Unchanged from the expression Groq and the OpenAI-compatible providers
-    already shared; lifted here so the two copies cannot drift while C1 is still
-    open. Nothing new reads it.
+    A plain case-insensitive substring test, on purpose. These are short vendor
+    idioms ("tpd", "per day") rather than English, so the word-boundary matching
+    `_RATE_LIMIT_TEXT` needs would reject "(TPD)" and "requests/day" while buying
+    nothing — the input here is already known to be a rate-limit message, so the
+    over-match that motivated word anchoring in C2 cannot arise.
+
+    An empty marker list means the provider declares NO daily-quota vocabulary,
+    which is an answer (§9A rule 10 — declared, never inferred), not an omission.
     """
     msg = (message or "").lower()
-    return any(marker in msg for marker in ("per day", "tpd", "rpd", "daily", "quota"))
+    return any(marker.lower() in msg for marker in markers)
 
 
 # ── internals ────────────────────────────────────────────────────────────────

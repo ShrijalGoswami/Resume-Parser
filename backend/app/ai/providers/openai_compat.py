@@ -13,9 +13,8 @@ from __future__ import annotations
 
 from app.ai.gateway.roles import ModelRole
 from app.ai.providers.base import LLMProvider
-from app.ai.providers.errors import classify_vendor_error, is_quota_exhaustion
 from app.ai.schemas.base import ProviderResponse, TokenUsage
-from app.ai.utils.errors import AIConfigError, AIProviderError
+from app.ai.utils.errors import AIConfigError
 from app.core.config import settings
 
 
@@ -23,6 +22,14 @@ class OpenAICompatProvider(LLMProvider):
     name = "openai_compat"
     api_key_setting = "OPENAI_API_KEY"
     base_url: str | None = None
+    # Every provider in this family raises the `openai` SDK's exception types,
+    # whatever endpoint it is pointed at.
+    sdk_namespace = "openai"
+    # Preserved VERBATIM from the pre-C1 expression. "You exceeded your current
+    # quota" is OpenAI's billing-exhausted message and does not clear today;
+    # subclasses inherit it because they speak the same API. A subclass whose
+    # vendor words differ overrides this ONE attribute and nothing else.
+    quota_markers = ("per day", "tpd", "rpd", "daily", "quota")
     can_json = True
     can_stream = True
     can_reason = True
@@ -63,11 +70,6 @@ class OpenAICompatProvider(LLMProvider):
             finish_reason=getattr(choice, "finish_reason", None),
         )
 
-    # Every provider in this family (OpenAI, OpenRouter, Kimi) raises the `openai`
-    # SDK's exception types, whatever endpoint it is pointed at.
-    @staticmethod
-    def _classify(exc: Exception) -> AIProviderError:
-        return classify_vendor_error(exc, sdk="openai", is_quota=is_quota_exhaustion(str(exc)))
 
 
 class OpenAIProvider(OpenAICompatProvider):

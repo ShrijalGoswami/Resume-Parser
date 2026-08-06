@@ -9,9 +9,8 @@ from __future__ import annotations
 
 from app.ai.gateway.roles import ModelRole
 from app.ai.providers.base import LLMProvider
-from app.ai.providers.errors import classify_vendor_error
 from app.ai.schemas.base import ProviderResponse, TokenUsage
-from app.ai.utils.errors import AIConfigError, AIProviderError
+from app.ai.utils.errors import AIConfigError
 from app.core.config import settings
 
 
@@ -19,6 +18,17 @@ class AnthropicProvider(LLMProvider):
     name = "anthropic"
     display_name = "Anthropic"
     api_key_setting = "ANTHROPIC_API_KEY"
+    sdk_namespace = "anthropic"
+    # Deliberately EMPTY, and that is the finding rather than a gap in it.
+    # Anthropic's 429s are per-minute buckets (RPM / input- and output-tokens-
+    # per-minute) that reset within the minute, so every one of them SHOULD be
+    # retried — and now is, honouring the `retry-after` header it sends, which
+    # this provider previously discarded. Credit exhaustion, the one Anthropic
+    # failure that will not clear, arrives as a 400 `invalid_request_error` and
+    # never reaches the rate-limit branch, so a marker for it could not fire.
+    # Declaring nothing is an answer here (§9A rule 10); inventing markers so the
+    # list looked like Groq's would have been the guess.
+    quota_markers = ()
     can_json = True
     can_stream = True
     can_reason = True
@@ -71,9 +81,3 @@ class AnthropicProvider(LLMProvider):
             finish_reason=getattr(resp, "stop_reason", None),
         )
 
-    # `is_quota` is deliberately not passed: Anthropic quota exhaustion is still
-    # classified as a transient rate limit and retried (C1). Closing that finding
-    # is the Retry Classification task, and it is one argument here.
-    @staticmethod
-    def _classify(exc: Exception) -> AIProviderError:
-        return classify_vendor_error(exc, sdk="anthropic")

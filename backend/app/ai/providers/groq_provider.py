@@ -15,9 +15,8 @@ from typing import Any
 
 from app.ai.gateway.roles import ModelRole
 from app.ai.providers.base import LLMProvider
-from app.ai.providers.errors import classify_vendor_error, is_quota_exhaustion, retry_after_of
 from app.ai.schemas.base import ProviderResponse, TokenUsage
-from app.ai.utils.errors import AIConfigError, AIProviderError
+from app.ai.utils.errors import AIConfigError
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -29,6 +28,12 @@ class GroqProvider(LLMProvider):
     name = "groq"
     display_name = "Groq"
     api_key_setting = "GROQ_API_KEY"
+    sdk_namespace = "groq"
+    # Groq states the window in the message: "Rate limit reached … tokens per day
+    # (TPD)". Preserved VERBATIM from the pre-C1 expression, including the bare
+    # "quota": this is the only marker list ever exercised against a live
+    # account, so C1 had no business tuning it while closing a gap elsewhere.
+    quota_markers = ("per day", "tpd", "rpd", "daily", "quota")
     can_json = True
     can_stream = True
     can_reason = True
@@ -92,11 +97,3 @@ class GroqProvider(LLMProvider):
         key = (settings.GROQ_API_KEY or "").strip()
         return bool(key) and key != _PLACEHOLDER_KEY
 
-    @staticmethod
-    def _classify(exc: Exception) -> AIProviderError:
-        return classify_vendor_error(
-            exc,
-            sdk="groq",
-            is_quota=is_quota_exhaustion(str(exc)),
-            retry_after=retry_after_of(exc),
-        )

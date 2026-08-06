@@ -1690,7 +1690,8 @@ Phase 1
                               37 tests · COMPLETE (implemented and verified)
 ☑ Disabled Provider Fix       6 Aug 2026 — gateway.fallback_chain + orchestrator
                               C3 · 16 tests · violation injected and watched fail
-☐ Retry Classification
+☑ Retry Classification        6 Aug 2026 — providers declare vocabulary only
+                              C1 · 50 tests · violation injected and watched fail
 ☐ Provider Validation
 ☐ Default Model Fix
 ☐ Native JSON Support
@@ -1763,7 +1764,7 @@ answer because Postgres is slow.
 | Phase | Behaviour-visible? | Blast radius |
 |---|---|---|
 | 0 | no | **None** — nothing in the request path |
-| 1 | narrowly — disabled actually disables; quota stops being retried on two providers | **Low**, one named test per fix; the Groq path is unchanged |
+| 1 | narrowly — disabled actually disables; quota stops being retried on Gemini; three providers start honouring Retry-After | **Low**, one named test per fix; **the Groq path is unchanged** — its marker list is preserved verbatim |
 | 2 | no in production — the env resolver stays the default | **Low**; prod `config_snapshot()` must be byte-identical |
 | 3 | behind a flag; off = today's resolution | **Medium** — the only phase that changes model selection. Gated on eval parity |
 | 4 | no | **Low-medium**; additive migration |
@@ -1776,7 +1777,7 @@ answer because Postgres is slow.
 | R2 | **Retry amplification on a paid key** — up to 18 provider calls per logical request (3 network × 3 JSON × 2 schema), unalerted | Medium | High |
 | R3 | **Semantic search silently degrades** on an embedding-provider change (C11) | Medium | High |
 | R4 | **JSON compliance collapse** on a non-Llama model (C6), presenting as latency and cost rather than errors | High | Medium |
-| R5 | **Quota misclassification** burns a daily budget on Gemini/Anthropic (C1) | High once live | Medium |
+| R5 | ~~**Quota misclassification** burns a daily budget on Gemini/Anthropic (C1)~~ **RETIRED 6 Aug 2026** — a quota-exhausted provider costs exactly one call and fails over; pinned by call count, not by a flag | — | — |
 | R6 | **`byo_ai` sold and unbuilt** (C12) reaches a real Enterprise customer | Low now | High |
 | R7 | **Injection defences calibrated against one model family.** `ground_claims()` is model-independent; `scrub()`'s phrase list is not | Medium | High |
 | R8 | ~~**`AI_DISABLED_PROVIDERS` believed to work** during an incident (C3)~~ **RETIRED 6 Aug 2026** — it works now, and a call counter proves a disabled provider is never called | — | — |
@@ -1884,6 +1885,35 @@ orchestrator.
 **`AI_GATEWAY.md:85` needed no edit:** its claim that a `DISABLED` provider is
 "never routed" was false when written and is true now. The rest of that document
 is still drifted, and reconciling it is still later Phase 1 work.
+
+**One risk this task surfaced, recorded rather than acted on.** `AI_GATEWAY.md`
+already claimed rate limits were "not retried", and this task makes the
+*classification* correct without touching what the orchestrator does with it. So
+the doc drift noted in the document map is now one step wider: the gateway docs
+describe a classifier that no longer exists. **Reconciling them is still Phase 1
+work and still unstarted** — §11 remains authoritative over `AI_GATEWAY.md`,
+`AI_ARCHITECTURE.md` and `AI_PIPELINE.md`.
+
+#### Phase 1 · Retry Classification (6 Aug 2026) — C1
+
+| # | Decision | Why it binds later tasks |
+|---|---|---|
+| **D1.13** | **Providers declare retry VOCABULARY; `errors.py` makes the retry DECISION.** Two class attributes — `sdk_namespace` (which SDK raises its exceptions) and `quota_markers` (this vendor's words for a ceiling that will not clear today) | The verdict used to be computed by each provider and handed in finished, which is exactly how two of the four came to skip the question. **A new provider adds words, never logic.** Rule 13 now covers the retry decision, not just the error type |
+| **D1.14** | **`_classify` lives ONCE, on `LLMProvider`.** The four one-line delegations are gone | The behavioural guard from task 1 would have become trivially true, so it was **replaced by a structural one**: `"_classify" not in vars(Provider)` for all six providers *and the fake*. That is stronger — it fails on the override itself rather than on a symptom |
+| **D1.15** | **Marker lists are per-vendor for a CORRECTNESS reason, not tidiness.** Groq's list keeps the bare word `"quota"`; Gemini's deliberately omits it | Google says *"Quota exceeded for quota metric … per minute"* for a limit that clears in seconds. A shared list would fast-fail a Gemini request that was about to succeed — the opposite error to C1, and harder to see. **Do not "unify" these lists later**; a test asserts they differ and says why |
+| **D1.16** | **Groq's and the OpenAI family's lists are preserved VERBATIM** | Groq's is the only list ever exercised against a live account. Tuning it while closing a gap on a different provider would have been a behaviour change beyond C1, and would have made the one provider with production evidence the least trustworthy |
+| **D1.17** | **Anthropic declares NO quota vocabulary — an answer, not an omission.** Its 429s are per-minute buckets that reset within the minute, and its one non-clearing failure (credit exhaustion) is a 400 that never reaches the rate-limit branch | §9A rule 10 — declared, never inferred. Inventing markers so the list *looked* like Groq's would have been the guess. What Anthropic actually gained from C1 is Retry-After |
+| **D1.18** | **`Retry-After` is extracted centrally, for every provider** | "Where the vendor sends one" is answered by looking, not by a per-provider opt-in. Three providers previously discarded a wait time the vendor had explicitly stated and retried too early to succeed. Gemini correctly gets `None` and falls back to jittered backoff |
+| **D1.19** | **Quota classification is a two-stage gate:** a message must read as a rate limit *first*, and only then are the markers consulted | So a stray "per day" in an unrelated error cannot manufacture a quota and turn a retryable failure into a fast-fail. Found while writing the tests, when a bare `"tokens per day (TPD)"` string correctly classified as a plain provider error |
+| **D1.20** | **Quota keeps sharing `AI_RATE_LIMIT_COOLDOWN_SECONDS`** — deliberately not given its own | `config.py` already labels that setting *"rate-limited / quota"*, so sharing it is an existing recorded decision and overturning it is a behaviour change beyond C1. **It is still arguably wrong** — see the risk recorded below — and belongs to whoever revisits health cooldowns |
+
+**A risk this task surfaced and did NOT act on.** A daily quota now costs one
+provider call per *request*, but the provider is only marked unhealthy for
+`AI_RATE_LIMIT_COOLDOWN_SECONDS` (60s). An exhausted daily budget therefore gets
+re-probed every minute for the rest of the day — a slower version of the burn C1
+exists to stop. Fixing it is one row in `health._FAILURE_MAP` plus one setting,
+but it changes a decision `config.py` records explicitly (D1.20), so it needs its
+own task rather than a quiet ride along with this one.
 
 **One risk this task surfaced, recorded rather than acted on.** `AI_GATEWAY.md`
 already claimed rate limits were "not retried", and this task makes the

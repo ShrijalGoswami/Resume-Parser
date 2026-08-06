@@ -25,7 +25,9 @@ from abc import ABC, abstractmethod
 from typing import Iterator, Optional, Sequence
 
 from app.ai.gateway.roles import ModelRole
+from app.ai.providers.errors import classify_vendor_error
 from app.ai.schemas.base import ChatMessage, ProviderHealth, ProviderResponse
+from app.ai.utils.errors import AIProviderError
 from app.core.config import settings
 
 
@@ -50,6 +52,26 @@ class LLMProvider(ABC):
     max_output: int = 4096         # max output tokens
     #: Default model per logical role — the provider's own defaults.
     role_models: dict[ModelRole, str] = {}
+
+    # ── Declared retry vocabulary (the provider's words; NOT its verdicts) ───
+    # `_classify` below turns these into a retry decision. A provider states what
+    # its vendor CALLS things; `app/ai/providers/errors.py` decides what that
+    # MEANS (§9A rule 13).
+    #
+    #: Which SDK's exception types this provider's failures come from — the key
+    #: into the classifier's lookup table ("groq", "openai", "anthropic",
+    #: "google"). Blank means "no SDK types to consult", which is correct for a
+    #: provider that raises the AI hierarchy directly, like the fake.
+    sdk_namespace: str = ""
+    #: This vendor's own phrases for a ceiling that will NOT clear today, so a
+    #: rate limit carrying one is never retried. Empty is a declaration, not an
+    #: omission: it says this provider has no daily-quota vocabulary.
+    #:
+    #: These lists are deliberately NOT shared. "quota" alone means a daily
+    #: ceiling at Groq and appears in Google's PER-MINUTE messages too, so one
+    #: list applied to both would abandon requests that would have succeeded
+    #: seconds later.
+    quota_markers: tuple[str, ...] = ()
 
     # ── The one wire method every provider implements ───────────────────────
     @abstractmethod
@@ -88,6 +110,25 @@ class LLMProvider(ABC):
         return self.complete(
             system=system, user=user, model=model, temperature=temperature,
             max_tokens=max_tokens, timeout_seconds=timeout_seconds,
+        )
+
+    # ── Error classification — ONE implementation, for every provider ───────
+    @classmethod
+    def _classify(cls, exc: Exception) -> AIProviderError:
+        """Turn a raw vendor exception into the AI error hierarchy.
+
+        **Providers must not override this** (§9A rule 13). Everything a vendor
+        differs by is declared above as vocabulary; the decision is made once, in
+        `app/ai/providers/errors.py`. This method exists on the base rather than
+        four times over precisely because the four copies it replaced drifted
+        into four different word lists — and two of them silently stopped
+        classifying quota at all (C1).
+
+        A provider that appears to need its own version is signalling that the
+        vocabulary is missing a hook. Add the hook; every provider gets it.
+        """
+        return classify_vendor_error(
+            exc, sdk=cls.sdk_namespace, quota_markers=cls.quota_markers,
         )
 
     # ── Capability descriptors (metadata; future routing consumes these) ────
