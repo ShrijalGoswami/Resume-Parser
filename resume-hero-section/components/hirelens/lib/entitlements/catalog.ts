@@ -201,11 +201,6 @@ const FEATURE_TABLE = {
     minPlan: 'enterprise',
     blurb: 'Continuous pipeline scanning with recommended actions.',
   },
-  byo_ai: {
-    label: 'Bring Your Own AI',
-    minPlan: 'enterprise',
-    blurb: 'Route AI through your own OpenAI, Claude, Gemini, Groq, or Azure keys.',
-  },
   api_access: {
     label: 'API Access',
     minPlan: 'enterprise',

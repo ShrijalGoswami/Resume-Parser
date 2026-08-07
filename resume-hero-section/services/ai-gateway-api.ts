@@ -1,8 +1,10 @@
 /**
- * AI Gateway admin API client. Read endpoints are open to any authenticated
- * recruiter; the runtime provider switch is org-admin only (ORG_MANAGE) and
- * audited server-side. No secrets are ever returned — only provider/model
- * names, capability flags, and counters.
+ * AI Gateway diagnostics API client. Read-only: there is no runtime provider
+ * switch, because V1 is Groq-only by product decision and there is nothing to
+ * switch to. The provider is a deployment setting, validated at boot.
+ *
+ * No secrets are ever returned — only provider/model names, capability flags,
+ * and counters.
  */
 import type { AiConfig, AiHealth, AiUsage } from '@/types/ai-gateway'
 import { authHeaders, V1 } from './auth-headers'
@@ -24,5 +26,3 @@ async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
 export const getAiConfig = () => api<AiConfig>('/ai/config')
 export const getAiUsage = () => api<AiUsage>('/ai/usage')
 export const getAiHealth = () => api<AiHealth>('/ai/health')
-export const switchAiProvider = (provider: string) =>
-  api<AiConfig>('/ai/provider', { method: 'POST', body: JSON.stringify({ provider }) })

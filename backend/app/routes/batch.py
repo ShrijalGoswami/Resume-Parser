@@ -25,6 +25,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, File, Form, UploadFile, HTTPException, status
 
+from app.ai.utils.limits import job_description_error
 from app.core.config import settings
 from app.schemas.batch import RankingWeights, BatchAnalysisResponse
 from app.services.upload_utils import save_upload_to_temp
@@ -57,9 +58,9 @@ async def batch_analysis(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="Job description cannot be empty.")
 
-    if len(job_description) > 20000:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail="Job description too long (max 20000 characters).")
+    jd_error = job_description_error(job_description)
+    if jd_error:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=jd_error)
 
     if not files:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,

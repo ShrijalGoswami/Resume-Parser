@@ -44,7 +44,7 @@ def test_free_plan_capabilities():
     assert s.feature("basic_ai_summary").allowed
     for locked in ("candidate_comparison", "export_pdf", "ai_copilot",
                    "semantic_search", "interview_intelligence", "advanced_analytics",
-                   "byo_ai", "autonomous_agent"):
+                   "autonomous_agent"):
         assert not s.feature(locked).allowed, f"free must not include {locked}"
 
 
@@ -53,7 +53,7 @@ def test_plus_plan_capabilities():
     for included in ("full_resume_analysis", "candidate_comparison", "export_pdf"):
         assert s.feature(included).allowed, f"plus must include {included}"
     for locked in ("ai_copilot", "semantic_search", "interview_intelligence",
-                   "advanced_analytics", "export_excel", "byo_ai"):
+                   "advanced_analytics", "export_excel"):
         assert not s.feature(locked).allowed, f"plus must not include {locked}"
 
 
@@ -63,7 +63,7 @@ def test_pro_plan_capabilities():
                      "advanced_analytics", "executive_reports", "export_excel",
                      "candidate_comparison", "export_pdf"):
         assert s.feature(included).allowed, f"pro must include {included}"
-    for locked in ("byo_ai", "sso", "api_access", "audit_logs", "autonomous_agent",
+    for locked in ("sso", "api_access", "audit_logs", "autonomous_agent",
                    "dedicated_support"):
         assert not s.feature(locked).allowed, f"pro must not include {locked}"
 
@@ -222,7 +222,10 @@ def test_founding_org_keeps_capabilities_and_has_no_limits():
 
 def test_founding_org_is_not_a_free_enterprise_plan():
     s = svc("free", ruleset="founding")
-    assert not s.can_use_own_api_key().allowed
+    # Was `can_use_own_api_key()` (byo_ai) until the feature was removed on
+    # 6 Aug 2026 — V1 is Groq-only. `api_access` is the same shape of check:
+    # an Enterprise capability a grandfathered FREE org must not inherit.
+    assert not s.feature("api_access").allowed
     assert not s.feature("sso").allowed
 
 

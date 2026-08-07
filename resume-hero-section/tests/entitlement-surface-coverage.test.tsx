@@ -77,7 +77,6 @@ const NO_CLIENT_LOCK: Record<string, string> = {
   autonomous_agent: 'Agent endpoints gated per-endpoint; the Ledger surface reads ungated data.',
 
   // Account-level capabilities with no in-product control to lock.
-  byo_ai: 'Phase 4. No UI exists.',
   api_access: 'Settings ▸ API keys is permission-gated; the entitlement has no separate control.',
   sso: 'Provisioned out of band; no in-product control.',
   audit_logs:

@@ -42,7 +42,6 @@ from app.ai.evaluation.golden import (
     register_expected_responses,
 )
 from app.ai.gateway import health_manager, resolve
-from app.ai.gateway.gateway import clear_override
 from app.ai.gateway.provider_registry import get_provider_spec
 from app.ai.gateway.model_registry import get_model, estimate_cost
 from app.ai.providers.fake_provider import (
@@ -72,14 +71,12 @@ def fake_env(monkeypatch):
     # tests are instant and never flaky.
     monkeypatch.setattr(orch_mod.time, "sleep", lambda _s: None)
     monkeypatch.setattr(FakeProvider, "sleeper", staticmethod(lambda _s: None))
-    clear_override()
     health_manager.reset()
     fake_script.reset()
     provider_registry._INSTANCES.pop("fake", None)
     yield
     fake_script.reset()
     health_manager.reset()
-    clear_override()
 
 
 def copilot_case(question="Is this candidate a fit?"):

@@ -132,7 +132,6 @@ def layer_a() -> None:
     # A5 — config-driven selection: AI_PROVIDER=X → the gateway routes to X.
     orig = settings.AI_PROVIDER
     try:
-        gw.clear_override()
         for name in LLM_PROVIDERS:
             settings.AI_PROVIDER = name
             check("A", f"AI_PROVIDER={name} → gateway selects {name} (config-driven)",
@@ -244,7 +243,7 @@ def layer_a() -> None:
     try:
         settings.AI_ENABLE_CAPABILITY_ROUTING = True
         settings.AI_CAPABILITY_MODELS = {"recruiter_copilot": "route-model-x"}
-        omod.get_prompt = lambda cap: PromptTemplate(id="t", version="1", system="s", render=lambda **v: "u")
+        omod.get_prompt = lambda cap: PromptTemplate(id="t", version="1", system="s", render=lambda **v: "u", untrusted=frozenset())
         usage_tracker.reset()
         health_manager.reset()
         res = omod.orchestrator.run(capability=Capability.RECRUITER_COPILOT, variables={}, schema=_Reply)

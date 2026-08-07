@@ -2,16 +2,12 @@
 
 import * as React from 'react'
 import { ShieldCheck } from 'lucide-react'
-import { useAiConfig, useAiUsage, useAiHealth, useSwitchProvider } from '../../lib/api/ai-gateway'
-import { useOrgContext } from '../../lib/api/settings'
-import { SettingsSection, Field, NativeSelect, DeferredNote } from '../settings-ui'
-import { PERMS, hasPerm } from '../permissions'
+import { useAiConfig, useAiUsage, useAiHealth } from '../../lib/api/ai-gateway'
+import { SettingsSection, DeferredNote } from '../settings-ui'
 import { Card } from '../../ui/card'
 import { Badge, type BadgeProps } from '../../ui/badge'
-import { Button } from '../../ui/button'
 import { Skeleton } from '../../ui/skeleton'
 import { ErrorState } from '../../states/error-state'
-import { toast } from '../../ui/use-toast'
 import type { AiConfig } from '@/types/ai-gateway'
 
 /** Provider ids are lowercase keys; every surface shows them title-cased. */
@@ -32,14 +28,12 @@ function humanize(value: string) {
 }
 
 export function AiGatewaySection() {
-  const ctx = useOrgContext()
   const config = useAiConfig()
-  const canSwitch = hasPerm(ctx.data?.permissions, PERMS.ORG_MANAGE)
 
   return (
     <SettingsSection
       title="AI Gateway"
-      description="The active AI provider, per-role models, live health, and usage."
+      description="Read-only diagnostics: the configured provider, per-role models, live health, and usage."
     >
       {config.isLoading ? (
         <div className="flex flex-col gap-3">
@@ -55,7 +49,7 @@ export function AiGatewaySection() {
         />
       ) : (
         <div className="flex flex-col gap-6">
-          <ActiveProvider config={config.data} canSwitch={canSwitch} />
+          <ActiveProvider config={config.data} />
           <Providers config={config.data} />
           <PerRoleModels config={config.data} />
           <UsagePanel />
@@ -161,18 +155,12 @@ function HealthPanel() {
   )
 }
 
-function ActiveProvider({ config, canSwitch }: { config: AiConfig; canSwitch: boolean }) {
-  const switchProvider = useSwitchProvider()
-  const [selected, setSelected] = React.useState<string | null>(null)
-  const value = selected ?? config.active_provider
-  const changed = value !== config.active_provider
-
+function ActiveProvider({ config }: { config: AiConfig }) {
   return (
     <Card className="flex flex-col gap-3 p-4">
       <div className="flex flex-wrap items-center gap-2">
         <span className="hl-caption text-hl-fg-tertiary">Active provider</span>
         <span className="hl-h3 capitalize">{config.active_provider}</span>
-        {config.override_active ? <Badge variant="info">Override</Badge> : null}
         {/* The chain was joined raw, so the same provider read "Groq" as the
             active one and "groq" here, two words apart on one line. */}
         {config.fallback_enabled ? (
@@ -184,53 +172,20 @@ function ActiveProvider({ config, canSwitch }: { config: AiConfig; canSwitch: bo
         )}
       </div>
 
-      {canSwitch ? (
-        <div className="flex flex-wrap items-end gap-3">
-          <Field label="Switch provider" htmlFor="ai-provider">
-            <NativeSelect
-              id="ai-provider"
-              value={value}
-              onChange={(event) => setSelected(event.target.value)}
-            >
-              {config.providers.map((provider) => (
-                <option key={provider.name} value={provider.name} disabled={!provider.key_configured}>
-                  {provider.display_name}
-                  {provider.key_configured ? '' : ' (no key)'}
-                </option>
-              ))}
-            </NativeSelect>
-          </Field>
-          <Button
-            variant="primary"
-            size="sm"
-            disabled={!changed}
-            loading={switchProvider.isPending}
-            onClick={() =>
-              switchProvider.mutate(value, {
-                onSuccess: () => {
-                  toast({ variant: 'success', title: `Switched to ${value}` })
-                  setSelected(null)
-                },
-                onError: (error) =>
-                  toast({
-                    variant: 'danger',
-                    title: error instanceof Error ? error.message : 'Switch failed',
-                  }),
-              })
-            }
-          >
-            Apply
-          </Button>
-        </div>
-      ) : (
-        <p className="hl-caption flex items-center gap-1.5 text-hl-fg-tertiary">
-          <ShieldCheck className="size-3.5" aria-hidden /> Only an org admin can change the provider.
-          Every switch is audited.
-        </p>
-      )}
+      {/* There was a provider dropdown and an Apply button here until 6 Aug 2026.
+          They are gone with the feature, not hidden: HireLens is Groq-only for
+          V1, so there is nothing to switch to, and the switch itself mutated
+          process-global state from an org-scoped permission check — one
+          organization's admin changed the provider for every organization in the
+          process. The provider is a deployment setting now, validated at boot. */}
+      <p className="hl-caption flex items-center gap-1.5 text-hl-fg-tertiary">
+        <ShieldCheck className="size-3.5" aria-hidden /> The provider is set by
+        deployment configuration and verified at startup.
+      </p>
     </Card>
   )
 }
+
 
 function Providers({ config }: { config: AiConfig }) {
   return (

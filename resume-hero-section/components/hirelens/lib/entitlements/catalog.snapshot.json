@@ -87,7 +87,6 @@
         "audit_logs",
         "autonomous_agent",
         "basic_ai_summary",
-        "byo_ai",
         "candidate_comparison",
         "dedicated_support",
         "executive_reports",
@@ -201,12 +200,6 @@
       "label": "Autonomous Agent",
       "min_plan": "enterprise",
       "blurb": "Continuous pipeline scanning with recommended actions."
-    },
-    {
-      "key": "byo_ai",
-      "label": "Bring Your Own AI",
-      "min_plan": "enterprise",
-      "blurb": "Route AI through your own OpenAI, Claude, Gemini, Groq, or Azure keys."
     },
     {
       "key": "api_access",

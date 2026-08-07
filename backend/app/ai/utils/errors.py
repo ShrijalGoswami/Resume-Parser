@@ -62,6 +62,19 @@ class AIRateLimitError(AIProviderError):
         self.retryable = not is_quota
 
 
+class AIBudgetExhaustedError(AIError):
+    """One request spent its whole allowance of paid model invocations (S-5).
+
+    Deliberately NOT an `AIProviderError`: no provider failed. The request was
+    stopped because it had spent enough, so it is not retryable and must not
+    fail over — trying another provider is precisely the spending the budget
+    exists to prevent.
+    """
+
+    retryable = False
+    public_message = "AI service could not complete this request. Please try again."
+
+
 class AIParseError(AIProviderError):
     """The model returned output that could not be parsed as JSON. Retryable."""
 

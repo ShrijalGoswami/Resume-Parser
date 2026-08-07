@@ -27,7 +27,13 @@ class GeminiProvider(LLMProvider):
     # "quota" here, as Groq's list does, would stop retrying a request that was
     # about to succeed. Only day-scoped wording means "not today".
     quota_markers = ("per day", "perday", "per-day", "daily", "/day")
-    can_json = True
+    # Native JSON mode is NOT implemented here. Gemini expresses it through
+    # `response_mime_type`/`response_schema` on the generation config rather
+    # than a `response_format` parameter, and this provider is not shipping
+    # (§11.0 — Groq-only for V1), so it declares what is true rather than
+    # what is aspirational (§9A rule 10). Prompt-instructed JSON still works
+    # exactly as before; only the native request parameter is absent.
+    can_json = False
     can_stream = True
     can_reason = True
     can_vision = True

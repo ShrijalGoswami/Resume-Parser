@@ -34,7 +34,7 @@ app/ai/
 │   ├── roles.py       #   ModelRole (DEFAULT/FAST/CHEAP/LONG_CONTEXT/PREMIUM/EMBEDDINGS)
 │   ├── model_registry.py   # ModelSpec metadata + cost estimation
 │   ├── provider_registry.py# ProviderSpec metadata (capabilities, per-role models)
-│   ├── gateway.py     #   resolve(role) → (provider,model), fallback chain, runtime switch
+│   ├── gateway.py     #   resolve(role) → (provider,model), fallback chain
 │   └── usage.py       #   usage / cost / provider-health tracker
 ├── embeddings/        # retrieval layer — provider-agnostic vectorisation (NO LLM)
 │   ├── base.py        #   EmbeddingProvider (mirrors LLMProvider)
@@ -90,10 +90,11 @@ The orchestrator resolves **which provider + model** through the **AI Gateway**
 (DEFAULT_REASONING, FAST_REASONING, CHEAP_REASONING, LONG_CONTEXT,
 PREMIUM_REASONING, EMBEDDINGS); the gateway maps role → (provider, model) from
 config, builds a **configurable fallback chain**, tracks usage/cost/health, and
-supports a **runtime provider switch** that updates the whole platform at once. See
+reads the provider from configuration. **There is no runtime provider switch** —
+it was removed on 6 Aug 2026 when V1 became Groq-only by product decision. See
 [ADR-011](./decisions/ADR-011-ai-gateway-and-provider-management.md) and
 [sprints/V4_SPRINT7_5.md](./archive/sprints/V4_SPRINT7_5.md). Admin: `GET /ai/config`,
-`GET /ai/usage`, `POST /ai/provider` (authenticated, no secrets).
+`GET /ai/usage`, `GET /ai/health` (authenticated, read-only, no secrets).
 
 ## Provider abstraction
 
@@ -253,7 +254,7 @@ Every AI capability is organization-aware. The gateway `usage_tracker` calls an
 org rollup hook (registered by `app/enterprise/` so `app.ai` stays dependency-free)
 that attributes each AI call's `ai_requests`/`tokens` to the request's
 `current_org_id`. AI capabilities are gated by per-org **feature flags** (reports,
-agent, …) and the AI provider switch is org-admin-gated + audited. See
+agent, …). The AI Gateway settings surface is read-only diagnostics. See
 [ADR-014](./decisions/ADR-014-enterprise-platform-architecture.md) and
 [sprints/V6_SPRINT10.md](./archive/sprints/V6_SPRINT10.md).
 

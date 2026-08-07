@@ -117,8 +117,6 @@ FEATURES: dict[str, Feature] = {f.key: f for f in [
     # Enterprise.
     _f("autonomous_agent", "Autonomous Agent", Plan.enterprise,
        "Continuous pipeline scanning with recommended actions."),
-    _f("byo_ai", "Bring Your Own AI", Plan.enterprise,
-       "Route AI through your own OpenAI, Claude, Gemini, Groq, or Azure keys."),
     _f("api_access", "API Access", Plan.enterprise,
        "Programmatic access with scoped organization keys."),
     _f("webhooks", "Webhooks", Plan.enterprise,

@@ -109,7 +109,9 @@ cost, **total_fallbacks**, **recent_fallbacks**, cache hits, duplicate prompts.
 consecutive failures, and recent fallback events. `GET /api/v1/ai/config`:
 active provider, fallback chain, disabled providers, and each provider's health
 (no secrets — names/counters only). `POST /api/v1/ai/provider` (org-admin):
-runtime provider switch.
+runtime provider switch. **REMOVED 6 Aug 2026** — V1 is Groq-only by product
+decision (HANDOFF §11.0), so there is nothing to switch to. The provider is a
+deployment setting (`AI_PROVIDER`), validated at boot.
 
 ## Cache
 

@@ -2,7 +2,24 @@
 
 **Status:** Design proposal · no code written · awaiting approval
 **Date:** 31 Jul 2026
-**Scope:** FREE · PLUS · PRO · ENTERPRISE plans, entitlement enforcement, BYO AI keys, upgrade surfaces
+**Scope:** FREE · PLUS · PRO · ENTERPRISE plans, entitlement enforcement, upgrade surfaces
+
+> ## ⚠️ BYO AI IS CANCELLED — do not implement §7 or the `/org/ai-credentials` endpoints
+>
+> **Product decision, 6 Aug 2026: HireLens is Groq-only for V1** (HANDOFF §11.0).
+> The `byo_ai` entitlement has been **removed** from the catalog, from both
+> mirrors, from `/pricing`, and from the entitlement helpers. It was never
+> implemented.
+>
+> This document is a **dated design proposal**, kept as the record of what was
+> planned on 31 Jul 2026. It is annotated rather than rewritten, because editing
+> a historical proposal to pretend it never proposed something destroys the only
+> evidence of why the decision was later taken. **Everything it says about BYO
+> AI — §7, the credential store, `0019_org_ai_credentials.sql`, the four
+> `/org/ai-credentials` routes, `ai-credentials-section.tsx`, and rollout steps
+> 5 and 10 — is superseded and must not be built.** The rest of the document
+> (plans, entitlement enforcement, quotas, upgrade surfaces) is unaffected and
+> was shipped.
 
 ---
 
@@ -326,7 +343,7 @@ update public.candidate_uploads u set organization_id = r.organization_id
 Required because the resume quota is an **org** limit while `candidate_uploads` is recruiter-scoped
 today. Without this, two members of the same org get two independent quotas.
 
-**`0019_org_ai_credentials.sql`** (BYO AI)
+**`0019_org_ai_credentials.sql`** (BYO AI) — ⚠️ **CANCELLED, never created**
 
 ```sql
 create table if not exists public.org_ai_credentials (
@@ -482,7 +499,7 @@ grandfathering decision in §11.3.
 
 ---
 
-## 7. AI Gateway changes (BYO AI)
+## 7. AI Gateway changes (BYO AI) — ⚠️ CANCELLED 6 Aug 2026, do not implement
 
 ### 7.1 Resolution rule
 

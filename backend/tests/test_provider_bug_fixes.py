@@ -31,7 +31,6 @@ import types
 import pytest
 
 from app.ai.gateway.gateway import (
-    clear_override,
     configured_reasoning_providers,
     is_reasoning_configured,
 )
@@ -264,7 +263,6 @@ class TestEveryProviderClassifiesThroughTheSharedLadder:
 @pytest.fixture
 def chain(monkeypatch):
     """Point the reasoning chain somewhere explicit, with no runtime override."""
-    clear_override()
 
     def _configure(primary: str, fallbacks: str = "", enable_fallback: bool = True):
         monkeypatch.setattr(settings, "AI_PROVIDER", primary)
@@ -272,7 +270,6 @@ def chain(monkeypatch):
         monkeypatch.setattr(settings, "AI_ENABLE_FALLBACK", enable_fallback)
 
     yield _configure
-    clear_override()
 
 
 class TestReasoningConfiguration:

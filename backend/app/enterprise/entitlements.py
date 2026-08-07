@@ -324,9 +324,6 @@ class PlanService:
     def can_use_autonomous_agent(self) -> Decision:
         return self.feature("autonomous_agent")
 
-    def can_use_own_api_key(self) -> Decision:
-        return self.feature("byo_ai")
-
     def can_export(self, fmt: str = "pdf") -> Decision:
         key = "export_excel" if (fmt or "").strip().lower() in {"excel", "xlsx", "csv"} else "export_pdf"
         return self.feature(key)

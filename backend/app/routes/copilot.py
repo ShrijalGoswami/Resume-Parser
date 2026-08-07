@@ -64,7 +64,8 @@ from app.enterprise.deps import RequireAiUse
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/copilot", tags=["Copilot"])
 
-_MAX_MESSAGE_CHARS = 4000
+# Moved to app/ai/utils/limits.py (S-4) — it disagreed with the service's copy.
+from app.ai.utils.limits import CHAT_MESSAGE_MAX_CHARS as _MAX_MESSAGE_CHARS
 
 
 # ── Stateless (legacy) ──────────────────────────────────────────────────────

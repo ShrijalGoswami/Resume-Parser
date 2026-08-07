@@ -27,7 +27,9 @@ from app.ai.services.copilot_service import generate_copilot_answer
 
 logger = logging.getLogger(__name__)
 
-_MAX_MESSAGE_CHARS = 1500
+# Was a second, SMALLER copy of the route's limit (S-4): the route truncated
+# at 4000 and this cut the same message again at 1500. One owner now.
+from app.ai.utils.limits import CHAT_MESSAGE_MAX_CHARS as _MAX_MESSAGE_CHARS
 
 
 def _history_dicts(history: list[ChatMessage]) -> list[dict]:

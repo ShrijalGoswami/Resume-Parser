@@ -38,7 +38,8 @@ class _Reply(BaseModel):
 
 
 def _prompt_patch():
-    return lambda cap: PromptTemplate(id="t", version="1", system="sys", render=lambda **v: "user")
+    return lambda cap: PromptTemplate(id="t", version="1", system="sys", render=lambda **v: "user",
+                            untrusted=frozenset())
 
 
 def _fake(name, *, error=None, counter=None):

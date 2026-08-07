@@ -29,7 +29,10 @@ class AnthropicProvider(LLMProvider):
     # Declaring nothing is an answer here (§9A rule 10); inventing markers so the
     # list looked like Groq's would have been the guess.
     quota_markers = ()
-    can_json = True
+    # Native JSON mode is NOT implemented here. Anthropic has no equivalent
+    # request parameter — the vendor's own guidance is tool-use or prefill —
+    # and this provider is not shipping (§11.0). Declares what is true.
+    can_json = False
     can_stream = True
     can_reason = True
     can_tools = True

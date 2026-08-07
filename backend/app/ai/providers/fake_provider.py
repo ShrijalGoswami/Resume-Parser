@@ -66,6 +66,7 @@ from typing import Any, Callable, Optional
 from app.ai.gateway.roles import ModelRole
 from app.ai.providers.base import LLMProvider
 from app.ai.schemas.base import ProviderResponse, TokenUsage
+from app.ai.utils.json import JSON_REPAIR_INSTRUCTION
 from app.ai.utils.errors import (
     AIConfigError,
     AIProviderError,
@@ -226,6 +227,31 @@ fake_script = FakeScript()
 _NONCE_TAG = re.compile(r"<<<(END_)?([A-Z_]+):[0-9a-fA-F]{8,}>>>")
 
 
+def _normalise(text: str) -> str:
+    """Strip the two things the ORCHESTRATOR adds per call, so one prompt keeps
+    one identity across attempts.
+
+    Both are deterministic additions this codebase makes on purpose, and both
+    would otherwise make prompt-keying impossible:
+
+      * the per-call **fence nonce** (`_NONCE_TAG`) — fresh randomness on every
+        render so a résumé cannot close its own fence (D0.15);
+      * the **JSON repair instruction** (C6) — appended from the second JSON
+        attempt onward, so a parse failure is not re-asked with a byte-identical
+        prompt.
+
+    Without the second, a retry would look like a different prompt: a scripted
+    sequence would never reach its second entry, and the golden dataset would
+    find no registered answer for the very attempt it exists to measure. Nothing
+    else about the prompt is touched, so a genuine change to prompt TEXT still
+    changes the fingerprint — which is what keeps §9A rule 6 detectable.
+    """
+    cleaned = _NONCE_TAG.sub(r"<<<\1\2:NONCE>>>", text or "")
+    if cleaned.endswith(JSON_REPAIR_INSTRUCTION):
+        cleaned = cleaned[: -len(JSON_REPAIR_INSTRUCTION)]
+    return cleaned
+
+
 def fingerprint(system: str, user: str) -> str:
     """Stable id for a prompt.
 
@@ -233,16 +259,12 @@ def fingerprint(system: str, user: str) -> str:
     whichever model name the gateway resolved, so a role or model change does not
     silently invalidate every registered golden response.
 
-    Per-call fence nonces are normalised out (see `_NONCE_TAG`); nothing else
-    about the prompt is touched, so a genuine change to prompt TEXT still
-    produces a different fingerprint — which is the behaviour that makes
-    §9A rule 6 (prompt text must not change during a provider migration)
-    detectable rather than merely stated.
+    See `_normalise` for what is stripped and why.
     """
     digest = hashlib.sha256()
-    digest.update(_NONCE_TAG.sub(r"<<<\1\2:NONCE>>>", system or "").encode("utf-8", "replace"))
+    digest.update(_normalise(system).encode("utf-8", "replace"))
     digest.update(b"\x00")
-    digest.update(_NONCE_TAG.sub(r"<<<\1\2:NONCE>>>", user or "").encode("utf-8", "replace"))
+    digest.update(_normalise(user).encode("utf-8", "replace"))
     return digest.hexdigest()
 
 
@@ -260,6 +282,10 @@ class FakeProvider(LLMProvider):
     name = "fake"
     display_name = "Fake (offline)"
     api_key_setting = ""          # no credential — that is the point
+    # Declares native JSON mode, so the orchestrator exercises the C6 path
+    # through the fake exactly as it does through Groq. The fake records the
+    # flag rather than behaving differently: what is being proven offline is
+    # that the REQUEST was shaped correctly, not that a vendor honoured it.
     can_json = True
     can_stream = False
     can_reason = True
@@ -279,12 +305,19 @@ class FakeProvider(LLMProvider):
                 "candidate assessment was fabricated."
             )
 
-    def complete(self, *, system, user, model, temperature, max_tokens, timeout_seconds) -> ProviderResponse:
+    def complete(self, *, system, user, model, temperature, max_tokens, timeout_seconds,
+                 json_mode: bool = False) -> ProviderResponse:
         fp = fingerprint(system, user)
         behaviour = fake_script.next_behaviour(fp)
         fake_script._record_call(
             fingerprint=fp, model=model, kind=behaviour.kind,
             temperature=temperature, max_tokens=max_tokens, timeout_seconds=timeout_seconds,
+            json_mode=json_mode,
+            # The FACT under test, not the prompt itself: recording the raw user
+            # text would carry candidate-derived content around in memory for no
+            # gain, and what a C6 test needs to know is whether the orchestrator
+            # asked for a repair on this attempt.
+            repair_requested=(user or "").endswith(JSON_REPAIR_INSTRUCTION),
         )
 
         if behaviour.latency_ms:

@@ -1,25 +1,27 @@
 """Prompts for the recruiter batch candidate analysis (single Groq call per resume)."""
 
-from app.ai.utils.untrusted import UNTRUSTED_INPUT_GUARDRAIL, fence
-
 BATCH_SYSTEM_PROMPT = (
     "You are an expert technical recruiter and hiring manager. You evaluate a "
     "candidate's resume against a specific job description and produce a concise, "
     "honest, recruiter-grade assessment. You never invent skills or experience that "
     "are not present in the resume. You return ONLY valid minified JSON matching the "
-    "requested schema — no markdown, no commentary, no code fences.\n\n"
-    + UNTRUSTED_INPUT_GUARDRAIL
+    "requested schema — no markdown, no commentary, no code fences."
 )
+# The untrusted-input guardrail used to be concatenated here by hand. It is now
+# appended by `PromptTemplate` for every capability that declares untrusted input
+# (S-1), so this file no longer carries security logic of its own.
 
 
 def build_batch_prompt(job_description: str, resume_json: str) -> str:
     """Build the user prompt combining the JD and the structured resume.
 
-    The résumé is fenced with a per-call nonce because it is authored by the
-    candidate being judged: a plain "=== CANDIDATE RESUME ===" marker is text the
-    document can reproduce, which let a résumé append its own instructions and
-    dictate `matching_skills` / `missing_skills`. The job description comes from
-    the recruiter and is trusted.
+    `resume_json` arrives **already fenced**. This builder does not call
+    `fence()` and must not: the résumé is declared untrusted in the prompt
+    registry, and `PromptTemplate.build_user` applies the boundary for every
+    capability from one implementation (S-1). This file used to be the only one
+    that remembered to do it, which is exactly why the other seven did not.
+
+    The job description comes from the recruiter and is treated as trusted.
     """
     return f"""Evaluate the following candidate against the job description.
 
@@ -27,7 +29,7 @@ def build_batch_prompt(job_description: str, resume_json: str) -> str:
 {job_description}
 
 === CANDIDATE RESUME (untrusted, authored by the candidate) ===
-{fence(resume_json)}
+{resume_json}
 
 Return ONLY a JSON object with EXACTLY these keys:
 {{

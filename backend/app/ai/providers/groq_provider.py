@@ -34,6 +34,8 @@ class GroqProvider(LLMProvider):
     # "quota": this is the only marker list ever exercised against a live
     # account, so C1 had no business tuning it while closing a gap elsewhere.
     quota_markers = ("per day", "tpd", "rpd", "daily", "quota")
+    # Groq's chat-completions API is OpenAI-compatible and accepts
+    # `response_format={"type": "json_object"}`. Load-bearing since C6.
     can_json = True
     can_stream = True
     can_reason = True
@@ -63,8 +65,18 @@ class GroqProvider(LLMProvider):
             logger.info("Groq client initialized.")
         return GroqProvider._client
 
-    def complete(self, *, system, user, model, temperature, max_tokens, timeout_seconds) -> ProviderResponse:
+    def complete(self, *, system, user, model, temperature, max_tokens, timeout_seconds,
+                 json_mode: bool = False) -> ProviderResponse:
         client = self._get_client()
+        # Native JSON mode (C6). Sent only when the orchestrator has confirmed
+        # both this provider and the resolved MODEL declare support, so an
+        # unsupported model never receives a parameter it would 400 on.
+        #
+        # The API additionally requires the word "JSON" to appear in the
+        # messages. Every registered prompt already contains it, which is why
+        # C6 needed no prompt changes — see `tests/test_native_json.py`, which
+        # asserts that and will fail if a future prompt drops it.
+        extra = {"response_format": {"type": "json_object"}} if json_mode else {}
         try:
             resp = client.chat.completions.create(
                 model=model,
@@ -75,6 +87,7 @@ class GroqProvider(LLMProvider):
                 temperature=temperature,
                 max_tokens=max_tokens,
                 timeout=timeout_seconds,
+                **extra,
             )
         except Exception as exc:  # normalize vendor errors → AI error hierarchy
             raise self._classify(exc) from exc

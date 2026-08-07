@@ -36,7 +36,7 @@ from __future__ import annotations
 
 import pytest
 
-from app.ai.gateway.gateway import clear_override, config_snapshot
+from app.ai.gateway.gateway import config_snapshot
 from app.ai.gateway.validation import (
     CONFIGURED,
     DISABLED,
@@ -71,7 +71,6 @@ def config(monkeypatch):
                          "CHEAP_REASONING_MODEL", "LONG_CONTEXT_MODEL",
                          "PREMIUM_REASONING_MODEL"):
         defaults[role_setting] = ""
-    clear_override()
 
     def _set(**overrides):
         for key, value in {**defaults, **overrides}.items():
@@ -79,7 +78,6 @@ def config(monkeypatch):
 
     _set()
     yield _set
-    clear_override()
 
 
 def _refusal(config, **overrides) -> str:

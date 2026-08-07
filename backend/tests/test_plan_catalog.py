@@ -85,7 +85,7 @@ def test_capability_placement():
         "ai_copilot": Plan.pro, "semantic_search": Plan.pro,
         "interview_intelligence": Plan.pro, "advanced_analytics": Plan.pro,
         "executive_reports": Plan.pro, "export_excel": Plan.pro,
-        "autonomous_agent": Plan.enterprise, "byo_ai": Plan.enterprise,
+        "autonomous_agent": Plan.enterprise,
         "api_access": Plan.enterprise, "sso": Plan.enterprise,
         "audit_logs": Plan.enterprise, "dedicated_support": Plan.enterprise,
     }
@@ -132,7 +132,7 @@ def test_founding_ruleset_has_no_limits():
 def test_founding_does_not_grant_capabilities_that_never_existed():
     """Grandfathering preserves what was promised — it is not a free Enterprise
     plan. BYO AI, SSO and API access did not exist as entitlements before."""
-    for key in ("byo_ai", "sso", "api_access", "dedicated_support"):
+    for key in ("sso", "api_access", "dedicated_support"):
         assert key not in FOUNDING_FEATURES
 
 

@@ -18,6 +18,7 @@ import logging
 from fastapi import APIRouter, File, Form, UploadFile, HTTPException, status
 from fastapi.concurrency import run_in_threadpool
 
+from app.ai.utils.limits import job_description_error
 from app.services.resume_service import ResumeService
 from app.services.upload_utils import save_upload_to_temp
 from app.parser.exceptions import ParserError
@@ -55,6 +56,12 @@ async def match_analysis(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Job description cannot be empty.",
         )
+
+    # This route bounded the job description NOWHERE before S-4, while
+    # /batch-analysis refused anything over 20000. Same input, same limit now.
+    jd_error = job_description_error(job_description)
+    if jd_error:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=jd_error)
 
     # ── Save file to a unique temp path ───────────────────────────────────
     file_path = await save_upload_to_temp(file)

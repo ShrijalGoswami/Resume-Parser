@@ -25,6 +25,7 @@ from typing import Optional, Type, TypeVar
 
 from app.ai.config import get_ai_config
 from app.ai.gateway import ModelRole, active_provider, cost_of, fallback_chain, resolve, usage_tracker
+from app.ai.gateway.model_registry import get_model
 from app.ai.gateway.capability_routing import model_route_for
 from app.ai.gateway.gateway import ModelSelection, ModelSource
 from app.ai.gateway.health import health_manager, kind_for_error
@@ -32,11 +33,12 @@ from app.ai.gateway.provider_config import get_provider_config
 from app.ai.prompts.registry import get_prompt
 from app.ai.providers.registry import get_provider
 from app.ai.schemas.base import AIExecution, AIResult, Capability, TokenUsage
+from app.ai.utils.budget import CallBudget
 from app.ai.utils.errors import (
-    AIConfigError, AIError, AIParseError, AIProviderError, AIRateLimitError,
-    AITimeoutError, AIValidationError,
+    AIBudgetExhaustedError, AIConfigError, AIError, AIParseError, AIProviderError,
+    AIRateLimitError, AITimeoutError, AIValidationError,
 )
-from app.ai.utils.json import parse_json_object
+from app.ai.utils.json import parse_json_object, with_repair_instruction
 
 logger = logging.getLogger("app.ai")
 
@@ -145,11 +147,16 @@ class AIOrchestrator:
                 f"configure a provider that is not on it."
             )
 
+        # ONE budget for the whole request — it spans the failover loop, so N
+        # providers can no longer multiply the ladder's cost (S-5).
+        budget = CallBudget(capability=capability.value)
+
         last_error: Optional[AIError] = None
         for selection in ordered:
             try:
                 data, execution = self._attempt(
-                    capability, selection, system, user, schema, cfg, temp, max_tok, timeout_override,
+                    capability, selection, system, user, schema, cfg, temp, max_tok,
+                    timeout_override, budget,
                 )
                 self._log(execution)
                 health_manager.record_success(selection.provider)
@@ -169,6 +176,12 @@ class AIOrchestrator:
                         latency_ms=execution.latency_ms, request_id=request_id_ctx.get(),
                     )
                 return AIResult(data=data, execution=execution)  # type: ignore[return-value]
+            except AIBudgetExhaustedError:
+                # Not a provider failure, so no health penalty and no failover:
+                # the next provider would be refused on the first call anyway,
+                # and recording this against the provider would blame it for a
+                # ceiling the request hit.
+                raise
             except AIError as exc:
                 last_error = exc
                 health_manager.record_failure(
@@ -185,7 +198,8 @@ class AIOrchestrator:
         raise last_error or AIProviderError("All configured AI providers are unavailable.")
 
     # -- one provider attempt (owns the full retry ladder) -----------------
-    def _attempt(self, capability, selection, system, user, schema, cfg, temp, max_tok, timeout_override):
+    def _attempt(self, capability, selection, system, user, schema, cfg, temp, max_tok,
+                 timeout_override, budget):
         prov = get_provider(selection.provider)  # may raise AIConfigError → fallback
         # Per-provider config (M2): timeout / retry policy / default-model override,
         # each falling back to the global AI_* defaults. Behaviour is unchanged when
@@ -217,7 +231,26 @@ class AIOrchestrator:
             except Exception:  # cached shape no longer valid → fall through to a live call
                 pass
 
-        provider_calls = parse_attempts = validate_attempts = 0
+        # Native JSON mode (C6) — decided ONCE, before the ladder, from two
+        # declarations that must BOTH be true:
+        #   * the provider implements the request parameter (`can_json`), and
+        #   * the resolved model declares it supports JSON (`ModelSpec`).
+        # An unregistered model is "unknown", not "yes": the registry documents
+        # that unknown models still work, so guessing here would send a parameter
+        # a model might 400 on, and a 400 is retried three times before failing.
+        # Declared, never inferred (§9A rule 10) — and this is what finally makes
+        # `can_json` load-bearing rather than decorative, which was C6.
+        model_spec = get_model(model_name)
+        json_mode = bool(prov.supports_json() and model_spec and model_spec.supports_json)
+        # Passed as **kwargs so a provider that does NOT declare `can_json` never
+        # receives a parameter its `complete()` was not written to accept.
+        json_kwargs = {"json_mode": True} if json_mode else {}
+
+        # `provider_calls` used to be its own counter. It is now a reading of the
+        # ONE budget, taken from a mark, so the request total and the per-attempt
+        # count can never disagree (S-5).
+        attempt_mark = budget.mark()
+        parse_attempts = validate_attempts = 0
         usage = TokenUsage()
         last_error: Optional[AIError] = None
         timed_out = False
@@ -225,18 +258,25 @@ class AIOrchestrator:
         try:
             for _ in range(cfg.max_schema_retries):
                 parsed: Optional[dict] = None
-                for _ in range(cfg.max_json_retries):
+                for json_attempt in range(cfg.max_json_retries):
+                    # A parse failure is re-asked WITH a repair instruction; the
+                    # first attempt is byte-identical to the pre-C6 prompt, which
+                    # is what keeps deterministic evaluation intact.
+                    attempt_user = with_repair_instruction(user, json_attempt)
                     text: Optional[str] = None
                     # Network attempts and transient-rate-limit retries have
                     # SEPARATE bounded budgets, each with backoff (A4). Quota
                     # exhaustion is never retried (it won't clear today).
                     network_fails = rate_limit_retries = 0
                     while True:
-                        provider_calls += 1
+                        # Refused BEFORE the call, so an exhausted budget costs
+                        # nothing. Non-retryable, so it leaves every ladder.
+                        budget.spend(provider=selection.provider)
                         try:
                             resp = prov.complete(
-                                system=system, user=user, model=model_name,
+                                system=system, user=attempt_user, model=model_name,
                                 temperature=temp, max_tokens=max_tok, timeout_seconds=timeout,
+                                **json_kwargs,
                             )
                             usage = resp.usage
                             text = resp.text
@@ -247,14 +287,14 @@ class AIOrchestrator:
                             last_error = exc
                             if exc.is_quota or rate_limit_retries >= pcfg.max_rate_limit_retries:
                                 self._log_retry(
-                                    capability, provider_calls,
+                                    capability, budget.spent_since(attempt_mark),
                                     "rate_limit_quota" if exc.is_quota else "rate_limit_exhausted",
                                     0.0, exc, retry_after=exc.retry_after, final=True,
                                 )
                                 break  # fail fast → outer fallback loop (if any)
                             rate_limit_retries += 1
                             delay = self._rate_limit_delay(exc, rate_limit_retries, pcfg)
-                            self._log_retry(capability, provider_calls, "rate_limit", delay, exc,
+                            self._log_retry(capability, budget.spent_since(attempt_mark), "rate_limit", delay, exc,
                                             retry_after=exc.retry_after)
                             time.sleep(delay)
                             continue
@@ -263,22 +303,22 @@ class AIOrchestrator:
                             last_error = exc
                             network_fails += 1
                             if network_fails >= pcfg.max_network_retries:
-                                self._log_retry(capability, provider_calls, "timeout_exhausted",
+                                self._log_retry(capability, budget.spent_since(attempt_mark), "timeout_exhausted",
                                                 0.0, exc, final=True)
                                 break
                             delay = self._backoff(network_fails, pcfg)
-                            self._log_retry(capability, provider_calls, "timeout", delay, exc)
+                            self._log_retry(capability, budget.spent_since(attempt_mark), "timeout", delay, exc)
                             time.sleep(delay)
                             continue
                         except AIProviderError as exc:
                             last_error = exc
                             network_fails += 1
                             if network_fails >= pcfg.max_network_retries:
-                                self._log_retry(capability, provider_calls, "provider_error_exhausted",
+                                self._log_retry(capability, budget.spent_since(attempt_mark), "provider_error_exhausted",
                                                 0.0, exc, final=True)
                                 break
                             delay = self._backoff(network_fails, pcfg)
-                            self._log_retry(capability, provider_calls, "provider_error", delay, exc)
+                            self._log_retry(capability, budget.spent_since(attempt_mark), "provider_error", delay, exc)
                             time.sleep(delay)
                             continue
                     if text is None:
@@ -305,7 +345,7 @@ class AIOrchestrator:
 
                 execution = self._execution(
                     capability, selection.provider, model_name, True, start,
-                    provider_calls, parse_attempts, validate_attempts, usage,
+                    budget.spent_since(attempt_mark), parse_attempts, validate_attempts, usage,
                 )
                 self._record(selection.provider, model_name, execution, timed_out=False)
                 usage_tracker.qa_cache_put(fingerprint, parsed)  # QA-mode reuse
@@ -316,7 +356,7 @@ class AIOrchestrator:
         except AIError as exc:
             execution = self._execution(
                 capability, selection.provider, model_name, False, start,
-                provider_calls, parse_attempts, validate_attempts, usage, error=str(exc),
+                budget.spent_since(attempt_mark), parse_attempts, validate_attempts, usage, error=str(exc),
             )
             self._record(selection.provider, model_name, execution, timed_out=timed_out)
             self._log(execution)

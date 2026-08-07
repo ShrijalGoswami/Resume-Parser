@@ -89,7 +89,7 @@ def test_founding_is_not_a_free_upgrade():
     """Grandfathering preserves what existed. It does not hand out capabilities
     that were never available — those are what the new tiers sell."""
     s = founding()
-    for never_existed in ("byo_ai", "sso", "api_access", "dedicated_support"):
+    for never_existed in ("sso", "api_access", "dedicated_support"):
         assert not s.feature(never_existed).allowed
 
 

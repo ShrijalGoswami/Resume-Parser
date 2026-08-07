@@ -41,10 +41,8 @@ from pydantic import BaseModel
 from app.ai.gateway import fallback_chain, health_manager
 from app.ai.gateway.gateway import (
     active_provider,
-    clear_override,
     config_snapshot,
     configured_reasoning_providers,
-    set_active_provider,
 )
 from app.ai.gateway.health import HealthState
 from app.ai.gateway.model_registry import ModelSpec, register_model
@@ -54,7 +52,7 @@ from app.ai.prompts.base import PromptTemplate
 from app.ai.providers.base import LLMProvider
 from app.ai.providers.registry import register_provider
 from app.ai.schemas.base import Capability, ProviderResponse, TokenUsage
-from app.ai.utils.errors import AIConfigError
+from app.ai.utils.errors import AIConfigError, AIError
 from app.core.config import settings
 
 orch_mod = importlib.import_module("app.ai.orchestrator.orchestrator")
@@ -100,11 +98,10 @@ def routing(monkeypatch):
     calls: dict[str, int] = {}
     _register(OFF, calls)
     _register(ON, calls)
-    clear_override()
     health_manager.reset()
     monkeypatch.setattr(
         orch_mod, "get_prompt",
-        lambda cap: PromptTemplate(id="t", version="1", system="s", render=lambda **v: "u"),
+        lambda cap: PromptTemplate(id="t", version="1", system="s", render=lambda **v: "u", untrusted=frozenset()),
     )
 
     def _configure(primary: str, fallbacks: str = "", disabled: str = "",
@@ -115,7 +112,6 @@ def routing(monkeypatch):
         monkeypatch.setattr(settings, "AI_ENABLE_FALLBACK", enable_fallback)
 
     yield _configure, calls
-    clear_override()
     health_manager.reset()
 
 
@@ -137,14 +133,18 @@ class TestADisabledProviderIsNeverCalled:
         assert result.data.answer == ON
 
     def test_a_disabled_fallback_is_never_reached(self, routing):
-        """The primary fails outright; the disabled fallback must not catch it.
-        Falling back onto a provider that was switched off is the same defect
-        arriving one step later."""
+        """Even with the primary degraded, the disabled fallback must not catch
+        the traffic. Falling back onto a provider that was switched off is the
+        same defect arriving one step later.
+
+        The primary is marked unhealthy rather than made to fail, because an
+        unhealthy provider is still tried as a last resort (D1.12) — which is
+        precisely the state in which a fallback is most likely to be reached."""
         configure, calls = routing
         configure(primary=ON, fallbacks=OFF, disabled=OFF)
         health_manager.record_failure(ON, kind="timeout")
-        with pytest.raises(AIConfigError):
-            set_active_provider(OFF)          # and it cannot be reached this way either
+        assert health_manager.is_available(ON) is False
+        assert _run().data.answer == ON
         assert calls.get(OFF, 0) == 0
 
     def test_disabling_every_provider_refuses_instead_of_serving(self, routing):
@@ -236,27 +236,13 @@ class TestTheChainAndTheAdminSurfaceAgree:
         assert settings.is_llm_configured is False
 
 
-class TestTheAdminSwitchCannotUndoADisable:
-    def test_switching_to_a_disabled_provider_is_refused(self, routing):
-        configure, _ = routing
-        configure(primary=ON, disabled=OFF)
-        with pytest.raises(AIConfigError) as excinfo:
-            set_active_provider(OFF)
-        assert "AI_DISABLED_PROVIDERS" in str(excinfo.value)
-        assert active_provider() == ON
-
-    def test_switching_to_an_enabled_provider_still_works(self, routing):
-        configure, _ = routing
-        configure(primary=OFF, disabled=OFF)
-        set_active_provider(ON)
-        assert active_provider() == ON
-
-    def test_an_unknown_provider_is_still_refused_by_its_own_message(self, routing):
-        configure, _ = routing
-        configure(primary=ON, disabled=OFF)
-        with pytest.raises(AIConfigError) as excinfo:
-            set_active_provider("no_such_provider")
-        assert "Unknown provider" in str(excinfo.value)
+# `TestTheAdminSwitchCannotUndoADisable` lived here until 6 Aug 2026. It guarded
+# `set_active_provider()`, which refused to make a disabled provider active. Both
+# the guard and the function were removed with the runtime provider switch (V1 is
+# Groq-only — HANDOFF §11.0), because a switch with one option is not a feature.
+# The invariant it protected — a disabled provider is never routed to — is still
+# asserted by every other class in this file, from the routing side rather than
+# from the switch side.
 
 
 class TestDisablingIsReversible:

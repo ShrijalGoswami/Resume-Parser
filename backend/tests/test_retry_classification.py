@@ -41,7 +41,6 @@ import pytest
 from pydantic import BaseModel
 
 from app.ai.gateway import health_manager, usage_tracker
-from app.ai.gateway.gateway import clear_override
 from app.ai.gateway.health import HealthState
 from app.ai.gateway.provider_registry import ProviderSpec, register_provider_spec
 from app.ai.gateway.roles import ModelRole
@@ -115,11 +114,10 @@ def ladder(monkeypatch):
     monkeypatch.setattr(orch_mod.time, "sleep", lambda _s: None)   # no wall clock
     monkeypatch.setattr(
         orch_mod, "get_prompt",
-        lambda cap: PromptTemplate(id="t", version="1", system="s", render=lambda **v: "u"),
+        lambda cap: PromptTemplate(id="t", version="1", system="s", render=lambda **v: "u", untrusted=frozenset()),
     )
     monkeypatch.setattr(settings, "AI_DISABLED_PROVIDERS", "")
     monkeypatch.setattr(settings, "AI_ENABLE_FALLBACK", True)
-    clear_override()
     health_manager.reset()
     usage_tracker.reset()
 
@@ -132,7 +130,6 @@ def ladder(monkeypatch):
         return calls
 
     yield _configure, calls
-    clear_override()
     health_manager.reset()
 
 

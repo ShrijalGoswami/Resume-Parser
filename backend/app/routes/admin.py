@@ -3,37 +3,31 @@ AI Gateway admin routes (V5 / Sprint 7.5).
 
     GET  /api/v1/ai/config    — resolved provider/model per logical role (NO secrets)
     GET  /api/v1/ai/usage     — usage, cost, and provider-health snapshot
-    POST /api/v1/ai/provider  — runtime switch of the platform-wide reasoning provider
+    GET  /api/v1/ai/health    — live per-provider health and recent fallbacks
+
+**Read-only diagnostics.** There is no runtime provider switch: V1 is Groq-only
+by product decision (HANDOFF §11.0), so there is nothing to switch to. The
+provider is a deployment decision — `AI_PROVIDER` plus a restart — validated at
+boot rather than accepted from a request. `POST /ai/provider` existed until
+6 Aug 2026 and was removed with the feature; it mutated process-global state
+from an org-scoped permission check, so one organization's admin changed the
+provider for every organization in the process.
 
 Authenticated (recruiter). These never expose API keys or raw provider errors —
-only provider/model names, capability flags, and counters. The gateway is the one
-switch: changing the provider here (or via env + restart) immediately affects every
-AI feature (Copilot, Comparison, Semantic Search, Interview Intelligence).
+only provider/model names, capability flags, and counters.
 """
 
 import logging
 
 from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel
 
-from typing import Annotated
-
-from app.ai.gateway import config_snapshot, set_active_provider, usage_tracker, health_manager
-from app.ai.utils.errors import AIConfigError
+from app.ai.gateway import config_snapshot, usage_tracker, health_manager
 from app.core.config import settings
 from app.core.deps import RecruiterDep
-from app.enterprise.context import OrgContext
-from app.enterprise.deps import require_permission, RequireUsageView
-from app.enterprise.rbac import Permission
-from app.enterprise.repositories import AuditRepository
-from fastapi import Depends
+from app.enterprise.deps import RequireUsageView
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/ai", tags=["AI Gateway"])
-
-
-class SwitchProviderRequest(BaseModel):
-    provider: str
 
 
 @router.get("/config")
@@ -78,20 +72,3 @@ async def qa_reset(_: RecruiterDep):
     usage_tracker.reset()
     usage_tracker.enable_qa_mode()
     return {"qa_mode": True, "detail": "usage tracker reset; QA duplicate-detection enabled"}
-
-
-@router.post("/provider")
-async def switch_provider(
-    payload: SwitchProviderRequest,
-    ctx: Annotated[OrgContext, Depends(require_permission(Permission.ORG_MANAGE))],
-):
-    """Switch the platform-wide reasoning provider at runtime (org-admin only; audited)."""
-    try:
-        set_active_provider(payload.provider)
-    except AIConfigError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
-    AuditRepository(ctx.organization_id).record(
-        user_id=ctx.recruiter.id, user_email=ctx.recruiter.email,
-        action="ai_provider.changed", resource_type="ai_gateway", metadata={"provider": payload.provider},
-    )
-    return config_snapshot()

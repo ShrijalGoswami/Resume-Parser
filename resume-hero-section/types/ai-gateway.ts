@@ -26,7 +26,6 @@ export interface AiHealthEntry {
 
 export interface AiConfig {
   active_provider: string
-  override_active: boolean
   fallback_enabled: boolean
   fallback_chain: string[]
   disabled_providers: string[]

@@ -42,7 +42,6 @@ from pydantic import BaseModel
 
 from app.ai.gateway.gateway import (
     ModelSource,
-    clear_override,
     config_snapshot,
     resolve,
     routable_providers,
@@ -119,9 +118,8 @@ def env(monkeypatch):
     }
     monkeypatch.setattr(
         orch_mod, "get_prompt",
-        lambda cap: PromptTemplate(id="t", version="1", system="s", render=lambda **v: "u"),
+        lambda cap: PromptTemplate(id="t", version="1", system="s", render=lambda **v: "u", untrusted=frozenset()),
     )
-    clear_override()
 
     def _set(**overrides):
         for key, value in {**defaults, **overrides}.items():
@@ -129,7 +127,6 @@ def env(monkeypatch):
 
     _set()
     yield _set, received
-    clear_override()
 
 
 def _run(**kwargs):

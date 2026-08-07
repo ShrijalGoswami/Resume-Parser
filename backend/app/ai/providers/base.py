@@ -72,7 +72,16 @@ class LLMProvider(ABC):
     api_key_setting: str = ""
 
     # ── Declared capability metadata (providers override; base reads these) ──
-    can_json: bool = True          # native/parseable JSON output
+    #: Declares NATIVE JSON MODE — that this provider can be *asked* for JSON
+    #: through a request parameter, and the vendor enforces it. It does NOT mean
+    #: "can produce JSON if the prompt says so", which is true of every model and
+    #: is therefore worth declaring about none of them.
+    #:
+    #: **Default False, deliberately.** Before C6 this defaulted True and was read
+    #: by nothing — a decoration (§9A rule 10). Now it gates a real request
+    #: parameter, so the safe default is "not declared": a provider that has not
+    #: implemented `json_mode` in `complete()` must never be handed it.
+    can_json: bool = False
     can_stream: bool = False       # token streaming
     can_reason: bool = True        # general reasoning/chat
     can_vision: bool = False       # image inputs
@@ -114,6 +123,7 @@ class LLMProvider(ABC):
         temperature: float,
         max_tokens: int,
         timeout_seconds: int,
+        json_mode: bool = False,
     ) -> ProviderResponse:
         """
         Perform ONE completion attempt (no retries — the orchestrator owns retry
@@ -121,6 +131,11 @@ class LLMProvider(ABC):
         (AIConfigError for non-retryable config problems, AIProviderError/
         AITimeoutError/AIRateLimitError for transient ones). Never let a raw
         vendor exception escape.
+
+        `json_mode` asks the vendor to constrain the response to a JSON object
+        (C6). **It is only ever passed to a provider that declares `can_json`**,
+        so an implementation that has not been written to honour it never
+        receives it and does not need the parameter at all.
         """
         raise NotImplementedError
 
@@ -164,6 +179,8 @@ class LLMProvider(ABC):
 
     # ── Capability descriptors (metadata; future routing consumes these) ────
     def supports_json(self) -> bool:
+        """True when this provider implements native JSON mode — load-bearing
+        since C6, read by the orchestrator before it asks for JSON."""
         return self.can_json
 
     def supports_streaming(self) -> bool:

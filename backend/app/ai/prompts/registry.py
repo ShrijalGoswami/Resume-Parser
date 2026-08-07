@@ -9,6 +9,7 @@ capabilities register a template here; nothing embeds long prompts in routes.
 from __future__ import annotations
 
 from app.ai.prompts.base import PromptTemplate
+from app.ai.utils.untrusted import JOB_DESCRIPTION
 from app.ai.schemas.base import Capability
 from app.ai.utils.errors import AIConfigError
 
@@ -48,6 +49,9 @@ _REGISTRY: dict[Capability, PromptTemplate] = {
         version="v1.0",
         system=SYSTEM_PROMPT,
         render=lambda **v: build_analysis_prompt(v["resume_json"], v["ats_score"], v["breakdown_json"]),
+        # The résumé is authored by the person being evaluated. `breakdown_json`
+        # and `ats_score` are computed by `app/nlp/*` and are ours.
+        untrusted=frozenset({"resume_json"}),
         description="Explain deterministic ATS scores (LLM produces text only).",
     ),
     Capability.JOB_MATCHING: PromptTemplate(
@@ -55,6 +59,11 @@ _REGISTRY: dict[Capability, PromptTemplate] = {
         version="v1.1",
         system=MATCH_SYSTEM_PROMPT,
         render=lambda **v: build_match_prompt(v["job_description"], v["resume_json"]),
+        # S-2: the job description is untrusted too. A poisoned JD influences
+        # EVERY candidate scored against that role, which makes it the highest-
+        # leverage injection in the product — one write, every verdict.
+        untrusted=frozenset({"resume_json", "job_description"}),
+        untrusted_sources={"job_description": JOB_DESCRIPTION},
         description="Compare a resume against a job description (text only; scores are deterministic).",
     ),
     Capability.BATCH_CANDIDATE: PromptTemplate(
@@ -62,6 +71,11 @@ _REGISTRY: dict[Capability, PromptTemplate] = {
         version="v1.0",
         system=BATCH_SYSTEM_PROMPT,
         render=lambda **v: build_batch_prompt(v["job_description"], v["resume_json"]),
+        # Was the ONLY protected capability, fenced by hand inside its builder.
+        # Same protection, now declared rather than remembered — and S-2 added the
+        # job description, which this capability reads for every ranked candidate.
+        untrusted=frozenset({"resume_json", "job_description"}),
+        untrusted_sources={"job_description": JOB_DESCRIPTION},
         description="Single JD-aware candidate analysis used by batch ranking.",
     ),
     Capability.RECRUITER_COPILOT: PromptTemplate(
@@ -75,6 +89,9 @@ _REGISTRY: dict[Capability, PromptTemplate] = {
             v["question"],
             v.get("intent", "general"),
         ),
+        # `context` is assembled from stored candidate data, which is
+        # résumé-derived and therefore carries whatever survived the parser.
+        untrusted=frozenset({"context"}),
         description="Context-aware recruiter copilot Q&A grounded in platform data.",
     ),
     Capability.CANDIDATE_COMPARISON: PromptTemplate(
@@ -84,6 +101,7 @@ _REGISTRY: dict[Capability, PromptTemplate] = {
         render=lambda **v: build_comparison_prompt(
             v["context"], v["roster"], v.get("question", "")
         ),
+        untrusted=frozenset({"context", "roster"}),
         description="Executive comparison of 2–5 candidates grounded in stored data.",
     ),
     Capability.INTERVIEW_GENERATION: PromptTemplate(
@@ -94,6 +112,7 @@ _REGISTRY: dict[Capability, PromptTemplate] = {
             v["context"], v["candidate_line"],
             v.get("focus", "blueprint"), v.get("instruction", ""), v.get("sections"),
         ),
+        untrusted=frozenset({"context", "candidate_line"}),
         description="Grounded interview workbench (strategy, questions, verification, scorecard).",
     ),
     Capability.EXECUTIVE_REPORT: PromptTemplate(
@@ -103,6 +122,7 @@ _REGISTRY: dict[Capability, PromptTemplate] = {
         render=lambda **v: build_report_prompt(
             v["context"], v.get("focus", "full"), v.get("instruction", ""), v.get("sections"),
         ),
+        untrusted=frozenset({"context"}),
         description="Executive hiring intelligence briefing grounded in real platform metrics.",
     ),
     Capability.AGENT_REASONING: PromptTemplate(
@@ -110,6 +130,8 @@ _REGISTRY: dict[Capability, PromptTemplate] = {
         version=AGENT_PROMPT_VERSION,
         system=AGENT_REASONING_SYSTEM_PROMPT,
         render=lambda **v: build_agent_prompt(v["situations"]),
+        # Situations are summarised from campaign + candidate records.
+        untrusted=frozenset({"situations"}),
         description="Prioritise detected agent situations into a recruiter briefing.",
     ),
 }

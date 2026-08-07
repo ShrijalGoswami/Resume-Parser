@@ -101,7 +101,6 @@ EXEMPT = {
                             "the result is gated in the response, not the route",
     "export_excel": "no Excel export endpoint exists yet — the entitlement is "
                     "declared so the plan matrix is complete",
-    "byo_ai": "Phase 4 — no credential endpoints yet",
     "api_access": "Phase 4 — scoped org API keys exist but the public API does not",
     "sso": "Supabase-level auth configuration, not a HireLens endpoint",
     "audit_logs": "read surface exists for every org today; gating it would hide "

@@ -5,9 +5,9 @@ Think of it as Stripe for AI providers: a feature asks for a logical role
 ("I need reasoning") and the gateway decides the provider, model, and fallback
 chain from configuration. No feature knows or cares which vendor answered.
 
-Selection precedence (reasoning):
-  1. runtime admin override (in-memory) — one switch updates the whole platform
-  2. AI_PROVIDER / AI_DEFAULT_PROVIDER (env)
+The reasoning provider comes from configuration alone: AI_PROVIDER, falling
+back to AI_DEFAULT_PROVIDER. There is deliberately NO runtime switch — see
+`active_provider()`.
 
 MODEL RESOLUTION HAS EXACTLY ONE AUTHORITATIVE DECISION PATH (§9A rule 16)
 ---------------------------------------------------------------------------
@@ -85,9 +85,6 @@ from app.core.config import settings
 
 logger = logging.getLogger("app.ai")
 
-# In-memory admin override (server-side only). None → use configured provider.
-_provider_override: Optional[str] = None
-
 
 class ModelSource(str, Enum):
     """Why this model was chosen. The five inputs kept distinct on purpose —
@@ -112,39 +109,21 @@ class ModelSelection:
 
 
 def active_provider() -> str:
-    """The provider all reasoning currently routes to."""
-    return (_provider_override or settings.reasoning_provider).lower()
+    """The provider all reasoning routes to. Configuration only.
 
+    **There is no runtime switch, by product decision (§11.0): V1 is Groq-only,
+    so there is nothing to switch to.** A `set_active_provider()` used to exist
+    and mutated a module-level global, which made it worse than redundant: the
+    route checked `ORG_MANAGE` inside the caller's own organization and then
+    changed the provider for **every** organization served by the process. It was
+    removed with the feature rather than gated, because a switch with one option
+    is not a feature to gate.
 
-def set_active_provider(name: str) -> str:
-    """Runtime switch (admin) — immediately affects every AI feature. Server-side.
-
-    Refuses a provider that is disabled by configuration. The admin switch is an
-    in-memory override and `AI_DISABLED_PROVIDERS` is a deployment decision; if
-    the switch could win, an operator who took a provider out during an incident
-    could have it put back by anyone with the Settings screen open — and the
-    chain would silently refuse to route there anyway, so the switch would appear
-    to succeed and change nothing.
+    Changing the provider is a deployment decision — set `AI_PROVIDER` and
+    restart — which is validated at boot (`validation.py`) rather than accepted
+    from a request.
     """
-    global _provider_override
-    from app.ai.gateway.health import health_manager
-
-    key = (name or "").strip().lower()
-    if get_provider_spec(key) is None:
-        raise AIConfigError(f"Unknown provider '{name}'.")
-    if health_manager.is_disabled(key):
-        raise AIConfigError(
-            f"Provider '{key}' is disabled by AI_DISABLED_PROVIDERS and cannot be "
-            f"made active. Remove it from that list to route to it again."
-        )
-    _provider_override = key
-    logger.info("AI gateway: active reasoning provider switched to '%s'", key)
-    return key
-
-
-def clear_override() -> None:
-    global _provider_override
-    _provider_override = None
+    return settings.reasoning_provider.lower()
 
 
 def _role_model(provider: str, role: ModelRole) -> tuple[str, ModelSource]:
@@ -324,7 +303,6 @@ def config_snapshot() -> dict:
         })
     return {
         "active_provider": prov,
-        "override_active": _provider_override is not None,
         "fallback_enabled": settings.AI_ENABLE_FALLBACK,
         # Names only: this line never needed a model, and resolving one can now
         # fail (C4). An admin surface must not break on the configuration it exists

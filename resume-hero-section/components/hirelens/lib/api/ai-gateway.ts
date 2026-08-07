@@ -1,7 +1,7 @@
 'use client'
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getAiConfig, getAiUsage, getAiHealth, switchAiProvider } from '@/services/ai-gateway-api'
+import { useQuery } from '@tanstack/react-query'
+import { getAiConfig, getAiUsage, getAiHealth } from '@/services/ai-gateway-api'
 import type { AiConfig, AiHealth, AiUsage } from '@/types/ai-gateway'
 
 /**
@@ -32,16 +32,5 @@ export function useAiHealth() {
     queryKey: aiGatewayKeys.health,
     queryFn: getAiHealth,
     refetchInterval: 30_000,
-  })
-}
-
-export function useSwitchProvider() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (provider: string) => switchAiProvider(provider),
-    onSuccess: (config) => {
-      queryClient.setQueryData(aiGatewayKeys.config, config)
-      queryClient.invalidateQueries({ queryKey: aiGatewayKeys.health })
-    },
   })
 }

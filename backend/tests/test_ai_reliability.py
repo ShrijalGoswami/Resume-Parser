@@ -75,7 +75,8 @@ class _Reply(BaseModel):
 
 # ── Fault-injection harness (fake providers drive the REAL orchestrator) ──────
 def _prompt_patch():
-    return lambda cap: PromptTemplate(id="t", version="1", system="sys", render=lambda **v: "user")
+    return lambda cap: PromptTemplate(id="t", version="1", system="sys", render=lambda **v: "user",
+                            untrusted=frozenset())
 
 
 def _with_chain(provider_name: str):

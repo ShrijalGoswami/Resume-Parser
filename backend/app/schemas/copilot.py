@@ -4,6 +4,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, computed_field
 
+from app.ai.utils.limits import JOB_DESCRIPTION_MAX_CHARS
 from app.schemas.batch import CandidateResult
 
 
@@ -15,7 +16,8 @@ class ChatMessage(BaseModel):
 class CopilotRequest(BaseModel):
     """A single grounded question about one candidate."""
     candidate: CandidateResult
-    job_description: str = Field(default="", max_length=20000)
+    # Same ceiling as the analysis routes, from the one owner (S-4).
+    job_description: str = Field(default="", max_length=JOB_DESCRIPTION_MAX_CHARS)
     history: list[ChatMessage] = Field(default_factory=list, max_length=50, description="Recent prior turns")
     message: str = Field(max_length=4000, description="The recruiter's new question")
 

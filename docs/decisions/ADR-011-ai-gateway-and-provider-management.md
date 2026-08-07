@@ -39,7 +39,7 @@ Evolve the AI Foundation into a true **AI Gateway** — "Stripe for AI providers
   aggregator (requests, tokens, estimated cost, latency, error rate, timeouts) per
   provider/model, plus derived provider health. Exposed to an authenticated admin.
 - **Admin layer** (`routes/admin.py`) — `GET /ai/config`, `GET /ai/usage`,
-  `POST /ai/provider` (runtime switch). Secrets never leave the server; only
+  `GET /ai/health`. Secrets never leave the server; only
   provider/model names, capability flags, and counters are surfaced.
 - **Embeddings** follow the same abstraction (hashing/openai/gemini, configurable),
   so Semantic Search stays provider-agnostic.
@@ -47,7 +47,9 @@ Evolve the AI Foundation into a true **AI Gateway** — "Stripe for AI providers
 ## Consequences
 
 - ✅ **Vendor-swappable by config** — change `AI_PROVIDER` (+ restart) or POST a
-  runtime switch; every AI feature follows instantly. No feature-level code edits.
+  configuration change plus a restart; every AI feature follows. No feature-level
+  code edits. (The runtime switch this ADR originally specified was removed on
+  6 Aug 2026 — V1 is Groq-only; see HANDOFF §11.0.)
 - ✅ **Role-based** — features express intent ("reasoning", "long context"); the
   business maps roles to models per cost/quality strategy.
 - ✅ **Resilient** — configurable, non-hardcoded fallback chains; a dead provider

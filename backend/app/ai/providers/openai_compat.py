@@ -30,6 +30,7 @@ class OpenAICompatProvider(LLMProvider):
     # subclasses inherit it because they speak the same API. A subclass whose
     # vendor words differ overrides this ONE attribute and nothing else.
     quota_markers = ("per day", "tpd", "rpd", "daily", "quota")
+    # Same request parameter as Groq — this family speaks the same API.
     can_json = True
     can_stream = True
     can_reason = True
@@ -38,7 +39,8 @@ class OpenAICompatProvider(LLMProvider):
     def _api_key(self) -> str:
         return (getattr(settings, self.api_key_setting, "") or "").strip()
 
-    def complete(self, *, system, user, model, temperature, max_tokens, timeout_seconds) -> ProviderResponse:
+    def complete(self, *, system, user, model, temperature, max_tokens, timeout_seconds,
+                 json_mode: bool = False) -> ProviderResponse:
         key = self._api_key()
         if not key:
             raise AIConfigError(f"{self.name}: {self.api_key_setting} is not configured.")
@@ -58,6 +60,7 @@ class OpenAICompatProvider(LLMProvider):
                 temperature=temperature,
                 max_tokens=max_tokens,
                 timeout=timeout_seconds,
+                **({"response_format": {"type": "json_object"}} if json_mode else {}),
             )
         except Exception as exc:  # pragma: no cover — normalize vendor errors
             raise self._classify(exc) from exc

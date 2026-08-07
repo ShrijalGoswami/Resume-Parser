@@ -12,7 +12,6 @@ from app.ai.gateway.roles import ModelRole
 from app.ai.gateway.gateway import (
     ModelSelection,
     active_provider,
-    clear_override,
     config_snapshot,
     configured_reasoning_providers,
     cost_of,
@@ -20,7 +19,6 @@ from app.ai.gateway.gateway import (
     is_reasoning_configured,
     resolve,
     resolve_embedding,
-    set_active_provider,
 )
 from app.ai.gateway.usage import usage_tracker
 from app.ai.gateway.health import health_manager, HealthState
@@ -40,8 +38,6 @@ __all__ = [
     "fallback_chain",
     "resolve_embedding",
     "active_provider",
-    "set_active_provider",
-    "clear_override",
     "config_snapshot",
     "configured_reasoning_providers",
     "cost_of",
