@@ -590,6 +590,36 @@ def extract_certifications(certifications_section: str) -> list[str]:
                 certs.append(cleaned)
     return certs
 
+def _employment_text(text: str, sections: dict[str, str]) -> str:
+    """The part of the résumé whose date ranges represent EMPLOYMENT.
+
+    `years_of_experience_from_text` unions every dated range it is given, which
+    is right — overlapping and concurrent jobs must not double-count. What was
+    wrong is what it was given: the whole document. A degree reading
+    "(2014-2018)" is a date range like any other, so a candidate who studied
+    2014-2018 and worked 2018-2025 was credited with **eleven** years instead of
+    seven, and the inflation grows with the length of the degree.
+
+    That number is not cosmetic — it feeds ATS scoring and seniority judgement,
+    so it decides whether someone is read as a senior hire.
+
+    The function itself is left alone: it is called elsewhere with bare snippets
+    and its contract (union the ranges you are given) is correct. Only the input
+    is narrowed.
+    """
+    experience = (sections.get("experience") or "").strip()
+    if experience:
+        return experience
+    # No experience section was detected — a one-column résumé, or unusual
+    # headings. Fall back to the whole document minus education, so a degree's
+    # dates still cannot be counted as employment. Better to under-narrow than
+    # to return nothing and report 0 years for someone with a real history.
+    education = (sections.get("education") or "").strip()
+    if education and education in text:
+        return text.replace(education, " ")
+    return text
+
+
 def extract_resume_data(text: str) -> ResumeData:
     """
     Extracts raw text, maps it to ResumeData Pydantic model, and normalizes entries.
@@ -619,5 +649,5 @@ def extract_resume_data(text: str) -> ResumeData:
         experience=experience,
         projects=projects,
         certifications=certifications,
-        total_experience_years=years_of_experience_from_text(text),
+        total_experience_years=years_of_experience_from_text(_employment_text(text, sections)),
     )
