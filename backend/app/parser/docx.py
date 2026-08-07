@@ -15,7 +15,9 @@ class DocxParser(BaseParser):
         logger.info(f"File detected: {file_path}")
         
         if not file_path.exists():
-            raise ParserError(f"DOCX file does not exist at: {file_path}")
+            # Path to the log, not to the client — see the note in pdf.py (A6).
+            logger.error(f"Extraction failure: DOCX file does not exist at: {file_path}")
+            raise ParserError("The uploaded file could not be read.")
 
         # A DOCX is a ZIP archive, and python-docx decompresses all of it before
         # returning. Every check upstream — extension, magic bytes, the 10MB
@@ -62,5 +64,11 @@ class DocxParser(BaseParser):
             return raw_text, page_count
             
         except Exception as e:
-            logger.error(f"Extraction failure: Failed to parse DOCX {file_path}. Reason: {str(e)}")
-            raise ParserError(f"Failed to parse DOCX document: {str(e)}")
+            logger.error(
+                f"Extraction failure: Failed to parse DOCX {file_path}. Reason: {str(e)}",
+                exc_info=True,
+            )
+            raise ParserError(
+                "Failed to parse DOCX document. The file may be corrupt, "
+                "password-protected, or not a real Word document."
+            )

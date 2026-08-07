@@ -14,7 +14,11 @@ class PDFParser(BaseParser):
         logger.info(f"File detected: {file_path}")
         
         if not file_path.exists():
-            raise ParserError(f"PDF file does not exist at: {file_path}")
+            # The path goes to the log, never into the exception: `ParserError`
+            # text is surfaced to the client verbatim by `batch_service`, and an
+            # absolute path names the OS, the account and the temp layout (A6).
+            logger.error(f"Extraction failure: PDF file does not exist at: {file_path}")
+            raise ParserError("The uploaded file could not be read.")
 
         try:
             # Selected PDF parser
@@ -37,5 +41,14 @@ class PDFParser(BaseParser):
             return raw_text, page_count
             
         except Exception as e:
-            logger.error(f"Extraction failure: Failed to parse PDF {file_path}. Reason: {str(e)}")
-            raise ParserError(f"Failed to parse PDF document: {str(e)}")
+            # `str(e)` from PyMuPDF embeds the absolute temp path it was handed.
+            # Log it with the traceback; the client gets a message that says what
+            # to do about it and nothing about this machine (A6).
+            logger.error(
+                f"Extraction failure: Failed to parse PDF {file_path}. Reason: {str(e)}",
+                exc_info=True,
+            )
+            raise ParserError(
+                "Failed to parse PDF document. The file may be corrupt, "
+                "password-protected, or not a real PDF."
+            )
