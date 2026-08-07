@@ -514,6 +514,22 @@ def extract_education(education_section: str) -> list[EducationEntry]:
     logger.info(f"Extraction success: Extracted {len(result)} education entries.")
     return result
 
+#: Titles that identify a heading fragment as the ROLE rather than the employer.
+#: Module scope so the heading splitter and the line classifier agree — they used
+#: to hold two different lists, and the shorter one silently mis-assigned
+#: "Specialist", "Programmer", "Consultant" and "Architect" headings.
+_ROLE_KEYWORDS = (
+    "intern", "developer", "engineer", "analyst", "lead", "manager",
+    "specialist", "programmer", "consultant", "architect",
+)
+#: Explicit role/company separators, tried in order. Comma is deliberately NOT
+#: here — it is handled separately and only with a role-keyword guard, because
+#: it is also ordinary punctuation inside a company name.
+_HEADING_SEPARATORS = ("—", "|", " at ", " @ ")
+#: Brackets left empty once the date is cut out of a heading.
+_EMPTY_BRACKETS_RE = re.compile(r"[(\[\{]\s*[)\]\}]")
+
+
 def extract_experience(experience_section: str) -> list[ExperienceEntry]:
     """
     Extracts work experience, merging line breaks and formatting bullets.
@@ -533,9 +549,16 @@ def extract_experience(experience_section: str) -> list[ExperienceEntry]:
             continue
             
         lower_line = cleaned.lower()
-        duration_match = re.search(r"((?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s*\d{4}|\d{4})\s*[-–—\s]+\s*(?:present|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s*\d{4}|\d{4})", lower_line)
-        is_role = any(r in lower_line for r in ["intern", "developer", "engineer", "analyst", "lead", "manager", "specialist", "programmer", "consultant", "architect"])
-        has_separator = any(sep in cleaned for sep in ["—", "|", " at ", " @ "])
+        # Matched against the ORIGINAL line, not a lowercased copy: the span is
+        # used to cut the text below, and offsets into a different string are
+        # only accidentally correct.
+        duration_match = re.search(
+            r"((?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s*\d{4}|\d{4})\s*[-–—\s]+\s*"
+            r"(?:present|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s*\d{4}|\d{4})",
+            cleaned, re.IGNORECASE,
+        )
+        is_role = any(r in lower_line for r in _ROLE_KEYWORDS)
+        has_separator = any(sep in cleaned for sep in _HEADING_SEPARATORS)
         is_bullet = cleaned.startswith(("•", "-", "*")) or cleaned.startswith(chr(149))
         
         if (is_role or duration_match or has_separator) and not is_bullet:
@@ -556,17 +579,37 @@ def extract_experience(experience_section: str) -> list[ExperienceEntry]:
             
             heading_text = cleaned
             if duration_match:
-                heading_text = heading_text.replace(duration_match.group(0), "").strip()
-                
+                # Cut by span, then clear the brackets the date left behind.
+                # `.replace()` on a match found in a lowercased copy also left
+                # "Senior Backend Engineer, Razorpay ()" — the empty parentheses
+                # were stored as part of the role, verbatim, in every record.
+                heading_text = (
+                    heading_text[: duration_match.start()] + " " + heading_text[duration_match.end():]
+                )
+                heading_text = _EMPTY_BRACKETS_RE.sub(" ", heading_text)
+                heading_text = re.sub(r"\s{2,}", " ", heading_text).strip(" ,;·|-–—")
+
             parts = []
-            for sep in ["—", "|", " at ", " @ "]:
+            for sep in _HEADING_SEPARATORS:
                 if sep in heading_text:
                     parts = heading_text.split(sep, 1)
                     break
-                    
+
+            # "Senior Backend Engineer, Razorpay" — the most common heading form
+            # in the wild, and the one the audit fixture used. Comma is tried
+            # LAST and only when a side actually names a role, because it is also
+            # ordinary punctuation: "Acme, Inc." and "Razorpay, Bengaluru" must
+            # not be torn in half. The explicit separators above still win.
+            if len(parts) != 2 and "," in heading_text:
+                candidate = [p.strip() for p in heading_text.split(",", 1)]
+                if len(candidate) == 2 and all(candidate) and any(
+                    any(r in side.lower() for r in _ROLE_KEYWORDS) for side in candidate
+                ):
+                    parts = candidate
+
             if len(parts) == 2:
                 p1_lower = parts[0].lower()
-                if any(r in p1_lower for r in ["intern", "developer", "engineer", "analyst", "lead", "manager"]):
+                if any(r in p1_lower for r in _ROLE_KEYWORDS):
                     current_entry["role"] = parts[0].strip()
                     current_entry["company"] = parts[1].strip()
                 else:
@@ -613,6 +656,11 @@ def extract_experience(experience_section: str) -> list[ExperienceEntry]:
     logger.info(f"Extraction success: Extracted {len(result)} experience entries.")
     return result
 
+#: Splits "Project Name - what it does" on one line. Requires whitespace around
+#: the separator so a hyphenated name ("E-Commerce Platform") stays intact.
+_PROJECT_TITLE_SPLIT_RE = re.compile(r"\s+[-–—:]\s+")
+
+
 def extract_projects(projects_section: str) -> list[ProjectEntry]:
     """
     Extracts and filters projects, resolving tech-stack and link line lookaheads (TASK 3).
@@ -631,6 +679,21 @@ def extract_projects(projects_section: str) -> list[ProjectEntry]:
         if not is_bullet:
             title = line
             description = []
+
+            # "Payment Reconciliation Engine - event-sourced ledger reconciling
+            # gateway and bank statements." — title and summary on one line, the
+            # most compact way résumés list projects. Without this split the
+            # whole sentence became the title, and because the entry then had no
+            # description at all it failed the `has_bullets` check below and the
+            # project was dropped entirely.
+            inline = _PROJECT_TITLE_SPLIT_RE.split(title, 1)
+            if len(inline) == 2:
+                head, tail = inline[0].strip(), inline[1].strip()
+                # A separator inside a short name ("E-Commerce Platform") is part
+                # of the name, not a boundary; require a substantive right side.
+                if head and len(tail) >= 20:
+                    title = head
+                    description = [tail]
             
             # Look ahead for sub elements
             i += 1
@@ -653,11 +716,25 @@ def extract_projects(projects_section: str) -> list[ProjectEntry]:
                         if is_tech_stack:
                             description.append(f"Technologies: {next_line}")
                     else:
-                        # Determine if the next line is a continuation of description or a new project title
+                        # Continuation of the current project, or the start of the
+                        # next one?
+                        #
+                        # This used to treat a line ENDING in a period as a
+                        # continuation, which is backwards: a full stop marks a
+                        # complete thought, so it is evidence the line stands
+                        # alone. Two single-line projects therefore merged, the
+                        # second becoming the description of the first, and the
+                        # résumé lost a project.
+                        #
+                        # A continuation is a line that starts lowercase (clearly
+                        # mid-sentence) or one that follows text which did NOT
+                        # finish its sentence — i.e. wrapped text.
                         is_title_like = next_line[0].isupper() if next_line else False
-                        is_sentence_end_or_lowercase = next_line.endswith(".") or not is_title_like
-                        
-                        if is_sentence_end_or_lowercase:
+                        previous_text = description[-1] if description else title
+                        previous_finished = previous_text.rstrip().endswith((".", "!", "?"))
+                        is_continuation = (not is_title_like) or (not previous_finished)
+
+                        if is_continuation:
                             # Merge continuation of text into the previous description item
                             if description:
                                 description[-1] = (description[-1] + " " + next_line).strip()
