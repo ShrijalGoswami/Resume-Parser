@@ -345,6 +345,85 @@ def extract_skills(skills_section: str, full_text: str) -> list[str]:
     
     logger.info(f"Extraction success: Normalized & categorized skills compiled (count: {len(final_skills)}).")
     return final_skills
+#: Tokens that identify a line (or comma-separated fragment) as an institution
+#: or as a qualification. Extracted to module scope so the single-line splitter
+#: and the line classifier below cannot disagree about what a degree looks like.
+_INSTITUTION_KEYWORDS = (
+    "institute", "university", "college", "school", "vit", "iit", "nit", "academy",
+)
+_DEGREE_KEYWORDS = (
+    "b.tech", "b.e", "b.sc", "bca", "m.tech", "m.e", "m.sc", "mca", "b.s.", "m.s.",
+    "bachelor", "master", "phd",
+)
+#: A date range inside an education line. Case-insensitive because it is applied
+#: to the original text, not a lowercased copy — the original is what gets stored.
+_EDU_DURATION_RE = re.compile(
+    r"\(?\s*((?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\.?\s*)?((?:19|20)\d{2})"
+    r"\s*[-–—]\s*"
+    r"(present|current|(?:(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\.?\s*)?(?:19|20)\d{2})"
+    r"\s*\)?",
+    re.IGNORECASE,
+)
+
+
+def _split_combined_education_line(line: str) -> dict[str, str]:
+    """Split a one-line education entry into its parts.
+
+    Résumés routinely write the whole qualification on a single line:
+
+        B.Tech Computer Science and Engineering, IIT Madras (2014-2018)
+
+    The line classifier below is line-oriented and tests institution BEFORE
+    degree in an elif chain, so a line naming both was filed entirely as the
+    institution — degree and duration came back empty. That is not a cosmetic
+    loss: `reconciliation` treats extracted degrees as facts the model may not
+    call missing, so an empty degree silently weakens M-4 as well.
+
+    Splitting is syntactic — the date is lifted out, then commas separate the
+    remaining fragments and the same keyword lists classify each. Fragments that
+    match neither attach to the degree while no institution has been seen and to
+    the institution afterwards, which follows the near-universal ordering
+    (qualification, then where it was earned).
+    """
+    parts: dict[str, str] = {}
+    remainder = line
+
+    match = _EDU_DURATION_RE.search(remainder)
+    if match:
+        parts["duration"] = clean_duration(match.group(0).strip("() "))
+        remainder = (remainder[: match.start()] + " " + remainder[match.end():])
+
+    gpa = re.search(
+        r"(?:cgpa|gpa|grade|marks|percentage)[\s:]*([0-9.]+(?:\s*/\s*[0-9.]+)?|[0-9]+%)",
+        remainder, re.IGNORECASE,
+    )
+    if gpa:
+        parts["gpa"] = clean_gpa(gpa.group(0))
+        remainder = remainder[: gpa.start()] + " " + remainder[gpa.end():]
+
+    degree_bits: list[str] = []
+    inst_bits: list[str] = []
+    for fragment in remainder.split(","):
+        fragment = fragment.strip(" ,;()-·|")
+        if not fragment:
+            continue
+        low = fragment.lower()
+        if any(k in low for k in _INSTITUTION_KEYWORDS):
+            inst_bits.append(fragment)
+        elif any(k in low for k in _DEGREE_KEYWORDS):
+            degree_bits.append(fragment)
+        elif inst_bits:
+            inst_bits.append(fragment)
+        else:
+            degree_bits.append(fragment)
+
+    if degree_bits:
+        parts["degree"] = ", ".join(degree_bits)
+    if inst_bits:
+        parts["institution"] = ", ".join(inst_bits)
+    return parts
+
+
 def extract_education(education_section: str) -> list[EducationEntry]:
     """
     Extracts education details, standardizing GPAs and dates.
@@ -360,17 +439,51 @@ def extract_education(education_section: str) -> list[EducationEntry]:
     
     for line in lines:
         lower_line = line.lower()
-        is_inst = any(k in lower_line for k in ["institute", "university", "college", "school", "vit", "iit", "nit", "academy"])
-        is_degree = any(k in lower_line for k in ["b.tech", "b.e", "b.sc", "bca", "m.tech", "m.e", "m.sc", "mca", "b.s.", "m.s.", "bachelor", "master", "phd"])
+        is_inst = any(k in lower_line for k in _INSTITUTION_KEYWORDS)
+        is_degree = any(k in lower_line for k in _DEGREE_KEYWORDS)
         gpa_match = re.search(r"(?:cgpa|gpa|grade|marks|percentage)[\s:]*([0-9.]+(?:\s*/\s*[0-9.]+)?|[0-9]+%)", lower_line)
         duration_match = re.search(r"((?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s*\d{4}|\d{4})\s*[-–—\s]+\s*(?:present|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s*\d{4}|\d{4})", lower_line)
-        
-        if is_inst:
+
+        # A line naming BOTH a qualification and an institution is a complete
+        # entry written on one line. Handled before the elif chain below, which
+        # tests institution first and would swallow the whole line.
+        if is_inst and is_degree:
             if current_entry and (current_entry.get("institution") or current_entry.get("degree")):
+                entries.append(current_entry)
+                current_entry = {}
+            current_entry.update(_split_combined_education_line(line))
+            continue
+
+        # A single-component line may still carry its dates ("IIT Madras, 2014-2018").
+        if (is_inst or is_degree) and _EDU_DURATION_RE.search(line):
+            extracted = _split_combined_education_line(line)
+            duration = extracted.pop("duration", "")
+            if duration:
+                current_entry.setdefault("duration", duration)
+                line = _EDU_DURATION_RE.sub(" ", line).strip(" ,;()-")
+                lower_line = line.lower()
+
+        if is_inst:
+            # Start a new entry only when this one ALREADY names an institution.
+            # It used to flush on a pending degree too, which split the ordinary
+            # two-line form —
+            #     B.Tech Computer Science
+            #     Indian Institute of Technology Madras
+            # — into a degree with no institution followed by an institution with
+            # no degree. Both halves then read as incomplete to anything
+            # downstream, including M-4 reconciliation.
+            if current_entry and current_entry.get("institution"):
                 entries.append(current_entry)
                 current_entry = {}
             current_entry["institution"] = line
         elif is_degree:
+            # A second qualification once this entry is already complete is the
+            # NEXT entry, not a correction of this one. Without this, a résumé
+            # listing an M.Tech above a B.Tech had the first degree silently
+            # overwritten by the second.
+            if current_entry.get("degree") and current_entry.get("institution"):
+                entries.append(current_entry)
+                current_entry = {}
             current_entry["degree"] = line
         elif gpa_match:
             current_entry["gpa"] = clean_gpa(gpa_match.group(0))  # Standardize GPA Casing (TASK 5)
