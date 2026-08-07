@@ -229,17 +229,75 @@ def extract_email(text: str) -> str:
     logger.warning("Missing field: Email could not be extracted.")
     return ""
 
+# ── Phone extraction ────────────────────────────────────────────────────────
+# The previous pattern hardcoded a 3-3-4 North American grouping, so any résumé
+# written the way most of the world writes a number — "+91 98765 43210" (5-5),
+# "+44 20 7946 0958" (2-4-4) — extracted NOTHING, silently. The recruiter saw a
+# candidate with no phone number and no error.
+#
+# Grouping is not something to enumerate: every country groups differently and a
+# résumé may use spaces, hyphens, dots, parentheses or unicode dashes. So the
+# shape is matched loosely and the DIGIT COUNT decides, using exactly the range
+# `validators.validate_phone` already enforces (10-13). That keeps one
+# definition of "is this a phone number" instead of two that can disagree.
+#
+# The digit-count check is also what keeps false positives out, which matters
+# more than it sounds: a résumé is full of number-like runs. "2014-2018" is 8
+# digits, "2021 - 2025" is 8, a bare year is 4 — all rejected without needing a
+# special case. Letters are absent from the character class, so "840ms to 190ms"
+# and "4M transactions" can never join up into a candidate.
+
+#: Separators that may appear inside a written phone number (incl. unicode dashes).
+_PHONE_SEP = r"[\s.‐-―()\-]"
+#: A loose candidate: optional +CC, then digits interleaved with separators.
+_PHONE_CANDIDATE_RE = re.compile(rf"\+?\d(?:{_PHONE_SEP}*\d){{6,19}}")
+#: A label immediately preceding a number is strong evidence it is THE number.
+_PHONE_LABEL_RE = re.compile(
+    rf"(?:phone|mobile|tel|telephone|cell|contact)\s*[:#]?\s*(\+?\d(?:{_PHONE_SEP}*\d){{6,19}})",
+    re.IGNORECASE,
+)
+#: Runs long enough to be two concatenated years/ids rather than one number.
+_PHONE_MIN_DIGITS, _PHONE_MAX_DIGITS = 10, 13
+
+
+def _phone_digits(raw: str) -> str:
+    return re.sub(r"\D", "", raw)
+
+
+def _first_valid_phone(segment: str) -> str:
+    """First substring of `segment` whose digit count is phone-shaped."""
+    # A labelled number wins over positional order — "DOB 12-03-1990" can precede
+    # the real number, and only the label disambiguates them.
+    for m in _PHONE_LABEL_RE.finditer(segment):
+        candidate = m.group(1).strip(" .-()")
+        if _PHONE_MIN_DIGITS <= len(_phone_digits(candidate)) <= _PHONE_MAX_DIGITS:
+            return candidate
+    for m in _PHONE_CANDIDATE_RE.finditer(segment):
+        candidate = m.group(0).strip(" .-()")
+        if _PHONE_MIN_DIGITS <= len(_phone_digits(candidate)) <= _PHONE_MAX_DIGITS:
+            return candidate
+    return ""
+
+
 def extract_phone(text: str) -> str:
     """
     Extracts the phone number.
+
+    Header first, then the rest of the document. The split is deliberate: a
+    contact number is almost always in the first few lines, and preferring it
+    stops a phone-shaped run further down (an employer's number in a project
+    description, a reference's contact) from winning on position alone.
     """
-    pattern = r"(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}|\b\d{10}\b"
-    match = re.search(pattern, text[:1200])
-    if match:
-        phone = match.group(0).strip()
-        logger.info(f"Extraction success: Phone extracted: '{phone}'")
-        return phone
-        
+    if not text:
+        logger.warning("Missing field: Phone could not be extracted.")
+        return ""
+
+    for segment in (text[:1200], text[1200:]):
+        phone = _first_valid_phone(segment)
+        if phone:
+            logger.info(f"Extraction success: Phone extracted: '{phone}'")
+            return phone
+
     logger.warning("Missing field: Phone could not be extracted.")
     return ""
 
