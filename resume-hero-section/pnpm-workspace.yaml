@@ -2,3 +2,21 @@ allowBuilds:
   esbuild: true
   sharp: true
   unrs-resolver: false
+
+# Next 16.2.12 depends on postcss 8.4.31, which carries four advisories (the
+# newest needs >= 8.5.23). postcss is build-time only here — it processes this
+# project's own CSS, never attacker-supplied input — so the exposure is small,
+# but the advisories are real and the fix is a semver-compatible bump inside
+# 8.x. Lifted for the whole tree rather than left for a future Next release.
+#
+# Verified with a full production build and the frontend suite after applying;
+# if a future Next version breaks under it, remove this line rather than pinning
+# something older.
+overrides:
+  postcss: '^8.5.23'
+  # sharp is Next's image optimiser. Unreachable today because
+  # next.config.mjs sets images.unoptimized: true — but that may change during
+  # the redesign, and a dormant advisory is easier to fix now than to remember
+  # later. Native module: if a deploy platform fails to build it, drop this line
+  # (the advisory is not reachable while images stay unoptimized).
+  sharp: '^0.35.0'
