@@ -243,17 +243,69 @@ def is_reasoning_configured() -> bool:
     return bool(configured_reasoning_providers())
 
 
-def resolve_embedding() -> tuple[str, str, int]:
-    """(provider, model, dimensions) for the configured embedding provider."""
+def resolve_embedding() -> tuple[str, str, int, str]:
+    """(provider, model, dimensions, dimensions_source) for the embedding provider.
+
+    WHY THE SOURCE IS PART OF THE ANSWER
+    ------------------------------------
+    This used to fall straight through to `EMBEDDING_DIMENSIONS` whenever the
+    model was absent from the registry, and report the result as fact. Every
+    NVIDIA model is absent from the registry — a model whose width is determined
+    by the model itself cannot be a static table entry — so `/ai/config`
+    confidently reported 1536 for a provider returning 2048.
+
+    A wrong number here is worse than no number: this endpoint is what an
+    operator reads while diagnosing why semantic search is returning nothing,
+    and the dimension is the first thing they would check. So the value now
+    comes from whoever actually knows, and says which one that was:
+
+      observed   — the live provider embedded something this process and
+                   reported its real width. Authoritative.
+      registry   — a static model spec. True for fixed-width models.
+      configured — nothing better was available; this is `EMBEDDING_DIMENSIONS`,
+                   which for a model-determined provider is a guess.
+
+    `observed` is preferred over `registry` deliberately: if a vendor ever
+    changes a model's output width, the live response is right and the table is
+    stale, and the table is the thing that cannot notice.
+    """
     provider = (settings.EMBEDDING_PROVIDER or "hashing").lower()
     model = (settings.EMBEDDING_MODEL or "").strip()
     if not model or model == "hashing-v1":
         spec = get_provider_spec(provider)
         if spec:
             model = spec.default_model(ModelRole.EMBEDDINGS) or model
+
+    # 1. What the provider has actually seen. Never constructs a provider that
+    #    isn't already cached, and never makes a network call: an admin view must
+    #    not spend money or fail because a key is missing.
+    observed = _observed_embedding_dimensions(provider)
+    if observed:
+        return provider, model or "hashing-v1", observed, "observed"
+
+    # 2. A static spec, for providers whose width genuinely is fixed.
     m = get_model(model)
-    dims = (m.dimensions if m and m.dimensions else settings.EMBEDDING_DIMENSIONS)
-    return provider, model or "hashing-v1", dims
+    if m and m.dimensions:
+        return provider, model or "hashing-v1", m.dimensions, "registry"
+
+    # 3. Last resort, and flagged as such.
+    return provider, model or "hashing-v1", settings.EMBEDDING_DIMENSIONS, "configured"
+
+
+def _observed_embedding_dimensions(provider: str) -> int:
+    """The active provider's real output width, if it has produced one.
+
+    Reads the registry's CACHE only. Building a provider here would raise for a
+    missing key and take down the admin surface that exists to report exactly
+    that kind of misconfiguration.
+    """
+    try:
+        from app.ai.embeddings.registry import _CACHE
+
+        inst = _CACHE.get(provider)
+        return int(getattr(inst, "dimensions", 0) or 0) if inst else 0
+    except Exception:  # pragma: no cover - diagnostics must never raise
+        return 0
 
 
 def cost_of(model: str, prompt_tokens: int, completion_tokens: int) -> Optional[float]:
@@ -278,7 +330,7 @@ def config_snapshot() -> dict:
         except AIConfigError as exc:
             roles[role.value] = {"provider": prov, "model": None,
                                  "source": None, "error": str(exc)}
-    emb_provider, emb_model, emb_dims = resolve_embedding()
+    emb_provider, emb_model, emb_dims, emb_dims_source = resolve_embedding()
     from app.ai.gateway.health import health_manager
     from app.ai.gateway.validation import check_provider_configuration, configuration_state
     health = health_manager.snapshot()
@@ -310,7 +362,14 @@ def config_snapshot() -> dict:
         "fallback_chain": routable_providers(),
         "disabled_providers": sorted(settings.disabled_providers),
         "roles": roles,
-        "embeddings": {"provider": emb_provider, "model": emb_model, "dimensions": emb_dims},
+        "embeddings": {
+            "provider": emb_provider,
+            "model": emb_model,
+            "dimensions": emb_dims,
+            # observed | registry | configured — see `resolve_embedding`. Without
+            # this, a reader cannot tell a measured width from a stale env var.
+            "dimensions_source": emb_dims_source,
+        },
         "providers": providers,
         "provider_health": health,
         # Findings, not a verdict — severity included so an operator can see what
