@@ -207,6 +207,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         # Agent scan reasons over a whole campaign — the most expensive single
         # call in the product, and it was unlimited (A5).
         "/api/v1/agent/scan": (10, 60),
+        # Semantic search and similar-candidate lookup. A5 covered the endpoints
+        # that spend at the LLM; these spend at the EMBEDDING provider, which is
+        # a different vendor bill and was therefore missed. Every call embeds the
+        # query through NVIDIA before it can rank anything, so an authenticated
+        # caller could bill the account at request rate.
+        "/api/v1/search": (30, 60),
     }
 
     # path SUFFIX -> (max POSTs, window seconds).
