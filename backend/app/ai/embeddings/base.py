@@ -19,8 +19,15 @@ class EmbeddingProvider(ABC):
     name: str = "base"
     #: Model identifier (stored with each embedding so staleness is detectable).
     model: str = ""
-    #: Output vector dimensionality.
+    #: Output vector dimensionality. A provider whose model determines its own
+    #: width (NVIDIA NIM) leaves this 0 until the first live response sets it.
     dimensions: int = 0
+    #: Whether `embed()` accepts an `input_type` keyword. Asymmetric retrieval
+    #: models embed a QUERY and a PASSAGE with different projections, and using
+    #: the wrong one degrades ranking silently rather than raising. Providers
+    #: that do not distinguish the two leave this False and are called
+    #: positionally, so their signature is unaffected.
+    supports_input_type: bool = False
 
     @abstractmethod
     def embed(self, texts: list[str]) -> list[list[float]]:

@@ -148,7 +148,48 @@ def validate_startup() -> None:
     # billing-less deployment is a configuration this app supports.
     _validate_plan_bindings()
 
+    # Embedding store integrity: are the stored vectors from the model that is
+    # actually serving queries? Placed last because it is a data-state check,
+    # not a configuration one, and because it needs the AI config above to be
+    # valid before "the active model" means anything.
+    _validate_embedding_integrity()
+
     logger.info("Startup validation complete.")
+
+
+def _validate_embedding_integrity() -> None:
+    """Make an incomplete reindex loud instead of invisible.
+
+    A stale store does not break anything that raises — it makes semantic search
+    quietly return fewer and worse results. See `app.ai.embeddings.integrity`.
+    Whether that refuses the boot is the operator's call
+    (`EMBEDDING_STALENESS_ACTION`), because the right answer differs: for a
+    search-led deployment stale data is an outage, for one where search is a
+    secondary feature, refusing to boot would be self-inflicted downtime.
+    """
+    action = (settings.EMBEDDING_STALENESS_ACTION or "warn").strip().lower()
+    if action == "off":
+        logger.info("Embedding integrity check disabled (EMBEDDING_STALENESS_ACTION=off).")
+        return
+
+    try:
+        from app.ai.embeddings.integrity import report_embedding_integrity
+
+        report = report_embedding_integrity()
+    except Exception as exc:  # noqa: BLE001 - never block startup on a check
+        logger.warning("Embedding integrity check skipped: %s", exc)
+        return
+
+    # COULD NOT ASK ≠ GOT A BAD ANSWER. `skipped` and `unavailable` must never
+    # fail a boot: a database blip would otherwise be indistinguishable from a
+    # genuinely stale store and would take the whole service down.
+    if action == "fail" and report.is_stale:
+        raise StartupError(
+            f"Embedding store is stale: {report.stale_rows} of {report.total_rows} rows "
+            f"were produced by a model other than the active {report.active_model!r}. "
+            f"Those candidates are invisible to semantic search. Reindex the affected "
+            f"campaigns, or set EMBEDDING_STALENESS_ACTION=warn to boot anyway."
+        )
 
 
 def _validate_plan_bindings() -> None:

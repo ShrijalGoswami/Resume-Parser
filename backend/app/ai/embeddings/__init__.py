@@ -7,6 +7,11 @@ retrieval. Separate from the LLM layer: retrieval never uses the LLM.
 """
 
 from app.ai.embeddings.base import EmbeddingProvider
+from app.ai.embeddings.integrity import (
+    EmbeddingIntegrityReport,
+    check_embedding_integrity,
+    report_embedding_integrity,
+)
 from app.ai.embeddings.registry import (
     available_embedding_providers,
     get_embedding_provider,
@@ -28,4 +33,7 @@ __all__ = [
     "embed_query",
     "active_embedding_model",
     "EmbeddingResult",
+    "check_embedding_integrity",
+    "report_embedding_integrity",
+    "EmbeddingIntegrityReport",
 ]

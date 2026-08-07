@@ -272,9 +272,33 @@ class Settings(BaseSettings):
     # searched by vector similarity; the LLM only explains results afterwards.
     # Default provider is dependency-free (deterministic hashing) so semantic
     # search works out of the box; swap to a real model (OpenAI/Voyage/…) via env.
-    EMBEDDING_PROVIDER: str = "hashing"          # hashing | openai
-    EMBEDDING_MODEL: str = "hashing-v1"          # e.g. text-embedding-3-small
+    # V1 production embedding provider is `nvidia` (NVIDIA NIM / Nemotron); the
+    # CODE default stays `hashing` so an offline checkout, CI, and any
+    # deployment without a key keep working with zero configuration and no
+    # network. Production selects nvidia explicitly via the environment.
+    #
+    # There is deliberately NO automatic nvidia→hashing fallback: the two
+    # produce different-width vectors, and `vector_search.cosine_similarity`
+    # returns 0.0 on a length mismatch, so a silent downgrade would degrade
+    # search invisibly instead of failing.
+    EMBEDDING_PROVIDER: str = "hashing"          # hashing | nvidia
+    EMBEDDING_MODEL: str = "hashing-v1"          # e.g. nvidia/nemotron-3-embed-1b
+    # Used by the `hashing` provider as a REAL input (its hash-bucket count) and
+    # by `nvidia` only to detect drift — that model determines its own output
+    # width, which the provider derives from the first live response.
     EMBEDDING_DIMENSIONS: int = 1536
+    NVIDIA_API_KEY: str = ""
+    # What a boot should do when stored embeddings were produced by a model
+    # other than the active one — i.e. a reindex was never run or did not
+    # finish. Those rows score 0.0 against every query and vanish from search
+    # WITHOUT an error, so the point is to make it impossible to miss.
+    #   warn (default) — log it; ERROR level in production, WARNING elsewhere
+    #   fail           — refuse to boot until the reindex is done
+    #   off            — do not check
+    # `warn` is the default rather than `fail` because degraded search should
+    # not take down résumé parsing, auth and billing with it. Deployments where
+    # search IS the product should set `fail`.
+    EMBEDDING_STALENESS_ACTION: str = "warn"
     OPENAI_API_KEY: str = ""
 
     # Absolute paths so the env file is found regardless of the launch CWD.
