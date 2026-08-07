@@ -30,6 +30,7 @@ from app.nlp.ranking_engine import (
     estimate_years_experience,
 )
 from app.llm.batch_analyzer import analyze_candidate
+from app.services.reconciliation import reconcile_analysis
 
 logger = logging.getLogger(__name__)
 
@@ -78,8 +79,18 @@ def _process_one(
 
     matching = groq.matching_skills if groq else []
     missing = groq.missing_skills if groq else []
+    weaknesses = groq.weaknesses if groq else []
     relevant_projects = groq.relevant_projects if groq else []
     less_relevant = groq.less_relevant_projects if groq else []
+
+    # Drop model claims the parser's own extraction refutes (M-4). Deliberately
+    # BEFORE scoring: `missing_skills` is an input to `compute_candidate_score`
+    # below, so a skill the résumé plainly lists but the model called missing
+    # does not merely display wrong — it lowers the candidate's rank. Fixing the
+    # text and leaving the score would keep the unfairness where it counts.
+    missing, weaknesses, _recon = reconcile_analysis(
+        resume_data=resume_data, missing_skills=missing, weaknesses=weaknesses
+    )
 
     score = compute_candidate_score(
         ats_score=ats_score,
@@ -115,7 +126,7 @@ def _process_one(
     if groq:
         result.summary = groq.candidate_summary
         result.strengths = groq.strengths
-        result.weaknesses = groq.weaknesses
+        result.weaknesses = weaknesses
         result.experience_relevance = groq.experience_relevance
         result.recommendation = groq.hiring_recommendation
         result.recommendation_explanation = groq.recommendation_explanation
