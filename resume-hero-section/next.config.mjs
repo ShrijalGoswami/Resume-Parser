@@ -1,3 +1,72 @@
+/**
+ * Origin ("scheme://host:port") of a URL, or '' if it is absent/unparseable.
+ * CSP source expressions are origins — a full URL with a path is silently
+ * ignored by the browser, which is the worst way for this to be wrong.
+ */
+function originOf(url) {
+  try {
+    return url ? new URL(url).origin : ''
+  } catch {
+    return ''
+  }
+}
+
+/**
+ * The Content-Security-Policy header, or null when it cannot be built safely.
+ *
+ * Returns null — emitting nothing — when the Supabase or API origin is missing,
+ * rather than emitting a policy that would block them. A missing header is the
+ * status quo; a wrong one is an outage.
+ */
+function buildCsp() {
+  const mode = (process.env.CSP_MODE || '').toLowerCase()
+  // Off in development by default: Turbopack's HMR needs eval and websockets,
+  // and a dev-only violation stream trains people to ignore the report.
+  const defaultMode = process.env.NODE_ENV === 'production' ? 'report-only' : 'off'
+  const resolved = ['off', 'report-only', 'enforce'].includes(mode) ? mode : defaultMode
+  if (resolved === 'off') return null
+
+  const supabase = originOf(process.env.NEXT_PUBLIC_SUPABASE_URL)
+  const api = originOf(process.env.NEXT_PUBLIC_API_URL)
+  if (!supabase || !api) return null
+
+  // Supabase Auth refresh and Realtime use the same origin over websockets.
+  const supabaseWs = supabase.replace(/^http/, 'ws')
+
+  const directives = [
+    "default-src 'self'",
+    "base-uri 'self'",
+    // No plugins, and nothing may frame this app — the authenticated surface
+    // advances and rejects candidates.
+    "object-src 'none'",
+    "frame-ancestors 'none'",
+    "form-action 'self'",
+    // See the note above: inline is required by the App Router bootstrap.
+    "script-src 'self' 'unsafe-inline'",
+    // Tailwind and next/font emit inline style; there is no nonce path for it.
+    "style-src 'self' 'unsafe-inline'",
+    "font-src 'self' data:",
+    // Avatars and exported assets come from Supabase Storage; data:/blob: cover
+    // generated previews. Deliberately not `https:` — an open image-src is a
+    // usable exfiltration channel.
+    `img-src 'self' data: blob: ${supabase}`,
+    // THE DIRECTIVE THAT EARNS THIS HEADER: the only hosts the page may talk to.
+    `connect-src 'self' ${api} ${supabase} ${supabaseWs}`,
+    "worker-src 'self' blob:",
+    "manifest-src 'self'",
+    "frame-src 'none'",
+    "media-src 'self'",
+    'upgrade-insecure-requests',
+  ]
+
+  return {
+    key: resolved === 'enforce'
+      ? 'Content-Security-Policy'
+      : 'Content-Security-Policy-Report-Only',
+    value: directives.join('; '),
+  }
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -33,32 +102,51 @@ const nextConfig = {
   // may load, so none can break Supabase Auth, API calls, PDF export or file
   // downloads. That is the entire selection criterion for this change.
   //
-  // WHAT IS DELIBERATELY ABSENT
+  // CONTENT-SECURITY-POLICY (M-5)
   //
-  // Content-Security-Policy — not here, not even Report-Only. CSP is the header
-  // that matters most for this product (it renders model-generated prose) and
-  // it is the only one that can break the app, in two specific ways:
-  //   * connect-src must name the Supabase project URL, or login and session
-  //     refresh fail;
-  //   * connect-src must name the API host, or every analysis, Ask AI,
-  //     comparison and export call fails while pages still render — which looks
-  //     like an AI outage, not a header bug.
-  // Both values are environment-specific and neither is knowable from this file.
-  // A Report-Only policy with the wrong origins reports noise that gets ignored,
-  // which is worse than no policy at all. It ships when the production origins
-  // are supplied, as Report-Only first.
+  // This used to be absent, with the reasoning that connect-src must name the
+  // Supabase project and the API host and that neither is knowable from this
+  // file. The first half was right; the second was not. Both origins are
+  // already in the environment as NEXT_PUBLIC_SUPABASE_URL and
+  // NEXT_PUBLIC_API_URL — the same values the browser is about to call — so the
+  // policy is derived from them rather than hardcoded. If either is missing the
+  // policy is not emitted at all, because a policy with the wrong origins breaks
+  // login and every analysis call while pages still render, which looks like an
+  // AI outage rather than a header bug.
+  //
+  // REPORT-ONLY BY DEFAULT, and this is the point rather than a hedge. A
+  // blocking policy that is wrong takes the product down; a Report-Only one that
+  // is wrong costs a console warning. Promote with CSP_MODE=enforce once the
+  // report endpoint is quiet.
+  //
+  // WHAT THIS POLICY DOES AND DOES NOT BUY
+  // `script-src` includes 'unsafe-inline' because the App Router bootstraps
+  // itself from inline scripts; removing it needs per-request nonces, which
+  // means generating them in the proxy and threading them through — a change
+  // well beyond this fix. So this policy does NOT stop injected inline script.
+  // Stated plainly so nobody reads the header and assumes XSS is solved: what it
+  // does stop is loading script from an unlisted origin, framing, form
+  // hijacking, plugin/object embedding, and — the one that matters most for a
+  // product rendering model-generated prose — exfiltration to any host not named
+  // in connect-src.
   //
   // Strict-Transport-Security — production-only and not settable safely from
   // here: emitting it in dev pins localhost to https in the developer's browser
   // for the max-age. It belongs at the edge (Vercel/proxy), which knows the
   // scheme. The backend already sets it, correctly gated on a TLS request.
   async headers() {
+    const csp = buildCsp()
     return [
       {
         source: '/:path*',
         headers: [
+          // Only present when the origins it needs are actually configured;
+          // `buildCsp` returns null rather than emit a policy that would block
+          // login and every API call.
+          ...(csp ? [csp] : []),
           // Clickjacking. The authenticated surface advances and rejects
-          // candidates; those actions must not be frameable.
+          // candidates; those actions must not be frameable. Kept alongside
+          // frame-ancestors for browsers that predate CSP Level 2.
           { key: 'X-Frame-Options', value: 'DENY' },
           // Stops a browser second-guessing Content-Type on an uploaded or
           // exported file and executing it as something else.
