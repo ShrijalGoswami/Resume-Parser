@@ -8,6 +8,8 @@ import { stageLabel } from '../workspace/stages'
 import { PageHeader } from '../shell/page-header'
 import { useSession } from '../lib/api/use-session'
 import { useProfile, useActiveRoles } from '../lib/api/hooks'
+import { useQuery } from '@tanstack/react-query'
+import { listCampaigns } from '@/services/campaigns-api'
 import { useCandidates } from '../lib/api/workspace'
 import { LoadingScreen, LoadingLines } from '../states/loading'
 import { EmptyState } from '../states/empty-state'
@@ -140,19 +142,7 @@ function AuthedInterviews({ initial }: { initial?: { role?: string; candidate?: 
       <ErrorState variant="route" title="Couldn't load your roles" onRetry={() => roles.refetch()} />
     )
   } else if (!roles.data || roles.data.length === 0) {
-    body = (
-      <EmptyState
-        surface
-        icon={ClipboardList}
-        title="No active roles"
-        description="Open a role and add candidates before preparing an interview."
-        action={
-          <Button variant="primary" asChild>
-            <Link href="/roles">Go to Roles</Link>
-          </Button>
-        }
-      />
-    )
+    body = <NoActiveRoles />
   } else {
     body = <RoleInterviews roles={roles.data} initial={initial} />
   }
@@ -167,6 +157,56 @@ function AuthedInterviews({ initial }: { initial?: { role?: string; candidate?: 
         {body}
       </div>
     </AppShell>
+  )
+}
+
+/**
+ * "No active roles" was true and unhelpful.
+ *
+ * The audit found this screen announcing an empty workspace to someone who had
+ * just built a role — because the role was still a DRAFT, and this list only
+ * asks for active ones. The sentence was accurate and the reader was left to
+ * guess why their work had vanished.
+ *
+ * So it asks a second, cheap question before saying anything: are there roles
+ * in some other state? If there are, it says which, and points at the thing
+ * that would fix it. Nothing about the backend changed — the screen simply
+ * stopped reporting one status as though it were the whole picture.
+ */
+function NoActiveRoles() {
+  const all = useQuery({ queryKey: ['hl', 'campaigns', 'all'], queryFn: () => listCampaigns() })
+
+  // Say nothing until the second question has an answer. `?? 0` meant that
+  // while this query was in flight the screen asserted "No roles yet — create
+  // a role", then replaced it with "you have 1 role in draft" a moment later.
+  // The first sentence was not a loading state; it was a different, wrong
+  // answer, and it is the one a fast reader takes away.
+  if (all.isPending) return <LoadingScreen label="Checking your roles" />
+
+  // A failed second query is not evidence that no roles exist. It leaves the
+  // screen knowing exactly one thing — none are active — so that is all it
+  // says, without a count it cannot stand behind.
+  const total = all.isError ? null : (all.data?.length ?? 0)
+  const inactive = total ?? 0
+
+  return (
+    <EmptyState
+      surface
+      icon={ClipboardList}
+      title={total === 0 ? 'No roles yet' : 'No roles are active yet'}
+      description={
+        total === 0
+          ? 'Create a role and add candidates before preparing an interview.'
+          : total === null
+            ? 'Interviews are prepared from active roles, and none of yours are active right now.'
+            : `Interviews are prepared from active roles. You have ${inactive} role${inactive === 1 ? '' : 's'} in draft or another state — activate one to prepare an interview from it.`
+      }
+      action={
+        <Button variant="primary" asChild>
+          <Link href="/roles">{total === 0 ? 'Go to Roles' : 'Review your roles'}</Link>
+        </Button>
+      }
+    />
   )
 }
 

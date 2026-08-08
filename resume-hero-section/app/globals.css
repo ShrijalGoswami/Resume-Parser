@@ -625,7 +625,14 @@
   --destructive-foreground: #FFFFFF;
   --border: var(--hl-border-default);
   --input: var(--hl-border-default);
-  --ring: var(--hl-accent-solid);
+  /* Focus resolves to the copper focus token, never the terracotta accent
+     (V2 §3.9): navigation state and focus must not compete with the primary
+     action. `--hl-focus-ring` is defined by the V2 dark ramp only, so the
+     fallback keeps the outgoing light/Iris palette on its own accent until
+     its §22 value swap lands. This is the SAME token the outline rules below
+     use — one focus system, reached by two mechanisms (imported shadcn
+     primitives paint a `ring`, everything else takes the outline). */
+  --ring: var(--hl-focus-ring, var(--hl-accent-solid));
   /* The shadcn chart slots too, so a base-token chart primitive dropped into
      the product renders the brand series instead of the stock oklch ramp.
      `components/workspace/charts.tsx` is the one that matters — it is reused
@@ -832,8 +839,12 @@
   --hl-glass-border: rgba(139, 123, 255, 0.18);
   --hl-glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
 
-  /* Lifted on dark — an 8% halo is invisible against a near-black field. */
-  --hl-focus-halo: rgba(139, 123, 255, 0.22);
+  /* Lifted on dark — an 8% halo is invisible against a near-black field.
+     Copper, matching `--hl-focus-ring`: this halo spreads behind the focus
+     ring on text fields, and it was still the pre-V2 violet (#8B7BFF) — the
+     one hue V2 bans outright. It painted only while a field held focus,
+     which is why it survived the screen-by-screen sweep. */
+  --hl-focus-halo: rgba(196, 139, 113, 0.22);
 
   /* THE CTA GRADIENT IS NOT OVERRIDDEN ON DARK, DELIBERATELY.
      ---------------------------------------------------------------------
@@ -1174,7 +1185,7 @@
    (0,2,0), so fields still take the ring treatment rather than the outline.
    ========================================================================= */
 .hl :focus-visible {
-  outline: 2px solid var(--hl-accent-solid);
+  outline: 2px solid var(--hl-focus-ring, var(--hl-accent-solid));
   outline-offset: 2px;
   border-radius: 3px;
 }
@@ -1199,16 +1210,16 @@
   .hl textarea:focus-visible,
   .hl select:focus-visible {
     outline: none;
-    border-color: var(--hl-accent-solid);
+    border-color: var(--hl-focus-ring, var(--hl-accent-solid));
     box-shadow:
-      0 0 0 1px var(--hl-accent-solid),
+      0 0 0 1px var(--hl-focus-ring, var(--hl-accent-solid)),
       0 0 0 6px var(--hl-focus-halo);
   }
   /* Checkboxes, radios and switches are painted controls, not fields — they
      keep the standard offset outline. */
   .hl input[type='checkbox']:focus-visible,
   .hl input[type='radio']:focus-visible {
-    outline: 2px solid var(--hl-accent-solid);
+    outline: 2px solid var(--hl-focus-ring, var(--hl-accent-solid));
     outline-offset: 2px;
     box-shadow: none;
   }

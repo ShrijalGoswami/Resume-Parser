@@ -1,8 +1,9 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import { useEffect } from 'react';
 import {
-  Sparkles, Loader2, FileDown, RefreshCw, ClipboardList, Target, ThumbsDown,
+  FileDown, RefreshCw, ClipboardList, Target, ThumbsDown,
   ShieldCheck, AlertTriangle, Clock, Users, Gauge, CheckCircle2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,17 +13,27 @@ import { exportInterviewPdf } from '@/lib/interview-pdf';
 import type { InterviewGenerateRequest, InterviewPack } from '@/types/interview';
 import { cn } from '@/lib/utils';
 
+/**
+ * V2 semantic tokens, not the raw Tailwind palette.
+ *
+ * These were light-mode tints — `bg-emerald-50`, `bg-rose-50`, and a
+ * `bg-violet-50` competency chip that V2 bans outright. On the charcoal canvas
+ * they rendered as near-white plates with dark type: bright light-mode chips
+ * punched into a dark screen. The semantic tokens carry the same meanings and
+ * are defined for both themes, and every one of these pairs a colour with a
+ * WORD, so the meaning survives desaturation (V2 §21).
+ */
 const DIFFICULTY_TONE: Record<string, string> = {
-  Easy: 'bg-emerald-50 text-emerald-700',
-  Medium: 'bg-sky-50 text-sky-700',
-  Hard: 'bg-amber-50 text-amber-700',
-  Expert: 'bg-rose-50 text-rose-700',
+  Easy: 'bg-hl-success-bg text-hl-success',
+  Medium: 'bg-hl-info-bg text-hl-info',
+  Hard: 'bg-hl-warning-bg text-hl-warning',
+  Expert: 'bg-hl-danger-bg text-hl-danger',
 };
 const REC_TONE: Record<string, string> = {
-  'Strong Hire': 'bg-emerald-100 text-emerald-800 border-emerald-200',
-  Hire: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  Borderline: 'bg-amber-50 text-amber-700 border-amber-200',
-  'No Hire': 'bg-rose-50 text-rose-700 border-rose-200',
+  'Strong Hire': 'bg-hl-success-bg text-hl-success border-hl-success/40',
+  Hire: 'bg-hl-success-bg text-hl-success border-hl-success/30',
+  Borderline: 'bg-hl-warning-bg text-hl-warning border-hl-warning/40',
+  'No Hire': 'bg-hl-danger-bg text-hl-danger border-hl-danger/40',
 };
 
 const QUICK_ACTIONS: { label: string; req: InterviewGenerateRequest }[] = [
@@ -75,32 +86,27 @@ export function InterviewIntelligence({
 
   if (!pack && !loading) {
     return (
-      <div className="rounded-2xl border border-border/60 bg-card p-8 text-center shadow-sm">
-        <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-2xl bg-primary/10">
-          <Sparkles className="size-6 text-primary" />
+      <div className="rounded-hl-lg border border-hl-border bg-hl-subtle p-8 text-center">
+        <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-hl-md bg-hl-muted">
+          {/* A clipboard, not a sparkle (V2 §8): what this prepares is an
+              interview, and the icon should say so. */}
+          <ClipboardList className="size-6 text-hl-fg-secondary" />
         </div>
-        <h3 className="text-base font-semibold text-foreground">AI Interview Workbench</h3>
+        <h3 className="text-base font-semibold text-foreground">Interview workbench</h3>
         <p className="mx-auto mt-1 max-w-lg hl-body text-muted-foreground">
           Generate a complete, grounded interview plan — strategy, technical &amp; behavioral
           questions, skill verification, risk analysis, an interviewer scorecard, and a hiring
           recommendation.
         </p>
-        {error && <p className="mt-3 hl-body text-rose-600">{error}</p>}
+        {error && <p className="mt-3 hl-body text-hl-danger">{error}</p>}
         <Button className="mt-5" onClick={() => run({ focus: 'blueprint' }, 'Full pack')}>
-          <Sparkles className="mr-1.5 size-4" /> Generate interview pack
+          Generate interview pack
         </Button>
       </div>
     );
   }
 
-  if (loading && !pack) {
-    return (
-      <div className="flex flex-col items-center gap-3 rounded-2xl border border-border/60 bg-card py-16 shadow-sm">
-        <Loader2 className="size-6 animate-spin text-primary" />
-        <p className="hl-body text-muted-foreground">Designing the interview{busyLabel ? ` · ${busyLabel}` : ''}…</p>
-      </div>
-    );
-  }
+  if (loading && !pack) return <GeneratingPack label={busyLabel} />;
 
   if (!pack) return <EmptyState title="No interview pack" description="Generate one to get started." icon={<ClipboardList className="size-6" />} />;
 
@@ -111,12 +117,20 @@ export function InterviewIntelligence({
   return (
     <div className="space-y-5">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/60 bg-card p-3 shadow-sm">
+      {/* Same surface as `Section` below: V2 takes elevation from the
+          background step, not from a drop shadow (§7). This bar kept
+          `bg-card`/`shadow-sm` through the colour sweep, so it sat one step
+          BELOW the sections it heads while casting the only shadow on screen. */}
+      <div className="flex flex-wrap items-center gap-2 rounded-hl-lg border border-hl-border bg-hl-subtle p-3">
         <span className="mr-1 hl-label text-muted-foreground">Interactive</span>
         {QUICK_ACTIONS.map((a) => (
           <Button key={a.label} variant="outline" size="sm" disabled={loading}
             onClick={() => run(a.req, a.label, a.req.focus !== 'blueprint')}>
-            {loading && busyLabel === a.label ? <Loader2 className="mr-1.5 size-3.5 animate-spin" /> : null}
+            {loading && busyLabel === a.label ? (
+              <span className="mr-1.5 inline-block h-0.5 w-4 overflow-hidden rounded-full bg-hl-muted align-middle" aria-hidden>
+                <span className="hl-indeterminate block h-full w-1/3 rounded-full bg-[var(--hl-accent-secondary)]" />
+              </span>
+            ) : null}
             {a.label}
           </Button>
         ))}
@@ -131,20 +145,20 @@ export function InterviewIntelligence({
       </div>
 
       {pack.degraded && (
-        <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 hl-body text-amber-800">
+        <div className="flex items-center gap-2 rounded-hl-md border border-hl-warning/40 bg-hl-warning-bg px-4 py-3 hl-body text-hl-warning">
           <AlertTriangle className="size-4 shrink-0" /> AI narrative was unavailable — this pack is derived from stored analysis.
         </div>
       )}
 
       {/* Executive Summary */}
-      <Section title="Executive Summary" icon={<ClipboardList className="size-4 text-primary" />}>
+      <Section title="Executive Summary" icon={<ClipboardList className="size-4 text-hl-fg-tertiary" />}>
         {es.who && <p className="hl-body text-foreground">{es.who}</p>}
         {es.why_shortlisted && <p className="mt-2 hl-body text-muted-foreground"><b className="text-foreground">Why shortlisted:</b> {es.why_shortlisted}</p>}
         {es.key_differentiators.length > 0 && <Bullets items={es.key_differentiators} className="mt-2" />}
       </Section>
 
       {/* Interview Plan */}
-      <Section title="Interview Plan" icon={<Clock className="size-4 text-primary" />}>
+      <Section title="Interview Plan" icon={<Clock className="size-4 text-hl-fg-tertiary" />}>
         <div className="flex flex-wrap gap-4 hl-body">
           {st.recommended_duration_minutes > 0 && <Stat icon={<Clock className="size-4" />} label="Duration" value={`${st.recommended_duration_minutes} min`} />}
           {st.suggested_interviewer_profile && <Stat icon={<Users className="size-4" />} label="Interviewer" value={st.suggested_interviewer_profile} />}
@@ -153,7 +167,7 @@ export function InterviewIntelligence({
           <ol className="mt-3 space-y-1.5">
             {st.stages.map((s, i) => (
               <li key={i} className="flex items-start gap-2 hl-body">
-                <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10 hl-caption text-primary">{i + 1}</span>
+                <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-hl-muted hl-caption text-hl-fg-secondary">{i + 1}</span>
                 <span><b className="text-foreground">{s.name}</b>{s.duration_minutes ? ` · ${s.duration_minutes} min` : ''}{s.focus ? <span className="text-muted-foreground"> — {s.focus}</span> : null}</span>
               </li>
             ))}
@@ -161,21 +175,24 @@ export function InterviewIntelligence({
         )}
         {st.priority_focus_areas.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-1.5">
-            {st.priority_focus_areas.map((f, i) => <span key={i} className="rounded-full bg-primary/10 px-2 py-0.5 hl-badge text-primary">{f}</span>)}
+            {/* Topic labels, not decisions — same neutral chip as the skill and
+                competency chips they sit beside. Terracotta is reserved for
+                things the reader can act on; these are read, not clicked. */}
+            {st.priority_focus_areas.map((f, i) => <span key={i} className="rounded-full bg-hl-muted px-2 py-0.5 hl-badge text-hl-fg-secondary">{f}</span>)}
           </div>
         )}
       </Section>
 
       {/* Technical */}
       {pack.technical_questions.length > 0 && (
-        <Section title="Technical Questions" icon={<Target className="size-4 text-primary" />}>
+        <Section title="Technical Questions" icon={<Target className="size-4 text-hl-fg-tertiary" />}>
           <div className="space-y-3">
             {pack.technical_questions.map((q, i) => (
               <div key={i} className="rounded-xl border border-border/60 p-3">
                 <p className="flex flex-wrap items-center gap-2 hl-body-medium font-semibold text-foreground">
                   {q.question}
                   <span className={cn('rounded px-1.5 py-0.5 hl-badge', DIFFICULTY_TONE[q.difficulty] ?? 'bg-muted')}>{q.difficulty}</span>
-                  {q.skill && <span className="rounded bg-emerald-50 px-1.5 py-0.5 hl-badge text-emerald-700">{q.skill}</span>}
+                  {q.skill && <span className="rounded bg-hl-muted px-1.5 py-0.5 hl-badge text-hl-fg-secondary">{q.skill}</span>}
                 </p>
                 {q.reason && <p className="mt-1 hl-small text-muted-foreground"><b>Why:</b> {q.reason}</p>}
                 {q.expected_answer && <p className="mt-1 hl-small text-muted-foreground"><b>Strong answer:</b> {q.expected_answer}</p>}
@@ -190,13 +207,14 @@ export function InterviewIntelligence({
 
       {/* Behavioral */}
       {pack.behavioral_questions.length > 0 && (
-        <Section title="Behavioral Questions" icon={<Users className="size-4 text-primary" />}>
+        <Section title="Behavioral Questions" icon={<Users className="size-4 text-hl-fg-tertiary" />}>
           <div className="space-y-3">
             {pack.behavioral_questions.map((q, i) => (
               <div key={i} className="rounded-xl border border-border/60 p-3">
                 <p className="flex flex-wrap items-center gap-2 hl-body-medium font-semibold text-foreground">
                   {q.question}
-                  {q.competency && <span className="rounded bg-violet-50 px-1.5 py-0.5 hl-badge text-violet-700">{q.competency}</span>}
+                  {/* Was bg-violet-50/text-violet-700 — violet is banned (V2 §23). */}
+                  {q.competency && <span className="rounded bg-hl-muted px-1.5 py-0.5 hl-badge text-hl-fg-secondary">{q.competency}</span>}
                 </p>
                 {q.reason && <p className="mt-1 hl-small text-muted-foreground"><b>Why:</b> {q.reason}</p>}
                 {q.expected_answer && <p className="mt-1 hl-small text-muted-foreground"><b>Strong answer:</b> {q.expected_answer}</p>}
@@ -209,7 +227,7 @@ export function InterviewIntelligence({
 
       {/* Skill Verification */}
       {pack.skill_verifications.length > 0 && (
-        <Section title="Skill Verification" icon={<CheckCircle2 className="size-4 text-primary" />}>
+        <Section title="Skill Verification" icon={<CheckCircle2 className="size-4 text-hl-fg-tertiary" />}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[560px] hl-small">
               <thead><tr className="border-b border-border/60 text-left hl-label text-muted-foreground">
@@ -231,11 +249,11 @@ export function InterviewIntelligence({
 
       {/* Risk */}
       {pack.risks.length > 0 && (
-        <Section title="Risk Assessment" icon={<ThumbsDown className="size-4 text-rose-600" />}>
+        <Section title="Risk Assessment" icon={<ThumbsDown className="size-4 text-hl-danger" />}>
           <div className="space-y-2">
             {pack.risks.map((r, i) => (
               <div key={i} className="flex items-start gap-2 rounded-xl border border-border/60 p-3 hl-body">
-                <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-500" />
+                <AlertTriangle className="mt-0.5 size-4 shrink-0 text-hl-warning" />
                 <div>
                   <p><b className="text-foreground">{r.category}</b> — <span className="text-muted-foreground">{r.detail}</span></p>
                   {r.how_to_investigate && <p className="mt-0.5 hl-small text-muted-foreground"><b>Investigate:</b> {r.how_to_investigate}</p>}
@@ -248,7 +266,7 @@ export function InterviewIntelligence({
 
       {/* Scorecard */}
       {pack.scorecard.length > 0 && (
-        <Section title="Interviewer Scorecard" icon={<Gauge className="size-4 text-primary" />}>
+        <Section title="Interviewer Scorecard" icon={<Gauge className="size-4 text-hl-fg-tertiary" />}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[520px] hl-small">
               <thead><tr className="border-b border-border/60 text-left hl-label text-muted-foreground">
@@ -270,7 +288,7 @@ export function InterviewIntelligence({
       )}
 
       {/* Recommendation */}
-      <Section title="Final Recommendation" icon={<ShieldCheck className="size-4 text-primary" />}>
+      <Section title="Final Recommendation" icon={<ShieldCheck className="size-4 text-hl-fg-tertiary" />}>
         {fr.recommendation && (
           <span className={cn('inline-block rounded-full border px-3 py-1 hl-badge', REC_TONE[fr.recommendation] ?? 'bg-muted')}>{fr.recommendation}</span>
         )}
@@ -281,9 +299,58 @@ export function InterviewIntelligence({
   );
 }
 
+/**
+ * Generating a pack is a single ~11 second call with no streaming, and a
+ * spinner over "Designing the interview…" reads as a hang long before it
+ * returns. It cannot be made to arrive incrementally, and pretending otherwise
+ * — a typing effect, a fake percentage — would be inventing progress the
+ * backend never reports.
+ *
+ * So it says what is actually happening: a copper progress rule, the section
+ * being written, and after a few seconds an honest note that the whole pack
+ * arrives at once.
+ */
+function GeneratingPack({ label }: { label: string | null }) {
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSlow(true), 3500);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  return (
+    <div
+      className="flex flex-col items-center gap-3 rounded-hl-lg border border-hl-border bg-hl-subtle py-16"
+      role="status"
+      aria-live="polite"
+    >
+      <p className="hl-body text-hl-fg-secondary">
+        Writing the interview{label ? ` · ${label}` : ''}…
+      </p>
+      <span className="block h-0.5 w-28 overflow-hidden rounded-full bg-hl-muted" aria-hidden>
+        <span className="hl-indeterminate block h-full w-1/3 rounded-full bg-[var(--hl-accent-secondary)]" />
+      </span>
+      {slow ? (
+        <p className="hl-caption max-w-sm text-center text-hl-fg-tertiary">
+          The pack is written in one pass — questions, evidence and scorecard
+          arrive together rather than one at a time.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Section icons are chrome, and chrome is neutral.
+ *
+ * All seven were terracotta — the colour V2 reserves for the thing you can
+ * act on. Nine accent-coloured glyphs down the page spend that meaning on
+ * labels, so by the time the reader reaches "Export PDF" the colour no longer
+ * says "this one". The two icons that stayed coloured are the two that carry a
+ * judgement: Risk Assessment (danger) and its per-risk warning triangle.
+ */
 function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <section className="rounded-2xl border border-border/60 bg-card p-5 shadow-sm">
+    <section className="rounded-hl-lg border border-hl-border bg-hl-subtle p-5">
       <h3 className="mb-3 flex items-center gap-2 hl-h3 text-foreground">{icon} {title}</h3>
       {children}
     </section>
@@ -301,7 +368,7 @@ function Bullets({ items, className }: { items: string[]; className?: string }) 
   );
 }
 function MiniBullets({ label, items, tone }: { label: string; items: string[]; tone: 'rose' | 'slate' }) {
-  const cls = tone === 'rose' ? 'text-rose-600' : 'text-muted-foreground';
+  const cls = tone === 'rose' ? 'text-hl-danger' : 'text-muted-foreground';
   return (
     <div className="mt-1.5">
       <p className={cn('hl-label', cls)}>{label}</p>
@@ -314,7 +381,7 @@ function MiniBullets({ label, items, tone }: { label: string; items: string[]; t
 function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="flex items-center gap-2 rounded-lg border border-border/60 px-3 py-1.5">
-      <span className="text-primary">{icon}</span>
+      <span className="text-hl-fg-tertiary">{icon}</span>
       <div><p className="hl-label text-muted-foreground">{label}</p><p className="hl-body-medium text-foreground">{value}</p></div>
     </div>
   );
