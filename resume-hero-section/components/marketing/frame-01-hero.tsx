@@ -7,7 +7,7 @@ import {
   MaskReveal,
   TiltCard,
 } from './fx'
-import { HeroDecisionCard } from './hero-decision-card'
+import { HeroWorkspace } from './hero-workspace'
 import { Reveal } from './motion'
 import { ProductVideo } from './product-video'
 
@@ -112,7 +112,7 @@ export function Frame01Hero() {
         <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6 md:px-20">
           <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-12">
             {/* Content */}
-            <div className="flex flex-col gap-7 lg:col-span-7">
+            <div className="flex flex-col gap-6 lg:col-span-5">
               {/* 72/76. Linear and Vercel both cap their hero at 64px; Stripe
                   runs 38.6. Newsreader at 300 carries less optical mass than a
                   510-weight sans, so 72 sits level with a 64px Linear headline
@@ -128,7 +128,11 @@ export function Frame01Hero() {
                   than shouting over it. The second stanza is the same size and
                   full-strength white while the first is recessed: the contrast
                   does the emphasis, so neither line needs bold or colour. */}
-              <h1 className="font-mkt-display text-[38px] leading-[44px] font-light tracking-[-0.02em] md:text-[64px] md:leading-[70px] md:tracking-[-0.03em]">
+              {/* 64 -> 50. The headline stops being the largest object on the
+                  screen so the working surface can be. A hero whose type
+                  dominates says "read our positioning"; a hero whose product
+                  dominates says "this is what you would be using". */}
+              <h1 className="font-mkt-display text-[34px] leading-[40px] font-light tracking-[-0.02em] md:text-[50px] md:leading-[56px] md:tracking-[-0.025em]">
                 <span className="mkt-fade-in-up block text-mkt-dark-fg-variant">
                   Every tool tells you
                   <br className="hidden md:block" /> who&rsquo;s strongest.
@@ -143,8 +147,7 @@ export function Frame01Hero() {
                   read as a block of text rather than as a sentence. */}
               <p className="mkt-fade-in-up mkt-delay-200 max-w-[60ch] text-[17px] leading-[28px] text-mkt-dark-fg-variant md:text-[18px] md:leading-[30px]">
                 HireLens reads every résumé in full and names what a ranking
-                hides — the tenure pattern, the missing scope, the risk
-                you&rsquo;d otherwise meet in month four.{' '}
+                hides.{' '}
                 <span className="text-mkt-dark-fg">
                   Every claim opens to the line it came from.
                 </span>
@@ -207,12 +210,13 @@ export function Frame01Hero() {
                 a risk derived from the résumé's own dates, and the two lines
                 it was read from. When a screen recording of the product
                 exists, it belongs HERE, and <ProductVideo> is ready for it. */}
-            <div className="lg:col-span-5 lg:pl-4">
-              {/* radius must match the card's own `rounded-[8px]`, or the lit
-                  rim will cut the corners square. */}
-              <TiltCard radius="8px">
-                <HeroDecisionCard />
-              </TiltCard>
+            <div className="lg:col-span-7">
+              {/* No TiltCard here. A tilt on a 424px card is a material
+                  property; the same tilt on a 700px working surface skews a
+                  dozen rows of live text, and the far edge stops being
+                  readable. The surface earns attention by working, which is
+                  the whole brief — it does not need a perspective trick. */}
+              <HeroWorkspace />
             </div>
           </div>
         </div>
