@@ -1,6 +1,12 @@
 import Link from 'next/link'
 
 import { CompressionEngine } from './compression-engine'
+import {
+  BlurReveal,
+  ConstellationBackground,
+  MaskReveal,
+  TiltCard,
+} from './fx'
 import { HeroDecisionCard } from './hero-decision-card'
 import { Reveal } from './motion'
 
@@ -44,6 +50,17 @@ export function Frame01Hero() {
            headline under the bar. Bottom padding carries the reduction. */
         className="mkt-min-vh relative isolate flex flex-col justify-center overflow-hidden bg-mkt-dark-bg pt-24 pb-16"
       >
+        {/* The node field. Scoped to this section rather than fixed across the
+            page: the marketing page alternates dark and light bands, and a
+            fixed canvas is invisible behind every light band while still
+            costing a full GPU frame.
+
+            Held at 0.55 because it sits directly behind a 64px headline. At
+            full strength the links cross the descenders and the type stops
+            being the brightest thing on the screen, which inverts the
+            hierarchy the hero is built on. */}
+        <ConstellationBackground intensity={0.55} />
+
         <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6 md:px-20">
           <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-12">
             {/* Content */}
@@ -142,7 +159,11 @@ export function Frame01Hero() {
                 One real card, still, is a stronger claim than a pile of
                 gradients. */}
             <div className="lg:col-span-5 lg:pl-4">
-              <HeroDecisionCard />
+              {/* radius must match the card's own `rounded-[8px]`, or the lit
+                  rim will cut the corners square. */}
+              <TiltCard radius="8px">
+                <HeroDecisionCard />
+              </TiltCard>
             </div>
           </div>
         </div>
@@ -153,14 +174,26 @@ export function Frame01Hero() {
       {/* ---------------------------------------------------------------- */}
       <section className="relative bg-mkt-inverse-surface py-32 md:py-40">
         <div className="mx-auto max-w-[1440px] px-6 md:px-20">
-          <Reveal className="mb-14 flex flex-col items-center gap-6 text-center">
-            <h2 className="mx-auto max-w-3xl font-mkt-display text-[32px] leading-[40px] text-mkt-dark-bg md:text-[48px] md:leading-[56px]">
+          <div className="mb-14 flex flex-col items-center gap-6 text-center">
+            {/* Mask reveal rather than a fade: the heading is display type on
+                an inverse band, so it can carry a line-by-line entrance that
+                would be too much for body copy. */}
+            <MaskReveal
+              as="h2"
+              className="mx-auto max-w-3xl font-mkt-display text-[32px] leading-[40px] text-mkt-dark-bg md:text-[48px] md:leading-[56px]"
+            >
               Watch a day of hiring resolve to the decisions that matter.
-            </h2>
+            </MaskReveal>
 
             {/* A three-beat legend for the panel below, so the eye knows what
-                it is reading before the motion starts. */}
-            <ol className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 mkt-label text-mkt-dark-bg/50">
+                it is reading before the motion starts. Blur-to-focus, and
+                deliberately behind the heading: the legend is read second. */}
+            <BlurReveal
+              as="ol"
+              delay={0.22}
+              blur={7}
+              className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 mkt-label text-mkt-dark-bg/50"
+            >
               <li>Intake</li>
               <li aria-hidden="true" className="text-mkt-dark-bg/25">
                 &rarr;
@@ -170,8 +203,8 @@ export function Frame01Hero() {
                 &rarr;
               </li>
               <li>Signal</li>
-            </ol>
-          </Reveal>
+            </BlurReveal>
+          </div>
 
           <Reveal delay={80}>
             <CompressionEngine />
