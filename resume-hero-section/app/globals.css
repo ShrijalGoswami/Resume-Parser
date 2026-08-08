@@ -2102,11 +2102,15 @@
      product tokens so the two surfaces cannot drift.
      ===================================================================== */
 
-  /* Light surfaces (frames 2-5) */
-  --mkt-canvas: #fbfcff;
-  --mkt-subtle: #f6f9ff;
-  --mkt-muted: #ecf0fb;
-  --mkt-inset: #e2e8f7;
+  /* Light surfaces — WARM NEUTRAL (V2).
+     Was a blue-cast ramp (#fbfcff / #f6f9ff / #ecf0fb) tuned to the violet
+     accent. Under terracotta a cool neutral reads as two palettes arguing, and
+     a blue-white page is one of the strongest "tech template" tells there is.
+     These are near-hueless with a trace of warmth so the accent belongs. */
+  --mkt-canvas: #fafaf9;
+  --mkt-subtle: #f5f5f3;
+  --mkt-muted: #ebebe8;
+  --mkt-inset: #e2e2de;
   /* The raised plane a card sits on, mirroring `--hl-bg-raised` in the
      product. The public site had no such step, so every card was painted
      `--mkt-canvas` — the same colour as the section behind it and the page
@@ -2117,27 +2121,34 @@
      Off-white canvas + pure-white card is the same separation the product
      already relies on, and it costs no border weight to get. */
   --mkt-raised: #ffffff;
-  --mkt-border-subtle: #edf0fa;
-  --mkt-border: #e0e6f5;
-  --mkt-border-strong: #c9d2ea;
+  --mkt-border-subtle: #eeeeeb;
+  --mkt-border: #e2e2de;
+  --mkt-border-strong: #c9c9c3;
 
   /* Light text. `--mkt-fg-tertiary` was #828b89, which measured ~3.4:1 on the
      canvas — it inherited the pre-AA value the product token had already been
      fixed away from. Brought onto the AA-safe step with the re-hue. */
-  --mkt-fg: #141a2e;
-  --mkt-fg-secondary: #4a5578;
-  --mkt-fg-tertiary: #626b8a;
+  --mkt-fg: #1a1c1f;            /* 16.35:1 on canvas */
+  --mkt-fg-secondary: #4a4e55;  /* 8.00:1 */
+  --mkt-fg-tertiary: #5f646c;   /* 5.70:1 — full AA, this carries metadata */
 
-  /* Accent + AI */
-  --mkt-accent: #6d5ef8;
-  --mkt-accent-text: #5847e8;
-  --mkt-accent-bg: #f0edfe;
-  --mkt-ai-bg: #f5f7ff;
+  /* Accent — burnt terracotta (V2 §3.3). Same fill/text split as the product:
+     #B85C38 measures 4.35:1 on this canvas, just under AA, so it is a FILL
+     (white on it is 4.54:1) and `--mkt-accent-text` is the one that carries
+     type at 4.51:1. On light the two are nearly the same value — the split
+     still exists because the ratio does. */
+  --mkt-accent: #b85c38;
+  --mkt-accent-text: #b45a37;
+  --mkt-accent-bg: #f7efe9;
+  --mkt-ai-bg: #f5f5f3;   /* no tinted AI surface — V2 §16 */
 
-  /* Prism spectrum — the identity gradient */
-  --mkt-prism-violet: #6d5ef8;
-  --mkt-prism-blue: #4f7cff;
-  --mkt-prism-cyan: #66d9ff;
+  /* Prism removed (V2 §23). Was violet -> blue -> cyan, the identity gradient
+     and the single most template-like thing in the palette. The tokens resolve
+     to the accent so any remaining consumer renders a flat terracotta rather
+     than breaking; each is deleted as its section is rebuilt. */
+  --mkt-prism-violet: #b85c38;
+  --mkt-prism-blue: #b85c38;
+  --mkt-prism-cyan: #c48b71;
 
   /* Focus / score band — text tones, AA on their own tints (see `.hl`) */
   --mkt-focus-high: #0b6e80;
@@ -2154,30 +2165,36 @@
   --mkt-focus-soft-solid: #ff9052;
   --mkt-focus-out-solid: #ff6b6b;
 
-  /* Ink — frames 4-5 use the deeper of the two inks */
-  --mkt-ink: #0a0c18;
+  /* Ink / dark shell — the same charcoal the product uses, so the marketing
+     site and the app are demonstrably one thing. Both were navy-violet. */
+  --mkt-ink: #121417;
 
-  /* Frame 1 dark shell. Frame 2's "Stakes" band shares --mkt-dark-bg,
-     which is deliberately lighter than --mkt-ink. */
-  --mkt-dark-bg: #10131f;
-  --mkt-dark-fg: #e8eaf5;
-  --mkt-dark-fg-variant: #c6c9e4;
-  --mkt-dark-surface-variant: #2a2f47;
-  --mkt-dark-outline: #8b90ad;
-  --mkt-dark-outline-variant: #3a3f5e;
-  --mkt-dark-primary: #b9aeff;
-  --mkt-primary-container: #6d5ef8;
-  --mkt-inverse-primary: #5847e8;
-  --mkt-inverse-surface: #e8eaf5;
-  --mkt-tertiary-container: #a54e1a;
+  --mkt-dark-bg: #121417;
+  --mkt-dark-fg: #f2f4f7;             /* 16.75:1 */
+  --mkt-dark-fg-variant: #9ea4b0;     /* 7.37:1 */
+  --mkt-dark-surface-variant: #252930;
+  --mkt-dark-outline: #606a7c;
+  --mkt-dark-outline-variant: #333842;
+  /* Copper, not a light violet. On dark this carries nav labels and rules at
+     6.40:1 — safe as type, and deliberately NOT the CTA colour so navigation
+     cannot compete with the one action that matters. */
+  --mkt-dark-primary: #c48b71;
+  --mkt-primary-container: #b85c38;   /* the CTA fill; white label 4.54:1 */
+  --mkt-inverse-primary: #9e4d2e;     /* hover — deepens, never brightens */
+  --mkt-inverse-surface: #f2f4f7;
+  --mkt-tertiary-container: #a33a3a;  /* danger, distinct from the accent */
 
   /* Gradients + glass, mirroring the product recipes so a CTA on the landing
      page and a CTA in the app are the same object. */
-  --mkt-gradient-primary: linear-gradient(135deg, #6d5ef8 0%, #4f7cff 100%);
-  --mkt-gradient-cta: linear-gradient(135deg, #6355ea 0%, #4166e6 100%);
-  /* Deepens on hover, does not brighten — see the product token for why a
-     brightening hover silently drops a white label below AA. */
-  --mkt-gradient-cta-hover: linear-gradient(135deg, #5b4ce4 0%, #3a5ee0 100%);
+  /* GRADIENTS FLATTENED (V2 §7, §23). A gradient CTA is the template signal
+     the redesign exists to remove. Each token resolves to a flat terracotta so
+     existing consumers keep rendering something correct while their sections
+     are rebuilt; they are deleted once nothing references them.
+     Hover still deepens rather than brightens — a brightening hover silently
+     drops the white label below AA. */
+  --mkt-gradient-primary: linear-gradient(#b85c38, #b85c38);
+  --mkt-gradient-cta: linear-gradient(#b85c38, #b85c38);
+  --mkt-gradient-cta-hover: linear-gradient(#9e4d2e, #9e4d2e);
   --mkt-gradient-prism: linear-gradient(120deg, #6d5ef8 0%, #4f7cff 55%, #66d9ff 100%);
   --mkt-glass-bg: rgba(255, 255, 255, 0.82);
   --mkt-glass-border: rgba(109, 94, 248, 0.10);

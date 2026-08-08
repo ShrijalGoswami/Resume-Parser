@@ -40,8 +40,11 @@ export function MarketingFooter() {
           >
             HireLens
           </Link>
+          {/* The year is derived, not typed. It read "© 2024" throughout 2026 —
+              a small thing that quietly tells a visitor the site is unmaintained,
+              on the one page whose job is to establish that it is not. */}
           <p className="mkt-body-sm tracking-wide text-mkt-fg-secondary">
-            © 2024 HireLens Inc. Precision in Recruitment.
+            © {new Date().getFullYear()} HireLens Inc. Precision in Recruitment.
           </p>
         </div>
         {/* `flex-wrap` and a smaller gap: five real routes no longer fit one

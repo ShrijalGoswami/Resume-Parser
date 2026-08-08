@@ -121,10 +121,17 @@ export function MarketingNav() {
             <Link
               key={link.label}
               href={link.href}
-              // `py-1` is hit area only: 12px uppercase type renders 16px tall,
-              // under the 24px WCAG 2.5.8 minimum, and this bar is reachable on
+              // Inter, sentence case (V2 §4). These were JetBrains Mono,
+              // uppercase, tracking-widest — the single strongest reason the
+              // bar read "developer tool" rather than "enterprise software".
+              // Mono is reserved for scores, IDs and timestamps; a navigation
+              // label is none of those. Sentence case because SHOUTING FOUR
+              // WORDS is not confidence, it is volume.
+              //
+              // `py-1` remains hit area only: 14px type renders ~20px tall,
+              // under the 24px WCAG 2.5.8 minimum, and this bar is used on
               // tablets. The negative margin keeps the bar's height unchanged.
-              className={`-my-1 py-1 mkt-data font-medium uppercase tracking-widest transition-all duration-500 ${label}`}
+              className={`-my-1 py-1 text-[14px] font-medium leading-5 transition-colors duration-[var(--hl-dur-base)] ease-[var(--hl-ease-out)] ${label}`}
             >
               {link.label}
             </Link>
@@ -136,7 +143,7 @@ export function MarketingNav() {
           <Link
             href="/auth/login"
             // `py-1` is hit area only — see the note on the nav links above.
-            className={`-my-1 py-1 mkt-data font-medium uppercase tracking-widest transition-colors duration-500 ${
+            className={`-my-1 py-1 text-[14px] font-medium leading-5 transition-colors duration-[var(--hl-dur-base)] ease-[var(--hl-ease-out)] ${
               onInk
                 ? 'text-mkt-dark-fg-variant hover:text-mkt-dark-fg'
                 : 'text-mkt-fg-secondary hover:text-mkt-fg'
@@ -144,11 +151,16 @@ export function MarketingNav() {
           >
             Sign in
           </Link>
+          {/* The one filled control on the page. Flat terracotta — no gradient,
+              no glow, no ring (V2 §12). 4px radius rather than a pill: a fully
+              rounded button is a consumer gesture, and this is an instrument.
+              White label measures 4.54:1 on the fill, and the hover DEEPENS —
+              brightening it would drop that label under AA. */}
           <Link
             href="/auth/signup"
-            className="bg-mkt-primary-container px-6 py-3 mkt-data font-medium uppercase tracking-widest text-white transition-colors duration-300 hover:bg-mkt-inverse-primary"
+            className="rounded-[4px] bg-mkt-primary-container px-5 py-2.5 text-[14px] font-medium leading-5 text-white transition-colors duration-[var(--hl-dur-base)] ease-[var(--hl-ease-out)] hover:bg-mkt-inverse-primary"
           >
-            Request Access
+            Request access
           </Link>
         </div>
 
@@ -205,7 +217,7 @@ export function MarketingNav() {
                 key={link.label}
                 href={link.href}
                 onClick={() => setMenuOpen(false)}
-                className={`py-3 mkt-data font-medium uppercase tracking-widest transition-colors ${label}`}
+                className={`py-3 text-[15px] font-medium leading-6 transition-colors ${label}`}
               >
                 {link.label}
               </Link>
@@ -222,7 +234,7 @@ export function MarketingNav() {
               <Link
                 href="/auth/login"
                 onClick={() => setMenuOpen(false)}
-                className={`py-2 mkt-data font-medium uppercase tracking-widest transition-colors ${
+                className={`py-2 text-[15px] font-medium leading-6 transition-colors ${
                   onInk
                     ? 'text-mkt-dark-fg-variant hover:text-mkt-dark-fg'
                     : 'text-mkt-fg-secondary hover:text-mkt-fg'
@@ -233,9 +245,9 @@ export function MarketingNav() {
               <Link
                 href="/auth/signup"
                 onClick={() => setMenuOpen(false)}
-                className="bg-mkt-primary-container px-6 py-3 text-center mkt-data font-medium uppercase tracking-widest text-white transition-colors duration-300 hover:bg-mkt-inverse-primary"
+                className="rounded-[4px] bg-mkt-primary-container px-5 py-3 text-center text-[15px] font-medium leading-6 text-white transition-colors duration-[var(--hl-dur-base)] ease-[var(--hl-ease-out)] hover:bg-mkt-inverse-primary"
               >
-                Request Access
+                Request access
               </Link>
             </div>
           </div>
