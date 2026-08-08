@@ -1619,6 +1619,21 @@
     border-left: 2px solid var(--hl-accent-secondary);
   }
 
+  /* Indeterminate progress — V2 §18's "2px copper progress rule" for inline
+     work of unknown duration. Travels on `transform` only (no layout, no
+     repaint), and the blanket reduced-motion rule parks it. */
+  .hl-indeterminate {
+    animation: hl-indeterminate 1.2s ease-in-out infinite;
+  }
+  @keyframes hl-indeterminate {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(300%);
+    }
+  }
+
   /* Neutral skeleton fill + sheen sweep (§3.7). */
   .hl-skeleton {
     background-color: var(--hl-skeleton-base);
