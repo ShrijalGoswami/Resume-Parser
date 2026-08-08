@@ -9,6 +9,7 @@ import {
 } from './fx'
 import { HeroDecisionCard } from './hero-decision-card'
 import { Reveal } from './motion'
+import { ProductVideo } from './product-video'
 
 /**
  * Frame 1 — `hirelens_marketing_hero_frame_1`.
@@ -50,16 +51,63 @@ export function Frame01Hero() {
            headline under the bar. Bottom padding carries the reduction. */
         className="mkt-min-vh relative isolate flex flex-col justify-center overflow-hidden bg-mkt-dark-bg pt-24 pb-16"
       >
-        {/* The node field. Scoped to this section rather than fixed across the
-            page: the marketing page alternates dark and light bands, and a
-            fixed canvas is invisible behind every light band while still
-            costing a full GPU frame.
+        {/* ---------------------------------------------------------------- */}
+        {/* BACKGROUND STACK                                                  */}
+        {/*   -z-30  ambient film                                             */}
+        {/*   -z-20  scrim        <- makes the type legible over it           */}
+        {/*   -z-10  node field                                               */}
+        {/*    z-10  content                                                  */}
+        {/* ---------------------------------------------------------------- */}
 
-            Held at 0.55 because it sits directly behind a 64px headline. At
-            full strength the links cross the descenders and the type stops
-            being the brightest thing on the screen, which inverts the
-            hierarchy the hero is built on. */}
-        <ConstellationBackground intensity={0.55} />
+        {/* The film. `cover` on a full-bleed box, so the framing is whatever
+            the viewport gives it — there is no composition to protect here,
+            because everything that matters is drawn on top. */}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-30">
+          <ProductVideo
+            src="/hero/hero-ambient.mp4"
+            webm="/hero/hero-ambient.webm"
+            poster="/hero/hero-ambient-poster.webp"
+            width={1920}
+            height={1074}
+            fit="cover"
+            priority
+            label=""
+          />
+        </div>
+
+        {/* THE SCRIM IS NOT TASTE, IT IS A MEASUREMENT.
+            The footage peaks at Y=226/255 — near-white cloud — and those
+            highlights sweep through the LEFT half of the frame, which is
+            exactly where the headline and body copy sit. Body text at
+            #9ea4b0 needs its composited background at or below 64 grey to
+            hold 4.5:1, which over a 226 pixel means an effective alpha of at
+            least 0.77.
+
+            Two layers, multiplied: a flat 0.62 everywhere, plus a
+            left-weighted wash held near full strength to 45% and dying out by
+            78%. The wash must stay strong that far across because the text
+            column runs to 51% of the viewport — an earlier version faded from
+            35% and measured 2.94:1 at the right end of the proof strip, which
+            looks fine and fails. Worst case at 55% is now 0.784 effective,
+            compositing a 226 highlight to 61 grey: 4.75:1 for #9ea4b0.
+
+            The vertical pass seats the fixed nav, which would otherwise sit on
+            open sky, and darkens the last 24% so the section does not butt
+            into the light band below on a bright frame. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 -z-20 bg-[#0E1013]/62"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 -z-20 bg-[linear-gradient(90deg,rgba(14,16,19,0.72)_0%,rgba(14,16,19,0.62)_45%,rgba(14,16,19,0)_78%),linear-gradient(180deg,rgba(14,16,19,0.72)_0%,rgba(14,16,19,0)_24%,rgba(14,16,19,0)_76%,rgba(14,16,19,0.55)_100%)]"
+        />
+
+        {/* The node field, now the third layer rather than the only one. Cut
+            from 0.55 to 0.3: with the film carrying the atmosphere, the
+            original strength reads as debris over the picture rather than as
+            depth behind the type. */}
+        <ConstellationBackground intensity={0.3} />
 
         <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6 md:px-20">
           <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-12">
@@ -138,7 +186,12 @@ export function Frame01Hero() {
                   about behaviour, not data. Kept at tertiary weight so it reads
                   as a footnote to the CTAs rather than competing with them. */}
               <div className="mkt-fade-in-up mkt-delay-400 pt-10">
-                <p className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13.5px] leading-5 text-mkt-dark-outline">
+                {/* --mkt-dark-outline (#606a7c) is a BORDER token, and it was
+                    being used for 13.5px text. Against the section ground it
+                    measures 3.39:1 — under AA for normal text before the film
+                    was ever added. --mkt-dark-fg-variant is 7.37:1 and is the
+                    token that exists for recessed prose. */}
+                <p className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13.5px] leading-5 text-mkt-dark-fg-variant">
                   <span>Reads every résumé, not the top twenty</span>
                   <span aria-hidden="true" className="opacity-50">·</span>
                   <span>Every claim traced to its source</span>
@@ -148,16 +201,12 @@ export function Frame01Hero() {
               </div>
             </div>
 
-            {/* The product, not a metaphor.
-                What used to sit here: six blurred rows of invented applicants
-                behind a floating glass panel reading "J. Chen · 98% MATCH".
-                Three problems, in order of seriousness — 98% is a score this
-                product has never produced (the real top score across twelve
-                candidates was 68); the blur was decoration standing in for a
-                demonstration; and the panel floated on a loop, which is motion
-                that explains nothing.
-                One real card, still, is a stronger claim than a pile of
-                gradients. */}
+            {/* The product, still. The film behind this section is atmosphere,
+                not evidence — it contains no HireLens UI — so the claim that
+                the product works is still carried by this card: real scores,
+                a risk derived from the résumé's own dates, and the two lines
+                it was read from. When a screen recording of the product
+                exists, it belongs HERE, and <ProductVideo> is ready for it. */}
             <div className="lg:col-span-5 lg:pl-4">
               {/* radius must match the card's own `rounded-[8px]`, or the lit
                   rim will cut the corners square. */}

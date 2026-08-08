@@ -50,6 +50,12 @@ type TiltCardProps = {
   hoverScale?: number
   /** Must match the child's radius, or the glow rim will not sit on the edge. */
   radius?: string
+  /**
+   * The cursor-tracked terracotta rim. Off for cards whose content is itself
+   * the subject — a lit edge around a product recording competes with the
+   * recording, and reads as a frame effect rather than as a material.
+   */
+  glow?: boolean
 }
 
 export function TiltCard({
@@ -57,6 +63,7 @@ export function TiltCard({
   className = '',
   hoverScale = 1.012,
   radius = '8px',
+  glow = true,
 }: TiltCardProps) {
   const hostRef = useRef<HTMLDivElement>(null)
   const innerRef = useRef<HTMLDivElement>(null)
@@ -91,8 +98,8 @@ export function TiltCard({
 
     function tick() {
       const inner = innerRef.current
-      const glow = glowRef.current
-      if (!inner || !glow) {
+      const rim = glowRef.current
+      if (!inner) {
         running = false
         return
       }
@@ -110,9 +117,11 @@ export function TiltCard({
 
       // The gradient centre is set in percentages of the card, so it stays
       // correct at any card size without re-reading the rect every frame.
-      glow.style.setProperty('--tilt-gx', `${((current.x + 1) / 2) * 100}%`)
-      glow.style.setProperty('--tilt-gy', `${((-current.y + 1) / 2) * 100}%`)
-      glow.style.opacity = String(current.on)
+      if (rim) {
+        rim.style.setProperty('--tilt-gx', `${((current.x + 1) / 2) * 100}%`)
+        rim.style.setProperty('--tilt-gy', `${((-current.y + 1) / 2) * 100}%`)
+        rim.style.opacity = String(current.on)
+      }
 
       // Park the loop once the card has settled back to rest, rather than
       // running rAF forever on a page the visitor has scrolled past.
@@ -187,6 +196,7 @@ export function TiltCard({
         {/* The rim. `padding: 1px` plus an xor mask leaves only the 1px frame
             of the gradient painted, so the fill never washes over the card's
             content — this is a lit edge, not a backlight. */}
+        {glow ? (
         <div
           ref={glowRef}
           aria-hidden="true"
@@ -205,6 +215,7 @@ export function TiltCard({
             maskComposite: 'exclude',
           }}
         />
+        ) : null}
       </div>
     </div>
   )
