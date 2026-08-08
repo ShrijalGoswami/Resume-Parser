@@ -15,12 +15,11 @@ import { PendingAnalysis } from './sections/primitives'
 import { CandidateHeader } from './sections/header'
 import { CandidateVerdict, CandidateSummary } from './sections/ai'
 import {
-  CandidateStrengths,
   CandidateEvidence,
-  CandidateRisks,
   CandidateSkills,
   CandidateInterviewQuestions,
 } from './sections/evidence'
+import { CandidateClaimEvidence } from './sections/claim-evidence'
 import { CandidateResume, CandidateNotes, CandidateActivity } from './sections/record'
 import { CandidateScorecard } from './sections/scorecard'
 import { CandidateResumeRecord } from './sections/resume-record'
@@ -141,9 +140,13 @@ function AuthedDossier({ roleId, candidateId }: { roleId: string; candidateId: s
             <div className="flex min-w-0 flex-col gap-8">
               <CandidateVerdict model={model} onOpenResume={c.openResume} />
               <CandidateSummary model={model} />
-              <CandidateStrengths model={model} />
+              {/* Claims carrying the résumé lines that echo them. The plain
+                  strength/risk lists (still used by the Peek, where there is
+                  no room for support) are replaced here — at full density the
+                  page can afford to show what each assertion rests on. */}
+              <CandidateClaimEvidence model={model} kind="strengths" />
               <CandidateEvidence model={model} />
-              <CandidateRisks model={model} />
+              <CandidateClaimEvidence model={model} kind="risks" />
               <CandidateSkills model={model} />
               <CandidateInterviewQuestions model={model} />
             </div>
