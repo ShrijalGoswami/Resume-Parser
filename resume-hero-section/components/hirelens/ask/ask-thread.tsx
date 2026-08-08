@@ -2,7 +2,9 @@
 
 import * as React from 'react'
 import { usePathname } from 'next/navigation'
-import { Sparkles } from 'lucide-react'
+// MessageSquareText, not Sparkles (V2 §8/§23): this surface is named Ask, and
+// what it does is answer questions — not perform magic.
+import { MessageSquareText } from 'lucide-react'
 import { detectPageContext } from '@/lib/copilot-context'
 import { EmptyState } from '../states/empty-state'
 import { ErrorState } from '../states/error-state'
@@ -135,7 +137,17 @@ export function AskThread({
               ))}
               {pending !== null ? (
                 <>
-                  <UserTurn content={pending} />
+                  {/* THE QUESTION MUST NOT APPEAR TWICE.
+                      The server persists the user's message as soon as it is
+                      posted, so while the answer is still generating the
+                      messages query can already return that turn — and the
+                      optimistic bubble beside it made the recruiter look like
+                      they had asked the same thing twice. Render the
+                      optimistic copy only until the persisted one arrives. */}
+                  {turns[turns.length - 1]?.role === 'user' &&
+                  turns[turns.length - 1]?.content === pending ? null : (
+                    <UserTurn content={pending} />
+                  )}
                   <ThinkingTurn />
                 </>
               ) : null}
@@ -192,7 +204,7 @@ function Turn({
       {turn.structured ? (
         <AssistantTurn response={turn.structured} onFollowup={onFollowup} />
       ) : (
-        <div className="hl-prism-edge rounded-r-[var(--hl-radius-lg)] bg-hl-ai-surface p-4">
+        <div className="rounded-r-[var(--hl-radius-lg)] border-l-2 border-[var(--hl-accent-secondary)] bg-hl-subtle p-4">
           <p className="hl-body text-hl-fg">{turn.content}</p>
         </div>
       )}
@@ -204,8 +216,8 @@ function Turn({
 function LandingHero({ onPick }: { onPick: (prompt: string) => void }) {
   return (
     <EmptyState
-      className="hl-ai-glow"
-      icon={Sparkles}
+      // `hl-ai-glow` is a violet/cyan prism bloom (V2 §23 removes it).
+      icon={MessageSquareText}
       title="Ask anything about your hiring"
       description="One place for what you’ve learned, what’s true now, and what happens next."
     >
@@ -220,7 +232,7 @@ function LandingHero({ onPick }: { onPick: (prompt: string) => void }) {
             onClick={() => onPick(example.prompt)}
             className="flex flex-col gap-1.5 rounded-hl-lg border border-hl-border bg-hl-canvas px-3.5 py-3 text-left outline-none transition-colors hover:border-hl-border-strong hover:bg-hl-subtle"
           >
-            <span className="hl-label text-hl-prism-mid">{example.mode}</span>
+            <span className="hl-label text-hl-fg-tertiary">{example.mode}</span>
             <span className="hl-body text-hl-fg">{example.prompt}</span>
           </button>
         ))}

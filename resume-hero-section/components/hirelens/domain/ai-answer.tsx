@@ -14,6 +14,8 @@ import { ConfidencePill } from './confidence-pill'
 export interface AIAnswerSource {
   label: string
   onClick?: () => void
+  /** Longer description, surfaced on hover — the chip stays scannable. */
+  title?: string
 }
 
 export interface AIAnswerProps {
@@ -68,6 +70,7 @@ export function AIAnswer({
               key={`${source.label}-${index}`}
               type="button"
               onClick={source.onClick}
+              title={source.title}
               disabled={!source.onClick}
               className="hl-caption rounded-full border border-hl-border bg-hl-canvas px-2 py-0.5 text-hl-fg-secondary outline-none transition-colors enabled:hover:text-hl-fg disabled:cursor-default"
             >

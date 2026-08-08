@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Sparkles, ArrowUpRight, ArrowDownRight, Activity } from 'lucide-react'
+import { ArrowUpRight, ArrowDownRight, Activity } from 'lucide-react'
 import { Card } from '../ui/card'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -71,7 +71,7 @@ export function ScenarioSimulator({
     <Card variant="ai" className={className}>
       <div className="flex flex-col gap-3 p-4">
         <div className="flex items-center gap-2">
-          <Sparkles className="size-4 text-hl-prism-mid" aria-hidden />
+          {/* The copper rule on the card already marks this as system output. */}
           <span className="hl-body-medium">What-if simulation</span>
         </div>
 
@@ -121,7 +121,7 @@ export function ScenarioSimulator({
         </div>
 
         <div>
-          <Button variant="ai" size="sm" onClick={run} loading={simulation.isPending}>
+          <Button variant="primary" size="sm" onClick={run} loading={simulation.isPending}>
             {result ? 'Re-run' : 'Run simulation'}
           </Button>
         </div>

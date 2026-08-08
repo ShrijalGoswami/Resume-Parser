@@ -1,11 +1,12 @@
 'use client'
 
 import * as React from 'react'
-import { Search, Sparkles, BrainCircuit } from 'lucide-react'
+import { Search, MessageSquareText, BrainCircuit } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Skeleton } from '../ui/skeleton'
 import { Badge } from '../ui/badge'
 import { ConfidencePill } from '../domain'
+import { Emphasized } from './ask-message'
 import { EmptyState } from '../states/empty-state'
 import { ErrorState } from '../states/error-state'
 import { useMemoryList, useRetrieveMemory } from '../lib/api/ask'
@@ -77,8 +78,8 @@ export function BrainBrowser({ onAskInThread }: { onAskInThread: (query: string)
                 ranking
               </p>
               <div className="flex gap-2">
-                <Button variant="ai" size="sm" onClick={() => onAskInThread(query)}>
-                  <Sparkles /> Ask in a thread
+                <Button variant="secondary" size="sm" onClick={() => onAskInThread(query)}>
+                  <MessageSquareText /> Ask in a thread
                 </Button>
                 <Button variant="ghost" size="sm" onClick={clearSearch}>
                   Back to browse
@@ -166,7 +167,12 @@ function FilterChip({
 function MemoryCard({ memory, why }: { memory: MemoryItem; why?: string[] }) {
   return (
     <div className="rounded-hl-md border border-hl-border-subtle bg-hl-canvas p-3">
-      <p className="hl-body text-hl-fg">{memory.value_text}</p>
+      {/* Stored copilot insights carry the same **emphasis** the answer
+          did, so they get the same treatment rather than showing raw
+          asterisks on a second surface. */}
+      <p className="hl-body text-hl-fg">
+        <Emphasized text={memory.value_text} />
+      </p>
       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
         <Badge variant="neutral" className="capitalize">
           {memory.source || 'unknown'}

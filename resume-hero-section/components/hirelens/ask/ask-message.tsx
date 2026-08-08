@@ -1,7 +1,6 @@
 'use client'
 
 import * as React from 'react'
-import { Sparkles } from 'lucide-react'
 import { AIAnswer } from '../domain'
 import { Button } from '../ui/button'
 import type { CopilotStructuredResponse } from '@/types/copilot'
@@ -17,18 +16,78 @@ export function UserTurn({ content }: { content: string }) {
   )
 }
 
-/** The in-flight state — a calm prism pulse, never a spinner wall. */
+/**
+ * The in-flight state.
+ *
+ * THE ANSWER TAKES ABOUT ELEVEN SECONDS AND DOES NOT STREAM. That is the
+ * constraint this state has to survive honestly. A pulsing glyph over the word
+ * "Thinking…" reads as a hung request by second four, and any typing effect or
+ * partial text would imply the answer is arriving incrementally when in truth
+ * it lands in one piece — a lie the reader would only detect by waiting.
+ *
+ * So it does two things instead. A copper progress rule (V2 §18) says work is
+ * genuinely in flight, and after a few seconds a second line names what the
+ * wait is actually for — the copilot is reading the workspace before it
+ * answers. That is true of every request, needs no server signal to say, and
+ * gives the reader a reason to wait rather than a spinner to distrust.
+ */
 export function ThinkingTurn() {
+  const [longWait, setLongWait] = React.useState(false)
+
+  React.useEffect(() => {
+    // Roughly a third of the way into a typical answer: late enough that a
+    // fast response never shows it, early enough to land before doubt does.
+    const timer = window.setTimeout(() => setLongWait(true), 3500)
+    return () => window.clearTimeout(timer)
+  }, [])
+
   return (
     <div
-      className="hl-prism-edge rounded-r-[var(--hl-radius-lg)] bg-hl-ai-surface p-4"
+      className="rounded-r-[var(--hl-radius-lg)] border-l-2 border-[var(--hl-accent-secondary)] bg-hl-subtle p-4"
       aria-live="polite"
     >
-      <span className="hl-body inline-flex items-center gap-2 text-hl-fg-secondary">
-        <Sparkles className="size-4 animate-pulse text-hl-prism-mid" aria-hidden />
-        Thinking…
+      <p className="hl-body text-hl-fg-secondary">Reading your workspace…</p>
+      <span
+        className="mt-2 block h-0.5 w-24 overflow-hidden rounded-full bg-hl-muted"
+        aria-hidden
+      >
+        <span className="hl-indeterminate block h-full w-1/3 rounded-full bg-[var(--hl-accent-secondary)]" />
       </span>
+      {longWait ? (
+        <p className="hl-caption mt-2 text-hl-fg-tertiary">
+          Answers arrive complete rather than word by word, so this takes a
+          moment.
+        </p>
+      ) : null}
     </div>
+  )
+}
+
+/**
+ * The model writes names and figures in `**bold**`, and the answer was
+ * rendering those asterisks literally — "**SHRIJAL GOSWAMI**" in the middle of
+ * a sentence. This resolves that one construct and nothing else.
+ *
+ * It is deliberately NOT a markdown renderer. The copilot returns prose with
+ * occasional emphasis, not documents, and reaching for a parser (or growing
+ * this regex toward one) would be answering a question nobody asked. If richer
+ * formatting ever arrives from the backend, that is a decision to make on
+ * purpose with a real renderer — not by accretion here.
+ */
+export function Emphasized({ text }: { text: string }) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g)
+  return (
+    <>
+      {parts.map((part, index) =>
+        part.startsWith('**') && part.endsWith('**') && part.length > 4 ? (
+          <strong key={index} className="font-semibold text-hl-fg">
+            {part.slice(2, -2)}
+          </strong>
+        ) : (
+          <React.Fragment key={index}>{part}</React.Fragment>
+        ),
+      )}
+    </>
   )
 }
 
@@ -61,8 +120,12 @@ export function AssistantTurn({
   response: CopilotStructuredResponse
   onFollowup: (question: string) => void
 }) {
+  // The source NAME leads, with its detail as the title — a chip row is a list
+  // of where the answer came from, and `detail` can be a sentence, which turned
+  // the attribution row into prose that no longer scanned as attribution.
   const sources = response.sources_used.map((source) => ({
-    label: source.detail || source.source,
+    label: source.source || source.detail,
+    title: source.detail || undefined,
   }))
 
   return (
@@ -96,9 +159,13 @@ export function AssistantTurn({
           Answered with limited context — some sources were unavailable.
         </p>
       ) : null}
-      <p>{response.answer}</p>
+      <p>
+        <Emphasized text={response.answer} />
+      </p>
       {response.summary && response.summary !== response.answer ? (
-        <p className="hl-body mt-2 text-hl-fg-secondary">{response.summary}</p>
+        <p className="hl-body mt-2 text-hl-fg-secondary">
+          <Emphasized text={response.summary} />
+        </p>
       ) : null}
       <AnswerList label="Strengths" items={response.strengths} />
       <AnswerList label="Watch-outs" items={response.weaknesses} />

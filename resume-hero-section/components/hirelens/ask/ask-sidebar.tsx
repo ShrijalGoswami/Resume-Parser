@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Plus, ListChecks, BrainCircuit, Sparkles } from 'lucide-react'
+import { Plus, ListChecks, BrainCircuit, CornerDownRight } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Badge } from '../ui/badge'
 import { Skeleton } from '../ui/skeleton'
@@ -127,7 +127,8 @@ export function AskNav({
               onClick={() => onPickSuggestion(suggestion)}
               className="hl-small flex items-start gap-2 rounded-hl-md px-2.5 py-2 text-left text-hl-fg-secondary outline-none transition-colors hover:bg-hl-subtle hover:text-hl-fg"
             >
-              <Sparkles className="mt-0.5 size-3 shrink-0 text-hl-prism-mid" aria-hidden />
+              {/* A suggestion is a prompt you can take, not a spell (V2 §8). */}
+              <CornerDownRight className="mt-0.5 size-3 shrink-0 text-hl-fg-tertiary" aria-hidden />
               {suggestion}
             </button>
           ))}
