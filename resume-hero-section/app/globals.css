@@ -2491,14 +2491,21 @@
   }
 
   /* --- Frame 1 entrance ------------------------------------------------- */
+  /* Entrance (V2 §9). Was 1s over 20px, which is a REVEAL — long enough that
+     the eye follows the movement instead of arriving at the words. 420ms over
+     8px reads as the page settling rather than performing, and the stagger
+     below is what carries the reading order: headline, then the claim, then
+     the actions, then the footnote. Motion explains the hierarchy; it is not
+     an effect. */
   .mkt-fade-in-up {
     opacity: 0;
-    transform: translateY(20px);
-    animation: mkt-fade-in-up 1s ease-out forwards;
+    transform: translateY(8px);
+    animation: mkt-fade-in-up 420ms var(--hl-ease-out, cubic-bezier(0.2, 0, 0, 1)) forwards;
   }
-  .mkt-delay-100 { animation-delay: 100ms; }
-  .mkt-delay-200 { animation-delay: 200ms; }
-  .mkt-delay-300 { animation-delay: 300ms; }
+  .mkt-delay-100 { animation-delay: 70ms; }
+  .mkt-delay-200 { animation-delay: 140ms; }
+  .mkt-delay-300 { animation-delay: 210ms; }
+  .mkt-delay-400 { animation-delay: 280ms; }
 }
 
 @keyframes mkt-breath-aurora {

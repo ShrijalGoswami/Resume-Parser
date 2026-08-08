@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { Inter, JetBrains_Mono, Newsreader, Public_Sans } from 'next/font/google'
-import { NeuralBackground } from '@/components/marketing/NeuralBackground'
 
 /**
  * Marketing (public site) layout.
@@ -70,10 +69,19 @@ export default function MarketingLayout({
       <noscript>
         <style>{`.mkt-reveal,.mkt-resolve{opacity:1!important;transform:none!important}.mkt-meter-fill{transform:scaleX(1)!important}`}</style>
       </noscript>
-      {/* Mounted once for the whole public surface, not per section. It is a
-          fixed overlay (see NeuralBackground) so it spans every section —
-          light and dark alike — as one continuous field. */}
-      <NeuralBackground />
+      {/* REMOVED: <NeuralBackground /> — the animated knowledge-graph field.
+          It was mounted once as a fixed overlay spanning all 13 screens, which
+          is what made it so costly: a neural-network graphic is THE visual
+          cliché of AI products, and this one followed the visitor through
+          every light section too, where the dots read as dust on the page.
+
+          It also carried a floating toggle button, which is why a stray "N"
+          sits in the corner of every marketing screenshot — a control for a
+          background nobody asked to configure.
+
+          Nothing replaces it. Design System V2 answers a sparse screen with
+          space and typography; atmosphere standing in for substance is the
+          thing this redesign exists to remove. */}
       {children}
     </div>
   )

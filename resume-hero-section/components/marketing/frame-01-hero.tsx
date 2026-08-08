@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 import { CompressionEngine } from './compression-engine'
-import { HeroShader } from './hero-shader'
+import { HeroDecisionCard } from './hero-decision-card'
 import { Reveal } from './motion'
 
 /**
@@ -21,27 +21,6 @@ import { Reveal } from './motion'
  *   data-value         24 /  32, 400   (JetBrains Mono)
  *   data-label         12 /  16, 500   (JetBrains Mono, 0.05em)
  */
-
-/** The unresolved pile behind the hero's candidate card. Each row is a real
- *  applicant reduced to what you can tell about them before HireLens reads
- *  them — a name you can't rank and a role you can't verify. They sit blurred
- *  and dim so the one resolved card in front carries all the focus. */
-const HERO_PILE = [
-  { name: 'R. Kaur', meta: 'PDF · 9 yrs', width: 'w-full' },
-  { name: 'T. Møller', meta: 'DOCX · 6 yrs', width: 'w-11/12' },
-  { name: 'A. Okonkwo', meta: 'PDF · 7 yrs', width: 'w-full' },
-  { name: 'L. Silva', meta: 'DOCX · 11 yrs', width: 'w-10/12' },
-  { name: 'M. Bianchi', meta: 'PDF · 5 yrs', width: 'w-full' },
-  { name: 'P. Varga', meta: 'DOCX · 8 yrs', width: 'w-11/12' },
-]
-
-/** The three numbers under the hero's resolved card — the whole product in one
- *  line: everything read, evidence attached, nothing dropped unseen. */
-const HERO_READOUT = [
-  { value: '250', label: 'Read' },
-  { value: '612', label: 'Evidence' },
-  { value: '0', label: 'Unseen' },
-]
 
 export function Frame01Hero() {
   return (
@@ -65,51 +44,63 @@ export function Frame01Hero() {
            headline under the bar. Bottom padding carries the reduction. */
         className="mkt-min-vh relative isolate flex flex-col justify-center overflow-hidden bg-mkt-dark-bg pt-24 pb-16"
       >
-        <HeroShader />
-
         <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6 md:px-20">
           <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-12">
             {/* Content */}
-            <div className="flex flex-col gap-8 lg:col-span-8">
+            <div className="flex flex-col gap-7 lg:col-span-7">
               {/* 72/76. Linear and Vercel both cap their hero at 64px; Stripe
                   runs 38.6. Newsreader at 300 carries less optical mass than a
                   510-weight sans, so 72 sits level with a 64px Linear headline
                   rather than above it. At 120px the two authored lines wrapped
                   to three and the block alone was 330px — 2.6x Linear's. */}
-              <h1 className="mkt-fade-in-up font-mkt-display text-[44px] leading-[48px] font-light tracking-[-0.02em] text-mkt-dark-fg md:text-[72px] md:leading-[76px] md:tracking-[-0.03em]">
-                Your judgment,
-                <br />
-                on every candidate.
+              {/* Two sentences, set as two stanzas. The first is what every
+                  competitor can say; the second is what only this product can.
+                  The line break is the argument — the eye lands on "regret"
+                  because it starts a line of its own.
+
+                  Newsreader at 300 carries less optical mass than a 510 sans,
+                  so 68px here sits level with a 60px Linear headline rather
+                  than shouting over it. The second stanza is the same size and
+                  full-strength white while the first is recessed: the contrast
+                  does the emphasis, so neither line needs bold or colour. */}
+              <h1 className="font-mkt-display text-[38px] leading-[44px] font-light tracking-[-0.02em] md:text-[64px] md:leading-[70px] md:tracking-[-0.03em]">
+                <span className="mkt-fade-in-up block text-mkt-dark-fg-variant">
+                  Every tool tells you
+                  <br className="hidden md:block" /> who&rsquo;s strongest.
+                </span>
+                <span className="mkt-fade-in-up mkt-delay-100 mt-2 block text-mkt-dark-fg md:mt-3">
+                  HireLens tells you
+                  <br className="hidden md:block" /> who you&rsquo;d regret.
+                </span>
               </h1>
 
-              <p className="mkt-fade-in-up mkt-delay-100 max-w-2xl mkt-body-lg text-mkt-dark-fg-variant">
-                HireLens reads the whole pile, brings the few who matter into
-                focus, and tells you what you&rsquo;d regret — so your best
-                judgment reaches everyone, not just the top of the stack.
+              {/* 60ch, not 2xl. A hero paragraph that runs the full column is
+                  read as a block of text rather than as a sentence. */}
+              <p className="mkt-fade-in-up mkt-delay-200 max-w-[60ch] text-[17px] leading-[28px] text-mkt-dark-fg-variant md:text-[18px] md:leading-[30px]">
+                HireLens reads every résumé in full and names what a ranking
+                hides — the tenure pattern, the missing scope, the risk
+                you&rsquo;d otherwise meet in month four.{' '}
+                <span className="text-mkt-dark-fg">
+                  Every claim opens to the line it came from.
+                </span>
               </p>
 
-              <div className="mkt-fade-in-up mkt-delay-200 flex flex-wrap items-center gap-6">
+              {/* Inter, sentence case, 4px radius, flat fills (V2 §4, §12).
+                  These were mono UPPERCASE on a violet block. One primary per
+                  view: the filled control is the only terracotta on the screen,
+                  which is what makes it read as the thing to do. */}
+              <div className="mkt-fade-in-up mkt-delay-300 flex flex-wrap items-center gap-3">
                 <Link
                   href="/auth/signup"
-                  className="group flex items-center gap-2 bg-mkt-primary-container px-7 py-3 mkt-data font-medium uppercase tracking-widest text-white transition-colors duration-300 hover:bg-mkt-inverse-primary"
+                  className="rounded-[4px] bg-mkt-primary-container px-5 py-2.5 text-[15px] font-medium leading-6 text-white transition-colors duration-[var(--hl-dur-base)] ease-[var(--hl-ease-out)] hover:bg-mkt-inverse-primary"
                 >
-                  See it think
-                  {/* `aria-hidden` because the ligature IS the text content.
-                      Without it this link's accessible name — and the text
-                      every crawler and LLM extracts — reads
-                      "See it thinkarrow_forward". */}
-                  <span
-                    className="material-symbols-outlined text-sm transition-transform group-hover:translate-x-1"
-                    aria-hidden="true"
-                  >
-                    arrow_forward
-                  </span>
+                  Request access
                 </Link>
                 <a
-                  href="#customers"
-                  className="border border-mkt-dark-outline-variant px-7 py-3 mkt-data font-medium uppercase tracking-widest text-mkt-dark-fg transition-colors duration-300 hover:border-mkt-dark-fg"
+                  href="#how-it-works"
+                  className="rounded-[4px] border border-mkt-dark-outline-variant px-5 py-2.5 text-[15px] font-medium leading-6 text-mkt-dark-fg transition-colors duration-[var(--hl-dur-base)] ease-[var(--hl-ease-out)] hover:border-mkt-dark-outline hover:bg-white/[0.04]"
                 >
-                  Book a demo
+                  See how it reads a résumé
                 </a>
               </div>
 
@@ -125,78 +116,34 @@ export function Frame01Hero() {
                   checkable, rather than a claim about who uses it, which was
                   not. Nothing goes back in here until there is a customer who
                   has agreed in writing to be named. */}
-              <div className="mkt-fade-in-up mkt-delay-300 pt-12">
-                <p className="mkt-data font-medium uppercase tracking-widest text-mkt-dark-fg-variant opacity-60">
-                  {/* The spaces around each separator are significant — the
-                      frame has them either side of the `mx-2` dot. */}
-                  Every claim opens to its evidence{' '}
-                  <span className="mx-2">·</span> Every decision reversible{' '}
-                  <span className="mx-2">·</span> Nothing left unread
+              {/* Three checkable properties of the product, not an invented
+                  customer list. Inter rather than mono uppercase: this is prose
+                  about behaviour, not data. Kept at tertiary weight so it reads
+                  as a footnote to the CTAs rather than competing with them. */}
+              <div className="mkt-fade-in-up mkt-delay-400 pt-10">
+                <p className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13.5px] leading-5 text-mkt-dark-outline">
+                  <span>Reads every résumé, not the top twenty</span>
+                  <span aria-hidden="true" className="opacity-50">·</span>
+                  <span>Every claim traced to its source</span>
+                  <span aria-hidden="true" className="opacity-50">·</span>
+                  <span>Reversible for 30 days</span>
                 </p>
               </div>
             </div>
 
-            {/* Abstract visual — the pile resolving into one card */}
-            <div className="relative hidden h-full min-h-[520px] lg:col-span-4 lg:block">
-              {/* The unread pile: legible enough to register as people, blurred
-                  enough that you can't act on any of them. */}
-              <div className="absolute inset-0 flex flex-col justify-center gap-3 opacity-30 blur-[3px]">
-                {HERO_PILE.map((row) => (
-                  <div
-                    key={row.name}
-                    className={`flex items-center justify-between gap-3 rounded-[0.25rem] border border-white/[0.06] bg-mkt-dark-surface-variant/60 px-3 py-2.5 ${row.width}`}
-                  >
-                    <span className="mkt-body-sm font-mkt-label text-mkt-dark-fg/70">
-                      {row.name}
-                    </span>
-                    <span className="mkt-data text-mkt-dark-fg/40">
-                      {row.meta}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mkt-float absolute top-1/2 z-20 w-full -translate-y-1/2">
-                <div className="mkt-iris-hairline mb-4 w-full" />
-                <div className="mkt-glass-panel border-l-4 border-l-mkt-primary-container p-6">
-                  <div className="mb-2 flex items-start justify-between">
-                    <span className="font-mkt-mono text-[24px] leading-8 text-mkt-dark-fg">
-                      J. Chen
-                    </span>
-                    <span className="rounded-[0.25rem] bg-mkt-primary-container/10 px-2 py-1 mkt-data font-medium tracking-[0.05em] text-mkt-primary-container">
-                      98% MATCH
-                    </span>
-                  </div>
-                  <p className="mkt-body-sm text-mkt-dark-fg-variant">
-                    Exceptional systems architecture background. Flags: Short
-                    tenure at previous role.
-                  </p>
-
-                  {/* What sits under every claim: the evidence, and the fact
-                      that nobody in the pile went unread to produce it. */}
-                  <dl className="mt-5 flex items-center justify-between border-t border-white/[0.08] pt-4">
-                    {HERO_READOUT.map((stat) => (
-                      <div key={stat.label} className="flex flex-col gap-1">
-                        <dd className="font-mkt-mono text-[16px] leading-none text-mkt-dark-fg">
-                          {stat.value}
-                        </dd>
-                        <dt className="mkt-label-sm text-mkt-dark-outline">
-                          {stat.label}
-                        </dt>
-                      </div>
-                    ))}
-                  </dl>
-                </div>
-              </div>
+            {/* The product, not a metaphor.
+                What used to sit here: six blurred rows of invented applicants
+                behind a floating glass panel reading "J. Chen · 98% MATCH".
+                Three problems, in order of seriousness — 98% is a score this
+                product has never produced (the real top score across twelve
+                candidates was 68); the blur was decoration standing in for a
+                demonstration; and the panel floated on a loop, which is motion
+                that explains nothing.
+                One real card, still, is a stronger claim than a pile of
+                gradients. */}
+            <div className="lg:col-span-5 lg:pl-4">
+              <HeroDecisionCard />
             </div>
-          </div>
-
-          {/* Scroll cue */}
-          <div className="absolute bottom-8 left-1/2 flex -translate-x-1/2 animate-pulse flex-col items-center gap-2 opacity-50">
-            <span className="mkt-data font-medium uppercase tracking-widest text-mkt-dark-fg">
-              Scroll
-            </span>
-            <div className="h-12 w-px bg-mkt-dark-fg" />
           </div>
         </div>
       </section>
