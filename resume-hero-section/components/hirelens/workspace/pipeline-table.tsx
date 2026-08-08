@@ -28,7 +28,7 @@ export interface PipelineTableProps {
   onOpenCandidate: (id: string) => void
 }
 
-const COLUMN_COUNT = 8
+const COLUMN_COUNT = 9
 
 export function PipelineTable({
   rows,
@@ -76,10 +76,21 @@ export function PipelineTable({
                 className="size-3.5 accent-[var(--hl-accent-solid)]"
               />
             </th>
+            {/* Standing under the current sort. The audit's score-compression
+                finding is the reason this column exists: when ten of twelve
+                candidates read "Moderate Match", ORDER is the differentiator
+                the reader can trust — V2 §3.6's rule that position, not hue,
+                carries a sequence. */}
+            <th className="w-10 px-3 py-2 text-right font-medium" aria-label="Position">
+              #
+            </th>
             <th className="px-3 py-2 font-medium">Candidate</th>
             <th className="px-3 py-2 font-medium">Fit</th>
-            <th className="px-3 py-2 font-medium">ATS</th>
-            <th className="px-3 py-2 font-medium">Top skills</th>
+            {/* Numeric column, right-aligned (V2 §14). */}
+            <th className="px-3 py-2 text-right font-medium">ATS</th>
+            {/* Matched skills, not "top skills": evidence against THIS role's
+                requirements rather than generic résumé keywords. */}
+            <th className="px-3 py-2 font-medium">Matched skills</th>
             <th className="px-3 py-2 font-medium">Stage</th>
             <th className="px-3 py-2 font-medium">Verdict</th>
             <th className="px-3 py-2 font-medium">Updated</th>
@@ -100,7 +111,13 @@ export function PipelineTable({
                 ref={virtualizer.measureElement}
                 className={cn(
                   'hl-body border-t border-hl-border-subtle',
-                  selected.has(row.id) ? 'bg-hl-accent-subtle' : 'hover:bg-hl-subtle',
+                  // Selected rows take V2 §14's treatment exactly: the muted
+                  // step plus a 2px copper left border. The old accent tint
+                  // read as "highlighted by the system"; copper-at-the-edge
+                  // reads as "held by you", and stays distinct from hover.
+                  selected.has(row.id)
+                    ? 'bg-hl-muted shadow-[inset_2px_0_0_var(--hl-accent-secondary)]'
+                    : 'hover:bg-hl-subtle',
                 )}
               >
                 <td className="px-3 py-2">
@@ -111,6 +128,12 @@ export function PipelineTable({
                     aria-label={`Select ${row.name}`}
                     className="size-3.5 accent-[var(--hl-accent-solid)]"
                   />
+                </td>
+                {/* Standing under the current sort — mono, because it is a
+                    count, and quiet, because it is context rather than a
+                    score. `item.index` is the post-sort position. */}
+                <td className="hl-mono px-3 py-2 text-right text-hl-fg-tertiary">
+                  {item.index + 1}
                 </td>
                 <td className="px-3 py-2">
                   <div className="flex items-center gap-2">
@@ -125,9 +148,14 @@ export function PipelineTable({
                       className="min-w-0 text-left outline-none"
                     >
                       <p className="hl-body-medium truncate hover:underline">{row.name}</p>
-                      {row.matchCategory ? (
-                        <p className="hl-caption truncate text-hl-fg-tertiary">
-                          {row.matchCategory}
+                      {/* The one-line reason, not the category. Ten of twelve
+                          rows repeating "Moderate Match" said nothing; the
+                          analysis summary is the evidence line the audit asked
+                          for. The category survives only as a fallback for
+                          analyses that produced no summary. */}
+                      {row.summary || row.matchCategory ? (
+                        <p className="hl-caption max-w-[38ch] truncate text-hl-fg-tertiary">
+                          {row.summary ?? row.matchCategory}
                         </p>
                       ) : null}
                     </button>
@@ -145,15 +173,31 @@ export function PipelineTable({
                     <span className="hl-caption text-hl-fg-tertiary">—</span>
                   )}
                 </td>
-                <td className="hl-mono px-3 py-2">
+                {/* Right-aligned numerics (V2 §14), and deliberately tertiary:
+                    the audit found ATS values clustering (49 repeated down the
+                    column), so the number stays available without pretending
+                    to differentiate. */}
+                <td className="hl-mono px-3 py-2 text-right text-hl-fg-tertiary">
                   {row.atsScore !== null ? Math.round(row.atsScore) : '—'}
                 </td>
                 <td className="px-3 py-2">
-                  <div className="flex flex-wrap gap-1">
-                    {row.topSkills.slice(0, 3).map((skill) => (
-                      <Badge key={skill}>{skill}</Badge>
-                    ))}
-                  </div>
+                  {(() => {
+                    // Evidence against this role first; generic top skills only
+                    // when the analysis produced no matches to show.
+                    const skills = row.matchingSkills.length > 0 ? row.matchingSkills : row.topSkills
+                    const shown = skills.slice(0, 3)
+                    const rest = skills.length - shown.length
+                    return (
+                      <div className="flex flex-wrap items-center gap-1">
+                        {shown.map((skill) => (
+                          <Badge key={skill}>{skill}</Badge>
+                        ))}
+                        {rest > 0 ? (
+                          <span className="hl-mono text-hl-fg-tertiary">+{rest}</span>
+                        ) : null}
+                      </div>
+                    )
+                  })()}
                 </td>
                 <td className="px-3 py-2">
                   <StageMenu

@@ -164,7 +164,9 @@ export function PipelineLens({
 
   if (!data || data.length === 0) {
     return (
-      <Card variant="ai">
+      // Plain card, not `variant="ai"`: that variant is the prism-gradient
+      // border V2 §23 removes, and an upload prompt is not AI content anyway.
+      <Card>
         <EmptyState
           variant="first-run"
           icon={Users}
