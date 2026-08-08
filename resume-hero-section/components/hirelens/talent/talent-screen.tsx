@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Search, Sparkles, GitCompare, FolderPlus, X, Bookmark, Users } from 'lucide-react'
+import { Search, GitCompare, FolderPlus, X, Bookmark, Users } from 'lucide-react'
 import { AppShell } from '../shell'
 import { PageHeader } from '../shell/page-header'
 import { useSession } from '../lib/api/use-session'
@@ -21,6 +21,7 @@ import { ComparePanel } from '../workspace/compare-panel'
 import { Button } from '../ui/button'
 import { Skeleton } from '../ui/skeleton'
 import { EmptyState } from '../states/empty-state'
+import { allResultsWeak, topSimilarityPct } from './relevance'
 import { ErrorState } from '../states/error-state'
 import { LoadingScreen } from '../states/loading'
 import { toast } from '../ui/use-toast'
@@ -377,11 +378,7 @@ function AuthedTalent({ initial }: { initial: TalentInitial }) {
                   </div>
                 </EmptyState>
               ) : active.isLoading ? (
-                <div className="flex flex-col gap-2">
-                  {[0, 1, 2, 3].map((index) => (
-                    <Skeleton key={index} className="h-32" />
-                  ))}
-                </div>
+                <SearchingState />
               ) : active.isError ? (
                 <ErrorState
                   variant="inline"
@@ -415,7 +412,6 @@ function AuthedTalent({ initial }: { initial: TalentInitial }) {
                   <div className="mb-3 flex items-center gap-2">
                     {similarSeed ? (
                       <>
-                        <Sparkles className="size-4 text-hl-prism-mid" aria-hidden />
                         <p className="hl-body text-hl-fg-secondary">
                           Similar to <span className="text-hl-fg">{similarSeed.name}</span> ·{' '}
                           {results.length} found
@@ -425,11 +421,13 @@ function AuthedTalent({ initial }: { initial: TalentInitial }) {
                         </Button>
                       </>
                     ) : (
-                      <p className="hl-body text-hl-fg-secondary">
-                        Found {active.data?.count ?? results.length} candidates · strongest first
-                      </p>
+                      <ResultsSummary
+                        count={active.data?.count ?? results.length}
+                        provider={active.data?.provider}
+                      />
                     )}
                   </div>
+                  {allResultsWeak(results) ? <WeakRelevanceNote results={results} /> : null}
                   <ResultsList
                     results={results}
                     selected={selected}
@@ -470,5 +468,101 @@ function AuthedTalent({ initial }: { initial: TalentInitial }) {
         }}
       />
     </AppShell>
+  )
+}
+
+/**
+ * The searching state.
+ *
+ * Embedding the query is a network round trip to the provider: the audit
+ * measured about 2.1s warm and 5–15s from cold. Four grey rectangles said
+ * nothing about that, so a cold start looked like a hang. This says what is
+ * happening, and after a few seconds says why it is still happening — the
+ * honest explanation, not a fabricated progress percentage.
+ */
+function SearchingState() {
+  const [cold, setCold] = React.useState(false)
+
+  React.useEffect(() => {
+    // Past the warm case, so a normal search never shows the cold-start line.
+    const timer = window.setTimeout(() => setCold(true), 3000)
+    return () => window.clearTimeout(timer)
+  }, [])
+
+  return (
+    <div
+      className="rounded-hl-lg border border-hl-border bg-hl-subtle p-4"
+      role="status"
+      aria-live="polite"
+    >
+      <p className="hl-body text-hl-fg-secondary">Matching your description…</p>
+      <span className="mt-2 block h-0.5 w-24 overflow-hidden rounded-full bg-hl-muted" aria-hidden>
+        <span className="hl-indeterminate block h-full w-1/3 rounded-full bg-[var(--hl-accent-secondary)]" />
+      </span>
+      {cold ? (
+        <p className="hl-caption mt-2 text-hl-fg-tertiary">
+          The first search after a while is slower — the embedding model is
+          warming up.
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
+/**
+ * What was actually searched.
+ *
+ * `indexed` IS DELIBERATELY NOT RENDERED AS A POOL SIZE. The obvious reading —
+ * "4 candidates from N indexed" — is wrong: the live response returns
+ * `indexed: 0` alongside four real results, so the field does not mean "how
+ * many candidates are searchable". Rather than guess at its semantics and put
+ * a confident "from 0 indexed" under a list of four people, the screen says
+ * nothing about it. Inventing a meaning for a field is the same failure as
+ * inventing the number itself.
+ *
+ * `provider` is genuine and useful — it names the model that produced the
+ * ranking — but it is a long identifier, so it is truncated with the full
+ * value available on hover.
+ */
+function ResultsSummary({ count, provider }: { count: number; provider?: string }) {
+  return (
+    <div className="flex flex-wrap items-baseline gap-x-2">
+      <p className="hl-body text-hl-fg-secondary">
+        <span className="hl-mono text-hl-fg">{count}</span>{' '}
+        {count === 1 ? 'candidate' : 'candidates'} · strongest first
+      </p>
+      {provider ? (
+        // The model behind the ranking is technical metadata (V2 §4).
+        <span
+          className="hl-caption max-w-[22ch] truncate text-hl-fg-tertiary"
+          title={provider}
+        >
+          <span className="hl-mono">{provider}</span>
+        </span>
+      ) : null}
+    </div>
+  )
+}
+
+/**
+ * The artefact case, said out loud.
+ *
+ * Nothing is hidden or filtered — every result the server returned is still
+ * listed below this note. It exists because vector search cannot decline to
+ * answer, so a query matching nothing still produces a ranked list, and the
+ * reader deserves to be told that is what they are looking at.
+ */
+function WeakRelevanceNote({ results }: { results: SearchResultItem[] }) {
+  return (
+    <div className="mb-3 border-l-2 border-[var(--hl-accent-secondary)] pl-3">
+      <p className="hl-body text-hl-fg-secondary">
+        Nothing here is a close match — the strongest is{' '}
+        <span className="hl-mono">{topSimilarityPct(results)}%</span> similar.
+      </p>
+      <p className="hl-caption mt-0.5 text-hl-fg-tertiary">
+        Search always returns its nearest results, even when none are relevant.
+        Try describing the work rather than a job title.
+      </p>
+    </div>
   )
 }
