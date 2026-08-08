@@ -24,6 +24,7 @@ const model = (over: Partial<CandidateModel> = {}): CandidateModel => ({
   hasAnalysis: true,
   matchCategory: 'strong match',
   confidence: 88,
+  atsScore: 74,
   verdict: 'Advance to onsite',
   verdictReasoning: 'Deep systems background.',
   summary: 'A strong systems engineer.',

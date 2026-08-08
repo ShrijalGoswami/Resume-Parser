@@ -1,5 +1,4 @@
 import * as React from 'react'
-import { Sparkles } from 'lucide-react'
 import { AIAnswer, type AIAnswerSource } from '../../domain'
 import { ConfidencePill } from '../../domain/confidence-pill'
 import { Section, PendingAnalysis } from './primitives'
@@ -33,10 +32,11 @@ export function CandidateVerdict({
       reasoning={model.verdictReasoning || undefined}
       actions={actions}
     >
-      <p className="flex items-center gap-1.5 hl-label-sm font-hl-mono text-hl-fg-tertiary">
-        <Sparkles className="size-3.5 text-hl-prism-mid" aria-hidden />
-        The verdict
-      </p>
+      {/* Was a sparkle in prism blue over a mono label — three V2 violations
+          in one line (§8 no sparkles, §16 copper marks system content, §4
+          mono never labels). The copper rule on the card's edge already says
+          "system-generated"; the label just names the section, in Inter. */}
+      <p className="hl-label-sm text-hl-fg-tertiary">The verdict</p>
       {model.matchCategory ? (
         <p className="hl-h3 mt-1 capitalize text-hl-fg">{model.matchCategory}</p>
       ) : null}

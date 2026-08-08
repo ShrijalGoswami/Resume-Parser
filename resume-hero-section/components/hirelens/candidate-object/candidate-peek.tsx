@@ -12,7 +12,7 @@ import { useCandidateObject, useCandidateShortcuts } from './use-candidate-objec
 import { NoteDialog } from './note-dialog'
 import { CandidateHeader } from './sections/header'
 import { CandidateVerdict } from './sections/ai'
-import { CandidateStrengths, CandidateRisks } from './sections/evidence'
+import { CandidateStrengths, CandidateRisks, CandidateSkills } from './sections/evidence'
 import { CandidateDecisionBar } from './sections/decision-bar'
 
 /**
@@ -90,6 +90,12 @@ export function CandidatePeek({
               <CandidateVerdict model={c.model} onOpenResume={c.openResume} />
               <CandidateStrengths model={c.model} />
               <CandidateRisks model={c.model} />
+              {/* Matched vs missing skills — the checkable half of the read
+                  (from the analysis's structured output), added to the Peek as
+                  a v1.x composition change: an existing section, reused. The
+                  strengths above assert; these chips are what a reader can
+                  verify against the résumé in one glance. */}
+              <CandidateSkills model={c.model} />
             </>
           )}
         </DrawerBody>

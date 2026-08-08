@@ -687,8 +687,12 @@
   --hl-prism-from: #8B7BFF;
   --hl-prism-mid: #6C97FF;
   --hl-prism-to: #7FE2FF;
-  --hl-ai-surface: #0E1226;
-  --hl-ai-border: #2A3160;
+  /* NO TINTED AI SURFACE (V2 §16): AI content sits on the elevated step like
+     everything else; the copper rule carries the meaning. The old values were
+     a navy-blue tint (#0E1226 / #2A3160) — two palettes fighting on every
+     verdict card, brief and Ask answer. */
+  --hl-ai-surface: #1C1F24;
+  --hl-ai-border: #333842;
 
   /* SCORE RAMP (V2 §3.8) — five bands, MONOTONIC IN GREYSCALE.
      Greyscale values run 157 · 135 · 129 · 112 · 90 from best to worst, so
@@ -1601,17 +1605,18 @@
 
   /* Prism gradient border for AI surfaces (§3.3). The fill defaults to the
      canvas; AI blocks set --hl-prism-fill: var(--hl-ai-surface). */
+  /* V2 §16: system-generated content is marked by a single flat copper rule —
+     the gradient border and gradient hairline these classes used to draw are
+     removed by name in §23. The class names survive so every marked surface
+     converts at once; the geometry survives so nothing reflows. */
   .hl-prism-border {
-    border: 1px solid transparent;
-    background:
-      linear-gradient(var(--hl-prism-fill, var(--hl-bg-canvas)), var(--hl-prism-fill, var(--hl-bg-canvas))) padding-box,
-      linear-gradient(120deg, var(--hl-prism-from), var(--hl-prism-mid), var(--hl-prism-to)) border-box;
+    border: 1px solid var(--hl-accent-secondary);
+    background: var(--hl-prism-fill, var(--hl-bg-canvas));
   }
 
-  /* Prism left hairline for AIAnswer blocks (§4.8). */
+  /* Copper left rule for AIAnswer blocks (V2 §16). */
   .hl-prism-edge {
-    border-left: 2px solid transparent;
-    border-image: linear-gradient(180deg, var(--hl-prism-from), var(--hl-prism-to)) 1;
+    border-left: 2px solid var(--hl-accent-secondary);
   }
 
   /* Neutral skeleton fill + sheen sweep (§3.7). */

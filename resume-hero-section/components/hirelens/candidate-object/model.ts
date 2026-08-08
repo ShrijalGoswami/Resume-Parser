@@ -23,6 +23,13 @@ export interface CandidateModel {
   matchCategory: string
   /** Fit confidence 0–100 (null until analyzed). */
   confidence: number | null
+  /**
+   * ATS score 0–100 (null until analyzed). Additive v1.x field: the audit
+   * asked for Fit AND ATS visibility on the drawer, and ATS existed in the
+   * analysis but not in the model. Optional-with-safe-default per the freeze
+   * contract — no existing consumer changes behavior.
+   */
+  atsScore: number | null
   /** The AI's headline call — the Answer of the verdict. */
   verdict: string
   /** The verdict's collapsed reasoning. */
@@ -56,6 +63,7 @@ export function buildCandidateModel(
     hasAnalysis: Boolean(result),
     matchCategory: result?.match_category ?? '',
     confidence: result ? Math.round(result.overall_score ?? 0) : null,
+    atsScore: result?.ats_score != null ? Math.round(result.ats_score) : null,
     verdict: result?.recommendation ?? '',
     verdictReasoning: result?.recommendation_explanation ?? '',
     summary: result?.summary ?? '',
