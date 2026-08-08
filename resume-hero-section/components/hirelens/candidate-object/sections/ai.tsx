@@ -56,11 +56,21 @@ export function CandidateConfidence({ model }: { model: CandidateModel }) {
   )
 }
 
-/** CandidateSummary — the AI's narrative summary of the candidate. */
+/**
+ * CandidateSummary — the analysis's narrative paragraph.
+ *
+ * Titled "Analysis summary" rather than "Summary" for provenance. The audit
+ * flagged a page that appeared to contradict itself — "Moderate Match" beside
+ * a sentence calling someone a strong candidate — but those are two different
+ * backend fields (`match_category`, a band; `summary`, prose), not one
+ * judgment stated inconsistently. Naming the field each string comes from is
+ * the honest repair; rewriting either value to agree with the other would be
+ * inventing scoring, which this product must never do.
+ */
 export function CandidateSummary({ model }: { model: CandidateModel }) {
   if (!model.summary) return null
   return (
-    <Section title="Summary">
+    <Section title="Analysis summary">
       <p className="hl-body text-hl-fg-secondary">{model.summary}</p>
     </Section>
   )

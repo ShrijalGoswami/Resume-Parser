@@ -25,6 +25,10 @@ export {
   CandidateInterviewQuestions,
 } from './sections/evidence'
 export { CandidateResume, CandidateNotes, CandidateActivity } from './sections/record'
+// Additive v1.x sections: the decision facts, and the parsed résumé the claims
+// are checked against (NOT citations — see resume-record.tsx).
+export { CandidateScorecard } from './sections/scorecard'
+export { CandidateResumeRecord } from './sections/resume-record'
 export { CandidateDecisionBar } from './sections/decision-bar'
 
 // Composed surfaces

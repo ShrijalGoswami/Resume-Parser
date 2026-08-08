@@ -22,6 +22,8 @@ import {
   CandidateInterviewQuestions,
 } from './sections/evidence'
 import { CandidateResume, CandidateNotes, CandidateActivity } from './sections/record'
+import { CandidateScorecard } from './sections/scorecard'
+import { CandidateResumeRecord } from './sections/resume-record'
 import { CandidateDecisionBar } from './sections/decision-bar'
 
 function Notice({ title, showSignIn }: { title: string; showSignIn?: boolean }) {
@@ -116,28 +118,56 @@ function AuthedDossier({ roleId, candidateId }: { roleId: string; candidateId: s
 
   return (
     <AppShell breadcrumbs={crumbs} account={account}>
-      <div className="mx-auto flex w-full max-w-[760px] flex-col gap-10 px-6 pb-12 pt-10">
+      {/* THE CASE FILE.
+          The dossier was a 760px column on a 1440px screen: two thirds of the
+          viewport carried nothing, and the reader scrolled past the judgment
+          to reach the material it rests on. It is now two columns — the READ
+          on the left, the RECORD on the right — so a claim and the résumé it
+          came from are on screen together, which is the whole act of checking
+          a hiring decision. Below `lg` it collapses to the original single
+          column and the record follows the read, unchanged in order. */}
+      {/* `pb-24` clears the sticky decision bar. At `pb-12` the bar sat on top
+          of the last ~15px of the page — the missing-skills chips and the end
+          of the activity list were behind it, which is exactly the content a
+          reader is looking at when they reach for Advance. */}
+      <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-8 px-6 pb-24 pt-10">
         <CandidateHeader model={model} />
 
+        {/* The decision's inputs, before the decision's argument. */}
+        <CandidateScorecard model={model} />
+
         {model.hasAnalysis ? (
-          <>
-            <CandidateVerdict model={model} onOpenResume={c.openResume} />
-            <CandidateSummary model={model} />
-            <CandidateStrengths model={model} />
-            <CandidateEvidence model={model} />
-            <CandidateRisks model={model} />
-            <CandidateSkills model={model} />
-            <CandidateInterviewQuestions model={model} />
-          </>
+          <div className="grid grid-cols-1 items-start gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,440px)]">
+            <div className="flex min-w-0 flex-col gap-8">
+              <CandidateVerdict model={model} onOpenResume={c.openResume} />
+              <CandidateSummary model={model} />
+              <CandidateStrengths model={model} />
+              <CandidateEvidence model={model} />
+              <CandidateRisks model={model} />
+              <CandidateSkills model={model} />
+              <CandidateInterviewQuestions model={model} />
+            </div>
+
+            <aside className="flex min-w-0 flex-col gap-8 lg:sticky lg:top-6">
+              <CandidateResumeRecord model={model} />
+              <CandidateResume model={model} onOpenResume={c.openResume} />
+            </aside>
+          </div>
         ) : (
-          <PendingAnalysis />
+          <>
+            <PendingAnalysis />
+            <CandidateResume model={model} onOpenResume={c.openResume} />
+          </>
         )}
 
         <div className="border-t border-hl-border-subtle" />
 
-        <CandidateResume model={model} onOpenResume={c.openResume} />
-        <CandidateNotes roleId={roleId} candidateId={candidateId} />
-        <CandidateActivity roleId={roleId} candidateId={candidateId} />
+        {/* The working record stays full width: notes are written across the
+            page and activity is a timeline, neither belongs in a rail. */}
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+          <CandidateNotes roleId={roleId} candidateId={candidateId} />
+          <CandidateActivity roleId={roleId} candidateId={candidateId} />
+        </div>
       </div>
 
       <CandidateDecisionBar
