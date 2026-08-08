@@ -50,14 +50,23 @@ export function InboxHeader({ name, org }: { name?: string; org?: string }) {
     <header className="flex flex-col gap-5">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
-          {/* `hl-display`, the shell page-title step — not the focal step.
-              Home is a route like Roles or Talent; titling it two steps larger
-              made the greeting shout across the whole product. */}
-          <h1 className="hl-display">
+          {/* The one serif moment in the product (V2 §4: Newsreader, major
+              display headings only). The Dashboard is a morning brief, and the
+              greeting is its masthead — every other title in the app stays
+              Inter. Size unchanged: `hl-display`, the page-title step. */}
+          <h1
+            className="hl-display"
+            style={{
+              fontFamily: 'var(--font-newsreader-hl), Georgia, serif',
+              fontWeight: 500,
+              letterSpacing: '-0.01em',
+            }}
+          >
             {greeting()}
             {first ? `, ${first}` : ''}
           </h1>
-          <p className="hl-body text-hl-fg-tertiary">
+          {/* The dateline is metadata, and metadata is mono (V2 §4). */}
+          <p className="hl-caption text-hl-fg-tertiary font-[family-name:var(--font-hl-mono)]">
             {org ? `${org} · ` : ''}
             {todayLabel()}
           </p>

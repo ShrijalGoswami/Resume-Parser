@@ -23,29 +23,44 @@ import type { SummaryStat } from './inbox-data'
  */
 export function InboxSummary({ stats, loading }: { stats: SummaryStat[]; loading?: boolean }) {
   return (
-    <nav aria-label="Summary" className="hl-stagger grid grid-cols-2 gap-3 sm:grid-cols-4">
+    // ONE QUIET LINE, NOT FOUR TILES. The audit's sharpest finding: four
+    // large metric plates were the first thing on screen, and for most
+    // organizations most mornings they read `0 · 0 · 0 · —` — a telemetry
+    // console announcing emptiness. The counts are navigation, not the news;
+    // the decision queue above is the news. So the strip drops to a single
+    // hairline row of links: mono count, Inter label, no plates, no shadows.
+    // All three data states survive — skeleton, em dash + sr-only reason,
+    // real number — because honesty was never the problem, prominence was.
+    <nav
+      aria-label="Pipeline summary"
+      className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-b border-hl-border-subtle py-3"
+    >
       {stats.map((s) => (
         <Link
           key={s.label}
           href={s.href}
-          className="hl-surface flex flex-col gap-0.5 rounded-hl-lg border border-hl-border px-4 py-3 transition-[box-shadow,border-color,transform] duration-[var(--hl-dur-base)] ease-[var(--hl-ease-out)] hover:-translate-y-0.5 hover:border-hl-border-strong hover:shadow-[var(--hl-shadow-md)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hl-accent"
+          className="group flex items-baseline gap-2 rounded-hl-sm outline-none focus-visible:ring-2 focus-visible:ring-hl-accent"
         >
           {loading ? (
-            <Skeleton className="h-8 w-12" />
+            <Skeleton className="h-4 w-6" />
           ) : s.value === null ? (
             <>
-              {/* An em dash, not a zero and not a blank. The tile keeps its
-                  shape so the row does not reflow, and the reason is available
-                  to anyone who cannot see that it is a dash. */}
-              <span className="hl-metric-sm text-hl-fg-tertiary" aria-hidden>
+              <span
+                className="hl-caption text-hl-fg-tertiary font-[family-name:var(--font-hl-mono)]"
+                aria-hidden
+              >
                 —
               </span>
               <span className="sr-only">{s.label}: count unavailable</span>
             </>
           ) : (
-            <span className="hl-metric-sm text-hl-fg">{s.value}</span>
+            <span className="hl-caption text-hl-fg font-[family-name:var(--font-hl-mono)]">
+              {s.value}
+            </span>
           )}
-          <span className="hl-label text-hl-fg-tertiary">{s.label}</span>
+          <span className="hl-caption text-hl-fg-tertiary transition-colors group-hover:text-hl-fg-secondary">
+            {s.label}
+          </span>
         </Link>
       ))}
     </nav>

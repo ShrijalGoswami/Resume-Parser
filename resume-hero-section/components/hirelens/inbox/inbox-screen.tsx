@@ -57,16 +57,13 @@ function InboxSkeleton() {
         <Skeleton className="h-9 w-64" />
         <Skeleton className="h-4 w-40" />
       </div>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-[68px]" />
-        ))}
-      </div>
       <div className="flex flex-col gap-2">
         {Array.from({ length: 3 }).map((_, i) => (
           <Skeleton key={i} className="h-24" />
         ))}
       </div>
+      {/* The pipeline strip is a single hairline row now, not four tiles. */}
+      <Skeleton className="h-11" />
     </div>
   )
 }
@@ -235,23 +232,34 @@ function AuthedInbox() {
         }
       />
     )
-  } else {
+  } else if (recommendations.length > 0) {
     body = (
-      <>
-        {recommendations.length > 0 ? (
-          <InboxPriorityQueue
-            recommendations={recommendations}
-            aiReviewCount={reviewCount}
-            onUpdate={onUpdate}
-            pendingId={pendingId}
-            onOpenCandidate={openCandidate}
-            onPrefetchCandidate={prefetchCandidate}
-          />
-        ) : null}
-        <InboxActivityFeed events={events} />
-      </>
+      <InboxPriorityQueue
+        recommendations={recommendations}
+        aiReviewCount={reviewCount}
+        onUpdate={onUpdate}
+        pendingId={pendingId}
+        onOpenCandidate={openCandidate}
+        onPrefetchCandidate={prefetchCandidate}
+      />
+    )
+  } else {
+    // Recommendations resolved to none, but the workspace is alive (the feed
+    // has events). The brief still answers its question out loud: a calm
+    // sentence, not an empty region the reader has to interpret.
+    body = (
+      <p className="border-l-2 border-[var(--hl-accent-secondary)] py-0.5 pl-3 hl-body text-hl-fg-secondary">
+        Nothing is waiting on your decision right now.
+      </p>
     )
   }
+
+  // The feed is the record, not the news: it renders after the queue and the
+  // pipeline line, and only when the queue itself isn't loading or failed.
+  const feed =
+    !recs.isLoading && !recs.isError && events.length > 0 ? (
+      <InboxActivityFeed events={events} />
+    ) : null
 
   return (
     <AppShell breadcrumbs={INBOX_CRUMBS} account={account}>
@@ -264,8 +272,13 @@ function AuthedInbox() {
             first, not buried in Settings where they would meet the wall before
             the warning. Founding and unlimited orgs never see it. */}
         <QuotaMeter metric="resumes" />
-        <InboxSummary stats={stats} loading={analytics.isLoading} />
+        {/* Brief order (audit): the decisions first, then the pipeline line,
+            then the record. The four-tile strip that used to open the screen
+            is now the quiet hairline row after the queue — the counts are
+            navigation, and navigation does not lead a morning brief. */}
         {body}
+        <InboxSummary stats={stats} loading={analytics.isLoading} />
+        {feed}
       </div>
       {selected ? (
         <CandidatePeek

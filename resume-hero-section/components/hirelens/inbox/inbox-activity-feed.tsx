@@ -17,7 +17,13 @@ export function InboxActivityFeed({ events }: { events: ActivityEvent[] }) {
 
   return (
     <section aria-labelledby="inbox-activity-heading" className="flex flex-col gap-4">
-      <h2 id="inbox-activity-heading" className="hl-h2 text-hl-fg">
+      {/* The record, deliberately quieter than the queue: a label-step
+          heading, not a section title — the audit's point was that the feed
+          had become the main content, and type scale is where that started. */}
+      <h2
+        id="inbox-activity-heading"
+        className="hl-label uppercase tracking-wide text-hl-fg-tertiary"
+      >
         Recent activity
       </h2>
       {groups.map((group) => (

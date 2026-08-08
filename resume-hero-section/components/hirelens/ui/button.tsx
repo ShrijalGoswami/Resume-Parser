@@ -33,23 +33,24 @@ const buttonVariants = cva(
         // Primary carries weight as well as fill — it should be the single
         // heaviest thing on the screen it lives on.
         //
-        // The fill is `hl-gradient-cta`, NOT the identity gradient: the CTA cut
-        // is deepened so a white label clears WCAG AA (4.5:1) along the whole
-        // sweep. White on the identity gradient's blue stop measures 3.71:1 and
-        // would fail here. See the gradient token block in globals.css.
-        //
-        // Hover brightens and adds the accent glow rather than darkening —
-        // a gradient that darkens on hover reads as being pressed, not as
-        // being reachable.
+        // FLAT FILL, NOT A GRADIENT (V2 §7/§12). This was `hl-gradient-cta`,
+        // the violet identity gradient with a hover glow — both of which V2
+        // §23 removes by name. The fill is the accent solid (terracotta in
+        // dark, where white clears AA at 4.54:1), and hover DEEPENS to the
+        // accent-hover step: V2 buttons never brighten and never glow.
         primary:
-          'hl-gradient-cta font-semibold text-white shadow-[var(--hl-shadow-xs)] hover:shadow-[var(--hl-shadow-glow)]',
+          'bg-hl-accent font-semibold text-white shadow-[var(--hl-shadow-xs)] hover:bg-[var(--hl-accent-hover)]',
         // Secondary must stay elegant without disappearing: a real border and
         // full-strength foreground, not a tinted ghost.
         secondary:
           'border border-hl-border-strong bg-hl-canvas text-hl-fg hover:border-hl-border-strong hover:bg-hl-subtle',
         ghost: 'text-hl-fg-secondary hover:bg-hl-subtle hover:text-hl-fg',
+        // The SOLID danger tone, not the text tone: `--hl-danger` is the
+        // AA-safe TYPE colour (#E07A7A in dark — white on it fails), while
+        // `--hl-danger-solid` is the fill white labels were measured on
+        // (6.51:1 in dark). The two-tone contract is the same as the accent's.
         danger:
-          'bg-[color:var(--hl-danger)] font-semibold text-white hover:brightness-95',
+          'bg-[color:var(--hl-danger-solid)] font-semibold text-white hover:brightness-95',
         ai: 'hl-prism-border text-hl-fg hover:brightness-[0.97]',
       },
       size: {

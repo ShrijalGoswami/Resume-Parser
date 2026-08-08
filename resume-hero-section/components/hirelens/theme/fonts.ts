@@ -1,4 +1,4 @@
-import { Inter, JetBrains_Mono } from 'next/font/google'
+import { Inter, JetBrains_Mono, Newsreader } from 'next/font/google'
 
 /**
  * HireLens product type system (Design Bible §3.8).
@@ -35,5 +35,21 @@ export const fontMono = JetBrains_Mono({
   display: 'swap',
 })
 
+/**
+ * Newsreader — MAJOR display headings only (Design System V2 §4, decided).
+ *
+ * This partially supersedes the 29 Jul note above: V2 keeps Inter for every
+ * page title, control and label (the July reasoning stands — no serif on
+ * furniture), but reserves a serif for the handful of true display moments,
+ * and the approved V2 direction names Newsreader as that serif — the same
+ * voice the marketing site already speaks. First consumer: the Dashboard
+ * greeting. Anything below `hl-display` size must not use it.
+ */
+export const fontSerif = Newsreader({
+  subsets: ['latin'],
+  variable: '--font-newsreader-hl',
+  display: 'swap',
+})
+
 /** Space-separated font-variable class names for the product shell root. */
-export const fontVariables = `${fontSans.variable} ${fontMono.variable}`
+export const fontVariables = `${fontSans.variable} ${fontMono.variable} ${fontSerif.variable}`
