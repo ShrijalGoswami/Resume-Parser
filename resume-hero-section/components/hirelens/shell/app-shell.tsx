@@ -36,9 +36,12 @@ export function AppShell({ children, account, ...topBarProps }: AppShellProps) {
         <main
           id="hl-main"
           tabIndex={-1}
-          // `hl-canvas-wash` puts one soft prism bloom behind the content so a
-          // sparse screen has atmosphere rather than a flat fill.
-          className="hl-canvas-wash flex-1 overflow-y-auto outline-none"
+          // The prism bloom that used to sit here is gone (V2 §2, §23). It was
+          // three violet/cyan radial gradients behind every authenticated
+          // screen — atmosphere standing in for substance, and it tinted every
+          // neutral surface above it, which defeats the point of a neutral
+          // ramp. V2's answer to a sparse screen is space and typography.
+          className="flex-1 overflow-y-auto outline-none"
         >
           {/* `flex flex-col` is here so a screen can say `flex-1` and actually
               fill the viewport. `min-h-full` alone gives this wrapper a minimum,

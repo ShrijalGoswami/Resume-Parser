@@ -1,6 +1,6 @@
 'use client'
 
-import { Sparkles } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { useShell } from './shell-context'
 import { Kbd } from '../ui/kbd'
 import { Notifications } from './notifications'
@@ -54,11 +54,14 @@ export function TopBar({ breadcrumbs, title, unreadCount }: TopBarProps) {
         // the caption it was.
         className="hl-prism-focus group inline-flex h-hl-control-md w-80 max-w-[45vw] items-center gap-2.5 rounded-hl-md border border-hl-border bg-hl-subtle px-3.5 text-left outline-none transition-[background-color,border-color,box-shadow] duration-[var(--hl-dur-base)] ease-[var(--hl-ease-out)] hover:border-hl-border-strong hover:bg-hl-canvas hover:shadow-[var(--hl-shadow-sm)]"
       >
-        {/* Prism sparkle marks this as the AI-aware entry point (§3.3). It
-            saturates on hover, so the AI signature responds to intent rather
-            than sitting at full strength permanently. */}
-        <Sparkles
-          className="size-hl-icon-md shrink-0 text-hl-prism-mid opacity-70 transition-[opacity,transform] duration-[var(--hl-dur-base)] ease-[var(--hl-ease-out)] group-hover:scale-110 group-hover:opacity-100"
+        {/* Was a prism sparkle "marking the AI-aware entry point". V2 §8/§23
+            removes it: this control is a SEARCH field first — that is what a
+            recruiter comes here to do — and labelling it with the AI glyph
+            advertised the technology rather than the task. A magnifier says
+            what the control does, and the placeholder already says it also
+            answers questions. */}
+        <Search
+          className="size-hl-icon-md shrink-0 text-hl-fg-tertiary transition-colors duration-[var(--hl-dur-base)] ease-[var(--hl-ease-out)] group-hover:text-hl-fg-secondary"
           aria-hidden
         />
         <span className="hl-body flex-1 truncate text-hl-fg-tertiary">

@@ -393,10 +393,17 @@
   --hl-shadow-lg:
     0 4px 8px rgba(30, 41, 59, 0.05),
     0 24px 56px -12px rgba(30, 41, 59, 0.14);
-  /* Accent-tinted glow. ONLY for the primary CTA and live AI surfaces — a
-     coloured shadow on an ordinary card reads as a bug, not as premium. */
-  --hl-shadow-glow: 0 6px 20px -4px rgba(109, 94, 248, 0.35);
-  --hl-shadow-glow-strong: 0 8px 28px -4px rgba(109, 94, 248, 0.45);
+  /* GLOW REMOVED (V2 §7, §23). These were accent-tinted coloured shadows —
+     the single loudest "AI product" signal in the old palette, and explicitly
+     out of scope for V2, which forbids drop shadows for layout entirely and
+     builds elevation from the background step plus a border.
+
+     The tokens are KEPT rather than deleted, resolved to `none`, so that every
+     existing consumer keeps compiling while the screens are migrated one at a
+     time. They are removed for real once no rule references them — grep
+     `shadow-glow` before deleting. */
+  --hl-shadow-glow: none;
+  --hl-shadow-glow-strong: none;
 
   /* Raised surface — the plane a card sits on, one step above the canvas.
      In light mode the canvas is off-white and cards go pure white, which is
@@ -499,10 +506,12 @@
     radial-gradient(720px circle at 62% 96%, rgba(167, 139, 250, 0.06), transparent 70%),
     linear-gradient(180deg, #FFFFFF 0%, #F8FAFF 40%, #F3F8FF 100%);
 
-  /* Radius (§3.9) */
-  --hl-radius-sm: 6px;
-  --hl-radius-md: 8px;
-  --hl-radius-lg: 12px;
+  /* Radius (V2 §6) — sharper than before. 6px on a 36px control reads soft;
+     4px reads like an instrument. No pills anywhere: a fully rounded button
+     is a consumer-app gesture and this product is used for hours. */
+  --hl-radius-sm: 4px;   /* buttons, inputs, chips, badges */
+  --hl-radius-md: 8px;   /* cards, modals, popovers */
+  --hl-radius-lg: 12px;  /* full-bleed panels only */
   --hl-radius-xl: 16px;
 
   /* Motion (§3.13). Only the steps the product actually animates on are
@@ -630,35 +639,48 @@
 
 /* --- Dark (§3.1–3.7) ---------------------------------------------------- */
 [data-hl-theme='dark'] .hl {
-  /* Dark is a deep navy-violet, not a neutral charcoal — the same hue family
-     as light, rotated to the bottom of the lightness range. A neutral-gray
-     dark mode under a violet accent is the tell that a palette was designed
-     in light and ported. */
-  --hl-bg-canvas: #0A0C18;
-  --hl-bg-subtle: #0F1220;
-  --hl-bg-muted: #161A2C;
-  --hl-bg-inset: #1E2338;
-  --hl-border-subtle: #191D30;
-  --hl-border-default: #262B45;
-  --hl-border-strong: #373D5E;
-  --hl-text-primary: #EEF0FA;
-  --hl-text-secondary: #A8AFC9;
-  /* Held to the full AA floor for the same reason as its light counterpart.
-     Measures 5.55 / 5.31 / 4.92 on canvas / subtle / muted. */
-  --hl-text-tertiary: #7F88A8;
-  --hl-text-disabled: #454B66;
+  /* DESIGN SYSTEM V2 — deep matte charcoal, deliberately NEUTRAL.
+     The previous ramp was a navy-violet tuned to a violet accent. V2 replaces
+     that accent with burnt terracotta, and a blue-cast neutral under a warm
+     accent reads as two palettes fighting. These steps are near-hueless so the
+     terracotta is the only chromatic thing on screen — which is the point:
+     attention goes to the action and the evidence, not to the furniture. */
+  --hl-bg-canvas: #121417;
+  --hl-bg-subtle: #1C1F24;
+  --hl-bg-muted: #252930;
+  --hl-bg-inset: #0F1115;   /* input wells sit BELOW the canvas, not above */
+  --hl-border-subtle: #22262C;
+  /* Card edges. Texture, not structure — 1.57:1 on canvas, deliberately below
+     the 3:1 non-text floor because elevation is carried by the background
+     step (#121417 → #1C1F24), not by this line. See --hl-border-strong for
+     boundaries that must actually be perceivable. */
+  --hl-border-default: #333842;
+  --hl-border-strong: #606A7C;   /* 3.38:1 on canvas — real dividers, focus containers */
+  --hl-text-primary: #F2F4F7;    /* 16.75:1 on canvas */
+  --hl-text-secondary: #9EA4B0;  /* 7.37:1 */
+  --hl-text-tertiary: #8D939F;   /* 6.11:1 — still full AA for metadata */
+  /* WCAG 1.4.3 exempts inactive controls; lifting this would make disabled
+     read as enabled. 3.39:1 keeps it legible without claiming to be active. */
+  --hl-text-disabled: #646A75;
 
-  /* Brightened for dark while keeping white-label AA: white on this measures
-     4.90:1, and it holds 3.97:1 against the dark canvas so focus rings and the
-     active-nav marker stay above the 3:1 non-text floor (WCAG 1.4.11). */
-  --hl-accent-solid: #6A5AEC;
-  --hl-accent-hover: #7F70FF;
-  --hl-accent-text: #A99CFF;   /* 8.24:1 on canvas, 6.93:1 on its own tint */
-  --hl-accent-subtle-bg: #1E1B3E;
-  --hl-accent-border: #322D6B;
+  /* ACCENT — Burnt terracotta (V2 §3.3).
+     FILL ONLY. #B85C38 measures 4.06:1 on canvas and 3.64:1 on elevated —
+     both under AA — so it is a beautiful button and an inaccessible link.
+     White on it measures 4.54:1, which is why it works as a fill. Anything
+     that carries TYPE uses --hl-accent-text, which is lifted to clear AA on
+     both surfaces (5.04 / 4.52). The two are not interchangeable. */
+  --hl-accent-solid: #B85C38;
+  --hl-accent-hover: #9E4D2E;
+  --hl-accent-text: #C86D49;
+  --hl-accent-subtle-bg: #241713;
+  --hl-accent-border: #4A2A1C;
 
-  --hl-accent-secondary: #B9A5FF;
-  --hl-accent-secondary-soft: #D2C6FF;
+  /* Copper — focus rings, active nav, the system-generated-content rule.
+     6.40:1 on canvas, so unlike terracotta it is safe as a line AND as type.
+     Deliberately the marker colour rather than the accent: navigation state
+     and focus must not compete with the primary action. */
+  --hl-accent-secondary: #C48B71;
+  --hl-accent-secondary-soft: #D8AC98;
 
   /* Prism lifts in dark so the gradient still reads against a near-black
      canvas — the same three hues, one step brighter. */
@@ -668,55 +690,100 @@
   --hl-ai-surface: #0E1226;
   --hl-ai-border: #2A3160;
 
-  /* On dark the vivid tone IS the accessible tone — #3DDC97 measures 11.7:1
-     on the canvas — so the two-tone split inverts: the base token carries the
-     bright colour and `-solid` matches it. The pair is kept so a component
-     can reference either without knowing which theme is active. */
-  --hl-score-infocus: #7FE2FF;
-  --hl-score-infocus-bg: #0A2733;
-  --hl-score-sharp: #4FE0A8;
-  --hl-score-sharp-bg: #0C2A1E;
-  --hl-score-legible: #FFC46B;
-  --hl-score-legible-bg: #2B2008;
-  --hl-score-soft: #FFA070;
-  --hl-score-soft-bg: #2C1A0E;
-  --hl-score-outfocus: #FF8A80;
-  --hl-score-outfocus-bg: #2E1418;
+  /* SCORE RAMP (V2 §3.8) — five bands, MONOTONIC IN GREYSCALE.
+     Greyscale values run 157 · 135 · 129 · 112 · 90 from best to worst, so
+     desaturating the UI never makes a worse score look better than a better
+     one. That property is the whole point: the previous ramp mixed cyan,
+     mint, amber and coral, which are vivid but not ordered — cyan reads
+     LIGHTER than mint, so "best" and "second best" swapped places in
+     greyscale and for anyone with a colour vision deficiency.
 
-  --hl-score-infocus-solid: #66D9FF;
-  --hl-score-sharp-solid: #3DDC97;
-  --hl-score-legible-solid: #FFB84D;
-  --hl-score-soft-solid: #FF9052;
-  --hl-score-outfocus-solid: #FF6B6B;
+     The numeral is always shown alongside (V2 §21). Colour reinforces the
+     number; it never replaces it. */
+  --hl-score-infocus: #8FA678;      /* >= 85  grey 157 */
+  --hl-score-infocus-bg: #1B2118;
+  --hl-score-sharp: #7F8C7A;        /* >= 70  grey 135 */
+  --hl-score-sharp-bg: #1A1F19;
+  --hl-score-legible: #A87A32;      /* >= 55  grey 129 */
+  --hl-score-legible-bg: #241C0E;
+  --hl-score-soft: #8A6A55;         /* >= 40  grey 112 */
+  --hl-score-soft-bg: #201813;
+  --hl-score-outfocus: #6B5450;     /* <  40  grey  90 */
+  --hl-score-outfocus-bg: #1E1614;
 
-  --hl-success: #4FE0A8;
-  --hl-success-solid: #3DDC97;
-  --hl-success-bg: #0C2A1E;
-  --hl-warning: #FFC46B;
-  --hl-warning-solid: #FFB84D;
-  --hl-warning-bg: #2B2008;
-  --hl-danger: #FF8A80;
-  --hl-danger-solid: #FF6B6B;
-  --hl-danger-bg: #2E1418;
-  --hl-info: #8FAFFF;
-  --hl-info-solid: #4F7CFF;
-  --hl-info-bg: #101B38;
+  --hl-score-infocus-solid: #8FA678;
+  --hl-score-sharp-solid: #7F8C7A;
+  --hl-score-legible-solid: #A87A32;
+  --hl-score-soft-solid: #8A6A55;
+  --hl-score-outfocus-solid: #6B5450;
 
-  --hl-confidence-high: #4FE0A8;
-  --hl-confidence-med: #FFC46B;
-  --hl-confidence-low: #8A91AD;
+  /* SEMANTIC SCALE (V2 §3.4).
+     Luminance here is deliberately BALANCED, not spread — these states always
+     carry an icon and a text label, so hue may repeat what the label already
+     says. Spreading luminance would make "success" and "danger" look unequal
+     in weight, which is worse than them being close.
+     Every `-solid` below is a FILL; every base token is safe as TYPE. */
+  --hl-success: #8FA678;        /* 6.94:1 */
+  --hl-success-solid: #5C6B4B;  /* white label 5.74:1 */
+  --hl-success-bg: #1B2118;
+  --hl-warning: #D9A441;        /* 8.20:1 */
+  --hl-warning-solid: #A87A32;  /* takes a DARK label — white on it is 3.82:1 and fails */
+  --hl-warning-bg: #241C0E;
+  /* Danger is deeper and cooler than the terracotta accent on purpose. The
+     primary action and the destructive action must never be the same colour;
+     the V4 reference used terracotta for both the "New role" button and the
+     "no credits left" banner, and they became indistinguishable. */
+  --hl-danger: #E07A7A;         /* 6.36:1 */
+  --hl-danger-solid: #A33A3A;   /* white label 6.51:1 */
+  --hl-danger-bg: #241414;
+  --hl-neutral: #9EA4B0;        /* 7.37:1 */
+  --hl-neutral-solid: #3A4048;
+  --hl-neutral-bg: #1A1D22;
+  /* `--hl-info*` is defined once, further down with the other dark tokens. */
 
-  /* Chart marks lift in dark so a thin bar or line still separates from a
-     near-black plot area. */
-  --hl-chart-1: #8B7BFF;
-  --hl-chart-2: #6C97FF;
-  --hl-chart-3: #7FE2FF;
-  --hl-chart-4: #4FE0A8;
-  --hl-chart-5: #C4B5FD;
-  --hl-chart-6: #FFC46B;
+  /* PIPELINE STAGES (V2 §3.6) — luminance rises with progression so the
+     sequence is legible without hue. `rejected` sits off the ramp because it
+     is terminal, not advanced. Stages must ALSO be ordered by position. */
+  --hl-stage-sourced: #5A6470;
+  --hl-stage-screening: #6E7A80;
+  --hl-stage-shortlisted: #7F8C7A;
+  --hl-stage-interview: #9A8A5E;
+  --hl-stage-offer: #B58A55;
+  --hl-stage-hired: #8FA678;
+  --hl-stage-rejected: #6B5450;
 
-  --hl-skeleton-base: #161A2C;
-  --hl-skeleton-sheen: #1E2338;
+  /* `--hl-chart-*` is defined once, further down with the other dark tokens. */
+
+  /* STATE (V2 §3.9) */
+  --hl-focus-ring: #C48B71;     /* copper, never terracotta */
+  --hl-selection-bg: #4A3F28;   /* search-match highlight inside résumé text */
+  --hl-selection-fg: #F2F4F7;
+  --hl-info: #7FB0B8;           /* 7.74:1 */
+  --hl-info-solid: #3E6B72;     /* white label 5.91:1 */
+  --hl-info-bg: #14201F;
+
+  /* Confidence reuses the semantic scale rather than a parallel one — "low
+     confidence" IS a warning, and giving it its own hue meant two colours
+     saying the same thing. */
+  --hl-confidence-high: #8FA678;
+  --hl-confidence-med: #D9A441;
+  --hl-confidence-low: #9EA4B0;
+
+  /* CHART SERIES (V2 §3.7) — luminance deliberately SPREAD (min gap 22/255 in
+     greyscale), because a chart has no room for a label on every mark. The
+     previous set was violet/blue/cyan/mint, which is vivid but collapses:
+     cyan and mint sit 2/255 apart in greyscale, and under deuteranopia the
+     first and fourth series were the same colour. All six below stay
+     separable in greyscale and under both common CVD types. */
+  --hl-chart-1: #AC5634;   /* grey 110 */
+  --hl-chart-2: #548E97;   /* grey 132 */
+  --hl-chart-3: #8BA373;   /* grey 154 */
+  --hl-chart-4: #D6AC29;   /* grey 176 */
+  --hl-chart-5: #D2C1DC;   /* grey 198 */
+  --hl-chart-6: #ECD9D0;   /* grey 220 */
+
+  --hl-skeleton-base: #252930;
+  --hl-skeleton-sheen: #2A2E37;
 
   /* Dark elevation adds a hairline inset — shadows read weakly on dark (§3.9) */
   /* Dark elevation. Shadows read weakly on dark, so each step carries a
@@ -738,10 +805,10 @@
     0 16px 40px rgba(0, 0, 0, 0.6),
     0 32px 64px -16px rgba(0, 0, 0, 0.55);
 
-  /* Accent glow carries further on dark, so the alpha comes down rather than
-     up — the same apparent intensity against a darker field. */
-  --hl-shadow-glow: 0 6px 22px -4px rgba(109, 94, 248, 0.42);
-  --hl-shadow-glow-strong: 0 8px 30px -4px rgba(109, 94, 248, 0.55);
+  /* GLOW REMOVED (V2 §7, §23) — see the note on the light definition. Kept as
+     `none` so existing consumers compile while screens migrate. */
+  --hl-shadow-glow: none;
+  --hl-shadow-glow-strong: none;
 
   --hl-bg-raised: #12162A;
   /* On dark this is the whole trick: a lit top edge turns a flat rectangle
@@ -774,13 +841,18 @@
 
      Dark therefore inherits the light AA-tuned cut, and this block sets no
      `--hl-gradient-cta*` at all. */
-  --hl-canvas-wash:
-    radial-gradient(620px circle at 12% 6%, rgba(139, 123, 255, 0.10), transparent 70%),
-    radial-gradient(520px circle at 88% 2%, rgba(127, 226, 255, 0.07), transparent 70%),
-    radial-gradient(720px circle at 62% 96%, rgba(167, 139, 250, 0.06), transparent 70%),
-    linear-gradient(180deg, #0A0C18 0%, #0C0F1E 45%, #0E1226 100%);
+  /* WASH REMOVED (V2 §2, §23). This was three violet/cyan "prism blooms"
+     behind every authenticated screen. It is the same instinct as the
+     constellation on the marketing site — atmosphere standing in for
+     substance — and it tints every neutral surface it sits under, which
+     defeats the point of a neutral ramp.
 
-  --hl-scrim: rgba(6, 8, 18, 0.62);
+     V2's answer to a sparse screen is space and typography, not a bloom.
+     Resolved to a flat canvas; the token is kept so `.hl-canvas-wash` and any
+     other consumer keeps compiling during the screen-by-screen migration. */
+  --hl-canvas-wash: none;
+
+  --hl-scrim: rgba(10, 12, 14, 0.66);
 }
 
 /* --- Tailwind v4 mapping (utilities: bg-hl-*, text-hl-*, border-hl-*, …) --- */
@@ -1694,13 +1766,14 @@
 
   /* The active nav item: a soft violet plate with a lit edge, not a flat
      fill. The gradient indicator itself is the marker span in `left-nav`. */
+  /* Active nav row (V2 §15). Was a tinted accent gradient with a lit top edge.
+     V2 states the rail is chrome and should be the calmest surface on screen:
+     a full tinted plate makes the navigation compete with the content it is
+     pointing at, and the accent belongs to the primary ACTION, not to "you are
+     here". A flat neutral surface plus the copper marker carries the state,
+     and the label's weight carries it again for anyone who cannot see either. */
   .hl-nav-active {
-    background-image: linear-gradient(
-      to right,
-      color-mix(in srgb, var(--hl-accent-solid) 13%, transparent),
-      color-mix(in srgb, var(--hl-accent-solid) 5%, transparent)
-    );
-    box-shadow: inset 0 1px 0 0 var(--hl-surface-highlight);
+    background-color: var(--hl-bg-muted);
   }
 
   /* --- AI identity ---------------------------------------------------- */

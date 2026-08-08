@@ -3,7 +3,7 @@ import {
   Briefcase,
   Users,
   ClipboardList,
-  Sparkles,
+  MessageSquareText,
   BookText,
   GraduationCap,
   Settings,
@@ -105,7 +105,10 @@ export const navGroups: NavGroup[] = [
       {
         label: 'Ask',
         href: '/ask',
-        icon: Sparkles,
+        // MessageSquareText, not Sparkles (V2 §8/§23). The rail names
+        // destinations; a sparkle names a technology. Every other row here
+        // says what you will find when you arrive, and this one should too.
+        icon: MessageSquareText,
         isActive: (p) => p.startsWith('/ask'),
         shortcut: 'G K',
         perm: PERMS.AI_USE,

@@ -11,7 +11,7 @@ import {
   Sun,
   Moon,
   Monitor,
-  Sparkles,
+  Lock,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { navGroups, settingsNav, type NavItem } from './nav-config'
@@ -57,7 +57,7 @@ function NavLink({
         'transition-[background-color,color,transform] duration-[var(--hl-dur-base)] ease-[var(--hl-ease-out)]',
         collapsed && 'justify-center px-0',
         active
-          ? 'hl-nav-active text-hl-accent-fg'
+          ? 'hl-nav-active text-hl-fg'
           // HOVER IS NEUTRAL. IT MUST NOT BE THE ACCENT.
           // Inactive rows used to hover to `bg-hl-accent-subtle` (#F0EDFE),
           // which is within a hair of the plate the ACTIVE row carries
@@ -87,7 +87,15 @@ function NavLink({
           // permanent glow bolted to the navigation is the clearest case of
           // that. The rail is chrome and should be the calmest surface on
           // screen — the marker identifies the page, it does not announce it.
-          className="hl-gradient-primary absolute left-0 top-1/2 h-7 w-[3px] -translate-y-1/2 rounded-r-full"
+          //
+          // V2 §15: COPPER, FLAT, SQUARE. Copper rather than terracotta so the
+          // navigation cannot be mistaken for the primary action — terracotta
+          // is reserved for "do this", and a rail that shouts in the CTA colour
+          // competes with the one button on screen that matters. Flat because
+          // §7 forbids gradients on furniture. Square-ended because a rounded
+          // cap on a 3px bar reads soft at the exact scale where precision is
+          // the point.
+          className="absolute left-0 top-1/2 h-7 w-[3px] -translate-y-1/2 bg-[var(--hl-accent-secondary)]"
           aria-hidden
         />
       ) : null}
@@ -115,7 +123,12 @@ function NavLink({
               key-hint rather than crowding it, because a shortcut to a locked
               screen is not the thing worth advertising. */}
           {locked ? (
-            <Sparkles
+            // V2 §8/§23 removes sparkles from the product. Here the glyph was
+            // doubly wrong: a sparkle is the AI-theatre icon, and this mark
+            // does not mean AI — it means "your plan does not include this".
+            // A lock says exactly that, and says it to someone who has never
+            // seen the product before.
+            <Lock
               className="size-3.5 shrink-0 text-hl-fg-tertiary"
               strokeWidth={1.8}
               aria-hidden
