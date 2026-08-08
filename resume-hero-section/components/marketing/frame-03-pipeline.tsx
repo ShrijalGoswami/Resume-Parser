@@ -1,6 +1,7 @@
 'use client'
 
 import { Counter, Reveal } from './motion'
+import { EditorialBackdrop } from './fx/editorial-backdrops'
 
 /**
  * Frame 3 — `hirelens_marketing_the_decision_pipeline_frame_3`.
@@ -54,7 +55,40 @@ const TRIAGE_FEED = [
   { name: 'H. Nakamura', verdict: 'Filtered', because: 'Below level for scope', tone: 'fail', at: '0:11' },
   { name: 'P. Varga', verdict: 'Held', because: 'Strong, adjacent domain', tone: 'hold', at: '0:19' },
   { name: 'A. Okonkwo', verdict: 'Advanced', because: 'Owned ingestion at scale', tone: 'pass', at: '0:26' },
+  { name: 'M. Davis', verdict: 'Advanced', because: 'Event-driven re-platform', tone: 'pass', at: '0:31' },
+  { name: 'S. Lindqvist', verdict: 'Filtered', because: 'Duplicate application', tone: 'fail', at: '0:38' },
 ]
+
+/** Stage 01 — what the run was calibrated against. These are the chips the
+ *  console header carries so the funnel below reads as measured against
+ *  something, not as arbitrary percentages. */
+const ROLE_REQUIREMENTS = ['Go', 'Distributed systems', 'Owned prod at scale', 'IC5+']
+
+/** Stage 01 — the cohort itself, compressed to a band of initials. Opacity
+ *  encodes the verdict; the four warm marks are the ones a human still needs
+ *  to look at. Everyone else is dimmed, not deleted. */
+const CANDIDATE_BAND = [
+  { initials: 'RK', state: 'review' },
+  { initials: 'HN', state: 'out' },
+  { initials: 'AO', state: 'review' },
+  { initials: 'PV', state: 'held' },
+  { initials: 'MD', state: 'review' },
+  { initials: 'SL', state: 'out' },
+  { initials: 'JT', state: 'out' },
+  { initials: 'CB', state: 'held' },
+  { initials: 'EW', state: 'out' },
+  { initials: 'NV', state: 'review' },
+  { initials: 'LM', state: 'out' },
+  { initials: 'GK', state: 'out' },
+  { initials: 'DS', state: 'held' },
+  { initials: 'FA', state: 'out' },
+] as const
+
+const BAND_STATE = {
+  review: 'border-mkt-accent/50 bg-mkt-accent-bg text-mkt-accent-text',
+  held: 'border-mkt-border bg-mkt-subtle text-mkt-fg-secondary',
+  out: 'border-mkt-border-subtle bg-mkt-canvas text-mkt-fg-tertiary opacity-45',
+} as const
 
 const FEED_TONE = {
   pass: 'text-mkt-focus-high',
@@ -87,13 +121,34 @@ const REASONING_CHAIN = [
   { node: 'Recommendation', detail: '1 primary · 1 alternate' },
 ]
 
+/**
+ * A carry-mark: the count that crosses a section seam, stated where it
+ * crosses. Three of these turn the whitespace between the stages into the
+ * pauses of one countdown — the memo's trail, stretched over the page.
+ * Deliberately tiny; a short copper rule and a number, nothing more.
+ */
+function CarrySeam({ label }: { label: string }) {
+  return (
+    <div className="flex flex-col items-center">
+      <span className="h-10 w-px bg-mkt-prism-cyan/60" aria-hidden="true" />
+      <span className="mt-2.5 rounded-[0.25rem] border border-mkt-border-subtle bg-mkt-canvas px-2.5 py-1 font-mkt-mono text-[11px] tracking-wide text-mkt-fg-secondary">
+        {label}
+      </span>
+      <span className="mt-2.5 h-4 w-px bg-mkt-prism-cyan/40" aria-hidden="true" />
+    </div>
+  )
+}
+
 export function Frame03Pipeline() {
   return (
     <div className="w-full bg-mkt-canvas">
       {/* ---------------------------------------------------------------- */}
       {/* THE DECISION PIPELINE                                             */}
       {/* ---------------------------------------------------------------- */}
-      <section className="mx-auto flex w-full max-w-[1440px] flex-col items-center px-6 py-24 md:px-12 md:py-32">
+      <section className="relative isolate mx-auto flex w-full max-w-[1440px] flex-col items-center overflow-hidden px-6 py-24 md:px-12 md:py-32">
+        {/* Scatter on the left, rows right of center, one ringed mark at the
+            far edge — the section's own claim, drawn once, behind it. */}
+        <EditorialBackdrop variant="stages" />
         <Reveal className="mb-16 w-full">
           {/* Scrollable on narrow screens: seven labelled stages will not fit
               a phone, and crushing them is worse than letting them run. */}
@@ -152,6 +207,11 @@ export function Frame03Pipeline() {
             One instrument, from the whole pile to the right decision — and back,
             learning each time.
           </h2>
+        </Reveal>
+
+        {/* The thread leaves this section carrying what triage kept. */}
+        <Reveal delay={200} className="mt-16">
+          <CarrySeam label="30 carried forward" />
         </Reveal>
       </section>
 
@@ -213,7 +273,22 @@ export function Frame03Pipeline() {
         </Reveal>
 
         <Reveal delay={100} className="order-1 lg:order-2">
-          <div className="mkt-lift relative overflow-hidden rounded-mkt-xl border border-mkt-border bg-mkt-raised shadow-[var(--mkt-shadow-card-raised)]">
+          <div className="relative">
+            {/* The rest of the pile, still physically present behind the
+                console — depth, not decoration: triage sits on top of 250
+                sheets, and the composition should say so. */}
+            <div
+              className="pointer-events-none absolute -top-4 -right-4 bottom-8 left-8 hidden rotate-[1.6deg] rounded-mkt-xl border border-mkt-border-subtle bg-mkt-raised/80 lg:block"
+              aria-hidden="true"
+            >
+              <div className="space-y-3 p-6 opacity-40 blur-[2px]">
+                {[82, 64, 91, 55, 73].map((w, i) => (
+                  <div key={i} className="h-2 rounded-full bg-mkt-border" style={{ width: `${w}%` }} />
+                ))}
+              </div>
+            </div>
+
+            <div className="mkt-lift relative overflow-hidden rounded-mkt-xl border border-mkt-border bg-mkt-raised shadow-[var(--mkt-shadow-card-raised)]">
             <div className="mkt-grid-light pointer-events-none absolute inset-0 opacity-60" aria-hidden="true" />
 
             {/* Console header */}
@@ -221,12 +296,28 @@ export function Frame03Pipeline() {
               <div className="flex items-center gap-2">
                 <span className="mkt-live-dot h-1.5 w-1.5 rounded-full bg-mkt-focus-high" />
                 <span className="mkt-data text-mkt-fg-secondary">
-                  Triage · Senior Backend Engineer
+                  HireLens Triage · Senior Backend Engineer
                 </span>
               </div>
               <span className="mkt-data text-mkt-fg-tertiary">
                 250 inbound
               </span>
+            </div>
+
+            {/* What this run was calibrated against — the bar the funnel
+                below is measuring candidates over. */}
+            <div className="relative flex flex-wrap items-center gap-1.5 border-b border-mkt-border-subtle px-5 py-2.5">
+              <span className="mr-1 mkt-label-sm text-mkt-fg-tertiary">
+                Calibrated on
+              </span>
+              {ROLE_REQUIREMENTS.map((req) => (
+                <span
+                  key={req}
+                  className="rounded-[0.25rem] border border-mkt-border-subtle bg-mkt-subtle px-2 py-0.5 mkt-data text-mkt-fg-secondary"
+                >
+                  {req}
+                </span>
+              ))}
             </div>
 
             <div className="relative space-y-6 p-5 md:p-6">
@@ -236,6 +327,7 @@ export function Frame03Pipeline() {
                   { label: 'Applicants read', value: 250, pct: 100, tone: 'bg-mkt-border-strong' },
                   { label: 'Met the bar', value: 88, pct: 35, tone: 'bg-mkt-focus-sharp' },
                   { label: 'Viable for this role', value: 30, pct: 12, tone: 'bg-mkt-focus-high' },
+                  { label: 'Need a human decision', value: 4, pct: 3, tone: 'bg-mkt-accent' },
                 ].map((row, i) => (
                   <div key={row.label}>
                     <div className="mb-1.5 flex items-baseline justify-between">
@@ -294,6 +386,22 @@ export function Frame03Pipeline() {
                 </ul>
               </div>
 
+              {/* The cohort itself, as a band of initials: dimmed means
+                  reasoned out, warm means a human still looks. */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                {CANDIDATE_BAND.map((candidate) => (
+                  <span
+                    key={candidate.initials}
+                    className={`flex h-7 w-7 items-center justify-center rounded-full border font-mkt-mono text-[10px] ${BAND_STATE[candidate.state]}`}
+                  >
+                    {candidate.initials}
+                  </span>
+                ))}
+                <span className="ml-1 mkt-data text-mkt-fg-tertiary">
+                  +236 · each with a reason
+                </span>
+              </div>
+
               {/* Verdicts landing. */}
               <div>
                 <div className="mb-2 flex items-center gap-2">
@@ -315,7 +423,7 @@ export function Frame03Pipeline() {
                         {entry.name}
                       </span>
                       <span
-                        className={`w-16 shrink-0 ${FEED_TONE[entry.tone as keyof typeof FEED_TONE]}`}
+                        className={`w-20 shrink-0 ${FEED_TONE[entry.tone as keyof typeof FEED_TONE]}`}
                       >
                         {entry.verdict}
                       </span>
@@ -327,14 +435,26 @@ export function Frame03Pipeline() {
                 </ul>
               </div>
             </div>
+            </div>
           </div>
+        </Reveal>
+
+        {/* What survives triage, handed to the next stage. The explicit
+            order matters: the siblings carry order-1/order-2 at lg, and an
+            unordered grid item would sort BEFORE them — the seam must stay
+            the section's last word. */}
+        <Reveal delay={120} className="order-3 mt-2 lg:col-span-2">
+          <CarrySeam label="12 to deep review" />
         </Reveal>
       </section>
 
       {/* ---------------------------------------------------------------- */}
       {/* STAGE 02 — DEEP REVIEW                                            */}
       {/* ---------------------------------------------------------------- */}
-      <section className="w-full bg-mkt-subtle">
+      <section className="relative isolate w-full overflow-hidden bg-mkt-subtle">
+        {/* The close read: margin rules, annotation ticks, one passage that
+            mattered — the mood of the verification console beside it. */}
+        <EditorialBackdrop variant="evidence" />
         <div className="mx-auto grid max-w-[1440px] grid-cols-1 items-center gap-16 px-6 py-24 md:px-12 lg:grid-cols-2 lg:gap-20">
           <Reveal className="order-1">
             <div className="mkt-lift relative overflow-hidden rounded-mkt-xl border border-mkt-border bg-mkt-raised shadow-[var(--mkt-shadow-card-raised)]">
@@ -453,27 +573,55 @@ export function Frame03Pipeline() {
               fit objectively.
             </p>
 
-            <ul className="mt-2 space-y-3 border-t border-mkt-border pt-6">
-              {[
-                ['Every score opens to the span it came from', 'description'],
-                ['Thin evidence is labelled thin, never rounded up', 'visibility'],
-                ['Competencies come from your calibration, not a template', 'tune'],
-              ].map(([copy, icon]) => (
-                <li key={copy} className="flex items-start gap-3">
-                  <span
-                    className="material-symbols-outlined mt-px text-[16px] text-mkt-accent-text"
-                    aria-hidden="true"
-                  >
-                    {icon}
-                  </span>
-                  <span className="mkt-body-sm text-mkt-fg-secondary">
-                    {copy}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            {/* The trace, drawn once: how any number in the panel opposite
+                can be walked back to the sentence it came from. This is the
+                differentiator, so it gets a diagram, not bullet points. */}
+            <div className="mt-2 border-t border-mkt-border pt-6">
+              <p className="mb-4 mkt-label text-mkt-fg-tertiary">
+                Every number traces back
+              </p>
+              <ol className="relative">
+                {(
+                  [
+                    ['Claim', '“Led the re-platforming… 40k req/s”', 'the sentence on the résumé'],
+                    ['Source span', 'Résumé · page 2 · role 2 of 5', 'where it was said'],
+                    ['Competency', 'System architecture · Validated', 'what it supports'],
+                    ['Confidence', '88 · shown, never rounded up', 'how much weight it holds'],
+                  ] as const
+                ).map(([step, detail, gloss], i, steps) => (
+                  <li key={step} className="relative flex gap-4 pb-5 last:pb-0">
+                    {/* The copper thread the whole product hangs from. */}
+                    <div className="flex flex-col items-center">
+                      <span
+                        className={`mt-1 h-2 w-2 shrink-0 rounded-full ${
+                          i === steps.length - 1 ? 'bg-mkt-accent' : 'border border-mkt-prism-cyan bg-mkt-canvas'
+                        }`}
+                        aria-hidden="true"
+                      />
+                      {i < steps.length - 1 && (
+                        <span className="mt-1 w-px flex-1 bg-mkt-prism-cyan/50" aria-hidden="true" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline gap-3">
+                        <span className="font-mkt-label text-base font-medium text-mkt-fg">
+                          {step}
+                        </span>
+                        <span className="mkt-data text-mkt-fg-tertiary">{gloss}</span>
+                      </div>
+                      <p className="mt-0.5 mkt-data text-mkt-fg-secondary">{detail}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
           </Reveal>
         </div>
+
+        {/* The four the evidence could not separate — a person decides. */}
+        <Reveal delay={120} className="pb-16">
+          <CarrySeam label="4 to decide" />
+        </Reveal>
       </section>
 
       {/* ---------------------------------------------------------------- */}
@@ -528,6 +676,30 @@ export function Frame03Pipeline() {
 
         <Reveal delay={100} className="order-1 lg:order-2">
           <div className="mkt-lift overflow-hidden rounded-mkt-xl border border-mkt-border bg-mkt-raised shadow-[var(--mkt-shadow-card-raised)]">
+            {/* The compression the memo stands on — the whole pipeline,
+                restated as five numbers ending in this document. */}
+            <div className="flex items-center justify-between gap-2 overflow-x-auto border-b border-mkt-border-subtle bg-mkt-subtle/60 px-5 py-2.5 font-mkt-mono text-[11px] text-mkt-fg-tertiary md:px-6">
+              {[
+                ['250', 'read'],
+                ['30', 'triaged'],
+                ['12', 'reviewed'],
+                ['4', 'compared'],
+                ['1', 'decision'],
+              ].map(([count, stage], i) => (
+                <span key={stage} className="flex shrink-0 items-center gap-2">
+                  {i > 0 && (
+                    <span className="text-mkt-prism-cyan" aria-hidden="true">
+                      →
+                    </span>
+                  )}
+                  <span>
+                    <span className={i === 4 ? 'text-mkt-accent-text' : 'text-mkt-fg'}>{count}</span>{' '}
+                    {stage}
+                  </span>
+                </span>
+              ))}
+            </div>
+
             <div className="mkt-prism-edge-bottom bg-mkt-canvas p-5 md:p-6">
               <div className="mb-4 flex items-start justify-between">
                 <div>
@@ -538,12 +710,35 @@ export function Frame03Pipeline() {
                     Generated for Role ID: 884-A · 4 candidates compared
                   </p>
                 </div>
-                <span
-                  className="material-symbols-outlined text-xl text-mkt-accent"
-                  aria-hidden="true"
-                >
-                  auto_awesome
+                <span className="rounded-[0.25rem] bg-mkt-accent-bg px-2 py-1 mkt-label-sm text-mkt-accent-text">
+                  HireLens
                 </span>
+              </div>
+
+              {/* The four still standing, scored — the two who don't make
+                  the memo stay visible, dimmed rather than deleted. */}
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                {(
+                  [
+                    ['AO', 91, 'Primary', true],
+                    ['MD', 82, 'Alternate', true],
+                    ['RK', 77, '', false],
+                    ['PV', 64, '', false],
+                  ] as const
+                ).map(([initials, score, role, kept]) => (
+                  <span
+                    key={initials}
+                    className={`flex items-center gap-2 rounded-[0.25rem] border px-2 py-1 mkt-data ${
+                      kept
+                        ? 'border-mkt-accent/40 bg-mkt-accent-bg text-mkt-fg'
+                        : 'border-mkt-border-subtle text-mkt-fg-tertiary opacity-60'
+                    }`}
+                  >
+                    <span className="font-mkt-mono">{initials}</span>
+                    <span className="font-mkt-mono">{score}</span>
+                    {role && <span className="text-mkt-accent-text">{role}</span>}
+                  </span>
+                ))}
               </div>
 
               {/* Who it lands on, and who it would have landed on instead. */}

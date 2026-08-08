@@ -3,6 +3,7 @@
 import Link from 'next/link'
 
 import { Reveal } from './motion'
+import { EditorialBackdrop } from './fx/editorial-backdrops'
 
 /**
  * Frame 4 — `hirelens_marketing_the_regret_climax_frame_4`.
@@ -97,6 +98,9 @@ export function Frame04Regret() {
       {/* ---------------------------------------------------------------- */}
       <section className="relative overflow-hidden border-t border-mkt-border-strong bg-mkt-ink px-4 py-32 text-mkt-canvas">
         <div className="mkt-aurora" />
+        {/* The signal that was there all along: one warm beam through the
+            dark, landing on the single bright sliver among dim strokes. */}
+        <EditorialBackdrop variant="signal" zBase />
 
         <div className="relative z-10 mx-auto max-w-[1280px]">
           <Reveal className="mx-auto mb-16 max-w-4xl text-center">
@@ -259,7 +263,8 @@ export function Frame04Regret() {
       {/* ---------------------------------------------------------------- */}
       {/* AI DIFFERENTIATION                                                */}
       {/* ---------------------------------------------------------------- */}
-      <section className="border-b border-mkt-border-subtle bg-mkt-canvas px-4 py-32">
+      <section className="relative isolate overflow-hidden border-b border-mkt-border-subtle bg-mkt-canvas px-4 py-32">
+        <EditorialBackdrop variant="paper" />
         <div className="mx-auto max-w-[1280px]">
           <Reveal className="mx-auto mb-16 max-w-3xl text-center">
             <h2 className="font-mkt-display text-4xl leading-tight font-light text-mkt-fg md:text-5xl md:leading-none">
@@ -273,8 +278,10 @@ export function Frame04Regret() {
             {/* Tenet 1 — the prism mark */}
             <Reveal className="group flex flex-col items-start gap-6 border-t border-mkt-border-subtle py-7 md:flex-row md:items-center">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-mkt-lg border border-mkt-border bg-mkt-canvas shadow-sm transition-shadow duration-300 group-hover:shadow-md">
+                {/* Was `auto_awesome` — a sparkle, which V2 §8 bans outright.
+                    Evidence gets an evidence mark, not AI theatre. */}
                 <span className="material-symbols-outlined mkt-prism-text" aria-hidden="true">
-                  auto_awesome
+                  fact_check
                 </span>
               </div>
               <div className="flex-1">

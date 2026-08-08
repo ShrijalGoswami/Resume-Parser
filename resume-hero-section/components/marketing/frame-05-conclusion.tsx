@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 
 import { Reveal } from './motion'
+import { EditorialBackdrop } from './fx/editorial-backdrops'
 import {
   FEATURES,
   FEATURE_KEYS,
@@ -69,13 +70,16 @@ import { useCurrencyPreference } from './pricing/use-currency-preference'
  * with numbers someone measured.
  */
 
-/** The shape of the work HireLens is built around, told as the sequence it
- *  happens in. Illustrative of the flow, attributed to nobody. */
-const STORY_TIMELINE = [
-  { day: 'Intake', event: 'Every applicant read in full', tone: 'neutral' },
-  { day: 'Triage', event: 'The few worth your time, each exclusion reasoned', tone: 'neutral' },
-  { day: 'Review', event: 'Deep reviews with evidence attached to every claim', tone: 'neutral' },
-  { day: 'Decide', event: 'The call, its reasoning, and what you traded away', tone: 'good' },
+/** The lifecycle of one decision, as the ledger keeps it — including the
+ *  part no other tool shows: the decision coming back, and surviving.
+ *  Illustrative of the product's flow (same fictional role and approver used
+ *  across the page), attributed to no real customer. */
+const STORY_LEDGER = [
+  { at: '14:02', actor: 'K. Osei', event: 'Approved A. Okonkwo · Role 884-A', tone: 'neutral' },
+  { at: '14:02', actor: 'HireLens', event: 'Memo, evidence and alternates sealed', tone: 'neutral' },
+  { at: 'Day 12', actor: 'K. Osei', event: 'Decision reopened — new reference signal', tone: 'reopened' },
+  { at: 'Day 12', actor: 'HireLens', event: 'Evidence re-run · alternate re-compared', tone: 'neutral' },
+  { at: 'Day 13', actor: 'K. Osei', event: 'Re-decided: A. Okonkwo confirmed', tone: 'good' },
 ]
 
 /** The last beat of the story: the decision, kept. */
@@ -151,7 +155,9 @@ export function Frame05Conclusion() {
       {/* ---------------------------------------------------------------- */}
       {/* CUSTOMER STORY                                                    */}
       {/* ---------------------------------------------------------------- */}
-      <section className="mx-auto max-w-[1280px] border-b border-mkt-subtle bg-mkt-canvas px-8 py-32">
+      <section className="relative isolate mx-auto max-w-[1280px] overflow-hidden border-b border-mkt-subtle bg-mkt-canvas px-8 py-32">
+        {/* Morning light through a tall window: the work under control. */}
+        <EditorialBackdrop variant="daylight" />
         <div className="grid grid-cols-1 items-center gap-16 lg:grid-cols-12">
           <div className="lg:col-span-7">
             <h2 className="mb-8 font-mkt-display text-4xl leading-tight text-mkt-fg md:text-5xl md:leading-none">
@@ -197,42 +203,67 @@ export function Frame05Conclusion() {
           <div className="hidden lg:col-span-5 lg:block">
             <div className="relative aspect-[3/4] overflow-hidden rounded-mkt-lg border border-mkt-subtle">
               <div className="absolute inset-0 flex items-center justify-center bg-mkt-subtle/50">
+                {/* Warm-graded into the hero's world: charcoal shadows,
+                    copper-warm highlights — no longer the cold grayscale
+                    stock atrium that could belong to any company. */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/marketing/atrium.png"
                   alt=""
-                  className="h-full w-full object-cover opacity-80 grayscale"
+                  className="h-full w-full object-cover opacity-90"
+                  style={{
+                    filter:
+                      'grayscale(1) sepia(0.42) hue-rotate(-14deg) saturate(1.15) brightness(0.88) contrast(1.06)',
+                  }}
+                />
+                {/* The hero's light, borrowed: warmth falling from the upper
+                    left, ink gathering at the base for the card to sit on. */}
+                <div
+                  className="absolute inset-0"
+                  aria-hidden="true"
+                  style={{
+                    background: [
+                      'radial-gradient(90% 60% at 18% 8%, rgba(196, 139, 113, 0.22), transparent 70%)',
+                      'linear-gradient(180deg, rgba(18, 20, 23, 0.05) 30%, rgba(13, 16, 19, 0.62) 100%)',
+                    ].join(', '),
+                  }}
                 />
               </div>
 
-              {/* The story's arithmetic, floated over the image so the column
-                  carries the result and not just the atmosphere. */}
+              {/* The ledger itself, floated over the image: one decision's
+                  whole life — made, sealed, reopened, and re-decided. */}
               <div className="absolute inset-x-4 bottom-4 rounded-mkt-lg border border-white/15 bg-mkt-ink/85 p-5 backdrop-blur-md">
                 <div className="mb-4 flex items-baseline justify-between border-b border-white/10 pb-3">
-                  <span className="mkt-label text-white/50">How a role runs</span>
-                  {/* Was a `<Counter to={9} suffix=" days" />` — a fabricated
-                      time-to-hire presented as a measured result. */}
-                  <span className="mkt-data text-white/70">Four stages</span>
+                  <span className="whitespace-nowrap mkt-label text-white/50">Decision ledger</span>
+                  <span className="mkt-data text-white/70">Reversible 30 days</span>
                 </div>
 
                 <ol className="space-y-2.5">
-                  {STORY_TIMELINE.map((step) => (
-                    <li key={step.day} className="flex items-start gap-3">
+                  {STORY_LEDGER.map((entry) => (
+                    <li key={`${entry.at}-${entry.event}`} className="flex items-start gap-3">
                       <span
                         className={`mt-1.5 h-1 w-1 shrink-0 rounded-full ${
-                          step.tone === 'good' ? 'bg-mkt-focus-sharp' : 'bg-white/35'
+                          entry.tone === 'good'
+                            ? 'bg-mkt-focus-sharp'
+                            : entry.tone === 'reopened'
+                              ? 'bg-mkt-dark-primary'
+                              : 'bg-white/35'
                         }`}
                         aria-hidden="true"
                       />
-                      <span className="w-14 shrink-0 mkt-data text-white/45">
-                        {step.day}
+                      <span className="w-14 shrink-0 whitespace-nowrap mkt-data text-white/45">
+                        {entry.at}
                       </span>
                       <span
                         className={`mkt-body-sm ${
-                          step.tone === 'good' ? 'text-white' : 'text-white/70'
+                          entry.tone === 'good'
+                            ? 'text-white'
+                            : entry.tone === 'reopened'
+                              ? 'text-[#dfb39e]'
+                              : 'text-white/70'
                         }`}
                       >
-                        {step.event}
+                        {entry.event}
                       </span>
                     </li>
                   ))}
@@ -420,7 +451,9 @@ export function Frame05Conclusion() {
       {/* ---------------------------------------------------------------- */}
       <section className="relative overflow-hidden bg-mkt-ink py-32 md:py-40">
         <div className="mkt-aurora" />
-        <div className="mkt-grid-dark pointer-events-none absolute inset-0 opacity-70" aria-hidden="true" />
+        {/* Full circle: the hero's weather settled into a warm horizon. The
+            engineering grid is gone — the page closes on light, not lines. */}
+        <EditorialBackdrop variant="horizon" zBase />
         <div className="mkt-vignette-dark pointer-events-none absolute inset-0" aria-hidden="true" />
 
         <div className="relative z-10 mx-auto max-w-4xl px-8 text-center">
