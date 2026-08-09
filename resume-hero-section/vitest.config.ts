@@ -15,6 +15,14 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: { '@': root },
+    alias: {
+      '@': root,
+      // `next/font/google` is a build-time construct with no runtime module —
+      // see tests/stubs/next-font-google.ts. Test environment only; the real
+      // loader is untouched in every build.
+      'next/font/google': fileURLToPath(
+        new URL('./tests/stubs/next-font-google.ts', import.meta.url),
+      ),
+    },
   },
 })
