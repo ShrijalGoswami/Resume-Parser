@@ -14,7 +14,6 @@ import { useCandidateDetail, getCandidateResult } from '../lib/api/candidate'
 import { LoadingScreen } from '../states/loading'
 import { ErrorState } from '../states/error-state'
 import { Button } from '../ui/button'
-import { Kbd } from '../ui/kbd'
 import { toast } from '../ui/use-toast'
 import { focusBand } from '../lib/focus-scale'
 import { useCan, PERMS } from '../lib/use-can'
@@ -37,17 +36,6 @@ function Notice({ title, showSignIn }: { title: string; showSignIn?: boolean }) 
         </Button>
       ) : null}
     </div>
-  )
-}
-
-function isEditable(target: EventTarget | null): boolean {
-  const el = target as HTMLElement | null
-  if (!el) return false
-  return (
-    el.tagName === 'INPUT' ||
-    el.tagName === 'TEXTAREA' ||
-    el.tagName === 'SELECT' ||
-    el.isContentEditable === true
   )
 }
 
@@ -181,20 +169,23 @@ function MemoLayout({
   const approve = React.useCallback(() => resolve('approved', 'Approved'), [resolve])
   const override = React.useCallback(() => resolve('dismissed', 'Overridden'), [resolve])
 
-  // Enter approves (Stitch ⏎). Dormant in fields / dialogs.
-  React.useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.metaKey || event.ctrlKey || event.altKey) return
-      if (isEditable(event.target)) return
-      if (document.querySelector('[role="dialog"][data-state="open"]')) return
-      if (event.key === 'Enter') {
-        event.preventDefault()
-        approve()
-      }
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [approve])
+  // NO GLOBAL ENTER-TO-APPROVE.
+  //
+  // This screen used to bind `keydown` on `window` and approve on Enter. Its
+  // only guards were modifier keys, editable targets and an open dialog — it
+  // never checked that focus was on, or even inside, this memo. So Enter with
+  // focus on the body, a link, or the nav rail recorded an approval, and
+  // `preventDefault()` swallowed whatever the focused element would have done.
+  //
+  // That is an irreversible write — the database freezes `decided_at`/
+  // `decided_by` and refuses re-decision — reachable from a keystroke the
+  // reader never aimed at this control. A stray Enter is not consent.
+  //
+  // Approving now requires an explicit action on the button: a click, or Enter
+  // or Space while it is focused, which the browser already gives every
+  // <button> natively. Nothing replaces the global listener, because the
+  // correct number of ways to irreversibly approve a hiring decision without
+  // touching the control is zero.
 
   const crumbs = [{ label: roleTitle, href: `/roles/${roleId}` }, { label: 'Decision' }]
 
@@ -218,8 +209,12 @@ function MemoLayout({
           </div>
           {canDecide ? (
             <div className="flex shrink-0 items-center gap-2">
+              {/* The `⏎` hint is gone with the global handler it advertised —
+                  a badge promising a shortcut that no longer exists would be
+                  worse than no badge. The button still takes Enter/Space when
+                  focused, which is the browser's own behaviour. */}
               <Button variant="primary" onClick={approve} loading={update.isPending}>
-                Approve <Kbd className="ml-1">⏎</Kbd>
+                Approve
               </Button>
               <Button variant="ghost" onClick={override} disabled={update.isPending}>
                 Override
