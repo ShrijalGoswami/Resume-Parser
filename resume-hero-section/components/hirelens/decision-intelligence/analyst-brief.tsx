@@ -1,7 +1,6 @@
 import * as React from 'react'
-import { Sparkles, TriangleAlert } from 'lucide-react'
+import { TriangleAlert } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { confidenceMeta } from './confidence-chip'
 import type { RecommendationSignal } from './signals'
 import type { Recommendation } from '@/types/agent'
 
@@ -30,13 +29,15 @@ function Row({
   )
 }
 
+/* Inter, not mono (V2 §4): a source name like "Campaign Analytics" is a label,
+   not data. Mono is reserved for scores, ids, counts and timestamps. */
 function Chips({ items }: { items: string[] }) {
   return (
     <div className="flex flex-wrap gap-1.5">
       {items.map((item) => (
         <span
           key={item}
-          className="rounded-hl-sm border border-hl-border bg-hl-canvas px-2 py-0.5 hl-caption font-hl-mono text-hl-fg-secondary"
+          className="rounded-hl-sm border border-hl-border bg-hl-canvas px-2 py-0.5 hl-caption text-hl-fg-secondary"
         >
           {item}
         </span>
@@ -59,15 +60,14 @@ export function AnalystBrief({
   signals: RecommendationSignal[]
   watchouts: string[]
 }) {
-  const { label: confidenceLabel } = confidenceMeta(rec.confidence)
-  const sourceCount = rec.data_sources.length
-
   return (
-    <section className="hl-prism-edge rounded-hl-lg border border-hl-ai-border bg-hl-ai-surface p-5">
-      <p className="mb-3 flex items-center gap-1.5 hl-label-sm font-hl-mono text-hl-fg-tertiary">
-        <Sparkles className="size-3.5 text-hl-prism-mid" aria-hidden />
-        Analyst brief
-      </p>
+    // V2 §16: AI output is a brief, not a conversation, and it sits on the same
+    // elevated surface as everything else. The 2px copper top rule is the single
+    // marker for system-generated content — no tinted plate, no prism edge, no
+    // sparkle. `--hl-ai-surface` and `--hl-ai-border` are on §23's banned list
+    // precisely because tinting AI content is the template tell.
+    <section className="rounded-hl-lg border border-hl-border border-t-2 border-t-[var(--hl-accent-secondary)] bg-hl-subtle p-5">
+      <p className="mb-3 hl-label-sm text-hl-fg-secondary">System analysis</p>
       <div>
         {rec.recommended_action ? (
           <Row label="Recommendation">{rec.recommended_action}</Row>
@@ -94,13 +94,18 @@ export function AnalystBrief({
             {watchouts.join(' · ')}
           </Row>
         ) : null}
-        <Row label="Confidence">
-          {confidenceLabel}
-          {sourceCount > 0 ? ` · ${sourceCount} source${sourceCount === 1 ? '' : 's'}` : ''}
-        </Row>
+        {/* The confidence row that used to sit here repeated the chip in the
+            header verbatim — the same words twice, one scroll apart. What the
+            reader cannot get from the chip is what the number was computed
+            FROM, so provenance takes the space instead. */}
         {rec.data_sources.length > 0 ? (
-          <Row label="Sources">
+          <Row label="Read from">
             <Chips items={rec.data_sources} />
+          </Row>
+        ) : null}
+        {rec.tools_used.length > 0 ? (
+          <Row label="Tools run">
+            <Chips items={rec.tools_used} />
           </Row>
         ) : null}
       </div>
