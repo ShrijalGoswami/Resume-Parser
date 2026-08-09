@@ -243,3 +243,5 @@ openapi*.tmp.json
 # control — where it outlives any deletion request.
 backend/eval-runs/
 eval-runs/
+/Redesignv4
+/Test Resume/
