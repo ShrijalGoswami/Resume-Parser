@@ -1,6 +1,6 @@
 # HireLens — Engineering Handoff
 
-**Written:** 2 Aug 2026 · **Updated:** 5 Aug 2026, end of day ·
+**Written:** 2 Aug 2026 · **Updated:** 9 Aug 2026, end of day ·
 **Replaces** the previous handoff entirely
 (recoverable at `git show e76df63:docs/HANDOFF.md`)
 
@@ -8,6 +8,14 @@ This document is written to be read **alone**. Nothing in it depends on chat
 history. If you are opening this repository for the first time — or starting a
 new session tomorrow — this is the only file you need to understand where the
 project stands.
+
+> **9 Aug 2026 — the active work is now §0, the Design System V2 product
+> redesign.** **The programme is complete: fifteen screens redesigned and
+> committed on `manus-ui-v1`, with nothing left uncommitted.** Learning is
+> deferred (no backend). Read §0 before anything else — including **§0.10**,
+> which records an agent recommendation that was approved outside deliberate QA
+> and the safety fix that followed. The AI (§11) and billing (§11A) milestones
+> are unchanged.
 
 > **Starting a session? Read in this order.**
 > §1 (repository state, and how to run it) → §12 (what is done, what is verified,
@@ -57,17 +65,291 @@ project stands.
 
 ---
 
+## 0. ACTIVE MILESTONE — Design System V2 product redesign (9 Aug 2026)
+
+> **Read this first if you are resuming work.** It supersedes §11/§11S as the
+> thing currently being worked on. The AI and billing milestones below are
+> unchanged and untouched by this program.
+
+**Branch:** `manus-ui-v1`. **Backend is frozen for this program** — no scoring,
+parser, embedding, contract or schema changes have been made, and none are
+permitted without stopping and asking.
+
+### 0.1 What this program is
+
+Applying `Redesignv4/DESIGN_SYSTEM_V2.md` to the product, **one screen at a
+time**. The operating rule, agreed with the product owner and not to be
+relaxed: *inspect the existing implementation and its backend contract →
+implement → verify in Chrome with real data → typecheck + full test suite +
+production build + fresh-reload console check → **stop and wait for approval**
+→ commit only when told.* One screen per commit.
+
+The recurring discovery across every screen: **the backend was already sending
+far more than the UI rendered.** Comparison rendered four of eight sections;
+Candidate Detail dropped rank, score components, ATS breakdown and the parsed
+résumé; Talent Search never showed `provider`. Most of this work was rendering
+fields that already existed, not inventing features.
+
+### 0.2 Completed and committed (in order)
+
+| Commit | Screen | Substance |
+|---|---|---|
+| `3b3c9a2` | **Landing (LOCKED)** | Direction C: focus thread, carry-marks, warmed ledger. Treat as frozen; the hero video `Landing page.mp4` must not be modified, recoloured, cropped or regenerated. |
+| `d33682d` | Dashboard | Telemetry console → morning decision brief. Four metric tiles → one hairline row; queue leads with the candidate. Also fixed the shared Button primitive (violet gradient + glow → flat accent; danger used the AA *text* tone as a fill). |
+| `1d08b94` | Candidate Table | Rank column, analysis summary replaces repeated "Moderate Match", matched-skills evidence, copper selection. |
+| `18a86a8` | Candidate Drawer | Copper evidence marks product-wide (`.hl-prism-edge`/`.hl-prism-border` → flat copper; dark `--hl-ai-surface` de-tinted), Fit/ATS in header, `atsScore` added to the model. |
+| `7191dab` | Candidate Detail | The case file: scorecard (rank, score arithmetic, ATS breakdown) + parsed résumé beside the claims; 760px column → two-column at `lg`. |
+| `de02f91` | Evidence Presentation | `evidence-link.ts` — a **lookup, not a citation**. Claims carry résumé lines that echo them, tagged by category, behind the copper rule. Unmatched claims say so. |
+| `4db8647` | Comparison | Rendered the four dropped sections (verdict + rationale, typed risks, strength profiles, interview focus) and made clustered scores honest: "vs #1" gap column, "Too close to separate" within 3 points. |
+| `728b41a` | Copilot | Honest ~11s loading (copper rule, no fake streaming), source chips readable again, duplicate user turn fixed, bold-only formatter, full sparkle/prism sweep. |
+| `6e578f0` | Talent Search | "% match" → "% similarity", weak-match labelling, gibberish caution, honest embedding-latency state. |
+| `8657402` | Interview Workspace | Draft-role empty state checks for roles in *other* states instead of announcing "No active roles"; ~11s generation gets a copper progress rule and an honest "written in one pass" note; raw light-mode Tailwind tints (`bg-emerald-50`, `bg-rose-50`, `bg-amber-50`, and a banned `bg-violet-50` competency chip) → V2 semantic tokens. Also carried the Interview focus-ring/focus-halo `globals.css` hunks. Browser verification **complete**. |
+| `0e36937` | Analytics | Restructured around what the record says; surfaced five backend fields the old screen dropped. Four KPI cards → one hairline figure strip. The funnel is **demoted deliberately**: the backend stores only each candidate's *current* stage, so conversion is not computable — the panel is titled "Current stage" and says so. Null renders an em dash, never a coalesced zero. New V2-native primitives in `analytics/analytics-charts.tsx`, **not** edits to the frozen-shared `components/workspace/charts.tsx`. |
+| `7b315d1` | Settings | Audited rather than redesigned. Active nav: terracotta plate → the copper inset idiom the main rail documents. Destructive icons take a danger tone on hover/focus only. `INITIALISMS` map fixes "Ats Score"/"Basic Ai Summary"/"Export Pdf". RBAC and entitlements untouched. |
+| `116034a` | Authentication | Prism Aurora, prism hairline and `Sparkles` removed from the editorial panel; **fabricated candidates removed** ("Sarah Jenkins", "FIT 88" — invented people and scores on the first screen a user sees). Mono → Inter across labels, trust line, password prose and legal copy; auth is now 100% Inter + Newsreader. Added the `.hl-serif` modifier to `globals.css` (**one hunk only**, staged with a filtered patch). Supabase auth, guards, redirects and session handling untouched. |
+| `1015cd8` | **App Shell** | The last held-back pass. `Sparkles` → `MessageSquareText` in the command palette; `hl-prism-focus` (violet→cyan focus ring) → flat copper on the search launcher; mono out of nav headings, the workspace monogram and the role caption; `.hl-rail` gradient → flat `background-color`; avatar plates driven by four `--hl-avatar-*` tokens instead of a hard-coded light-canvas pastel; `defaultTheme` system → dark. Carried the final two `globals.css` hunks — every hunk from the programme is now committed. |
+| `8698412` | **Decision Intelligence** | Prism vocabulary out of the Analyst Brief (§16: no tinted AI surface — neutral surface + 2px copper top rule + "System analysis"). Surfaced `tools_used`, `severity` and `created_at`, which the screen dropped. Added the resolved state from `status`/`decided_at`/`decided_by`, and a line stating that confidence describes the agent's situation detection, not the hire. Mono corrected. |
+| `3cd4879` | **Ledger** | `decidedAt` made strict — it used to display `created_at` under a "Date" column on an audit surface. Added the "By" column (`decided_by` IS recorded; the old comment claimed otherwise). "Candidate · Role" → "Subject" with a `role-level` suffix. Added "Computed from" provenance and a corrected audit trail. Two distinct empty states. Fixed a false-empty on query failure. |
+
+Two supporting commits in the same series, belonging to no single screen:
+
+| Commit | Substance |
+|---|---|
+| `85dd583` | `chore: ignore local design and test resume files` — `.gitignore` only. The pattern read `/Test Resumes` (plural) but the directory is `Test Resume/` (singular), so it never matched and the four canonical résumé PDFs sat untracked, one `git add -A` away from entering history. Corrected to `/Test Resume/`; `/Redesignv4` preserved; trailing newline added. |
+| `64661ae` | `fix(ui): resolve font variables inside Radix portals` — the Comparison drawer rendered entirely in Geist (163 nodes). Radix portals mount to `<body>`: the portal roots carried `.hl` so tokens resolved, but not the `next/font` variable classes, so `var(--font-hl-sans)` fell through to the root layout's Geist. `fontVariables` is now applied to both Dialog roots, both Drawer roots, the dropdown content and the tooltip content. Committed separately because it repairs an already-committed screen and belongs to no pass. |
+
+Four correctness and safety fixes, each committed on its own because each is
+independently revertible and none belongs to a screen:
+
+| Commit | Substance |
+|---|---|
+| `ae87022` | `fix(decision): remove impossible undo from irreversible decisions` — the approve/override toast offered an **Undo** that PATCHed the record back to `pending`. The database refuses that: a trigger stamps `decided_at`/`decided_by`, freezes them, and rejects re-decision. The control could only ever fail. Replaced with a statement that the decision is permanent; no client-side rollback was added. |
+| `dcd2241` | `fix(test): stub next font google in vitest` — `64661ae` put `next/font/google` into the module graph of every suite that renders a dialog, drawer, dropdown or tooltip, and it is a build-time construct with no runtime module. Nine suites died at import with `TypeError: Inter is not a function`, taking 166 tests out of execution. A test-only alias to a stub returning the same `{className, variable, style}` shape. **No product code was changed to accommodate the test runner.** |
+| `ff4bd78` | `fix(a11y): require an explicit action to approve a decision` — see §0.10. The memo bound `keydown` on `window`; Enter approved from anywhere on the page. |
+| `198db21` | `fix(ui): read agent confidence on its real 0–100 scale` — the chip compared the backend integer against 0.66/0.5 as though it were a ratio, so **every** recommendation rendered "High confidence", including a 50. One shared normaliser and one threshold table now. |
+| `ca82bf1` | `fix(ui): correct the raised surface token to the V2 elevated step` — `--hl-bg-raised` was `#12162A`, an Iris-era indigo measuring rgb(18, 22, 42) on a `#121417` canvas. Now `#1C1F24` (V2 level 1). Token only; no screen file touched. |
+
+### 0.3 UNCOMMITTED work in the tree
+
+**None.** Every pass in this programme is committed. `globals.css` has no
+remaining hunks.
+
+*Historical note, kept because the technique will be needed again:* `globals.css`
+and `decision-memo.tsx` both required **partial staging** — one file carrying
+hunks that belonged to different commits. Use a filtered patch plus
+`git apply --cached`, or restore the file to HEAD, apply only the wanted edits,
+stage, and restore the working copy. **Never `git add` the whole file** in that
+situation. This was done for `8657402`, `116034a`, `1015cd8`, `ae87022` and
+`ff4bd78`.
+
+### 0.4 Standing rules established this session
+
+- **Canonical test dataset:** the four PDFs in `Test Resume/` are the ONLY
+  résumés for any candidate/parsing/ranking/UI verification. Never generate
+  synthetic résumés or seed candidates. If a test needs more than four, stop
+  and ask. (Also recorded in the assistant's project memory.)
+  As of `85dd583`, `/Test Resume/` **is correctly ignored** by `.gitignore:247`
+  (the pattern previously read `/Test Resumes` and never matched). The directory
+  holds exactly `Dev_pathak_resume.pdf`, `Narendra_Bishnoi_Resume.pdf`,
+  `Shrijal_Goswami_Resume.pdf` and `Shubh-tyagi_resume.pdf`. They are local test
+  data and are **not tracked** by the current working tree. See §0.8 for the
+  separate, still-open question of résumé copies already in history.
+- **Never invent data.** If the backend does not provide something, the UI does
+  not show it. Two live examples: Talent Search **removed** an `indexed` count
+  after the API returned `indexed: 0` alongside four real results (the field
+  does not mean pool size), and Evidence Presentation refuses to call its
+  wording-match a citation.
+- **Display thresholds are labels, never filters.** The comparison tie floor (3
+  points) and the search weak floor (0.25) change no ordering and hide no rows;
+  both are documented in code with the measurements that chose them.
+- **`pnpm build` deletes `.next` out from under a running dev server** and
+  corrupts it (this caused three crashes and repeated forced sign-ins). Always
+  stop the dev server before building, then restart it. The dev-session-reset
+  middleware signs the browser out on every dev restart — that is by design.
+
+### 0.5 Backend findings raised, deliberately NOT fixed
+
+| Finding | Where seen |
+|---|---|
+| **Résumé parser mis-reads experience entries** — three of four extracted "roles" on one canonical candidate are bullet fragments (`"scale."`, `"deployed on Vercel…"`) rather than job titles. Surfaced only because Candidate Detail started rendering structured `resume_data`. | `7191dab` commit body |
+| **Semantic search has no relevance threshold** — gibberish returns candidates at ~0.015 similarity. The UI now labels it; the fix belongs in the search service. | `6e578f0` commit body |
+| **Score compression** — verdicts cluster at "Maybe"/"Moderate Match" while Fit spreads 65/64/56/29. UI leans on rank, evidence and state instead of colour. | Candidate Table / Comparison |
+| `analyst-brief.tsx` (Decision Intelligence) used a `Sparkles` icon. | **fixed** in `8698412` |
+
+### 0.6 Remaining work
+
+Recalculated against the actual commit history. **Every screen in this programme
+is now committed.** Analytics, Settings, Authentication, Interview, App Shell,
+Decision Intelligence and the Ledger no longer appear here.
+
+| Item | State |
+|---|---|
+| **Learning** | **deferred — no backend.** Do not start it expecting data to exist. |
+| **`ask/agent-backlog.tsx` Undo** | **KNOWN BUG, deliberately untouched.** Line 48 offers an Undo that PATCHes a decided recommendation back to `pending` — the same impossible action removed from Decision Intelligence in `ae87022`. The database rejects it. Left because Ask is outside the current scope; it should be fixed the same way. |
+| **Stale comment in `decision-memo.tsx`** | The `resolve()` comment still says "⏎ is bound to approve by an effect". That effect was removed in `ff4bd78`; the line predates the change and was carried through untouched. Documentation only, no behaviour. |
+| **`--hl-segment-thumb`, `--hl-glass-bg`, `--hl-glass-border`** | Iris-era indigo tokens, flagged and not cleaned. No screen audited in this programme consumes them. `globals.css:837` also still cites a stale `--hl-bg-muted (#161A2C)`. |
+
+### 0.7 Verification state
+
+**Read this as the record of what was actually observed in a browser.** Anything
+not listed as verified is not verified.
+
+Gates, run against the final committed tree:
+
+| Check | Result |
+|---|---|
+| `pnpm typecheck` | **pass** (exit 0) |
+| `pnpm test` | **461 passed / 461**, 34 / 34 suites (exit 0) — see the note below |
+| `pnpm build` | **pass** (exit 0) — dev server stopped first, port 3000 freed |
+
+> **On the test count.** 461/461 was true before `64661ae`, then FALSE from
+> `64661ae` until `dcd2241`: in that window nine suites failed at import and 166
+> tests never executed. The count was restored by the test-infrastructure fix,
+> verified from a clean baseline carrying only that change. If you are reading an
+> older revision of this file that claims 461/461, check which commit you are on.
+
+| Surface | State |
+|---|---|
+| Decision Intelligence — populated (pending) | **VERIFIED** |
+| Decision Intelligence — loading | **VERIFIED** |
+| Decision Intelligence — resolved / permanent-decision messaging | **VERIFIED**, against the real record described in §0.10 |
+| Ledger — populated | **VERIFIED**, using that same real resolved record: Decided, Decision, By ("You"), Subject with `role-level`, confidence at the time, drawer, provenance, audit trail |
+| Ledger — pending-aware empty state | **VERIFIED** earlier and screenshotted, but **no longer reproducible** without another agent scan, because the only recommendation is now decided |
+| Ledger — genuinely-empty state | **VERIFIED** |
+| Ledger — error state | **UNVERIFIED.** With the backend stopped the screen stays on loading past ~22s despite `retry: 1`. The false-empty-on-failure bug is fixed and the loading state is honest, but the error branch itself has never been seen to render |
+| Override / "Overridden" populated state | **UNVERIFIED** — no overridden record exists and none will be manufactured |
+| Candidate-linked Decision Intelligence (`signals`, watch-outs, fit chip) | **UNVERIFIED** — `high_potential_candidate` needs `overall ≥ 85` and `ats ≥ 80`; the canonical four top out at Fit 65, so the branch cannot fire on real data |
+| Narrow / responsive | **UNVERIFIED** — see below |
+| V2 palette audit (computed styles) | **VERIFIED** on Decision Intelligence and the Ledger: blue-cast 0, gradients 0, cyan 0, `Sparkles` 0; copper measured `rgb(196, 139, 113)` |
+| Portal fonts | **VERIFIED** — the Ledger drawer renders Inter + JetBrains Mono, no Geist, re-confirming `64661ae` |
+| Console | **VERIFIED clean** — only the React DevTools notice and HMR/Fast Refresh; the error/warning/hydration filter returns nothing |
+
+**Responsive verification is limited, and this has not been resolved.** The
+browser tool's `resize_window` reports success but does not change the tab's
+viewport — `clientWidth` stayed pinned (~1254/1536/1568 depending on the pass)
+at every requested size. **No narrow-viewport verification was possible in any
+pass.** What exists is static evidence only: `flex-wrap` on chip and action rows,
+`overflow-x-auto` on wide tables, `lg:grid-cols-2` on Analytics, and Settings'
+`lg` sidebar → native-select switch. Treat mobile as unverified.
+
+Two further gaps, recorded rather than closed: two pre-existing Radix
+`DialogContent` accessibility warnings fire when the **Candidate Drawer** opens
+(committed in `18a86a8`, not introduced by any pass here), and on Auth the
+invalid-credentials error state and the end-to-end valid login were never
+exercised — both require signing out and entering real credentials. Redirect and
+route-guard behaviour *were* verified in both directions.
+
+### 0.10 INCIDENT — an agent recommendation was approved outside deliberate QA
+
+> Recorded because an irreversible hiring-workflow record changed and the cause
+> matters more than the record does. Nothing here was reversed, recreated or
+> worked around.
+
+**The record, read from the API and not modified:**
+
+```
+id          393d7fce-c4a0-42a2-8348-1e2ac18ac628
+workflow    weak_candidate_pool
+status      approved
+decided_at  2026-08-09T04:57:58.452438+00:00   (10:27:58 IST)
+decided_by  4188c6bd-8c86-4179-88c2-310559986cc6
+created_at  2026-08-09T02:57:32.808946+00:00   (08:27:32 IST)
+updated_at  2026-08-09T04:57:58.452438+00:00   (identical to decided_at)
+confidence  80
+```
+
+**What happened.** The recommendation was generated by a single authorised agent
+scan and was deliberately left **pending**, because verifying a populated Ledger
+did not justify making a real hiring decision. It was later found to be
+`approved`. **Neither the product owner nor QA intentionally approved,
+overrode, or reverted it.**
+
+**Evidence.** Exactly **one** `PATCH /api/v1/agent/recommendations/393d7fce… →
+200` appears in the backend log, at 10:27:58 IST. `updated_at` equals
+`decided_at`, so the row was written once and never since. No other mutation of
+any hiring record was observed at any point.
+
+**The mechanism, and why it is the likely cause.** `decision-memo.tsx` bound
+`keydown` on `window` and approved on Enter. Its only guards were modifier keys,
+editable targets and an open dialog — it never checked that focus was on, or even
+inside, the memo, and `preventDefault()` swallowed the focused element's own
+action. The tab had that screen loaded, and an already-loaded React app keeps
+running and calls the API directly on `localhost:8000` even while the dev server
+is stopped. Any stray Enter reaching that tab would approve. **This is not a
+proven chain of events — no keystroke log exists — and it is recorded as the
+mechanism that made it possible, not as an established sequence.**
+
+**What was done.** The global listener was removed outright in `ff4bd78`, with
+nothing put in its place: approving now requires a click, or Enter/Space while
+the button is focused. Verified against the shipped bundle (no
+`addEventListener('keydown')` in the chunk) and empirically (five Enter presses
+with focus on the body → zero non-GET requests, record unchanged).
+
+**What was deliberately NOT done.** No attempt to revert the decision — the
+database freezes `decided_at`/`decided_by` and rejects re-decision, and forcing
+it would be worse than the fact. No second scan to recreate a pending record. No
+seeded or fabricated decision. The record stands as it is, and the Ledger shows
+it accurately.
+
+**Consequence for verification.** The Ledger's populated state is now verified
+against a real resolved decision (§0.7) — but the pending-aware empty state can
+no longer be reproduced without another scan, and the override path remains
+unverified.
+
+### 0.8 Data hygiene — résumé copies already in history (OPEN DECISION, not done)
+
+> This is a **future decision**, deliberately left untouched. Nothing here was
+> introduced by this program's commits, and nothing here has been fixed.
+
+Fixing the `.gitignore` pattern (`85dd583`) protects `Test Resume/` going
+forward. It does **not** touch résumé PDFs that are already tracked in history
+under other paths:
+
+```
+uploads/Dev_pathak_resume.pdf              first committed 6ba960a, 31 Jul 2026
+uploads/Narendra_Bishnoi_Resume.pdf
+uploads/Shrijal_Goswami_Resume .pdf
+uploads/Shubh-tyagi_resume.pdf
+backend/uploads/Shrijal_Goswami_Resume.pdf first committed ebb4d04, 30 May 2026
+backend/tests/fixtures/drill_resume.pdf
+```
+
+These are copies of the same canonical candidates. They predate this session by
+weeks and were **not** added, removed, rewritten or ignored by any of today's
+five commits — they were left exactly as found, by instruction.
+
+The concern is the same one the eval-runs ignore rule already records elsewhere
+in `.gitignore`: candidate documents in version control outlive any deletion
+request. Whoever picks this up should decide deliberately, because the options
+differ sharply in cost — ignoring them going forward is cheap and changes
+nothing already committed; removing them from history is a rewrite that
+invalidates every existing clone. **Do not do either without an explicit
+decision.**
+
+### 0.9 Running it
+
+```bash
+# backend (from repo root)
+cd backend && ../venv/Scripts/python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+# frontend
+cd resume-hero-section && pnpm dev --port 3000
+```
+Port 3000 sometimes retains a zombie `node` after a crash — check with
+`netstat -ano | grep :3000` and `taskkill //PID <pid> //F` before starting.
+
+---
+
 ## 1. Current repository status
 
 | | |
 |---|---|
 | **Branch** | `manus-ui-v1` |
-| **Latest code commit** | `e0889df` — *refactor(ai): make model resolution deterministic* (§11.3 Phase 1 task 5; decisions D1.28–D1.35), on top of `fbc07b2` *feat(ai): validate provider configuration* (task 4; D1.21–D1.27), `136340b` *refactor(ai): centralize retry classification* (task 3; D1.13–D1.20), `561003a` *fix(ai): prevent routing to disabled providers* (task 2; D1.7–D1.12) and `913426f` *refactor(ai): centralize provider error classification* (task 1; D1.1–D1.6). **HEAD is the docs commit on top of them** — this row deliberately names the last commit that changed behaviour, because a row naming its own commit can never be written accurately |
-| **Working tree** | **THREE uncommitted changes**, in order: the Groq-only product change (§11.0), Phase 1 task 6 (C6), and **AI Security S-1 through S-5** (§11S). They overlap in the AI layer and are **not** cleanly separable; commit in that order |
+| **Latest code commit** | `3cd4879` — *feat(ledger): complete V2 decision ledger*, the last of twelve commits made on 9 Aug 2026: `85dd583`, `64661ae`, `0e36937`, `7b315d1`, `116034a`, `1015cd8`, `ae87022`, `dcd2241`, `ff4bd78`, `198db21`, `ca82bf1`, `8698412`, `3cd4879` — on top of `8657402` *feat(interview): complete V2 workspace pass*. All belong to the §0 Design System V2 programme |
+| **Working tree** | **Clean of programme work.** Every §0 pass is committed; `globals.css` has no remaining hunks. The AI-layer changes this row used to name (§11.0, Phase 1 task 6, AI Security S-1–S-5) are all committed too |
 | **Last milestone** | Authentication — **COMPLETE and browser-verified** (§8D) |
-| **Active milestone** | **AI Security** (§11S) — Sprint 1 in progress. Preceded by **AI Architecture Foundation** (§11) — **Groq-only for V1 (§11.0)** — **Phase 0 complete (3/3), **Phase 1 COMPLETE (6/6)**. Rules: §9A · Roadmap: §11.3 · Progress: §13 |
-| **Backend tests** | **1001 passed** (972 + 29 security-hardening, 6 Aug 2026) |
-| **Frontend tests** | **455 passed**, 33 files (unchanged by §11.0, 6 Aug 2026) |
+| **Active milestone** | **Design System V2 product redesign (§0) — COMPLETE.** Fifteen screens committed, nothing outstanding; Learning deferred for want of a backend. The AI milestones below are unchanged and untouched: **AI Security** (§11S) Sprint 1 in progress, preceded by **AI Architecture Foundation** (§11) — **Groq-only for V1 (§11.0)** — **Phase 0 complete (3/3), Phase 1 COMPLETE (6/6)**. Rules: §9A · Roadmap: §11.3 · Progress: §13 |
+| **Backend tests** | **1001 passed** (972 + 29 security-hardening, 6 Aug 2026). Untouched by §0 — the backend is frozen for that program |
+| **Frontend tests** | **461 passed**, 34 files (9 Aug 2026, §0 program; was 455/33 on 6 Aug) |
 | **`tsc --noEmit`** | clean |
 | **`eslint .`** | **exactly 4 errors — all known debt** (§10 item 1). A 5th is a regression |
 | **`next build`** | succeeds; 40 routes (36 static, 4 dynamic) |
@@ -92,6 +374,11 @@ project stands.
 > deletes anything.
 
 ### Working tree
+
+> **As of 9 Aug 2026 the tree is clean of §0 programme work** — every Design
+> System V2 pass is committed. **§0.3 is the authority** on what is outstanding;
+> the paragraph below describes the AI-milestone era and is kept for that
+> history.
 
 **Clean.** Everything through the authentication UX milestone is committed, and
 so is `GAB-D1` (§8E) — the model vendor's name removed from every exported PDF,
