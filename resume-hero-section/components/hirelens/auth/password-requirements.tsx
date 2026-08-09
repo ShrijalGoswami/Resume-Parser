@@ -64,7 +64,7 @@ export function PasswordRequirements({
           <li
             key={rule.id}
             className={cn(
-              'hl-caption flex items-center gap-2 font-hl-mono transition-colors',
+              'hl-caption flex items-center gap-2 transition-colors',
               rule.met
                 ? 'text-hl-success'
                 : failing

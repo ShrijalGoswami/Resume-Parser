@@ -101,7 +101,7 @@ export function ForgotForm() {
   if (sent) {
     return (
       <div className="flex flex-col gap-4">
-        <h1 ref={sentHeadingRef} tabIndex={-1} className="hl-display-md outline-none">
+        <h1 ref={sentHeadingRef} tabIndex={-1} className="hl-display-md hl-serif outline-none">
           Check your inbox.
         </h1>
         <p className="hl-body text-hl-fg-secondary">
@@ -153,7 +153,7 @@ export function ForgotForm() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="hl-display-md">Reset your password.</h1>
+      <h1 className="hl-display-md hl-serif">Reset your password.</h1>
       <p className="hl-body text-hl-fg-secondary">
         Enter the email you sign in with and we’ll send you a link to choose a new password.
       </p>

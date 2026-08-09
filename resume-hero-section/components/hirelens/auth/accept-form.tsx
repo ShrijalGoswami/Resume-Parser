@@ -112,7 +112,7 @@ export function AcceptInviteForm() {
   if (done) {
     return (
       <div className="flex flex-col gap-4">
-        <h1 ref={doneHeadingRef} tabIndex={-1} className="hl-display-md outline-none">
+        <h1 ref={doneHeadingRef} tabIndex={-1} className="hl-display-md hl-serif outline-none">
           You’re in.
         </h1>
         <p className="hl-body text-hl-fg-secondary">
@@ -138,7 +138,7 @@ export function AcceptInviteForm() {
   // ── ready ───────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="hl-display-md">You’re invited.</h1>
+      <h1 className="hl-display-md hl-serif">You’re invited.</h1>
       <p className="hl-body text-hl-fg-secondary">
         {accountEmail
           ? `Set your name and a password to join your team on HireLens as ${accountEmail}.`

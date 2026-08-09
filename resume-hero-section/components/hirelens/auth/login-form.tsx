@@ -142,7 +142,7 @@ export function LoginForm() {
   if (magicSent) {
     return (
       <div className="flex flex-col gap-4">
-        <h1 ref={magicHeadingRef} tabIndex={-1} className="hl-display-md outline-none">
+        <h1 ref={magicHeadingRef} tabIndex={-1} className="hl-display-md hl-serif outline-none">
           Check your inbox.
         </h1>
         <p className="hl-body text-hl-fg-secondary" role="status">
@@ -171,7 +171,7 @@ export function LoginForm() {
 
   return (
     <div className="flex flex-col gap-8">
-      <h1 className="hl-display-md">Welcome back.</h1>
+      <h1 className="hl-display-md hl-serif">Welcome back.</h1>
 
       {linkError ? (
         <p className="-mt-4 hl-body text-hl-fg-secondary" role="status">
@@ -197,14 +197,14 @@ export function LoginForm() {
               Continue
               <ArrowRight />
             </Button>
-            <p className="hl-caption font-hl-mono text-hl-fg-tertiary">
+            <p className="hl-caption text-hl-fg-tertiary">
               We&rsquo;ll check if your team uses SSO.
             </p>
           </form>
 
           <div className="flex items-center gap-4" aria-hidden>
             <span className="h-px flex-1 bg-hl-border-subtle" />
-            <span className="hl-label-sm font-hl-mono text-hl-fg-tertiary">
+            <span className="hl-label-sm text-hl-fg-tertiary">
               or
             </span>
             <span className="h-px flex-1 bg-hl-border-subtle" />

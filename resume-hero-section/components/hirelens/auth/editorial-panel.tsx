@@ -1,95 +1,53 @@
 import * as React from 'react'
-import { Inbox, Sparkles, User } from 'lucide-react'
 
 /**
- * The Ink editorial half of the auth split — the product world previewed at
- * sign-in, always Deep Ink regardless of theme (the form half stays Glass). A
- * faint Prism Aurora (sanctioned sign-in moment, Design Bible §4.4) sits behind
- * a representative "Decision Inbox" window; the AI card is marked by the Prism
- * left hairline + sparkle. Colors come from the theme-invariant `--hl-editorial-*`
- * tokens. Mirrors the RC-1 Definitive Login right panel.
+ * The Ink editorial half of the auth split — always Deep Ink regardless of
+ * theme, while the form half stays theme-aware.
+ *
+ * WHAT THIS USED TO BE, AND WHY IT ISN'T.
+ * A "Living Product Window": a mock Decision Inbox behind a Prism Aurora, with
+ * a sparkle-marked AI card. Three things were wrong with it under V2.
+ *
+ * The aurora, the prism hairline and the sparkle are the exact vocabulary V2
+ * bans — a violet→cyan gradient, a decorative glow, and the sparkle icon that
+ * every AI product in the category uses. On the one screen where someone
+ * decides whether to trust us with an email and a password, that vocabulary
+ * says "another AI wrapper" rather than "the tool that shows its evidence".
+ *
+ * And the window was populated with people who do not exist — "Sarah Jenkins",
+ * "FIT 88", "Three decisions need you this morning". The standing rule for this
+ * product is that it does not invent candidates or scores. A screenshot of
+ * fabricated candidates is a strange promise to open with, and the reader has
+ * no way to tell it from the real thing until they are inside.
+ *
+ * What replaces it is the claim itself, set plainly: what HireLens does, in the
+ * product's own voice, with a copper rule as the only mark on the panel —
+ * copper being the colour this product uses for evidence.
  */
 export function EditorialPanel() {
   return (
-    <div className="relative flex h-full flex-col items-center justify-center overflow-hidden bg-hl-editorial px-12">
-      {/* Aurora — sanctioned sign-in bloom, ~7% */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            'radial-gradient(55% 45% at 62% 38%, var(--hl-prism-from), transparent 70%)',
-          opacity: 0.07,
-        }}
-      />
+    <div className="relative flex h-full flex-col justify-center overflow-hidden bg-hl-editorial px-16">
+      <div className="relative z-10 flex w-full max-w-[460px] flex-col">
+        <p className="hl-label text-hl-editorial-muted">
+          Résumé intelligence
+        </p>
 
-      <div className="relative z-10 flex w-full max-w-[440px] flex-col items-center">
-        {/* The panel's single serif moment */}
-        <p className="hl-body italic text-hl-editorial-muted">This is what&rsquo;s waiting inside.</p>
+        <p className="hl-display-md hl-serif mt-6 text-hl-editorial-fg">
+          Every claim, traced back to the résumé it came from.
+        </p>
 
-        {/* Living Product Window — a representative Decision Inbox frame */}
-        <div className="mt-8 w-full overflow-hidden rounded-hl-xl border border-hl-editorial-border bg-hl-editorial-surface p-5 text-left">
-          {/* Window header */}
-          <div className="flex items-center justify-between border-b border-hl-editorial-border pb-4">
-            <div className="flex items-center gap-2 text-hl-editorial-fg">
-              <Inbox className="size-[18px]" strokeWidth={1.8} aria-hidden />
-              <span className="hl-body-medium">Decision Inbox</span>
-            </div>
-            <span className="hl-caption font-hl-mono text-hl-editorial-muted">8:30 AM EST</span>
-          </div>
-
-          <p className="hl-body mt-5 text-hl-editorial-fg">Three decisions need you this morning.</p>
-
-          <div className="mt-5 flex flex-col gap-3">
-            {/* AI focus card — Prism left hairline marks AI presence */}
-            <div className="relative overflow-hidden rounded-hl-lg border border-hl-editorial-border pl-4 pr-4 py-3.5">
-              <span
-                aria-hidden
-                className="absolute inset-y-0 left-0 w-px"
-                style={{
-                  background:
-                    'linear-gradient(180deg, var(--hl-prism-from), var(--hl-prism-mid), var(--hl-prism-to))',
-                }}
-              />
-              <div className="flex items-start gap-3">
-                <Sparkles className="mt-0.5 size-[18px] shrink-0 text-hl-prism-mid" aria-hidden />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="hl-body-medium text-hl-editorial-fg">Start focus run</span>
-                    <span className="hl-caption font-hl-mono text-hl-score-sharp">FIT 88</span>
-                  </div>
-                  <p className="hl-body mt-1 line-clamp-2 text-hl-editorial-muted">
-                    Review top 3 engineering candidates for the Principal role. AI has summarized
-                    technical assessments.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Second decision — receded */}
-            <div className="rounded-hl-lg border border-hl-editorial-border px-4 py-3.5 opacity-70">
-              <div className="flex items-start gap-3">
-                <User className="mt-0.5 size-[18px] shrink-0 text-hl-editorial-muted" aria-hidden />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="hl-body-medium text-hl-editorial-fg">Sarah Jenkins</span>
-                    <span className="hl-caption font-hl-mono text-hl-score-legible">FIT 65</span>
-                  </div>
-                  <p className="hl-body mt-1 text-hl-editorial-muted">
-                    Pending your approval for final round interview scheduling.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Rotation indicator */}
-        <div className="mt-6 flex items-center gap-1.5" aria-hidden>
-          <span className="size-1.5 rounded-full bg-hl-editorial-fg" />
-          {[0, 1, 2, 3].map((i) => (
-            <span key={i} className="size-1.5 rounded-full bg-hl-editorial-border" />
-          ))}
+        {/* The single mark on this panel. Copper is the product's evidence
+            colour, so a copper rule beside a statement about evidence is the
+            one place it belongs — not decoration, the same rule the candidate
+            screens draw beside a quoted line. */}
+        <div className="mt-8 flex flex-col gap-4 border-l-2 border-[var(--hl-accent-secondary)] pl-5">
+          <p className="hl-body text-hl-editorial-muted">
+            HireLens reads each résumé against the role you actually wrote, then shows the lines it
+            scored — so a ranking is something you can check rather than something you accept.
+          </p>
+          <p className="hl-body text-hl-editorial-muted">
+            Where it isn&rsquo;t sure, it says so.
+          </p>
         </div>
       </div>
     </div>

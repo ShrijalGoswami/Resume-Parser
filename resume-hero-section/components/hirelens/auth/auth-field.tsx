@@ -52,7 +52,11 @@ export const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
         <div className="flex items-baseline justify-between gap-2">
           <label
             htmlFor={fieldId}
-            className="hl-label font-hl-mono text-hl-fg-tertiary"
+            // Inter, not JetBrains. A field label is UI chrome, and mono is
+            // reserved for data — scores, ids, timestamps. `hl-label` already
+            // carries the uppercase-and-tracked treatment the mono was there
+            // for, in the typeface the rest of the product uses.
+            className="hl-label text-hl-fg-tertiary"
           >
             {label}
           </label>

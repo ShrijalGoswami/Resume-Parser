@@ -44,7 +44,7 @@ export function LinkExpired({
   const headingRef = useFocusOnMount<HTMLHeadingElement>()
   return (
     <div className="flex flex-col gap-4">
-      <h1 ref={headingRef} tabIndex={-1} className="hl-display-md outline-none">
+      <h1 ref={headingRef} tabIndex={-1} className="hl-display-md hl-serif outline-none">
         {title}
       </h1>
       <p className="hl-body text-hl-fg-secondary">{children}</p>

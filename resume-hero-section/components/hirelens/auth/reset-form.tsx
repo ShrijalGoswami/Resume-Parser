@@ -125,7 +125,7 @@ export function ResetForm() {
   if (done) {
     return (
       <div className="flex flex-col gap-4">
-        <h1 ref={doneHeadingRef} tabIndex={-1} className="hl-display-md outline-none">
+        <h1 ref={doneHeadingRef} tabIndex={-1} className="hl-display-md hl-serif outline-none">
           Password changed.
         </h1>
         <p className="hl-body text-hl-fg-secondary">
@@ -150,7 +150,7 @@ export function ResetForm() {
   // ── ready ───────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="hl-display-md">Choose a new password.</h1>
+      <h1 className="hl-display-md hl-serif">Choose a new password.</h1>
       <form onSubmit={onSubmit} noValidate className="flex flex-col gap-5">
         {/* A password manager will not offer to update a saved credential
             without a username to attach it to, and this screen has no email

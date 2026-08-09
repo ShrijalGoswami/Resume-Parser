@@ -1285,6 +1285,21 @@
     line-height: 2.75rem;
     letter-spacing: -0.024em;
   }
+  /* THE SERIF MODIFIER — Newsreader, major display headings ONLY (V2 §4).
+     Compose it with a display step: `hl-display-md hl-serif`. It is a modifier
+     rather than a step of its own so the size scale stays single-source.
+     Weight drops to 500 because Newsreader at 680 is a different, heavier
+     voice than Inter at the same number. Never below `hl-display` size.
+
+     The Dashboard masthead (`inbox-header.tsx`) still sets the same three
+     declarations inline — it predates this class and is already shipped, so it
+     is left alone rather than churned. Fold it in next time that file is open;
+     the values here are copied from it deliberately. */
+  .hl-serif {
+    font-family: var(--font-newsreader-hl), Georgia, 'Times New Roman', serif;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
   /* PAGE HEADING — 31/38, Inter 680. Every titled route in the product shell,
      via `PageHeader`. Metrically identical to `hl-h1`; both names are kept so
      the 42 existing call sites did not need editing. */

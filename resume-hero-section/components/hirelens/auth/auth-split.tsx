@@ -49,7 +49,10 @@ export function AuthSplit({ children }: { children: React.ReactNode }) {
 
             What is left is true: enterprise SSO is real (`signInWithSSO` on
             this very page), and the data statement is the one /privacy makes. */}
-        <p className="hl-caption font-hl-mono tracking-wide text-hl-fg-tertiary">
+        {/* Inter: this is a sentence, not data. Mono here made a plain-English
+            reassurance read as terminal output on the one screen that is
+            asking to be believed. */}
+        <p className="hl-caption tracking-wide text-hl-fg-tertiary">
           SSO · encrypted in transit · your data stays yours.
         </p>
       </div>

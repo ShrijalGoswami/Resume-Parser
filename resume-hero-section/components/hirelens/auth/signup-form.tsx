@@ -95,7 +95,7 @@ export function SignupForm() {
   if (sent) {
     return (
       <div className="flex flex-col gap-4">
-        <h1 ref={sentHeadingRef} tabIndex={-1} className="hl-display-md outline-none">
+        <h1 ref={sentHeadingRef} tabIndex={-1} className="hl-display-md hl-serif outline-none">
           Check your inbox.
         </h1>
         <p className="hl-body text-hl-fg-secondary" role="status">
@@ -128,7 +128,7 @@ export function SignupForm() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="hl-display-md">Start with HireLens.</h1>
+      <h1 className="hl-display-md hl-serif">Start with HireLens.</h1>
       {/* `noValidate` hands validation to the checklist below. The browser's own
           bubble says "Please lengthen this text to 8 characters or more", is not
           announced to a screen reader, and disappears on the next keystroke —
@@ -186,7 +186,7 @@ export function SignupForm() {
             to terms you have not published, and a consent line pointing at
             nothing is unenforceable as well as discourteous. `target="_blank"`
             so reading them does not discard a half-filled form. */}
-        <p className="hl-caption font-hl-mono leading-relaxed text-hl-fg-tertiary">
+        <p className="hl-caption leading-relaxed text-hl-fg-tertiary">
           By continuing you agree to our{' '}
           <a
             href="/terms"
