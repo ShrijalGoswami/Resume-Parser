@@ -4,6 +4,7 @@ import * as React from 'react'
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu'
 import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { fontVariables } from '../theme/fonts'
 
 /** Dropdown menu (Design Bible §4.7). */
 export const DropdownMenu = DropdownMenuPrimitive.Root
@@ -19,6 +20,7 @@ export const DropdownMenuContent = React.forwardRef<
       ref={ref}
       sideOffset={sideOffset}
       className={cn(
+        fontVariables,
         'hl z-[var(--hl-z-dropdown)] min-w-[10rem] overflow-hidden rounded-hl-md border border-hl-border bg-hl-canvas p-1 text-hl-fg shadow-[var(--hl-shadow-md)]',
         'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0',
         className,

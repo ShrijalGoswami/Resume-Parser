@@ -3,6 +3,7 @@
 import * as React from 'react'
 import * as TooltipPrimitive from '@radix-ui/react-tooltip'
 import { cn } from '@/lib/utils'
+import { fontVariables } from '../theme/fonts'
 
 /** Tooltip (Design Bible §4.8) — 500ms delay, keyboard-focus triggers it too. */
 export function TooltipProvider({
@@ -24,6 +25,7 @@ export const TooltipContent = React.forwardRef<
       ref={ref}
       sideOffset={sideOffset}
       className={cn(
+        fontVariables,
         'hl z-[var(--hl-z-tooltip)] max-w-xs rounded-hl-md bg-hl-fg px-2.5 py-1.5 hl-caption text-hl-canvas shadow-[var(--hl-shadow-md)]',
         'data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0',
         className,

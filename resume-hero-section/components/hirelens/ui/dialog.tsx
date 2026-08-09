@@ -4,6 +4,7 @@ import * as React from 'react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { fontVariables } from '../theme/fonts'
 
 /** Dialog / Modal (Design Bible §4.9) — focus-trapped, Esc closes, scrim. */
 export const Dialog = DialogPrimitive.Root
@@ -23,6 +24,7 @@ export function DialogOverlay({
   return (
     <DialogPrimitive.Overlay
       className={cn(
+        fontVariables,
         'hl hl-rack-scrim fixed inset-0 z-[var(--hl-z-modal)]',
         'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0',
         className,
@@ -47,6 +49,7 @@ export const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
+        fontVariables,
         'hl fixed left-1/2 top-1/2 z-[var(--hl-z-modal)] w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2',
         'rounded-hl-xl border border-hl-border bg-hl-canvas p-[var(--hl-section-pad)] text-hl-fg shadow-[var(--hl-shadow-lg)]',
         'duration-[var(--hl-dur-base)] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',

@@ -4,6 +4,7 @@ import * as React from 'react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { fontVariables } from '../theme/fonts'
 
 /**
  * Drawer / Peek (Design Bible §4.4, §4.9). Right-side overlay that enters with
@@ -87,6 +88,7 @@ export const DrawerContent = React.forwardRef<
   <DialogPrimitive.Portal>
     <DialogPrimitive.Overlay
       className={cn(
+        fontVariables,
         'hl hl-rack-scrim fixed inset-0 z-[var(--hl-z-drawer)]',
         'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0',
       )}
@@ -94,6 +96,7 @@ export const DrawerContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
+        fontVariables,
         'hl fixed inset-y-0 right-0 z-[var(--hl-z-drawer)] flex w-full flex-col border-l border-hl-border bg-hl-canvas text-hl-fg shadow-[var(--hl-shadow-lg)]',
         'rounded-l-[var(--hl-radius-xl)] duration-[var(--hl-dur-base)]',
         'data-[state=open]:animate-in data-[state=open]:slide-in-from-right data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right motion-reduce:data-[state=open]:slide-in-from-right-0 motion-reduce:data-[state=closed]:slide-out-to-right-0',
