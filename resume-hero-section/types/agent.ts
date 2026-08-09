@@ -8,6 +8,13 @@ export interface Recommendation {
   dedupe_key: string;
   category: string; // action | urgent | campaign_risk | candidate_alert
   severity: string; // urgent | high | medium | low
+  /**
+   * INTEGER PERCENT, 0–100 — `app/schemas/agent.py` declares
+   * `confidence: int = Field(ge=0, le=100)`. NOT a 0–1 ratio. Read it through
+   * `confidenceBand`/`confidencePercent` (components/hirelens/lib/format.ts);
+   * comparing it directly against 0.66/0.5 made every recommendation render as
+   * high confidence.
+   */
   confidence: number;
   title: string;
   why: string;

@@ -30,10 +30,40 @@ export function scoreBand(score: number): { key: ScoreBandKey; label: string } {
 
 export type ConfidenceKey = 'high' | 'medium' | 'low'
 
-/** Confidence band (Design Bible §3.6). Accepts a 0–1 ratio or 0–100 percent. */
-export function confidenceBand(value: number): { key: ConfidenceKey; label: string } {
-  const ratio = value > 1 ? value / 100 : value
-  if (ratio >= 0.75) return { key: 'high', label: 'High confidence' }
-  if (ratio >= 0.5) return { key: 'medium', label: 'Medium confidence' }
-  return { key: 'low', label: 'Low confidence' }
+/**
+ * Normalise any confidence the product carries to a 0–100 percent.
+ *
+ * THE BACKEND CONTRACT IS 0–100. `app/schemas/agent.py` declares
+ * `confidence: int = Field(ge=0, le=100)` and the agent workflows emit 50, 75,
+ * 80, `min(95, …)`, `min(98, …)`. Candidate fit confidence is 0–100 as well.
+ *
+ * This exists because it was got wrong: the Decision Intelligence chip compared
+ * the raw value against 0.66/0.5 as though it were a ratio, so every
+ * recommendation — including a 50 — satisfied `>= 0.66` and rendered "High
+ * confidence" with a green check. The same recommendation read "Medium" in the
+ * Ask backlog, which normalised. A trust indicator that is always green is
+ * worse than no indicator, so there is now exactly ONE way to read the number.
+ *
+ * A value at or below 1 is still treated as a 0–1 ratio, for older callers that
+ * pass one; 1 means 100% either way, so the boundary is not ambiguous.
+ */
+export function confidencePercent(value: number): number {
+  if (!Number.isFinite(value)) return 0
+  const percent = value <= 1 ? value * 100 : value
+  return Math.round(Math.max(0, Math.min(100, percent)))
+}
+
+/**
+ * The confidence threshold table (Design Bible §3.6) — the SINGLE source of
+ * these cut-offs. Do not re-declare them at a call site; call this instead.
+ */
+export function confidenceBand(value: number): {
+  key: ConfidenceKey
+  label: string
+  percent: number
+} {
+  const percent = confidencePercent(value)
+  if (percent >= 75) return { key: 'high', label: 'High confidence', percent }
+  if (percent >= 50) return { key: 'medium', label: 'Medium confidence', percent }
+  return { key: 'low', label: 'Low confidence', percent }
 }
