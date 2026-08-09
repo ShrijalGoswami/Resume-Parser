@@ -23,7 +23,9 @@ export function WorkspaceSwitcher({
 
   const tile = (
     <span
-      className="flex size-hl-control-md shrink-0 items-center justify-center rounded-hl-md border border-hl-border-strong bg-hl-canvas hl-body-medium text-hl-fg font-[family-name:var(--font-hl-mono)]"
+      // Inter, not mono (V2 §4): the workspace monogram is identity chrome,
+      // not data. Same rule for the role caption below.
+      className="flex size-hl-control-md shrink-0 items-center justify-center rounded-hl-md border border-hl-border-strong bg-hl-canvas hl-body-medium text-hl-fg"
       aria-hidden
     >
       {initial}
@@ -46,7 +48,7 @@ export function WorkspaceSwitcher({
           <span className="truncate hl-body-medium text-hl-fg">
             {workspaceName}
           </span>
-          <span className="truncate hl-label text-hl-fg-secondary font-[family-name:var(--font-hl-mono)]">
+          <span className="truncate hl-label text-hl-fg-secondary">
             {role}
           </span>
         </span>

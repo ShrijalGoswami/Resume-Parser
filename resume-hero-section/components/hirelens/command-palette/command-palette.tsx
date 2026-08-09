@@ -3,7 +3,9 @@
 import * as React from 'react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { useRouter } from 'next/navigation'
-import { Search, Sparkles, CornerDownLeft } from 'lucide-react'
+// MessageSquareText, not Sparkles (V2 §8/§23): the ask affordance names the
+// act of asking a question, not the technology answering it.
+import { Search, MessageSquareText, CornerDownLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useShell } from '../shell/shell-context'
 import { primaryNav, settingsNav } from '../shell/nav-config'
@@ -75,7 +77,7 @@ export function CommandPalette() {
         id: 'ask:current',
         group: 'ask',
         label: trimmed,
-        icon: Sparkles,
+        icon: MessageSquareText,
         perform: () => router.push(`/ask?q=${encodeURIComponent(trimmed)}`),
       })
     }
@@ -141,7 +143,12 @@ export function CommandPalette() {
 
           <div className="flex items-center gap-2 border-b border-hl-border-subtle px-4">
             {isQuestion ? (
-              <Sparkles className="size-4 shrink-0 text-hl-prism-mid" aria-hidden />
+              // Copper, not the prism: V2 §16 marks system/AI affordances with
+              // the copper rule, and the sparkle is banned outright.
+              <MessageSquareText
+                className="size-4 shrink-0 text-[var(--hl-accent-secondary)]"
+                aria-hidden
+              />
             ) : (
               <Search className="size-4 shrink-0 text-hl-fg-tertiary" aria-hidden />
             )}

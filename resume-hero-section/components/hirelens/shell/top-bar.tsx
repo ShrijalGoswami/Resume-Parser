@@ -52,7 +52,10 @@ export function TopBar({ breadcrumbs, title, unreadCount }: TopBarProps) {
         // Search is the shell's most-used affordance — it gets a real control
         // height, a full-size icon, and a placeholder at body size rather than
         // the caption it was.
-        className="hl-prism-focus group inline-flex h-hl-control-md w-80 max-w-[45vw] items-center gap-2.5 rounded-hl-md border border-hl-border bg-hl-subtle px-3.5 text-left outline-none transition-[background-color,border-color,box-shadow] duration-[var(--hl-dur-base)] ease-[var(--hl-ease-out)] hover:border-hl-border-strong hover:bg-hl-canvas hover:shadow-[var(--hl-shadow-sm)]"
+        // Was `hl-prism-focus` — a violet→cyan gradient ring on focus. V2 §3.9
+        // has exactly one focus treatment: a flat copper outline. The launcher
+        // is chrome, and chrome does not get the AI identity.
+        className="group inline-flex h-hl-control-md w-80 max-w-[45vw] items-center gap-2.5 rounded-hl-md border border-hl-border bg-hl-subtle px-3.5 text-left outline-none transition-[background-color,border-color,box-shadow] duration-[var(--hl-dur-base)] ease-[var(--hl-ease-out)] hover:border-hl-border-strong hover:bg-hl-canvas hover:shadow-[var(--hl-shadow-sm)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--hl-focus-ring,var(--hl-accent-secondary))]"
       >
         {/* Was a prism sparkle "marking the AI-aware entry point". V2 §8/§23
             removes it: this control is a SEARCH field first — that is what a

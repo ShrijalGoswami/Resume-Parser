@@ -24,7 +24,13 @@ export function ThemeProvider({
   return (
     <NextThemesProvider
       attribute="data-hl-theme"
-      defaultTheme="system"
+      // V2 ships dark-first: the charcoal/terracotta ramp under
+      // `[data-hl-theme='dark']` IS Design System V2, while the light ramp is
+      // still the previous Iris identity awaiting its §22 value swap. Until
+      // that lands, a first visit must not open on the outgoing palette.
+      // An explicit user choice (stored under `hl-theme`) still wins, and the
+      // theme toggle keeps working — this changes the default only.
+      defaultTheme="dark"
       enableSystem
       disableTransitionOnChange
       storageKey="hl-theme"

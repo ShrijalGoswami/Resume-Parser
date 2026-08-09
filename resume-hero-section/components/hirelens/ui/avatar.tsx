@@ -43,8 +43,16 @@ export function Avatar({ name, src, size, seed, className, style, ...props }: Av
       style={{
         width: dimension,
         height: dimension,
-        backgroundColor: showImage ? undefined : `hsl(${hue} 42% 90%)`,
-        color: `hsl(${hue} 45% 32%)`,
+        // The hue stays deterministic (Design Bible §4.8); saturation and
+        // lightness come from theme tokens, because the literal 90%-light
+        // pastel plate was designed for the light canvas and read as a bright
+        // chip — the loudest thing on screen — on V2's charcoal. The dark
+        // scope overrides the four knobs in globals.css; light keeps the
+        // original values via the fallbacks here.
+        backgroundColor: showImage
+          ? undefined
+          : `hsl(${hue} var(--hl-avatar-plate-s, 42%) var(--hl-avatar-plate-l, 90%))`,
+        color: `hsl(${hue} var(--hl-avatar-ink-s, 45%) var(--hl-avatar-ink-l, 32%))`,
         ...style,
       }}
       {...props}

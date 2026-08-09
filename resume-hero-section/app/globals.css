@@ -765,6 +765,14 @@
 
   /* `--hl-chart-*` is defined once, further down with the other dark tokens. */
 
+  /* Avatar identity plates (Design Bible §4.8): the per-person hue survives,
+     but on charcoal the plate must recede and the initials must carry the
+     light — the inverse of the light theme's pastel-plate/dark-ink pairing. */
+  --hl-avatar-plate-s: 24%;
+  --hl-avatar-plate-l: 25%;
+  --hl-avatar-ink-s: 32%;
+  --hl-avatar-ink-l: 80%;
+
   /* STATE (V2 §3.9) */
   --hl-focus-ring: #C48B71;     /* copper, never terracotta */
   --hl-selection-bg: #4A3F28;   /* search-match highlight inside résumé text */
@@ -1802,12 +1810,11 @@
   }
 
   /* The nav rail reads as a slightly recessed plane beside the content. */
+  /* Flat, not a wash (V2 §7: no gradients on furniture — even a neutral one).
+     Elevation in V2 comes from the background step alone, and the rail sits
+     one step above the canvas: #1C1F24 on #121417 in dark. */
   .hl-rail {
-    background-image: linear-gradient(
-      to bottom,
-      color-mix(in srgb, var(--hl-bg-subtle) 100%, transparent),
-      color-mix(in srgb, var(--hl-bg-canvas) 55%, var(--hl-bg-subtle))
-    );
+    background-color: var(--hl-bg-subtle);
   }
 
   /* The active nav item: a soft violet plate with a lit edge, not a flat

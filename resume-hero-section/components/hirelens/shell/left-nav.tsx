@@ -274,8 +274,12 @@ export function LeftNav({ account }: LeftNavProps) {
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-2 pt-3">
         {visibleGroups.map((group) => (
           <div key={group.label} className="flex flex-col gap-0.5">
+            {/* Inter, not mono (V2 §4): group headings are navigation, and
+                mono in nav is the single strongest "developer tool" signal
+                the audit named. Mono is reserved for scores, IDs and
+                timestamps — a heading is none of those. */}
             {collapsed ? null : (
-              <span className="mb-1.5 px-3 hl-label text-hl-fg-tertiary font-[family-name:var(--font-hl-mono)]">
+              <span className="mb-1.5 px-3 hl-label text-hl-fg-tertiary">
                 {group.label}
               </span>
             )}
