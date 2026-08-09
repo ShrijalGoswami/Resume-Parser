@@ -829,7 +829,22 @@
   --hl-shadow-glow: none;
   --hl-shadow-glow-strong: none;
 
-  --hl-bg-raised: #12162A;
+  /* The level-1 elevated step (V2 §3.1 "Cards, panels, popovers", and the
+     elevation table: 0 canvas #121417 → 1 card #1C1F24 → 2 popover #252930).
+
+     WAS #12162A — an indigo carried over from the Iris identity, which the V2
+     dark ramp never swapped. It is not a step of this ramp at all: measured in
+     the browser it computes to rgb(18, 22, 42) against a #121417 canvas, i.e.
+     a navy plate floating on charcoal. It was still painting on the Ask
+     composer and the Ledger empty state, both through `.hl-surface`.
+
+     #1C1F24 and not #252930: #252930 is level 2, reserved for popovers, hover
+     and secondary fills. Every `.hl-surface` consumer — Card, DataTable,
+     EmptyState, the Ask composer — is a level-1 card or panel. It therefore
+     matches `--hl-bg-subtle` in dark, which is correct rather than redundant:
+     the ramp inverts between themes, and in light this token is #FFFFFF while
+     subtle is not. */
+  --hl-bg-raised: #1C1F24;
   /* On dark this is the whole trick: a lit top edge turns a flat rectangle
      into a surface catching light from above. */
   --hl-surface-highlight: rgba(255, 255, 255, 0.06);
