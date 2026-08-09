@@ -79,6 +79,10 @@ function AuthedLedger() {
     () => sortLedger((recs.data ?? []).filter(isResolved)),
     [recs.data],
   )
+  // Real count of what is still undecided — used only to tell the two empty
+  // states apart, never mixed into the ledger's own totals.
+  const pendingCount = (recs.data ?? []).length - resolved.length
+  const viewerId = profile.data?.id ?? null
 
   const pageCount = Math.max(1, Math.ceil(resolved.length / PAGE_SIZE))
   const clampedPage = Math.min(page, pageCount - 1)
@@ -91,25 +95,54 @@ function AuthedLedger() {
     : undefined
 
   let body: React.ReactNode
-  if (recs.isLoading) {
-    body = <LoadingScreen label="Loading the ledger" />
-  } else if (recs.isError) {
+  // ORDER AND CONDITIONS BOTH MATTER HERE.
+  //
+  // Error is tested FIRST: a failed request must never fall through to an empty
+  // state. On an audit surface "no decisions recorded" is a factual claim about
+  // the record, and making it because the network was down is the worst thing
+  // this screen can do.
+  //
+  // The loading test is `data === undefined`, not `isLoading`. `isLoading` is
+  // `isPending && isFetching`, so it drops to false in the GAPS BETWEEN retry
+  // backoffs while the query is still unresolved — and with the backend
+  // stopped, that gap rendered the empty state and told the reader their ledger
+  // was empty. Verified against a stopped backend, not reasoned about.
+  if (recs.isError) {
     body = (
       <ErrorState variant="route" title="Couldn't load the ledger" onRetry={() => recs.refetch()} />
     )
+  } else if (recs.data === undefined) {
+    body = <LoadingScreen label="Loading the ledger" />
   } else if (resolved.length === 0) {
-    body = (
-      <EmptyState
-        surface
-        icon={BookText}
-        title="No decisions recorded yet"
-        description="Decisions you approve or override in the Inbox are written here — permanently, as they stood."
-      />
-    )
+    // Two different empty states, deliberately. "Nothing here" and "nothing
+    // here YET, because the decisions are still sitting in your Inbox" are
+    // different facts, and the second one is actionable — the ledger looked
+    // identically, misleadingly bare in both cases.
+    body =
+      pendingCount > 0 ? (
+        <EmptyState
+          surface
+          icon={BookText}
+          title="Nothing decided yet"
+          description={`${pendingCount} recommendation${pendingCount === 1 ? '' : 's'} ${pendingCount === 1 ? 'is' : 'are'} waiting on you. Once you approve or override ${pendingCount === 1 ? 'it' : 'them'}, the record is written here and frozen.`}
+          action={
+            <Button variant="primary" asChild>
+              <Link href="/ask?view=backlog">Review what&rsquo;s waiting</Link>
+            </Button>
+          }
+        />
+      ) : (
+        <EmptyState
+          surface
+          icon={BookText}
+          title="No decisions recorded yet"
+          description="Decisions you approve or override are written here — permanently, as they stood at the moment of the call."
+        />
+      )
   } else {
     body = (
       <div className="flex flex-col gap-4">
-        <LedgerTable rows={pageRows} onOpen={setSelected} />
+        <LedgerTable rows={pageRows} onOpen={setSelected} viewerId={viewerId} />
         <div className="flex items-center justify-between">
           <p className="hl-body text-hl-fg-tertiary">
             Showing <span className="font-hl-mono tabular-nums">{rangeStart}–{rangeEnd}</span> of{' '}
@@ -157,7 +190,7 @@ function AuthedLedger() {
         </header>
         {body}
       </div>
-      <LedgerRecordDrawer rec={selected} onClose={() => setSelected(null)} />
+      <LedgerRecordDrawer rec={selected} onClose={() => setSelected(null)} viewerId={viewerId} />
     </AppShell>
   )
 }

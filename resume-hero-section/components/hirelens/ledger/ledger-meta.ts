@@ -10,16 +10,45 @@ export function isResolved(rec: Recommendation): boolean {
 }
 
 /**
- * The decision timestamp — the immutable `decided_at` stamped at decision time
- * (A2), falling back to `updated_at`/`created_at` only for legacy rows.
+ * The decision timestamp — the immutable `decided_at`, stamped by a DB trigger
+ * at decision time and frozen thereafter (migration 0015).
+ *
+ * STRICT ON PURPOSE. This used to fall back to `updated_at ?? created_at`, which
+ * meant a legacy row with no `decided_at` displayed the moment the AGENT WROTE
+ * the recommendation in a column headed "Date" on an audit surface — a different
+ * event's timestamp, presented as the decision's. An audit record that guesses
+ * when something happened is worse than one that admits it does not know, so a
+ * missing decision time now reads as missing.
  */
 export function decidedAt(rec: Recommendation): string | null {
-  return rec.decided_at ?? rec.updated_at ?? rec.created_at ?? null
+  return rec.decided_at ?? null
 }
 
-/** Most-recent decision first (by immutable decision time). */
+/**
+ * Ordering key only — never displayed. Falling back here keeps a legacy row in a
+ * sensible position in the list without ever claiming its fallback is the
+ * decision time.
+ */
+function sortKey(rec: Recommendation): string {
+  return rec.decided_at ?? rec.updated_at ?? rec.created_at ?? ''
+}
+
+/** Most-recent decision first. */
 export function sortLedger(recs: Recommendation[]): Recommendation[] {
-  return [...recs].sort((a, b) => (decidedAt(b) ?? '').localeCompare(decidedAt(a) ?? ''))
+  return [...recs].sort((a, b) => sortKey(b).localeCompare(sortKey(a)))
+}
+
+/**
+ * Who recorded the decision. `decided_by` is the deciding recruiter's id, and
+ * the repository scopes every read to the signed-in recruiter, so in practice it
+ * is the viewer — but that is asserted by matching ids, not assumed. When the id
+ * does not match (or no profile is loaded) the raw id is shown rather than a
+ * guessed name: this product does not invent people.
+ */
+export function actorLabel(rec: Recommendation, viewerId?: string | null): string | null {
+  if (!rec.decided_by) return null
+  if (viewerId && rec.decided_by === viewerId) return 'You'
+  return rec.decided_by.slice(0, 8).toUpperCase()
 }
 
 export interface DecisionMeta {
@@ -43,18 +72,25 @@ export function decisionMeta(status: ApprovalStatus): DecisionMeta {
   }
 }
 
-/** Real decision latency from created → decided, or null if unavailable. */
+/**
+ * Elapsed time between the agent proposing and the human deciding.
+ *
+ * Worded as "sat for" rather than "to decide": both timestamps are real, but the
+ * gap is wall-clock between two events, not time anyone spent deliberating. A
+ * recommendation raised overnight and resolved at 9am did not take nine hours of
+ * thought, and an audit record should not imply that it did.
+ */
 export function decisionLatency(rec: Recommendation): string | null {
   const decided = decidedAt(rec)
   if (!rec.created_at || !decided) return null
   const ms = new Date(decided).getTime() - new Date(rec.created_at).getTime()
   if (!(ms > 0)) return null
   const mins = Math.round(ms / 60000)
-  if (mins < 1) return 'under a minute to decide'
-  if (mins < 60) return `${mins} min to decide`
+  if (mins < 1) return 'decided within a minute of being raised'
+  if (mins < 60) return `sat ${mins} min before the call`
   const hrs = Math.round(mins / 60)
-  if (hrs < 48) return `${hrs}h to decide`
-  return `${Math.round(hrs / 24)}d to decide`
+  if (hrs < 48) return `sat ${hrs}h before the call`
+  return `sat ${Math.round(hrs / 24)}d before the call`
 }
 
 /** A short, stable display id from the real record id. */
