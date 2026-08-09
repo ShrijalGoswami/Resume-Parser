@@ -312,6 +312,7 @@ function AutomationRules({ canManage }: { canManage: boolean }) {
                   size="icon"
                   aria-label={`Delete ${rule.name}`}
                   onClick={() => setDeleteTarget(rule)}
+                  className="hover:text-hl-danger focus-visible:text-hl-danger"
                 >
                   <Trash2 />
                 </Button>

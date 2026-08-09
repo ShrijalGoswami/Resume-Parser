@@ -101,10 +101,16 @@ function AuthedSettings({ section }: { section: string }) {
                     key={item.id}
                     href={`/settings/${item.id}`}
                     aria-current={item.id === active.id ? 'page' : undefined}
+                    // Copper marker + weight, never terracotta (V2 §15). This
+                    // read as a terracotta plate with terracotta type — the
+                    // primary-action colour — so the settings rail competed
+                    // with the one button on the page that means "do this".
+                    // The nav rail beside it already states the rule and marks
+                    // its page with the same 2px copper inset.
                     className={cn(
                       'hl-ui rounded-hl-md px-2.5 py-2 outline-none transition-colors',
                       item.id === active.id
-                        ? 'bg-hl-accent-subtle text-hl-accent-fg'
+                        ? 'bg-hl-muted font-medium text-hl-fg shadow-[inset_2px_0_0_var(--hl-accent-secondary)]'
                         : 'text-hl-fg-secondary hover:bg-hl-subtle hover:text-hl-fg',
                     )}
                   >

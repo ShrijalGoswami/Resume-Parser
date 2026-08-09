@@ -9,8 +9,28 @@ import { Skeleton } from '../../ui/skeleton'
 import { ErrorState } from '../../states/error-state'
 import { toast } from '../../ui/use-toast'
 
+/**
+ * Flag keys are snake_case, and title-casing each word alone produced "Ats
+ * Score", "Basic Ai Summary" and "Export Pdf" — the product's own vocabulary
+ * spelled wrong, on the screen where an admin decides what to switch off.
+ * These are the initialisms the backend actually uses as flag words; anything
+ * not listed keeps ordinary title case.
+ */
+const INITIALISMS: Record<string, string> = {
+  ai: 'AI',
+  ats: 'ATS',
+  api: 'API',
+  pdf: 'PDF',
+  csv: 'CSV',
+  sso: 'SSO',
+  url: 'URL',
+}
+
 function humanize(flag: string) {
-  return flag.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+  return flag
+    .split('_')
+    .map((word) => INITIALISMS[word] ?? word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
 }
 
 export function FeatureFlagsSection() {

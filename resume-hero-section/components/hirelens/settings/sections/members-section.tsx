@@ -172,8 +172,18 @@ function MemberRow({
           {humanRole(member.role)}
         </Badge>
       )}
+      {/* Danger tone on hover/focus, not at rest: a row of permanently red
+          icons reads as an error state. The words still carry the meaning —
+          the aria-label names the person, and the typed-confirm dialog spells
+          out the action — so the colour is reinforcement, never the signal. */}
       {canManage ? (
-        <Button variant="ghost" size="icon" onClick={onRemove} aria-label={`Remove ${label}`}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onRemove}
+          aria-label={`Remove ${label}`}
+          className="hover:text-hl-danger focus-visible:text-hl-danger"
+        >
           <Trash2 />
         </Button>
       ) : null}

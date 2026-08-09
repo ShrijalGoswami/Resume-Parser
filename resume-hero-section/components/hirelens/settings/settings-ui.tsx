@@ -7,8 +7,9 @@ import { Button } from '../ui/button'
 import { PageHeader } from '../shell/page-header'
 
 /** Section shell (Design Bible §6.8) — Stripe-calm header + body, 800px column.
- *  The header is the shared PageHeader (premium Fraunces title); the form body
- *  below stays in the dense UI voice. */
+ *  The header is the shared PageHeader; the form body below stays in the dense
+ *  UI voice. (The title is Inter — the display steps dropped their serif on
+ *  29 Jul 2026 and the product has no serif; only marketing keeps one.) */
 export function SettingsSection({
   title,
   description,
