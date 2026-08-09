@@ -155,9 +155,23 @@ function MemoLayout({
       // that runs whether or not the buttons rendered.
       if (!canDecide) return
       update.mutate({ id: rec.id, status })
+      // NO UNDO. This toast used to offer one, which PATCHed the record back to
+      // `pending` — an action the database refuses: the trigger behind
+      // `decided_at`/`decided_by` freezes both on write and rejects any
+      // re-decision (see `agent_repository.update_status`). So the control was
+      // offering a route that could only ever fail, on the screen whose entire
+      // job is making a decision feel accountable.
+      //
+      // The honest replacement is to say the decision is permanent. A rollback
+      // faked on the client would be worse than the failing button: the Ledger
+      // is the record of what was decided, and it would disagree.
       toast({
-        title: `${verb} ${rec.title}`,
-        action: { label: 'Undo', onClick: () => update.mutate({ id: rec.id, status: 'pending' }) },
+        variant: 'success',
+        title: `${verb} · ${rec.title}`,
+        description:
+          status === 'approved'
+            ? 'Decision recorded. This decision is permanent.'
+            : 'Decision recorded as overridden. This decision is permanent.',
       })
       router.back()
     },
@@ -165,7 +179,7 @@ function MemoLayout({
   )
 
   const approve = React.useCallback(() => resolve('approved', 'Approved'), [resolve])
-  const override = React.useCallback(() => resolve('dismissed', 'Overrode'), [resolve])
+  const override = React.useCallback(() => resolve('dismissed', 'Overridden'), [resolve])
 
   // Enter approves (Stitch ⏎). Dormant in fields / dialogs.
   React.useEffect(() => {
