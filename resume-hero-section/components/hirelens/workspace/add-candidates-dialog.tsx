@@ -24,7 +24,184 @@ import { toast } from '../ui/use-toast'
 import { QuotaLock, QuotaMeter, useQuota, usePlanDenialHandler } from '../entitlements'
 import type { Campaign } from '@/types/campaign'
 
-type Phase = 'idle' | 'analyzing' | 'persisting' | 'indexing' | 'error'
+type Phase = 'idle' | 'uploading' | 'analyzing' | 'persisting' | 'indexing' | 'error'
+
+/**
+ * What the server is doing while we wait, in the order `batch_service` does it.
+ *
+ * NONE OF THESE IS A COMPLETION CLAIM. `/batch-analysis` is one POST and one
+ * JSON response — no stream, no job id, no per-file events — so the client
+ * cannot know which résumé is being read or how far along the batch is. These
+ * name the work truthfully and advance at a readable pace; they never tick a
+ * step off, and they never assert a percentage.
+ */
+export const ANALYSIS_STAGES = [
+  'Reading résumés',
+  'Extracting skills and experience',
+  'Analyzing candidate profiles',
+  'Comparing candidates against this role',
+  'Building your candidate ranking',
+] as const
+
+/** How long each line holds. Slow enough to read, quick enough to feel alive. */
+const STAGE_MS = 2800
+
+/**
+ * Copy for the tail phases, where the work is no longer a guess.
+ *
+ * Analysis is opaque, so it gets the rotating stages. Persisting and indexing
+ * are NOT opaque — the client issued those calls itself and knows exactly which
+ * one is outstanding — so each gets its own line and the rotation stops. Naming
+ * them is honest in a way the rotation could not be.
+ *
+ * Returns undefined for every other phase, which is what keeps the rotation on
+ * during `analyzing`.
+ */
+export function savingLabelFor(phase: Phase): string | undefined {
+  if (phase === 'persisting') return 'Saving your candidates…'
+  if (phase === 'indexing') return 'Finishing up…'
+  return undefined
+}
+
+/** The fan of the résumé stack. Rotation is per-card so the float keeps it. */
+const DOC_CARDS = [
+  { rotate: '-9deg', x: '-30px', delay: '0s', z: 'z-10' },
+  { rotate: '-3deg', x: '-10px', delay: '0.9s', z: 'z-20' },
+  { rotate: '3deg', x: '10px', delay: '1.8s', z: 'z-20' },
+  { rotate: '9deg', x: '30px', delay: '2.7s', z: 'z-10' },
+] as const
+
+/** One stylized résumé: paper, a hairline edge, and ruled lines. No artwork. */
+function DocumentCard({
+  rotate,
+  x,
+  delay,
+  z,
+}: {
+  rotate: string
+  x: string
+  delay: string
+  z: string
+}) {
+  return (
+    <span
+      className={`absolute ${z} block h-[74px] w-[56px] rounded-[3px] border border-hl-border bg-hl-elevated shadow-[var(--hl-shadow-sm)]`}
+      style={{
+        left: `calc(50% - 28px + ${x})`,
+        // Consumed by `hl-doc-float`, so the card breathes without unfanning.
+        ['--doc-rotate' as string]: rotate,
+        animation: `hl-doc-float 7s ease-in-out ${delay} infinite`,
+      }}
+      aria-hidden
+    >
+      {/* Ruled lines read as a résumé at this size; a document glyph would
+          read as a file-type badge instead. */}
+      <span className="absolute inset-x-[8px] top-[10px] block h-[3px] rounded-full bg-hl-fg-tertiary opacity-40" />
+      <span className="absolute inset-x-[8px] top-[19px] block h-[2px] w-[24px] rounded-full bg-hl-border-strong" />
+      {[30, 38, 46, 54, 62].map((top, i) => (
+        <span
+          key={top}
+          className="absolute left-[8px] block h-[2px] rounded-full bg-hl-border-strong"
+          style={{ top: `${top}px`, right: i % 2 === 0 ? '8px' : '18px' }}
+        />
+      ))}
+    </span>
+  )
+}
+
+/**
+ * The processing chamber — what fills the dropzone while the server works.
+ *
+ * WHY THIS EXISTS AND WHAT IT REFUSES TO DO. `/batch-analysis` is one opaque
+ * POST: no stream, no job id, no per-file events. The wait it covers is real
+ * (parse → extract → model → rank → persist) and can run tens of seconds, but
+ * nothing about its position is knowable. So this occupies the wait rather
+ * than measuring it — there is no percentage and no bar, because the previous
+ * bar showed `xhr.upload` bytes under the word "Analyzing" and therefore read
+ * "Analyzing… 100%" for exactly as long as the model was actually working.
+ *
+ * Three motions, all slow, all reusing the primitives in `globals.css`: paper
+ * that breathes, a beam that reads top-to-bottom, and an accent glow under
+ * 0.2 opacity. The reduced-motion rule that covers `.hl` neutralizes all
+ * three, so there is no second code path to maintain or forget.
+ *
+ * The stage interval is owned by an effect, so completion, error and cancel
+ * all stop it by unmounting this — no timer outlives the request.
+ *
+ * It also stays mounted through persisting and indexing. Unmounting it there
+ * dropped the recruiter back onto the dashed dropzone for the last second of a
+ * flow that had been continuous until then — the paper vanished, an empty
+ * upload box flashed, and only then did the dialog close. The animation is the
+ * same; only the line under it changes, because by that point the client knows
+ * exactly which call is outstanding and can say so.
+ */
+export function AnalyzingState({
+  fileCount,
+  /** Set once the work has a name — stops the rotation and states the phase. */
+  savingLabel,
+}: {
+  fileCount: number
+  savingLabel?: string
+}) {
+  const [stage, setStage] = React.useState(0)
+
+  React.useEffect(() => {
+    // No rotation once the phase is known: re-running the guesses over a call
+    // we can name would be inventing uncertainty we do not have.
+    if (savingLabel) return
+    const id = window.setInterval(() => {
+      // Advances and HOLDS on the last line. Looping back to "Reading résumés"
+      // would tell the reader the work had gone backwards.
+      setStage((current) => Math.min(current + 1, ANALYSIS_STAGES.length - 1))
+    }, STAGE_MS)
+    return () => window.clearInterval(id)
+  }, [savingLabel])
+
+  return (
+    <div
+      className="flex flex-col items-center gap-3 rounded-hl-lg border border-hl-border bg-hl-subtle px-6 py-5"
+      role="status"
+      aria-live="polite"
+      data-testid="processing-chamber"
+    >
+      {/* Fixed height: the stack and beam move inside a box that never
+          resizes, so nothing below it shifts while the modal waits. */}
+      <div className="relative h-[112px] w-full overflow-hidden">
+        {/* Ambient intelligence. Behind the paper, never over it. */}
+        <span
+          className="absolute left-1/2 top-1/2 block size-[150px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--hl-accent-solid)] blur-2xl"
+          style={{ animation: 'hl-doc-glow 4.5s ease-in-out infinite' }}
+          aria-hidden
+        />
+        <div className="absolute inset-0 flex items-center justify-center">
+          {DOC_CARDS.map((card) => (
+            <DocumentCard key={card.rotate} {...card} />
+          ))}
+        </div>
+        {/* The beam. One hairline, gradient-faded at both ends so it reads as
+            light passing over paper rather than a rule drawn across it. */}
+        <span
+          className="absolute inset-x-8 top-0 z-30 block h-px"
+          style={{
+            background:
+              'linear-gradient(90deg, transparent, var(--hl-accent-secondary), transparent)',
+            animation: 'hl-doc-scan 2.6s ease-in-out infinite',
+          }}
+          aria-hidden
+        />
+      </div>
+
+      <div className="flex min-h-[2.75rem] flex-col items-center gap-1 text-center">
+        <p className="hl-body-medium">
+          {fileCount} résumé{fileCount === 1 ? '' : 's'} processing
+        </p>
+        <p className="hl-small text-hl-fg-secondary">
+          {savingLabel ?? `${ANALYSIS_STAGES[stage]}…`}
+        </p>
+      </div>
+    </div>
+  )
+}
 
 /** 10MB. Stated once so the check and the sentence explaining it cannot drift. */
 const MAX_BYTES = 10 * 1024 * 1024
@@ -97,7 +274,11 @@ export function AddCandidatesDialog({
   const [dragging, setDragging] = React.useState(false)
 
   const hasJobDescription = Boolean(campaign.job_description?.trim())
-  const busy = phase === 'analyzing' || phase === 'persisting' || phase === 'indexing'
+  const busy =
+    phase === 'uploading' ||
+    phase === 'analyzing' ||
+    phase === 'persisting' ||
+    phase === 'indexing'
 
   // CHECK THE QUOTA BEFORE THE EXPENSIVE THING.
   //
@@ -122,6 +303,27 @@ export function AddCandidatesDialog({
     setProgress(0)
     setError(null)
     setRejected([])
+  }
+
+  // Clear on OPEN, not on close. A successful run closes the dialog while the
+  // chamber is still showing, so the teardown has to happen somewhere that is
+  // not mid-exit-animation; the next open is the only moment that is both
+  // guaranteed to happen and invisible to the user.
+  //
+  // Adjusted during render rather than in an effect — React's documented
+  // "adjusting state when a prop changes" pattern. An effect here would set
+  // state synchronously on every open and cascade a second render, which is
+  // what `react-hooks/set-state-in-effect` exists to catch.
+  const [wasOpen, setWasOpen] = React.useState(open)
+  if (open !== wasOpen) {
+    setWasOpen(open)
+    if (open) {
+      setFiles([])
+      setPhase('idle')
+      setProgress(0)
+      setError(null)
+      setRejected([])
+    }
   }
 
   const handleOpenChange = (next: boolean) => {
@@ -165,12 +367,19 @@ export function AddCandidatesDialog({
     // customer with 2 credits left ends up with 0 candidates instead of 2.
     const sending = files.slice(0, analyzable)
     try {
-      setPhase('analyzing')
+      // TWO DIFFERENT WAITS, AND ONLY THE FIRST ONE IS KNOWABLE.
+      // Sending the files is measurable in bytes, so that half keeps its real
+      // percentage. Everything after — parse, extract, model, rank — happens
+      // inside one opaque request, so it becomes an indeterminate wait rather
+      // than a number the client would have to invent.
+      setPhase('uploading')
       setProgress(0)
       const batch = await analyzeBatchWithProgress(
         campaign.job_description,
         sending,
         setProgress,
+        undefined,
+        () => setPhase('analyzing'),
       )
       setPhase('persisting')
       const persisted = await persistBatch(roleId, batch)
@@ -193,10 +402,16 @@ export function AddCandidatesDialog({
         // Truncation is never silent: a customer who selected eight files and
         // got two must be told which two, and why.
         description: overflow
-          ? `${files.length - sending.length} not analyzed — you've used your résumé allowance.`
+          ? `${files.length - sending.length} not analyzed — you’ve used your résumé allowance.`
           : undefined,
       })
-      reset()
+      // CLOSE WITH THE CHAMBER STILL ON SCREEN.
+      //
+      // `reset()` used to run here, and it put phase back to `idle` while the
+      // dialog was still playing its exit animation — so the last thing the
+      // recruiter saw was the chamber vanishing and an empty dashed dropzone
+      // fading out in its place. The state is cleared on the next open instead
+      // (see the effect above), which leaves nothing stale and nothing to time.
       onOpenChange(false)
     } catch (caught) {
       setPhase('error')
@@ -215,15 +430,6 @@ export function AddCandidatesDialog({
       setError(caught instanceof Error ? caught.message : 'Something went wrong')
     }
   }
-
-  const phaseLabel =
-    phase === 'analyzing'
-      ? `Analyzing… ${progress}%`
-      : phase === 'persisting'
-        ? 'Saving…'
-        : phase === 'indexing'
-          ? 'Indexing…'
-          : ''
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -267,21 +473,31 @@ export function AddCandidatesDialog({
             }}
             onDrop={onDrop}
           >
-            <button
-              type="button"
-              onClick={() => inputRef.current?.click()}
-              disabled={busy}
-              className={cn(
-                'flex flex-col items-center gap-2 rounded-hl-lg border border-dashed bg-hl-subtle px-6 py-8 text-center outline-none transition-colors hover:border-hl-accent disabled:opacity-60',
-                dragging ? 'border-hl-accent bg-hl-accent-subtle' : 'border-hl-border-strong',
-              )}
-            >
-              <Upload className="size-6 text-hl-fg-tertiary" aria-hidden />
-              <span className="hl-body-medium">
-                {dragging ? 'Drop to add' : 'Drop résumés here, or choose files'}
-              </span>
-              <span className="hl-caption text-hl-fg-tertiary">PDF or DOCX · up to 10MB each</span>
-            </button>
+            {/* The dropzone becomes the chamber once the files are the
+                server's problem, and STAYS the chamber until the dialog
+                closes. Same slot, so the modal does not reshuffle — the box a
+                recruiter just dropped four résumés into is the box that shows
+                them being read, saved and indexed, without the dashed outline
+                flashing back between the last two. */}
+            {phase === 'analyzing' || phase === 'persisting' || phase === 'indexing' ? (
+              <AnalyzingState fileCount={analyzable} savingLabel={savingLabelFor(phase)} />
+            ) : (
+              <button
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                disabled={busy}
+                className={cn(
+                  'flex flex-col items-center gap-2 rounded-hl-lg border border-dashed bg-hl-subtle px-6 py-8 text-center outline-none transition-colors hover:border-hl-accent disabled:opacity-60',
+                  dragging ? 'border-hl-accent bg-hl-accent-subtle' : 'border-hl-border-strong',
+                )}
+              >
+                <Upload className="size-6 text-hl-fg-tertiary" aria-hidden />
+                <span className="hl-body-medium">
+                  {dragging ? 'Drop to add' : 'Drop résumés here, or choose files'}
+                </span>
+                <span className="hl-caption text-hl-fg-tertiary">PDF or DOCX · up to 10MB each</span>
+              </button>
+            )}
 
             {/* WHAT WE WOULD NOT TAKE, AND WHY. Named individually: "2 files
                 skipped" still leaves the recruiter to work out which two. */}
@@ -289,8 +505,8 @@ export function AddCandidatesDialog({
               <div className="hl-small rounded-hl-md bg-hl-warning-bg p-3 text-hl-warning" role="status">
                 <p className="font-medium">
                   {rejected.length === 1
-                    ? "1 file wasn't added"
-                    : `${rejected.length} files weren't added`}
+                    ? "1 file wasn’t added"
+                    : `${rejected.length} files weren’t added`}
                 </p>
                 <ul className="mt-1 flex flex-col gap-0.5">
                   {rejected.map((file) => (
@@ -348,12 +564,32 @@ export function AddCandidatesDialog({
               </div>
             ) : null}
 
-            {busy ? (
-              <div className="hl-small flex items-center gap-2 text-hl-fg-secondary">
-                <span className="hl-ai-shimmer inline-block h-1.5 flex-1 rounded-full bg-hl-muted" />
-                {phaseLabel}
+            {/* Uploading is the one measurable wait, so it keeps a real bar and
+                a real number — and now says what the number means. */}
+            {phase === 'uploading' ? (
+              <div className="flex flex-col gap-2" role="status" aria-live="polite">
+                <div className="hl-small flex items-center justify-between text-hl-fg-secondary">
+                  <span>Uploading résumés</span>
+                  <span className="hl-mono">{progress}%</span>
+                </div>
+                <span
+                  className="block h-1.5 w-full overflow-hidden rounded-full bg-hl-muted"
+                  role="progressbar"
+                  aria-valuenow={progress}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label="Uploading résumés"
+                >
+                  <span
+                    className="block h-full rounded-full bg-[var(--hl-accent-secondary)] transition-[width] duration-[var(--hl-dur-fast)]"
+                    style={{ width: `${progress}%` }}
+                  />
+                </span>
               </div>
             ) : null}
+            {/* Nothing else goes here. Analyzing, persisting and indexing are
+                all carried by the chamber above, which names the phase itself;
+                a second shimmer under it would state the same thing twice. */}
             {error ? <p className="hl-body text-hl-danger">{error}</p> : null}
           </div>
         )}

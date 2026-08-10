@@ -2052,6 +2052,33 @@
   to { opacity: 1; transform: none; }
 }
 
+/* --- Résumé processing chamber (Add candidates → analyzing) -------------
+   Paper, glass, and a reading beam. Three slow motions, no progress: the
+   server call is opaque, so this occupies the wait honestly rather than
+   pretending to measure it. Declared here with the other primitives so the
+   reduced-motion rule below — which targets every animation inside `.hl` —
+   neutralizes all three without a second implementation.
+
+   Each card carries its own `--doc-rotate`, so the float preserves the fan
+   instead of straightening it. Travel is `transform` only (never `top`), so
+   nothing reflows while the modal waits. */
+@keyframes hl-doc-float {
+  0%, 100% { transform: rotate(var(--doc-rotate, 0deg)) translateY(0); }
+  50% { transform: rotate(var(--doc-rotate, 0deg)) translateY(-3px); }
+}
+/* The beam reads top-to-bottom, the way a résumé is read — not a left-right
+   laser sweep. It fades in and out at the extremes so it never snaps. */
+@keyframes hl-doc-scan {
+  0% { transform: translateY(0); opacity: 0; }
+  12%, 88% { opacity: 1; }
+  100% { transform: translateY(112px); opacity: 0; }
+}
+/* Ambient intelligence, kept under 0.2 opacity. Slow pulse only. */
+@keyframes hl-doc-glow {
+  0%, 100% { opacity: 0.08; transform: scale(0.92); }
+  50% { opacity: 0.18; transform: scale(1.05); }
+}
+
 @layer components {
   .hl-enter {
     animation: hl-enter var(--hl-dur-slow) var(--hl-ease-out) both;

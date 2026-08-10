@@ -26,8 +26,19 @@ import { apiErrorFrom } from '@/lib/api-error';
 export function analyzeBatchWithProgress(
   jobDescription: string,
   files: File[],
+  /**
+   * Bytes sent, 0–100. THIS MEASURES THE UPLOAD, NOT THE ANALYSIS — it reaches
+   * 100 the moment the last byte leaves the browser, while the server has not
+   * started ranking anything. Label it accordingly at the call site.
+   */
   onUploadProgress?: (percent: number) => void,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  /**
+   * The upload finished and the request is now in the server's hands. Fires
+   * even when the body length is not computable (so `onUploadProgress` never
+   * ran), which is what makes it a reliable switch to an indeterminate wait.
+   */
+  onUploadComplete?: () => void
 ): Promise<BatchAnalysisResponse> {
   // The header has to be resolved before the Promise executor, because reading
   // the Supabase session is async and `xhr.open` must precede
@@ -51,6 +62,7 @@ export function analyzeBatchWithProgress(
             onUploadProgress(Math.round((e.loaded / e.total) * 100));
           }
         };
+        xhr.upload.onload = () => onUploadComplete?.();
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) {
             try {
