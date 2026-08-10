@@ -1,3 +1,5 @@
+import Link from 'next/link'
+import { ArrowUpRight } from 'lucide-react'
 import { AIAnswer } from '../domain'
 import { Badge, type BadgeProps } from '../ui/badge'
 import type {
@@ -94,7 +96,39 @@ function PointList({ label, points }: { label: string; points: string[] }) {
   )
 }
 
-function Rankings({ rankings }: { rankings: RankingRow[] }) {
+/**
+ * The way out of a comparison and into one candidate's complete evaluation.
+ *
+ * A comparison answers "which of these", and the next question is always "show
+ * me this one properly" — but the report named candidates in prose and offered
+ * no route to any of them, so the reader had to close the panel, find the row
+ * again, and open it from the table. `roleId` is optional because a comparison
+ * can be run from Talent across a mixed result set; when the compared
+ * candidates do not share one role there is no correct link to build, and a
+ * wrong one is worse than none.
+ */
+function FullEvaluationLink({
+  roleId,
+  candidateId,
+  name,
+}: {
+  roleId?: string
+  candidateId: string
+  name: string
+}) {
+  if (!roleId) return null
+  return (
+    <Link
+      href={`/roles/${roleId}/candidates/${candidateId}`}
+      className="hl-caption inline-flex items-center gap-1 whitespace-nowrap rounded-hl-md px-1.5 py-0.5 text-hl-fg-secondary outline-none hover:bg-hl-subtle hover:text-hl-fg focus-visible:bg-hl-subtle [&_svg]:size-hl-icon-sm"
+      aria-label={`Full evaluation of ${name}`}
+    >
+      Full evaluation <ArrowUpRight aria-hidden />
+    </Link>
+  )
+}
+
+function Rankings({ rankings, roleId }: { rankings: RankingRow[]; roleId?: string }) {
   if (rankings.length === 0) return null
   const leader = rankings.reduce(
     (best, row) => (row.overall_score > best.overall_score ? row : best),
@@ -153,6 +187,13 @@ function Rankings({ rankings }: { rankings: RankingRow[] }) {
                         Too close to separate
                       </span>
                     ) : null}
+                    <span className="mt-0.5 block">
+                      <FullEvaluationLink
+                        roleId={roleId}
+                        candidateId={row.candidate_id}
+                        name={row.name}
+                      />
+                    </span>
                   </td>
                   {/* The numeral is the signal; no meter, because a bar at this
                       resolution draws a difference the number does not support. */}
@@ -194,7 +235,14 @@ function RiskList({ risks }: { risks: RiskItem[] }) {
   )
 }
 
-export function ComparisonReport({ report }: { report: CandidateComparisonReport }) {
+export function ComparisonReport({
+  report,
+  roleId,
+}: {
+  report: CandidateComparisonReport
+  /** Omitted when the compared candidates do not share a single role. */
+  roleId?: string
+}) {
   const summary = report.executive_summary
   // Server-attributed sources, exactly as the Ask surface reads them.
   const sources = report.sources_used?.map((source) => ({ label: source.source })) ?? []
@@ -216,7 +264,7 @@ export function ComparisonReport({ report }: { report: CandidateComparisonReport
         ) : null}
       </AIAnswer>
 
-      <Rankings rankings={report.rankings} />
+      <Rankings rankings={report.rankings} roleId={roleId} />
 
       {/* WHY, per candidate — the section a recruiter actually decides from,
           and the one that was missing entirely. */}

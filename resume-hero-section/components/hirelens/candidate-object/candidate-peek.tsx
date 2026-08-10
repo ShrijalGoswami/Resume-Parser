@@ -45,9 +45,42 @@ export function CandidatePeek({
   const [noteOpen, setNoteOpen] = React.useState(false)
 
   const goFull = React.useCallback(() => {
-    onOpenChange(false)
+    // DO NOT close the peek before navigating.
+    //
+    // This used to call `onOpenChange(false)` first, and that silently ate the
+    // navigation. A host that opened the peek by PUSHING a history entry —
+    // which `role-workspace.openCandidate` does whenever the drawer is opened
+    // from a closed state, i.e. the normal "click a candidate" path — closes it
+    // again with `window.history.back()`. History traversal is asynchronous, so
+    // the sequence was: queue a back(), start the push, then let the queued
+    // back() unwind it. The user landed right back on the role page with no
+    // error anywhere.
+    //
+    // It only appeared to work when the peek had been opened by navigating
+    // straight to `?candidate=…`, because then no history entry was pushed and
+    // the close took a `replaceState` branch instead. That is also why source
+    // and unit tests could not see it — the bug lives in the interaction
+    // between two components' history handling, not in either one's code.
+    //
+    // Navigating unmounts the host page and the drawer with it, so there is
+    // nothing left to close.
+    //
+    // The drawer's own `?candidate=` entry is REPLACED rather than left behind,
+    // so Back from the dossier lands on a clean role page. Leaving it meant
+    // Back returned to a URL that says a candidate drawer is open while none
+    // is — Next serves the role route from its client cache and does not
+    // re-read the param. `replaceState` is synchronous and starts no history
+    // traversal, so unlike the `back()` above it cannot cancel the push. Only
+    // the one param is dropped; `lens` and anything else survive.
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href)
+      if (url.searchParams.has('candidate')) {
+        url.searchParams.delete('candidate')
+        window.history.replaceState(null, '', url.pathname + url.search)
+      }
+    }
     router.push(`/roles/${roleId}/candidates/${candidateId}`)
-  }, [onOpenChange, roleId, candidateId, router])
+  }, [roleId, candidateId, router])
 
   useCandidateShortcuts(
     open && c.model
@@ -80,7 +113,19 @@ export function CandidatePeek({
           ) : (
             <span className="hl-h1">Candidate</span>
           )}
-          <Button variant="ghost" size="sm" onClick={goFull} className="shrink-0">
+          {/* The promotion out of quick review, and it must LOOK like one.
+              This was `variant="ghost"` — the quietest control in the system —
+              sitting beside the candidate's name, so the peek read as the whole
+              of the review rather than the top of it. The complete evaluation
+              lives on a page, and the way there has to be visible without
+              knowing the `F` shortcut exists. */}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={goFull}
+            className="shrink-0"
+            title="Open the complete evaluation — fit breakdown, core requirements, résumé evidence"
+          >
             <ArrowUpRight /> Full review <Kbd className="ml-1">F</Kbd>
           </Button>
         </DrawerHeader>
@@ -89,7 +134,7 @@ export function CandidatePeek({
           {c.isLoading ? (
             <LoadingLines />
           ) : c.isError || !c.model ? (
-            <ErrorState variant="inline" title="Couldn't load this candidate" onRetry={c.refetch} />
+            <ErrorState variant="inline" title="Couldn’t load this candidate" onRetry={c.refetch} />
           ) : (
             <>
               {/* CandidateConfidence is deliberately NOT rendered here.

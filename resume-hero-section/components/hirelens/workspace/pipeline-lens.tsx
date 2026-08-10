@@ -156,7 +156,7 @@ export function PipelineLens({
     return (
       <ErrorState
         variant="route"
-        title="Couldn't load this pipeline"
+        title="Couldn’t load this pipeline"
         onRetry={() => refetch()}
       />
     )
@@ -226,6 +226,7 @@ export function PipelineLens({
       ) : view === 'table' ? (
         <PipelineTable
           rows={rows}
+          roleId={roleId}
           selected={selected}
           onToggle={toggle}
           onToggleAll={toggleAll}

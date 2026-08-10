@@ -1,6 +1,7 @@
 'use client'
 
-import { GitCompareArrows, FolderPlus } from 'lucide-react'
+import Link from 'next/link'
+import { GitCompareArrows, FolderPlus, ArrowUpRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Card } from '../ui/card'
 import { Avatar } from '../ui/avatar'
@@ -113,9 +114,24 @@ export function TalentResultRow({
       ) : null}
 
       <div className="flex items-center gap-1">
+        {/* Two levels, named as such. "Open" was the only action here and it
+            opens the quick-review drawer, so a searcher who wanted the complete
+            evaluation had to open the drawer and then find the promotion inside
+            it. `campaign_id` is nullable on a search result — without it there
+            is no route to build, and the quick review remains available. */}
         <Button size="sm" variant="ghost" onClick={onOpen}>
-          Open
+          Quick review
         </Button>
+        {result.campaign_id ? (
+          <Button size="sm" variant="ghost" asChild>
+            <Link
+              href={`/roles/${result.campaign_id}/candidates/${result.candidate_id}`}
+              aria-label={`Full review of ${result.name}`}
+            >
+              Full review <ArrowUpRight aria-hidden />
+            </Link>
+          </Button>
+        ) : null}
         <Button size="sm" variant="ghost" onClick={onFindSimilar}>
           {/* Was a sparkle. Finding similar people is a comparison, and the
               icon now says that (V2 §8). */}

@@ -1,7 +1,9 @@
 'use client'
 
 import * as React from 'react'
+import Link from 'next/link'
 import { useVirtualizer } from '@tanstack/react-virtual'
+import { ArrowUpRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Avatar } from '../ui/avatar'
 import { Badge } from '../ui/badge'
@@ -21,6 +23,8 @@ import type { PipelineStage } from '@/types/campaign'
  */
 export interface PipelineTableProps {
   rows: CandidateRow[]
+  /** Needed to link each row to the canonical full-evaluation route. */
+  roleId: string
   selected: Set<string>
   onToggle: (id: string) => void
   onToggleAll: () => void
@@ -28,10 +32,13 @@ export interface PipelineTableProps {
   onOpenCandidate: (id: string) => void
 }
 
-const COLUMN_COUNT = 9
+// 9 → 10: the Review column below. `colSpan` on the virtualizer's padding rows
+// reads this, so it must move with the header.
+const COLUMN_COUNT = 10
 
 export function PipelineTable({
   rows,
+  roleId,
   selected,
   onToggle,
   onToggleAll,
@@ -94,6 +101,12 @@ export function PipelineTable({
             <th className="px-3 py-2 font-medium">Stage</th>
             <th className="px-3 py-2 font-medium">Verdict</th>
             <th className="px-3 py-2 font-medium">Updated</th>
+            {/* Clicking the name opens the quick-review drawer, which is the
+                right default — but it was also the ONLY way out of this table,
+                so the complete evaluation was reachable only by someone who
+                already knew to look inside the drawer for it. This column is
+                the direct route. */}
+            <th className="px-3 py-2 font-medium">Review</th>
           </tr>
         </thead>
         <tbody>
@@ -210,6 +223,15 @@ export function PipelineTable({
                 </td>
                 <td className="hl-caption px-3 py-2 text-hl-fg-tertiary">
                   {relativeTime(row.analysisAt ?? row.uploadedAt)}
+                </td>
+                <td className="px-3 py-2">
+                  <Link
+                    href={`/roles/${roleId}/candidates/${row.id}`}
+                    className="hl-caption inline-flex items-center gap-1 whitespace-nowrap rounded-hl-md px-1.5 py-1 text-hl-fg-secondary outline-none hover:bg-hl-subtle hover:text-hl-fg focus-visible:bg-hl-subtle [&_svg]:size-hl-icon-sm"
+                    aria-label={`Full review of ${row.name}`}
+                  >
+                    Full review <ArrowUpRight aria-hidden />
+                  </Link>
                 </td>
               </tr>
             )
