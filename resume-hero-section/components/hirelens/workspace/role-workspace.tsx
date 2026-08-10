@@ -57,7 +57,7 @@ export function RoleWorkspace({
   if (!configured) {
     return (
       <AppShell title="Role">
-        <Notice title="Sign-in isn't configured" />
+        <Notice title="Sign-in isn’t configured" />
       </AppShell>
     )
   }
@@ -203,7 +203,7 @@ function AuthedWorkspace({
       <AppShell title="Role" account={account}>
         <ErrorState
           variant="route"
-          title="Couldn't load this role"
+          title="Couldn’t load this role"
           onRetry={() => campaign.refetch()}
         />
       </AppShell>
@@ -230,7 +230,25 @@ function AuthedWorkspace({
         onDeleteRole={() => setDeleteOpen(true)}
       />
       <div className="mx-auto w-full max-w-6xl px-6 py-4">
-        {lens === 'triage' ? (
+        {/* Compare TAKES OVER the canvas rather than floating above it. It is a
+            reading task, not a glance, and it was previously a 560px drawer over
+            a dimmed copy of this very table. Rendered here it gets the same
+            width every other workspace surface gets. The lens is not unmounted
+            by anything else — closing Compare returns to it with the selection
+            intact. */}
+        {compareOpen ? (
+          <ComparePanel
+            open={compareOpen}
+            count={compareIds.length}
+            result={compare}
+            roleId={roleId}
+            onRetry={() => compare.mutate(compareIds)}
+            onClose={() => {
+              setCompareOpen(false)
+              compare.reset()
+            }}
+          />
+        ) : lens === 'triage' ? (
           <TriageLens roleId={roleId} />
         ) : lens === 'analytics' ? (
           <AnalyticsLens roleId={roleId} />
@@ -255,16 +273,6 @@ function AuthedWorkspace({
         campaign={campaign.data}
         open={addOpen}
         onOpenChange={setAddOpen}
-      />
-      <ComparePanel
-        open={compareOpen}
-        count={compareIds.length}
-        result={compare}
-        onRetry={() => compare.mutate(compareIds)}
-        onClose={() => {
-          setCompareOpen(false)
-          compare.reset()
-        }}
       />
       {candidateId ? (
         <CandidatePeek

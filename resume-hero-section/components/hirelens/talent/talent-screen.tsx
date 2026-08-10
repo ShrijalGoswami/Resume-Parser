@@ -58,7 +58,7 @@ export function TalentScreen({ initial }: { initial: TalentInitial }) {
   if (!configured) {
     return (
       <AppShell breadcrumbs={[{ label: 'Talent' }]}>
-        <div className="p-12 text-center hl-display-md">Sign-in isn&rsquo;t configured</div>
+        <div className="p-12 text-center hl-display-md">Sign-in isn’t configured</div>
       </AppShell>
     )
   }
@@ -270,8 +270,8 @@ function AuthedTalent({ initial }: { initial: TalentInitial }) {
                   onKeyDown={(event) => {
                     if (event.key === 'Enter') runSearch(draft, filters)
                   }}
-                  placeholder="Describe who you're looking for…"
-                  aria-label="Describe who you're looking for"
+                  placeholder="Describe who you’re looking for…"
+                  aria-label="Describe who you’re looking for"
                   aria-keyshortcuts="/"
                   className="hl-body h-12 flex-1 bg-transparent text-hl-fg outline-none placeholder:text-hl-fg-tertiary"
                 />
@@ -335,7 +335,28 @@ function AuthedTalent({ initial }: { initial: TalentInitial }) {
 
           <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto p-4">
             <div className="mx-auto max-w-[1100px]">
-              {viewCollectionId ? (
+              {/* Compare takes over the results column for the same reason it
+                  takes over the role canvas: it is a side-by-side read, and it
+                  used to be a 560px drawer over the very results it summarised.
+                  Closing it returns to the result list with the selection
+                  intact. */}
+              {compareOpen ? (
+                <ComparePanel
+                  open={compareOpen}
+                  count={compareIds.length}
+                  result={compare}
+                  // Compare is only offered when the selection shares one
+                  // campaign (`sharedCampaignId`), which is exactly the
+                  // condition under which a full-evaluation link can be built.
+                  // When it is null the links are omitted rather than guessed.
+                  roleId={sharedCampaignId ?? undefined}
+                  onRetry={() => compare.mutate(compareIds)}
+                  onClose={() => {
+                    setCompareOpen(false)
+                    compare.reset()
+                  }}
+                />
+              ) : viewCollectionId ? (
                 <CollectionView
                   collectionId={viewCollectionId}
                   onBack={() => setViewCollectionId(null)}
@@ -362,7 +383,7 @@ function AuthedTalent({ initial }: { initial: TalentInitial }) {
                 <EmptyState
                   icon={Users}
                   title="Find people across your talent pool"
-                  description="Describe who you're looking for in plain language."
+                  description="Describe who you’re looking for in plain language."
                 >
                   <div className="flex flex-col items-center gap-2">
                     {EXAMPLES.map((example) => (
@@ -382,7 +403,7 @@ function AuthedTalent({ initial }: { initial: TalentInitial }) {
               ) : active.isError ? (
                 <ErrorState
                   variant="inline"
-                  title="Search didn't run"
+                  title="Search didn’t run"
                   onRetry={() => active.refetch()}
                 />
               ) : results.length === 0 ? (
@@ -449,16 +470,6 @@ function AuthedTalent({ initial }: { initial: TalentInitial }) {
         roleId={drawerTarget?.roleId ?? ''}
         candidateId={drawerTarget?.candidateId ?? null}
         onClose={closeDrawer}
-      />
-      <ComparePanel
-        open={compareOpen}
-        count={compareIds.length}
-        result={compare}
-        onRetry={() => compare.mutate(compareIds)}
-        onClose={() => {
-          setCompareOpen(false)
-          compare.reset()
-        }}
       />
       <AddToCollectionDialog
         items={collectionItems ?? []}
