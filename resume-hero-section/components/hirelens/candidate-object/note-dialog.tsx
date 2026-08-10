@@ -49,7 +49,7 @@ export function NoteDialog({
           {/* sr-only: satisfies Radix's aria-describedby wiring; the textarea
               placeholder already carries the visible guidance. */}
           <DialogDescription className="sr-only">
-            The note is saved to this candidate&rsquo;s record.
+            The note is saved to this candidate’s record.
           </DialogDescription>
         </DialogHeader>
         <textarea

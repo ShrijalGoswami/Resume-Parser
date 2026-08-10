@@ -80,7 +80,7 @@ export function useCandidateObject(
       if (data?.url) window.open(data.url, '_blank', 'noopener,noreferrer')
       else toast({ variant: 'warning', title: 'No résumé on file for this candidate' })
     } catch {
-      toast({ variant: 'danger', title: "Couldn't open the résumé" })
+      toast({ variant: 'danger', title: "Couldn’t open the résumé" })
     }
   }, [model, resume])
 

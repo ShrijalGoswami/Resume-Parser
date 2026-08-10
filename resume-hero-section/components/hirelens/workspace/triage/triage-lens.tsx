@@ -177,13 +177,13 @@ export function TriageLens({ roleId }: TriageLensProps) {
   // Only claim a permission problem once the context actually said so; a failed
   // lookup gets a retry, not an accusation (see `usePermissionGate`).
   if (gate.state === 'error') {
-    return <ErrorState variant="inline" title="Couldn't check your access" onRetry={gate.retry} />
+    return <ErrorState variant="inline" title="Couldn’t check your access" onRetry={gate.retry} />
   }
   if (gate.state === 'denied') {
     return (
       <GateState
         reason="permission"
-        title="Triage moves candidates between stages, which your role can't do. The Pipeline lens shows the same candidates."
+        title="Triage moves candidates between stages, which your role can’t do. The Pipeline lens shows the same candidates."
       />
     )
   }
@@ -198,7 +198,7 @@ export function TriageLens({ roleId }: TriageLensProps) {
   }
 
   if (isError) {
-    return <ErrorState variant="route" title="Couldn't load triage" onRetry={() => refetch()} />
+    return <ErrorState variant="route" title="Couldn’t load triage" onRetry={() => refetch()} />
   }
 
   if (!data || data.length === 0) {

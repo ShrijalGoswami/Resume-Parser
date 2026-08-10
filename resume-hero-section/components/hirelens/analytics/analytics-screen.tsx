@@ -65,7 +65,7 @@ export function AnalyticsScreen() {
   if (!configured) {
     return (
       <AppShell breadcrumbs={ANALYTICS_CRUMBS}>
-        <Notice title="Sign-in isn't configured" />
+        <Notice title="Sign-in isn’t configured" />
       </AppShell>
     )
   }
@@ -98,7 +98,7 @@ export function AnalyticsScreen() {
       <AppShell breadcrumbs={ANALYTICS_CRUMBS}>
         <ErrorState
           variant="route"
-          title="Couldn't check your access"
+          title="Couldn’t check your access"
           onRetry={gate.retry}
         />
       </AppShell>
@@ -284,7 +284,7 @@ function AuthedAnalytics() {
     body = (
       <ErrorState
         variant="route"
-        title="Couldn't load analytics"
+        title="Couldn’t load analytics"
         onRetry={() => analytics.refetch()}
       />
     )
@@ -397,7 +397,7 @@ function AuthedAnalytics() {
               // stage per candidate, so conversion between stages cannot be
               // computed and is not shown. Stages with nobody in them are
               // omitted rather than drawn as empty rails.
-              note="Stage transitions aren't recorded, so this is a headcount by stage — not a conversion rate."
+              note="Stage transitions aren’t recorded, so this is a headcount by stage — not a conversion rate."
             >
               {stages.length === 0 ? (
                 <NoData>No candidates have a stage yet.</NoData>

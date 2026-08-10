@@ -38,7 +38,7 @@ export function LearningScreen() {
   if (!configured) {
     return (
       <AppShell breadcrumbs={LEARNING_CRUMBS}>
-        <Notice title="Sign-in isn't configured" />
+        <Notice title="Sign-in isn’t configured" />
       </AppShell>
     )
   }
@@ -92,12 +92,12 @@ function DeferredLearning() {
             Calibrated to your outcomes — once they exist.
           </h2>
           <p className="hl-body max-w-lg text-hl-fg-secondary">
-            Learning will show what HireLens calibrates from your team&rsquo;s real hiring outcomes —
+            Learning will show what HireLens calibrates from your team’s real hiring outcomes —
             quality-of-hire, ranking accuracy, and where the model adapts to your decisions.
           </p>
           <p className="hl-body max-w-lg text-hl-fg-tertiary">
             It depends on organizational hiring outcomes and post-decision feedback, which
-            aren&rsquo;t captured yet. When that platform capability lands, this surface becomes
+            aren’t captured yet. When that platform capability lands, this surface becomes
             available — and nothing here is estimated until it does.
           </p>
         </div>

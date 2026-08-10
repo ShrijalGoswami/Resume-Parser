@@ -80,7 +80,7 @@ export function RolesScreen({ initialNew = false }: { initialNew?: boolean }) {
   if (!configured) {
     return (
       <AppShell breadcrumbs={ROLES_CRUMBS}>
-        <Notice title="Sign-in isn't configured" />
+        <Notice title="Sign-in isn’t configured" />
       </AppShell>
     )
   }
@@ -129,7 +129,7 @@ function AuthedRoles({ initialNew }: { initialNew: boolean }) {
   if (roles.isLoading) {
     body = <LoadingScreen label="Loading roles" />
   } else if (roles.isError) {
-    body = <ErrorState variant="route" title="Couldn't load roles" onRetry={() => roles.refetch()} />
+    body = <ErrorState variant="route" title="Couldn’t load roles" onRetry={() => roles.refetch()} />
   } else if (total === 0) {
     body = (
       <EmptyState

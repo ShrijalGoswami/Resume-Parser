@@ -37,7 +37,7 @@ export interface FaqEntry {
 export const PRICING_FAQS: FaqEntry[] = [
   {
     question: 'What counts as a résumé?',
-    answer: `Each résumé you analyse counts once. Re-uploading the same file does not count again — we match on the file's contents, not its name, so "resume.pdf" from two different candidates counts twice and the same CV uploaded twice counts once. Analyses that fail are never counted.`,
+    answer: `Each résumé you analyse counts once. Re-uploading the same file does not count again — we match on the file’s contents, not its name, so "resume.pdf" from two different candidates counts twice and the same CV uploaded twice counts once. Analyses that fail are never counted.`,
   },
   {
     question: `Do the ${FREE_RESUMES} free résumés reset each month?`,

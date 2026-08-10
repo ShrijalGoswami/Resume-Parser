@@ -297,7 +297,7 @@ describe('QuotaMeter', () => {
 describe('QuotaLock', () => {
   it('reads as volume, not capability', () => {
     render(<QuotaLock metric="resumes" used={2} limit={2} window="lifetime" requiredPlan="plus" />)
-    expect(screen.getByText("You've used all 2 of your résumés.")).toBeInTheDocument()
+    expect(screen.getByText("You’ve used all 2 of your résumés.")).toBeInTheDocument()
     expect(screen.getByText('2 of 2 résumés used')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Upgrade to Plus' })).toBeInTheDocument()
   })

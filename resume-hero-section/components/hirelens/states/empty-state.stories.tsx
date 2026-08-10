@@ -14,7 +14,7 @@ export const FirstRun: Story = {
       <EmptyState
         variant="first-run"
         icon={Users}
-        title="Let's fill your first role"
+        title="Let’s fill your first role"
         description="Create a role and start evaluating candidates."
         action={
           <Button variant="primary">

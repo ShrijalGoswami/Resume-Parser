@@ -63,7 +63,7 @@ export function AnalyticsLens({ roleId }: { roleId: string }) {
     return (
       <ErrorState
         variant="inline"
-        title="Couldn't load analytics"
+        title="Couldn’t load analytics"
         onRetry={() => refetch()}
         className="mt-2"
       />
@@ -75,7 +75,7 @@ export function AnalyticsLens({ roleId }: { roleId: string }) {
       <EmptyState
         icon={BarChart3}
         title="No analytics yet"
-        description="Add and analyze candidates to see this role's metrics."
+        description="Add and analyze candidates to see this role’s metrics."
       />
     )
   }

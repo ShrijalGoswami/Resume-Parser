@@ -10,7 +10,7 @@ const recommendation: Recommendation = {
   severity: 'high',
   confidence: 0.82,
   title: 'Shortlist the top 5 candidates',
-  why: "Five candidates score above your bar and haven't been actioned.",
+  why: "Five candidates score above your bar and haven’t been actioned.",
   evidence: ['5 candidates ≥ 85 fit', '2 with matching domain experience'],
   data_sources: ['pipeline'],
   tools_used: ['ranker'],

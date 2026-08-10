@@ -135,11 +135,11 @@ export function Frame01Hero() {
               <h1 className="font-mkt-display text-[34px] leading-[40px] font-light tracking-[-0.02em] md:text-[50px] md:leading-[56px] md:tracking-[-0.025em]">
                 <span className="mkt-fade-in-up block text-mkt-dark-fg-variant">
                   Every tool tells you
-                  <br className="hidden md:block" /> who&rsquo;s strongest.
+                  <br className="hidden md:block" /> who’s strongest.
                 </span>
                 <span className="mkt-fade-in-up mkt-delay-100 mt-2 block text-mkt-dark-fg md:mt-3">
                   HireLens tells you
-                  <br className="hidden md:block" /> who you&rsquo;d regret.
+                  <br className="hidden md:block" /> who you’d regret.
                 </span>
               </h1>
 

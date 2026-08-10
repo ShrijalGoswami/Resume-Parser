@@ -50,7 +50,7 @@ export function ErrorState({
       >
         <TriangleAlert className="mt-0.5 size-4 shrink-0 text-hl-danger" aria-hidden />
         <div className="flex-1">
-          <p className="hl-body-medium">{title ?? "This didn't load"}</p>
+          <p className="hl-body-medium">{title ?? "This didn’t load"}</p>
           {description ? (
             <p className="hl-body text-hl-fg-secondary">{description}</p>
           ) : null}
@@ -74,7 +74,7 @@ export function ErrorState({
     >
       <TriangleAlert className="size-6 text-hl-danger" strokeWidth={1.5} aria-hidden />
       <div className="flex flex-col gap-1.5">
-        <h1 className="hl-display">{title ?? "This page didn't load"}</h1>
+        <h1 className="hl-display">{title ?? "This page didn’t load"}</h1>
         <p className="hl-body text-hl-fg-secondary">
           {description ?? 'Try again. If it keeps happening, contact support with the ID below.'}
         </p>

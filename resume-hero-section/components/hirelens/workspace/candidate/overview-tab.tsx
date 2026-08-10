@@ -52,7 +52,7 @@ export function OverviewTab({
     } catch {
       toast({
         variant: 'danger',
-        title: "Couldn't open the résumé",
+        title: "Couldn’t open the résumé",
         description: 'Try again in a moment.',
       })
     }

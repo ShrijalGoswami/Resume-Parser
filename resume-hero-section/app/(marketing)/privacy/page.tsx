@@ -168,9 +168,9 @@ export default function PrivacyPage() {
 
       <Clause title="6. Security">
         <P>
-          Data is encrypted in transit and at rest. Access within a customer&rsquo;s workspace is
+          Data is encrypted in transit and at rest. Access within a customer’s workspace is
           enforced at the database with row-level security, so one organization cannot read
-          another&rsquo;s data even if the application is wrong. Administrative access to
+          another’s data even if the application is wrong. Administrative access to
           production is restricted to the people who need it.
         </P>
         <P>

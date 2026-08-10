@@ -70,7 +70,7 @@ export function AskScreen({ initial }: { initial: AskInitial }) {
   if (!configured) {
     return (
       <AppShell title="Ask">
-        <div className="hl-display-md p-12 text-center">Sign-in isn&rsquo;t configured</div>
+        <div className="hl-display-md p-12 text-center">Sign-in isn’t configured</div>
       </AppShell>
     )
   }
@@ -103,7 +103,7 @@ export function AskScreen({ initial }: { initial: AskInitial }) {
   if (gate.state === 'error') {
     return (
       <AppShell title="Ask">
-        <ErrorState variant="route" title="Couldn't check your access" onRetry={gate.retry} />
+        <ErrorState variant="route" title="Couldn’t check your access" onRetry={gate.retry} />
       </AppShell>
     )
   }

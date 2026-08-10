@@ -49,7 +49,7 @@ export function QuotaLock({
   className,
 }: QuotaLockProps) {
   const label = metricLabel(metric)
-  const headline = title ?? `You've used all ${limit} of your ${label}.`
+  const headline = title ?? `You’ve used all ${limit} of your ${label}.`
   // The three questions, in order: what ran out (headline), why it matters /
   // when it comes back (renewal), and what changes if you upgrade (value).
   // The value line is the one that turns a dead end into a decision.

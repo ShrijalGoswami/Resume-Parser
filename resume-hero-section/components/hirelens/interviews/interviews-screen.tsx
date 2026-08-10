@@ -61,7 +61,7 @@ export function InterviewsScreen({ initial }: { initial?: { role?: string; candi
   if (!configured) {
     return (
       <AppShell breadcrumbs={INTERVIEW_CRUMBS}>
-        <Notice title="Sign-in isn't configured" />
+        <Notice title="Sign-in isn’t configured" />
       </AppShell>
     )
   }
@@ -139,7 +139,7 @@ function AuthedInterviews({ initial }: { initial?: { role?: string; candidate?: 
     body = <LoadingScreen label="Loading roles" />
   } else if (roles.isError) {
     body = (
-      <ErrorState variant="route" title="Couldn't load your roles" onRetry={() => roles.refetch()} />
+      <ErrorState variant="route" title="Couldn’t load your roles" onRetry={() => roles.refetch()} />
     )
   } else if (!roles.data || roles.data.length === 0) {
     body = <NoActiveRoles />
@@ -152,7 +152,7 @@ function AuthedInterviews({ initial }: { initial?: { role?: string; candidate?: 
       <div className="mx-auto flex w-full max-w-[1440px] flex-col px-6 pb-12 pt-6">
         <PageHeader
           title="Interviews"
-          description="Prepare a grounded interview from a candidate's own evidence."
+          description="Prepare a grounded interview from a candidate’s own evidence."
         />
         {body}
       </div>
@@ -263,7 +263,7 @@ function RoleInterviews({
         ) : candidates.isError ? (
           <ErrorState
             variant="inline"
-            title="Couldn't load candidates"
+            title="Couldn’t load candidates"
             onRetry={() => candidates.refetch()}
           />
         ) : (
@@ -282,7 +282,7 @@ function RoleInterviews({
               <EmptyState
                 variant="zero-results"
                 title="No candidates in this role yet"
-                description="Upload resumes to the role, then come back to prepare an interview."
+                description="Upload résumés to the role, then come back to prepare an interview."
               />
             }
           />
@@ -326,9 +326,9 @@ function RoleInterviews({
           </p>
         )}
 
-        <DeferredNote title="Scheduling and scorecards aren't available yet">
+        <DeferredNote title="Scheduling and scorecards aren’t available yet">
           Interview packs are generated on demand and are not stored. Calendar scheduling,
-          interviewer assignment, and saved scorecards need backend support that doesn&rsquo;t exist
+          interviewer assignment, and saved scorecards need backend support that doesn’t exist
           yet — so they are absent rather than simulated.
       </DeferredNote>
     </div>

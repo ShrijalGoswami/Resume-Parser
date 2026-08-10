@@ -58,7 +58,7 @@ export function AIAnswer({
       {grounded === false ? (
         <p className="mt-3 flex items-start gap-1.5 hl-caption text-hl-fg-tertiary">
           <Info className="mt-px size-3.5 shrink-0" aria-hidden />
-          <span>This answer wasn&rsquo;t generated from your organization&rsquo;s data.</span>
+          <span>This answer wasn’t generated from your organization’s data.</span>
         </p>
       ) : null}
 

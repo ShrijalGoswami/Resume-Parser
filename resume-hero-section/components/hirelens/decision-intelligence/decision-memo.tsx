@@ -70,7 +70,7 @@ function SeverityMark({ severity }: { severity: string }) {
 export function DecisionMemo({ roleId, decisionId }: { roleId: string; decisionId: string }) {
   const { session, loading, configured } = useSession()
 
-  if (!configured) return <AppShell title="Decision"><Notice title="Sign-in isn't configured" /></AppShell>
+  if (!configured) return <AppShell title="Decision"><Notice title="Sign-in isn’t configured" /></AppShell>
   if (loading) return <AppShell title="Decision"><LoadingScreen /></AppShell>
   if (!session) return <AppShell title="Decision"><Notice title="Sign in to continue" showSignIn /></AppShell>
   return <AuthedMemo roleId={roleId} decisionId={decisionId} />
@@ -99,7 +99,7 @@ function AuthedMemo({ roleId, decisionId }: { roleId: string; decisionId: string
   if (recs.isError || !rec) {
     return (
       <AppShell breadcrumbs={crumbs} account={account}>
-        <ErrorState variant="route" title="Couldn't find this decision" onRetry={() => recs.refetch()} />
+        <ErrorState variant="route" title="Couldn’t find this decision" onRetry={() => recs.refetch()} />
       </AppShell>
     )
   }

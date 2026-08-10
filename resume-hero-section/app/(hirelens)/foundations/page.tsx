@@ -364,7 +364,7 @@ export default function FoundationsPage() {
             <Button
               variant="secondary"
               onClick={() =>
-                toast({ variant: 'danger', title: "Couldn't reach the server", description: 'Try again in a moment.' })
+                toast({ variant: 'danger', title: "Couldn’t reach the server", description: 'Try again in a moment.' })
               }
             >
               Danger
@@ -378,7 +378,7 @@ export default function FoundationsPage() {
               <EmptyState
                 variant="first-run"
                 icon={Users}
-                title="Let's fill your first role"
+                title="Let’s fill your first role"
                 description="Create a role to start evaluating candidates."
                 action={
                   <Button variant="primary">
@@ -399,7 +399,7 @@ export default function FoundationsPage() {
             <Card className="p-4">
               <ErrorState
                 variant="inline"
-                title="Analytics didn't load"
+                title="Analytics didn’t load"
                 description="The metrics service is unavailable."
                 onRetry={() => toast({ title: 'Retrying…' })}
               />

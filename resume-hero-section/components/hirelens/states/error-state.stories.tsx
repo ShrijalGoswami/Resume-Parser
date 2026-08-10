@@ -11,7 +11,7 @@ export const Inline: Story = {
     <Card className="max-w-lg p-4">
       <ErrorState
         variant="inline"
-        title="Analytics didn't load"
+        title="Analytics didn’t load"
         description="The metrics service is unavailable."
         onRetry={() => {}}
       />

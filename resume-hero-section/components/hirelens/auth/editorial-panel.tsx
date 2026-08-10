@@ -46,7 +46,7 @@ export function EditorialPanel() {
             scored — so a ranking is something you can check rather than something you accept.
           </p>
           <p className="hl-body text-hl-editorial-muted">
-            Where it isn&rsquo;t sure, it says so.
+            Where it isn’t sure, it says so.
           </p>
         </div>
       </div>

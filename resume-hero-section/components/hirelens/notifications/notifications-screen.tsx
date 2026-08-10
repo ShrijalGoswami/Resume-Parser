@@ -67,7 +67,7 @@ export function NotificationsScreen() {
   if (!configured) {
     return (
       <AppShell breadcrumbs={NOTIFICATION_CRUMBS}>
-        <Notice title="Sign-in isn't configured" />
+        <Notice title="Sign-in isn’t configured" />
       </AppShell>
     )
   }
@@ -107,7 +107,7 @@ function AuthedNotifications() {
     body = (
       <ErrorState
         variant="route"
-        title="Couldn't load your notifications"
+        title="Couldn’t load your notifications"
         onRetry={refetch}
       />
     )

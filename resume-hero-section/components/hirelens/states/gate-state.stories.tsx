@@ -49,7 +49,7 @@ export const Quota: Story = {
     <div className="max-w-lg">
       <GateState
         reason="quota"
-        title="You've used all 2 of your résumés."
+        title="You’ve used all 2 of your résumés."
         description="Upgrade to continue."
         meta="2 of 2 résumés used"
         action={<Button variant="primary">Upgrade to Plus</Button>}

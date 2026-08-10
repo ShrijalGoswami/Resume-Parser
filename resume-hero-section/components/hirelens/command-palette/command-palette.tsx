@@ -178,7 +178,7 @@ export function CommandPalette() {
           >
             {flat.length === 0 ? (
               <p className="hl-body px-3 py-8 text-center text-hl-fg-tertiary">
-                No results for &ldquo;{query}&rdquo;.
+                No results for “{query}”.
               </p>
             ) : (
               sections.map((section) => (

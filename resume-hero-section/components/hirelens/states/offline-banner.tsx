@@ -23,7 +23,7 @@ export function OfflineBanner({ className }: { className?: string }) {
       )}
     >
       <span className="inline-block size-1.5 animate-pulse rounded-full bg-[color:var(--hl-warning)]" />
-      Can&rsquo;t reach HireLens — reconnecting&hellip;
+      Can’t reach HireLens — reconnecting&hellip;
     </div>
   )
 }

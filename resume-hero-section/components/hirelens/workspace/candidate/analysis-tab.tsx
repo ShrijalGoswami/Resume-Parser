@@ -119,7 +119,7 @@ function ProjectsList({ items }: { items: ProjectEntry[] }) {
  */
 export function AnalysisTab({ result }: { result: CandidateResult | null }) {
   if (!result) {
-    return <EmptyHint text="This candidate hasn't been analyzed yet." />
+    return <EmptyHint text="This candidate hasn’t been analyzed yet." />
   }
   const resume = result.resume_data
 

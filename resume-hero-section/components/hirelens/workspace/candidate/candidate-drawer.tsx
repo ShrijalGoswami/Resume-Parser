@@ -62,7 +62,7 @@ function DrawerInner({ roleId, candidateId }: { roleId: string; candidateId: str
       <div className="p-4">
         <ErrorState
           variant="inline"
-          title="Couldn't load candidate"
+          title="Couldn’t load candidate"
           onRetry={() => refetch()}
         />
       </div>

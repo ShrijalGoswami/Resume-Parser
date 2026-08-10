@@ -47,9 +47,9 @@ export default function TermsPage() {
       <Clause title="1. Who this agreement is with">
         <P>
           These terms are between{' '}
-          <Fact value={ENTITY.name} label="registered entity" /> (&ldquo;HireLens&rdquo;,
-          &ldquo;we&rdquo;, &ldquo;us&rdquo;) and the organization whose account accepts them
-          (&ldquo;you&rdquo;). If you accept them on behalf of an employer, you confirm you are
+          <Fact value={ENTITY.name} label="registered entity" /> (“HireLens”,
+          “we”, “us”) and the organization whose account accepts them
+          (“you”). If you accept them on behalf of an employer, you confirm you are
           authorised to bind that employer.
         </P>
         <P>
@@ -87,7 +87,7 @@ export default function TermsPage() {
 
       <Clause title="4. Candidate data, and the responsibility that comes with it">
         <P>
-          Résumés you upload contain other people&rsquo;s personal data. In respect of that data
+          Résumés you upload contain other people’s personal data. In respect of that data
           you are the controller and we are the processor: you decide why it is processed, and we
           process it only to provide the service to you.
         </P>
@@ -154,7 +154,7 @@ export default function TermsPage() {
 
       <Clause title="8. Confidentiality">
         <P>
-          Each side will protect the other&rsquo;s non-public information with at least the care
+          Each side will protect the other’s non-public information with at least the care
           it applies to its own, and will use it only to perform this agreement. This survives
           termination.
         </P>
@@ -189,7 +189,7 @@ export default function TermsPage() {
       <Clause title="11. Changes to these terms">
         <P>
           We will post any change here and update the date at the top. Where a change materially
-          reduces your rights we will give at least 30 days&rsquo; notice by email before it takes
+          reduces your rights we will give at least 30 days’ notice by email before it takes
           effect, and you may cancel within that period without penalty.
         </P>
       </Clause>

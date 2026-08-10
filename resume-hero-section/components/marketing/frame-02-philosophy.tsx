@@ -330,13 +330,13 @@ export function Frame02Philosophy() {
               The Stakes
             </p>
             <h2 className="mb-12 max-w-4xl text-balance font-mkt-display text-[2.25rem] leading-tight font-light tracking-[-0.03em] md:text-[3rem]">
-              The cost of a wrong hire isn&rsquo;t a bad quarter.
+              The cost of a wrong hire isn’t a bad quarter.
               <br />
-              <span className="text-mkt-muted">It&rsquo;s a lost year.</span>
+              <span className="text-mkt-muted">It’s a lost year.</span>
             </h2>
             <p className="max-w-xl mkt-data leading-relaxed text-mkt-fg-secondary">
               A mis-hire costs ~30% of first-year salary — and the momentum you
-              can&rsquo;t get back.
+              can’t get back.
             </p>
           </Reveal>
 
@@ -390,9 +390,9 @@ export function Frame02Philosophy() {
         <div className="mx-auto flex max-w-[1200px] flex-col items-center px-6 md:px-12">
           <Reveal>
             <h2 className="mb-16 max-w-3xl text-center text-balance font-mkt-display text-[2.5rem] leading-[1.2] font-light tracking-[-0.02em] text-mkt-fg">
-              Recruiting isn&rsquo;t a volume problem.
+              Recruiting isn’t a volume problem.
               <br />
-              It&rsquo;s a focus problem.
+              It’s a focus problem.
             </h2>
           </Reveal>
 

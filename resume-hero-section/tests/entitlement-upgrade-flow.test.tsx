@@ -152,14 +152,14 @@ describe('the upgrade dialog answers all three questions', () => {
     openWith({ metric: 'resumes', requiredPlan: 'plus' })
     // A quota asks for MORE — "résumés is on Plus" is not a sentence.
     expect(screen.getByText('More résumés are on Plus')).toBeInTheDocument()
-    expect(screen.getByText("You've reached your résumés limit.")).toBeInTheDocument()
+    expect(screen.getByText("You’ve reached your résumés limit.")).toBeInTheDocument()
     expect(screen.getByText('Upgrade to Plus for 25 résumés a month.')).toBeInTheDocument()
     expect(screen.getByText('Plus gives you 25 résumés a month.')).toBeInTheDocument()
   })
 
   it('names no tier when the denial carried none', () => {
     openWith({})
-    expect(screen.getByText("This feature isn't in your plan")).toBeInTheDocument()
+    expect(screen.getByText("This feature isn’t in your plan")).toBeInTheDocument()
     expect(screen.queryByText(/Upgrade to (Plus|Pro|Enterprise)/)).not.toBeInTheDocument()
   })
 
@@ -308,7 +308,7 @@ describe('every upgrade surface answers the three questions', () => {
 
   it('QuotaLock', () => {
     render(<QuotaLock metric="resumes" used={2} limit={2} window="lifetime" requiredPlan="plus" />)
-    expect(screen.getByText("You've used all 2 of your résumés.")).toBeInTheDocument() // what
+    expect(screen.getByText("You’ve used all 2 of your résumés.")).toBeInTheDocument() // what
     expect(screen.getByText('2 of 2 résumés used')).toBeInTheDocument() // why / how much
     expect(screen.getByText('Upgrade to Plus for 25 résumés a month.')).toBeInTheDocument() // what changes
   })

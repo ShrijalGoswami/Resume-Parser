@@ -105,9 +105,9 @@ export function Frame04Regret() {
         <div className="relative z-10 mx-auto max-w-[1280px]">
           <Reveal className="mx-auto mb-16 max-w-4xl text-center">
             <h2 className="mb-8 font-mkt-display text-4xl leading-tight font-light tracking-tight text-white md:text-5xl md:leading-none">
-              Every tool tells you who&rsquo;s strongest.
+              Every tool tells you who’s strongest.
               <br />
-              Only HireLens tells you what you&rsquo;d regret.
+              Only HireLens tells you what you’d regret.
             </h2>
             <p className="font-mkt-display text-xl italic text-mkt-fg-tertiary">
               The question no other tool asks.
@@ -210,7 +210,7 @@ export function Frame04Regret() {
                   </h4>
                   <div className="mkt-prism-border-left rounded-r-[0.375rem] bg-mkt-ai-bg p-4">
                     <p className="mb-3 mkt-body-sm text-mkt-fg-secondary">
-                      Selecting Marcus sacrifices Sarah&rsquo;s deep domain
+                      Selecting Marcus sacrifices Sarah’s deep domain
                       expertise in early-stage GTM motion. The cost is slower
                       time-to-market in Q3.
                     </p>
@@ -337,7 +337,7 @@ export function Frame04Regret() {
                   You decide, always
                 </h3>
                 <p className="text-mkt-fg-secondary">
-                  HireLens recommends; you approve; everything&rsquo;s
+                  HireLens recommends; you approve; everything’s
                   reversible and logged.
                 </p>
               </div>
@@ -362,7 +362,7 @@ export function Frame04Regret() {
         <div className="mx-auto max-w-[1280px] text-center">
           <Reveal>
             <h2 className="mb-12 font-mkt-display text-2xl text-mkt-fg-secondary md:text-3xl">
-              Built for teams that can&rsquo;t afford to be wrong — or to leak.
+              Built for teams that can’t afford to be wrong — or to leak.
             </h2>
           </Reveal>
 

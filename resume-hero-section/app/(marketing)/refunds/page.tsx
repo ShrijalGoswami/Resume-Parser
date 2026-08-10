@@ -106,7 +106,7 @@ export default function RefundsPage() {
         <P>
           Refunds go back to the original payment method through our payment processor. We
           initiate them within 5 business days of agreeing one. How long the money then takes to
-          appear is the card issuer&rsquo;s or bank&rsquo;s decision, typically 5 to 10 business
+          appear is the card issuer’s or bank’s decision, typically 5 to 10 business
           days, and is outside our control.
         </P>
       </Clause>

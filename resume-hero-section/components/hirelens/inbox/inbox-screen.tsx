@@ -81,7 +81,7 @@ export function InboxScreen() {
     return (
       <AppShell breadcrumbs={INBOX_CRUMBS}>
         <CenteredNotice
-          title="Sign-in isn't configured"
+          title="Sign-in isn’t configured"
           description="This deployment is missing its Supabase environment variables."
         />
       </AppShell>
@@ -175,8 +175,8 @@ function AuthedInbox() {
   } else if (recs.isError) {
     body = (
       <ErrorState
-        title="Couldn't load your inbox"
-        description="The priority queue didn't respond. Try again in a moment."
+        title="Couldn’t load your inbox"
+        description="The priority queue didn’t respond. Try again in a moment."
         onRetry={() => recs.refetch()}
       />
     )
@@ -209,7 +209,7 @@ function AuthedInbox() {
         description={
           firstRun
             ? 'Describe the role you are hiring for, add the résumés you have, and HireLens will read all of them and bring the few worth your time into focus.'
-            : "When candidates arrive or roles need a decision, they'll show up here."
+            : "When candidates arrive or roles need a decision, they’ll show up here."
         }
         action={
           <div className="flex flex-wrap items-center justify-center gap-2">

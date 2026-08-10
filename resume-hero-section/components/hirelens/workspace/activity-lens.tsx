@@ -25,7 +25,7 @@ export function ActivityLens({ roleId }: { roleId: string }) {
     return (
       <ErrorState
         variant="inline"
-        title="Couldn't load activity"
+        title="Couldn’t load activity"
         onRetry={() => refetch()}
         className="mt-2"
       />

@@ -44,7 +44,7 @@ export const Variants: Story = {
         onClick={() =>
           toast({
             variant: 'danger',
-            title: "Couldn't reach the server",
+            title: "Couldn’t reach the server",
             description: 'Try again in a moment.',
           })
         }

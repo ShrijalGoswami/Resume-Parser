@@ -42,8 +42,8 @@ export function PlanGate({ feature, children, fallback, loading, className }: Pl
     return (
       <div className={className}>
         <ErrorState
-          title="This didn't load"
-          description="We couldn't check what your plan includes. Try again."
+          title="This didn’t load"
+          description="We couldn’t check what your plan includes. Try again."
           onRetry={gate.retry}
         />
       </div>

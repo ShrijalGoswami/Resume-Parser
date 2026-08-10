@@ -109,7 +109,7 @@ export function UpgradeDialog({ request, onOpenChange, onCheckout }: UpgradeDial
   const why = feature
     ? featureBlurb(feature)
     : metric && plan
-      ? `You've reached your ${metricLabel(metric)} limit.`
+      ? `You’ve reached your ${metricLabel(metric)} limit.`
       : planLevel && plan
         ? PLAN_BLURBS[plan]
         : ''
@@ -138,7 +138,7 @@ export function UpgradeDialog({ request, onOpenChange, onCheckout }: UpgradeDial
                 asks for MORE. A tier is not a thing you are missing at all, so
                 it does not "go on" anything; you move to it. */}
             {!plan
-              ? `${subject} isn't in your plan`
+              ? `${subject} isn’t in your plan`
               : planLevel
                 ? `Move to ${PLAN_LABELS[plan]}`
                 : metric && !feature
@@ -190,8 +190,8 @@ export function UpgradeDialog({ request, onOpenChange, onCheckout }: UpgradeDial
               left for the customer to infer from a button. */}
           {!onCheckout ? (
             <p className="hl-caption text-hl-fg-tertiary">
-              Self-serve checkout isn&rsquo;t live yet. Tell us and we&rsquo;ll move you across
-              — usually the same working day, and nothing you&rsquo;ve already analysed is
+              Self-serve checkout isn’t live yet. Tell us and we’ll move you across
+              — usually the same working day, and nothing you’ve already analysed is
               affected.
             </p>
           ) : null}

@@ -50,7 +50,7 @@ export function SettingsScreen({ section }: { section: string }) {
   if (!configured) {
     return (
       <AppShell breadcrumbs={[{ label: 'Settings' }]}>
-        <div className="hl-display-md p-12 text-center">Sign-in isn&rsquo;t configured</div>
+        <div className="hl-display-md p-12 text-center">Sign-in isn’t configured</div>
       </AppShell>
     )
   }

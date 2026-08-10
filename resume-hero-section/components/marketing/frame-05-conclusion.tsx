@@ -161,7 +161,7 @@ export function Frame05Conclusion() {
         <div className="grid grid-cols-1 items-center gap-16 lg:grid-cols-12">
           <div className="lg:col-span-7">
             <h2 className="mb-8 font-mkt-display text-4xl leading-tight text-mkt-fg md:text-5xl md:leading-none">
-              Change which hires you&rsquo;re proud of, not just how fast you
+              Change which hires you’re proud of, not just how fast you
               make them.
             </h2>
 

@@ -44,7 +44,7 @@ export function LedgerScreen() {
   if (!configured) {
     return (
       <AppShell breadcrumbs={LEDGER_CRUMBS}>
-        <Notice title="Sign-in isn't configured" />
+        <Notice title="Sign-in isn’t configured" />
       </AppShell>
     )
   }
@@ -109,7 +109,7 @@ function AuthedLedger() {
   // was empty. Verified against a stopped backend, not reasoned about.
   if (recs.isError) {
     body = (
-      <ErrorState variant="route" title="Couldn't load the ledger" onRetry={() => recs.refetch()} />
+      <ErrorState variant="route" title="Couldn’t load the ledger" onRetry={() => recs.refetch()} />
     )
   } else if (recs.data === undefined) {
     body = <LoadingScreen label="Loading the ledger" />
@@ -127,7 +127,7 @@ function AuthedLedger() {
           description={`${pendingCount} recommendation${pendingCount === 1 ? '' : 's'} ${pendingCount === 1 ? 'is' : 'are'} waiting on you. Once you approve or override ${pendingCount === 1 ? 'it' : 'them'}, the record is written here and frozen.`}
           action={
             <Button variant="primary" asChild>
-              <Link href="/ask?view=backlog">Review what&rsquo;s waiting</Link>
+              <Link href="/ask?view=backlog">Review what’s waiting</Link>
             </Button>
           }
         />
@@ -182,7 +182,7 @@ function AuthedLedger() {
               {fmtDate(oldest)} — {fmtDate(newest)}
             </p>
           ) : null}
-          <h1 className="hl-display text-hl-fg">The decisions you&rsquo;ve made.</h1>
+          <h1 className="hl-display text-hl-fg">The decisions you’ve made.</h1>
           <p className="hl-body max-w-2xl text-hl-fg-secondary">
             Every decision and the evidence behind it — recorded as it stood at the moment of the
             call.

@@ -198,7 +198,7 @@ export function LoginForm() {
               <ArrowRight />
             </Button>
             <p className="hl-caption text-hl-fg-tertiary">
-              We&rsquo;ll check if your team uses SSO.
+              We’ll check if your team uses SSO.
             </p>
           </form>
 

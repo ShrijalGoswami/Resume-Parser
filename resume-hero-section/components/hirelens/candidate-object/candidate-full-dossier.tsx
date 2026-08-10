@@ -50,7 +50,7 @@ export function CandidateFullDossier({ roleId, candidateId }: { roleId: string; 
   if (!configured) {
     return (
       <AppShell title="Candidate review">
-        <Notice title="Sign-in isn't configured" />
+        <Notice title="Sign-in isn’t configured" />
       </AppShell>
     )
   }
@@ -108,7 +108,7 @@ function AuthedDossier({ roleId, candidateId }: { roleId: string; candidateId: s
   if (c.isError || !c.model) {
     return (
       <AppShell breadcrumbs={crumbs} account={account}>
-        <ErrorState variant="route" title="Couldn't load this candidate" onRetry={c.refetch} />
+        <ErrorState variant="route" title="Couldn’t load this candidate" onRetry={c.refetch} />
       </AppShell>
     )
   }

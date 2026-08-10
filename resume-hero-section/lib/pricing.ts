@@ -182,7 +182,7 @@ export function isCheckoutSupported(currency: CurrencyCode): boolean {
  */
 export function checkoutUnavailableReason(currency: CurrencyCode): string | null {
   if (isCheckoutSupported(currency)) return null
-  return `We can't take card payments in ${CURRENCIES[currency].label} yet — talk to us and we'll set your account up directly.`
+  return `We can’t take card payments in ${CURRENCIES[currency].label} yet — talk to us and we’ll set your account up directly.`
 }
 
 export const DEFAULT_BILLING_PERIOD: BillingPeriod = 'monthly'

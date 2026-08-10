@@ -529,9 +529,9 @@ export function Frame03Pipeline() {
                     without it, which is the whole point of the stage. */}
                 <figure className="mkt-prism-edge-left rounded-r-mkt-lg border border-l-0 border-mkt-border-subtle bg-mkt-canvas p-4">
                   <blockquote className="mkt-body-sm leading-relaxed text-mkt-fg">
-                    &ldquo;Led the re-platforming of the order pipeline to an
+                    “Led the re-platforming of the order pipeline to an
                     event-driven architecture serving 40k req/s, cutting p99
-                    latency from 900ms to 120ms.&rdquo;
+                    latency from 900ms to 120ms.”
                   </blockquote>
                   <figcaption className="mt-3 flex flex-wrap items-center gap-2 mkt-data text-mkt-fg-tertiary">
                     <span className="inline-flex items-center gap-1 rounded-[0.25rem] border border-mkt-border-subtle px-1.5 py-0.5">
@@ -648,7 +648,7 @@ export function Frame03Pipeline() {
           <p className="max-w-md mkt-body-lg text-mkt-fg-secondary">
             Synthesized, defensible recommendations delivered in a high-fidelity
             memo. It highlights strengths, isolates risks, and tells you what
-            you&rsquo;d regret.
+            you’d regret.
           </p>
 
           {/* The chain the memo was produced by, laid out as steps. */}
