@@ -89,7 +89,9 @@ export function CandidateScorecard({ model }: { model: CandidateModel }) {
         {fit !== null ? (
           <Fact label="Fit" value={String(fit)} meaning={band?.label} emphasis />
         ) : null}
-        {model.atsScore !== null ? <Fact label="ATS" value={String(model.atsScore)} /> : null}
+        {model.atsScore !== null ? (
+          <Fact label="ATS Readiness" value={String(model.atsScore)} meaning="résumé legibility, not job match" />
+        ) : null}
         {model.rank !== null ? (
           <Fact label="Rank" value={`#${model.rank}`} meaning="in this analysis run" />
         ) : null}

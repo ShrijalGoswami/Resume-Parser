@@ -660,6 +660,62 @@ def extract_experience(experience_section: str) -> list[ExperienceEntry]:
 #: the separator so a hyphenated name ("E-Commerce Platform") stays intact.
 _PROJECT_TITLE_SPLIT_RE = re.compile(r"\s+[-–—:]\s+")
 
+#: Leading glyph a résumé template renders as a bullet but which arrives as an
+#: ordinary letter/symbol because the icon font carries no useful Unicode
+#: mapping ("Ð" = U+00D0 is what one real template emits; "" = U+F0D8 and
+#: friends come from private-use icon fonts). These are NOT in the bullet set —
+#: the line is correctly read as a TITLE — but the glyph must not survive into
+#: the project's name. Requires trailing whitespace so a genuine title starting
+#: with a letter ("Ðatabase Tool" is not a thing, but "C# Parser" is) is safe:
+#: a single leading non-alphanumeric-ish marker followed by a space.
+_TITLE_MARKER_RE = re.compile(
+    "^["
+    "¡-¿"      # Latin-1 punctuation/symbols
+    "Ð×Þ"  # Ð × Þ — icon-font glyphs seen in real templates
+    "÷"
+    "‐-‧"      # dashes and bullet-adjacent punctuation
+    "■-◿"      # geometric shapes
+    "←-⇿"      # arrows
+    "☀-➿"      # dingbats
+    "-"      # private-use area (FontAwesome-style icon fonts)
+    r"]\s+"
+)
+
+#: "Project Name | Python, Flask, SQLite" — the title line carries its own tech
+#: stack. Splitting it is what keeps the entry alive: the full line trips the
+#: `is_title_tech_list` guard below (3+ known skills + a separator), so before
+#: this split BOTH of a real résumé's projects were discarded as if the title
+#: line were nothing but a list of technologies.
+_TITLE_STACK_SPLIT_RE = re.compile(r"\s*\|\s*")
+
+
+def _strip_title_marker(line: str) -> str:
+    """Drop an icon-font pseudo-bullet from the front of a project title."""
+    return _TITLE_MARKER_RE.sub("", line, count=1).strip()
+
+
+def _split_title_and_stack(title: str) -> tuple[str, str | None]:
+    """Split "Name | tech, tech" into ("Name", "tech, tech").
+
+    Returns `(title, None)` unless the left side genuinely looks like a NAME and
+    the right side genuinely looks like a TECH STACK. Both guards matter:
+      * left must be multi-word and near-skill-free, so a real list written with
+        pipes ("Python | Flask | SQLite") is not mistaken for a titled project;
+      * right must name at least two known skills, so "Dashboard | Q3 rewrite"
+        keeps its pipe and is left alone.
+    """
+    parts = _TITLE_STACK_SPLIT_RE.split(title, 1)
+    if len(parts) != 2:
+        return title, None
+    head, tail = parts[0].strip(), parts[1].strip()
+    if not head or not tail:
+        return title, None
+    head_skills = [s for s in COMMON_SKILLS if s in head.lower()]
+    tail_skills = [s for s in COMMON_SKILLS if s in tail.lower()]
+    if len(head.split()) >= 2 and len(head_skills) < 2 and len(tail_skills) >= 2:
+        return head, tail
+    return title, None
+
 
 def extract_projects(projects_section: str) -> list[ProjectEntry]:
     """
@@ -677,8 +733,16 @@ def extract_projects(projects_section: str) -> list[ProjectEntry]:
         is_bullet = line.startswith(("•", "-", "*", chr(149)))
         
         if not is_bullet:
-            title = line
+            # An icon-font pseudo-bullet is not a bullet (it never matched the
+            # set above) but it is not part of the project's name either.
+            title = _strip_title_marker(line)
             description = []
+
+            # "Name | Python, Flask, SQLite": lift the stack off the title so the
+            # `is_title_tech_list` guard below judges the NAME, not the stack.
+            title, stack = _split_title_and_stack(title)
+            if stack:
+                description = [f"Technologies: {stack}"]
 
             # "Payment Reconciliation Engine - event-sourced ledger reconciling
             # gateway and bank statements." — title and summary on one line, the
@@ -693,7 +757,9 @@ def extract_projects(projects_section: str) -> list[ProjectEntry]:
                 # of the name, not a boundary; require a substantive right side.
                 if head and len(tail) >= 20:
                     title = head
-                    description = [tail]
+                    # append, not assign: a "Technologies:" line lifted off the
+                    # title above must survive this second split.
+                    description.append(tail)
             
             # Look ahead for sub elements
             i += 1
@@ -706,6 +772,16 @@ def extract_projects(projects_section: str) -> list[ProjectEntry]:
                     if desc_text:
                         description.append(desc_text)
                 else:
+                    # An icon-font pseudo-bullet marks the start of the NEXT
+                    # project. It must be tested before the tech-stack check
+                    # below: these titles carry their stack ("Ð Name | Python,
+                    # Flask, SQLite"), so the stack check would otherwise
+                    # swallow the whole next project as a technologies line of
+                    # this one — which is exactly how a real résumé lost its
+                    # second project while keeping its first.
+                    if _TITLE_MARKER_RE.match(next_line):
+                        break
+
                     # Clean lookahead checks for links or pure tech lists
                     is_url = "github.com" in next_line.lower() or "linkedin.com" in next_line.lower() or next_line.lower() in ("github", "linkedin") or next_line.startswith("http")
                     

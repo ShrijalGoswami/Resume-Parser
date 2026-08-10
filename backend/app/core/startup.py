@@ -148,6 +148,16 @@ def validate_startup() -> None:
     # billing-less deployment is a configuration this app supports.
     _validate_plan_bindings()
 
+    # Billing webhook secret — fatal in production when checkout is live. The
+    # webhook is how a paid plan actually activates; without the secret every
+    # webhook is rejected (verify_webhook_signature returns False on an empty
+    # secret, and load_settings refuses to build the provider), so a customer
+    # would pay and never be upgraded. That fail-closed behaviour is correct, but
+    # a deploy should discover the missing secret at boot, not on the first
+    # customer. Only fires in production AND only when self-serve checkout is
+    # configured — a billing-less production deployment is supported.
+    _validate_billing_webhook_secret()
+
     # Embedding store integrity: are the stored vectors from the model that is
     # actually serving queries? Placed last because it is a data-state check,
     # not a configuration one, and because it needs the AI config above to be
@@ -189,6 +199,33 @@ def _validate_embedding_integrity() -> None:
             f"were produced by a model other than the active {report.active_model!r}. "
             f"Those candidates are invisible to semantic search. Reindex the affected "
             f"campaigns, or set EMBEDDING_STALENESS_ACTION=warn to boot anyway."
+        )
+
+
+def _validate_billing_webhook_secret() -> None:
+    """Fail the boot in production if checkout is live but the webhook secret is
+    absent. No-op in non-production and when no plan bindings are configured."""
+    if settings.ENVIRONMENT != "production":
+        return
+    try:
+        import os
+
+        from app.billing.providers.razorpay import plans
+        from app.billing.providers.razorpay.config import WEBHOOK_SECRET_ENV
+    except Exception as exc:  # noqa: BLE001 - never block boot on an import problem
+        logger.warning("Billing webhook secret not checked: %s", exc)
+        return
+
+    if not plans.configured_plans():
+        # Self-serve checkout is not configured — a billing-less prod deploy.
+        return
+
+    if not os.environ.get(WEBHOOK_SECRET_ENV, "").strip():
+        raise StartupError(
+            f"{WEBHOOK_SECRET_ENV} is not set, but self-serve checkout is configured "
+            "in production. Razorpay webhooks are how a paid plan activates; without "
+            "the secret every webhook is rejected, so customers would pay and never be "
+            "upgraded. Set the webhook secret before deploying."
         )
 
 

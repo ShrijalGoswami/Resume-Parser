@@ -34,6 +34,7 @@ import {
   DrawerHeader,
   DrawerBody,
   DrawerTitle,
+  DrawerDescription,
   Tabs,
   TabsList,
   TabsTrigger,
@@ -289,6 +290,12 @@ export default function FoundationsPage() {
                 <DrawerHeader>
                   <div>
                     <DrawerTitle>Aarav Sharma</DrawerTitle>
+                    {/* sr-only duplicate of the visible line below: the visible
+                        one keeps its hl-small step, the description carries the
+                        aria wiring Radix asks for. */}
+                    <DrawerDescription className="sr-only">
+                      Senior Backend Engineer
+                    </DrawerDescription>
                     <p className="hl-small text-hl-fg-secondary">Senior Backend Engineer</p>
                   </div>
                 </DrawerHeader>

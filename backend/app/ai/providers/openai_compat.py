@@ -110,6 +110,35 @@ class OpenRouterProvider(OpenAICompatProvider):
     }
 
 
+class NvidiaProvider(OpenAICompatProvider):
+    """NVIDIA NIM — OpenAI-compatible; only base_url + key + models differ.
+
+    Reuses `NVIDIA_API_KEY`, already this repo's NVIDIA credential (the Nemotron
+    embedding provider reads the same setting), and the same NIM base URL that
+    `app/ai/embeddings/nvidia_provider.py` documents as `DEFAULT_BASE_URL`.
+
+    `quota_markers` is inherited from the OpenAI-compatible family because NIM
+    speaks that API. NVIDIA's own wording for a ceiling that will not clear today
+    has NOT been observed yet, so if a trial 429 turns out to use different words
+    this attribute is the one place to correct it (§9A rule 13 — vocabulary, not
+    verdicts).
+    """
+
+    name = "nvidia"
+    display_name = "NVIDIA NIM"
+    api_key_setting = "NVIDIA_API_KEY"
+    base_url = "https://integrate.api.nvidia.com/v1"
+    ctx_window = 131072
+    max_output = 8192
+    role_models = {
+        ModelRole.DEFAULT_REASONING: "z-ai/glm-5.2",
+        ModelRole.FAST_REASONING: "z-ai/glm-5.2",
+        ModelRole.CHEAP_REASONING: "z-ai/glm-5.2",
+        ModelRole.LONG_CONTEXT: "z-ai/glm-5.2",
+        ModelRole.PREMIUM_REASONING: "z-ai/glm-5.2",
+    }
+
+
 class KimiProvider(OpenAICompatProvider):
     """Kimi / Moonshot AI — OpenAI-compatible; only base_url + key + models differ."""
 

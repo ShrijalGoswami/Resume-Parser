@@ -101,6 +101,11 @@ def _process_one(
         less_relevant_projects=less_relevant,
         semantic=semantic,
         weights=weights,
+        # Deterministic core-coverage inputs: the résumé's own skills and the JD
+        # text. These make core coverage immune to LLM extraction omissions and
+        # keep it JD-sensitive even when the LLM analysis above degraded.
+        resume_skills=list(resume_data.skills),
+        job_description=job_description,
     )
 
     result = CandidateResult(

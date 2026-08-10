@@ -48,6 +48,25 @@ services:
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false            # bypasses RLS. Server only. Never NEXT_PUBLIC_*.
 
+      # ── Embeddings (semantic talent search) ───────────────────────────────
+      # Absent from this blueprint until now, and the failure mode is the same
+      # silent one the Supabase block above describes. EMBEDDING_PROVIDER
+      # defaults to `hashing`, so a deploy without these boots happily and
+      # serves search from a dependency-free hash vector — while every stored
+      # vector was produced by Nemotron. The boot check reports "EMBEDDING STORE
+      # IS STALE: N of N rows" and, at the default `warn`, boots anyway: search
+      # returns 200 with quietly worse results and no user-visible error.
+      #
+      # The model is pinned, not defaulted, because the stored vectors' model
+      # identity is what the staleness check compares against. Changing it means
+      # a full reindex, never a config flip.
+      - key: EMBEDDING_PROVIDER
+        value: nvidia
+      - key: EMBEDDING_MODEL
+        value: nvidia/llama-nemotron-embed-1b-v2
+      - key: NVIDIA_API_KEY
+        sync: false            # set the real value in the Render dashboard
+
       # DEBUG | INFO | WARNING | ERROR. Raise during an incident without a code
       # change; INFO is the default and matches previous behaviour.
       - key: LOG_LEVEL

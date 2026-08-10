@@ -181,14 +181,24 @@ class NvidiaEmbeddingProvider(EmbeddingProvider):
                 is_quota=is_quota,
             )
         if status >= 500:
+            # Transient: the request was fine, the endpoint was not. Retryable.
             raise AIProviderError(f"NVIDIA embedding endpoint failed (HTTP {status}). {detail}")
         # 400/404/422 — a request this code built was refused. Surfacing the raw
         # body verbatim is the point: it names the offending field, which is the
         # only thing that makes an unfamiliar API contract debuggable.
-        raise AIProviderError(
+        #
+        # PERMANENT, so explicitly NOT retryable. An unknown model name or a
+        # malformed field is refused identically every time; retrying it three
+        # times only turns one clear failure into three, more slowly. The error
+        # TYPE is unchanged (callers and messages are unaffected) — only the
+        # retry eligibility is corrected, the same way `AIRateLimitError` narrows
+        # `retryable` per instance for quota exhaustion.
+        permanent = AIProviderError(
             f"NVIDIA refused the embedding request (HTTP {status}) for model "
             f"{self.model!r}. Response: {detail}"
         )
+        permanent.retryable = False
+        raise permanent
 
     def _post_batch(self, texts: list[str], input_type: str) -> list[list[float]]:
         try:

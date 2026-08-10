@@ -45,3 +45,16 @@ class TalentSearchResponse(BaseModel):
     count: int = 0
     indexed: int = 0                        # candidates (re)embedded to serve this search
     results: list[SearchResultItem] = Field(default_factory=list)
+
+    # ── Degraded-mode disclosure (P0-3) ──────────────────────────────────────
+    # An embedding provider failure no longer fails the search: ranking falls
+    # back to the lexical half of the hybrid scorer. That is a genuinely
+    # different (worse) ranking, so the client is TOLD rather than left to infer
+    # it from scores — a caller that silently treats degraded results as
+    # semantic ones would be drawing conclusions the data does not support.
+    #: True when the query could not be embedded and ranking was lexical-only.
+    degraded: bool = False
+    #: Stable machine-readable cause. One of `embedding_rate_limited`,
+    #: `embedding_timeout`, `embedding_unconfigured`, `embedding_unavailable`.
+    #: Never carries provider response text.
+    degraded_reason: Optional[str] = None

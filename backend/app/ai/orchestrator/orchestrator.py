@@ -19,7 +19,6 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-import random
 import time
 from typing import Optional, Type, TypeVar
 
@@ -33,6 +32,7 @@ from app.ai.gateway.provider_config import get_provider_config
 from app.ai.prompts.registry import get_prompt
 from app.ai.providers.registry import get_provider
 from app.ai.schemas.base import AIExecution, AIResult, Capability, TokenUsage
+from app.ai.utils.backoff import exponential_backoff, rate_limit_delay
 from app.ai.utils.budget import CallBudget
 from app.ai.utils.errors import (
     AIBudgetExhaustedError, AIConfigError, AIError, AIParseError, AIProviderError,
@@ -365,22 +365,23 @@ class AIOrchestrator:
     # -- retry backoff + observability (A4) --------------------------------
     @staticmethod
     def _backoff(attempt: int, cfg) -> float:
-        """Exponential backoff with EQUAL jitter, capped. `attempt` is 1-based.
-        Equal jitter (half fixed + half random) guarantees a non-trivial minimum
-        wait, so backoff is provable in tests yet still de-correlates retries."""
-        base = cfg.retry_base_delay_ms / 1000.0
-        cap = cfg.retry_max_delay_ms / 1000.0
-        raw = min(cap, base * (2 ** (attempt - 1)))
-        return raw / 2 + random.uniform(0, raw / 2)
+        """Exponential backoff with equal jitter. `attempt` is 1-based.
+
+        The math lives in `app.ai.utils.backoff` so the embedding service retries
+        on exactly the same curve; this stays as the orchestrator's spelling of it.
+        """
+        return exponential_backoff(
+            attempt, base_ms=cfg.retry_base_delay_ms, cap_ms=cfg.retry_max_delay_ms
+        )
 
     @staticmethod
     def _rate_limit_delay(exc: AIRateLimitError, attempt: int, cfg) -> float:
         """Honor Retry-After when the provider sent one (capped); otherwise fall
         back to exponential jittered backoff."""
-        cap = cfg.retry_max_delay_ms / 1000.0
-        if exc.retry_after is not None:
-            return min(cap, float(exc.retry_after))
-        return AIOrchestrator._backoff(attempt, cfg)
+        return rate_limit_delay(
+            exc.retry_after, attempt,
+            base_ms=cfg.retry_base_delay_ms, cap_ms=cfg.retry_max_delay_ms,
+        )
 
     @staticmethod
     def _log_retry(capability, attempt: int, reason: str, delay: float, exc,

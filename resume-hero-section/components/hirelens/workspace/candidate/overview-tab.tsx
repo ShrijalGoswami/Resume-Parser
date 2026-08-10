@@ -86,7 +86,7 @@ export function OverviewTab({
       {fit !== null || ats !== null ? (
         <div className="grid grid-cols-2 gap-3">
           {fit !== null ? <ScoreTile label="Fit" score={fit} /> : null}
-          {ats !== null ? <ScoreTile label="ATS" score={ats} /> : null}
+          {ats !== null ? <ScoreTile label="ATS Readiness" score={ats} /> : null}
         </div>
       ) : null}
 

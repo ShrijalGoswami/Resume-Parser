@@ -80,7 +80,12 @@ def _ensure_seeded() -> None:
     from app.ai.providers.gemini_provider import GeminiProvider
     from app.ai.providers.anthropic_provider import AnthropicProvider
     from app.ai.providers.fake_provider import FakeProvider
-    from app.ai.providers.openai_compat import KimiProvider, OpenAIProvider, OpenRouterProvider
+    from app.ai.providers.openai_compat import (
+        KimiProvider,
+        NvidiaProvider,
+        OpenAIProvider,
+        OpenRouterProvider,
+    )
 
     # The fake is specced like any other provider. Without a spec here the
     # gateway cannot resolve a model for it at all: since C4 removed the
@@ -88,7 +93,7 @@ def _ensure_seeded() -> None:
     # it another vendor's model name. Either way a missing spec is a defect —
     # this one just fails loudly instead of mislabelling every record.
     for cls in (GroqProvider, GeminiProvider, AnthropicProvider, FakeProvider,
-                OpenAIProvider, OpenRouterProvider, KimiProvider):
+                OpenAIProvider, OpenRouterProvider, KimiProvider, NvidiaProvider):
         register_provider_spec(_spec_from_class(cls))
     # Non-LLM embeddings provider (no completion class) — declared inline.
     register_provider_spec(ProviderSpec(

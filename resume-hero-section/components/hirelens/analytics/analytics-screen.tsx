@@ -20,6 +20,7 @@ import { DataTable, type DataTableColumn } from '../ui/data-table'
 import { ScoreMeter } from '../domain/score-meter'
 import { relativeTime } from '../lib/format'
 import { DayColumns, Distribution, MagnitudeRows, NoData, Panel, SplitBar } from './analytics-charts'
+import { escapeCsvCell } from './csv'
 import type { AnalyticsOverview, CandidateBrief, SkillCount } from '@/types/analytics'
 
 const ANALYTICS_CRUMBS = [{ label: 'Analytics' }]
@@ -250,7 +251,7 @@ function toCsv(data: AnalyticsOverview): string {
   data.ai_insights.common_missing_skills.forEach((d) => push('Missing skills', d.skill, d.count))
 
   return rows
-    .map((row) => row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(','))
+    .map((row) => row.map(escapeCsvCell).join(','))
     .join('\n')
 }
 

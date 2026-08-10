@@ -31,6 +31,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '../../ui/dialog'
 import { EmptyState } from '../../states/empty-state'
@@ -390,6 +391,11 @@ function CreateRuleDialog({
       <DialogContent size="md">
         <DialogHeader>
           <DialogTitle>New automation rule</DialogTitle>
+          {/* sr-only: satisfies Radix's aria-describedby wiring without adding
+              visible copy the form doesn't need. */}
+          <DialogDescription className="sr-only">
+            Choose a trigger event and the integration action it should run.
+          </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4">
           <Field label="Name" htmlFor="rule-name">

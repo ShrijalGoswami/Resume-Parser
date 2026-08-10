@@ -24,6 +24,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '../../ui/dialog'
 import { EmptyState } from '../../states/empty-state'
@@ -271,6 +272,12 @@ function InviteDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (op
       <DialogContent size="sm">
         <DialogHeader>
           <DialogTitle>Invite a member</DialogTitle>
+          {/* sr-only: the form is self-explanatory, but Radix requires the
+              content to carry a description (or opt out) — without one every
+              open logged the missing-aria-describedby warning. */}
+          <DialogDescription className="sr-only">
+            Invite someone to this organization by email and choose their role.
+          </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4">
           <Field label="Email" htmlFor="invite-email">

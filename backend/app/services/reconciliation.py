@@ -47,6 +47,7 @@ from dataclasses import dataclass, field
 from typing import Any, Iterable, Optional
 
 from app.nlp.skill_normalizer import CANONICAL_MAPPING
+from app.nlp.skills_vocab import SKILL_VOCAB
 
 logger = logging.getLogger(__name__)
 
@@ -108,6 +109,32 @@ def canonical_skill_key(value: str) -> str:
 
 def _keys(values: Iterable[str]) -> set[str]:
     return {k for k in (canonical_skill_key(v) for v in values or []) if k}
+
+
+#: Every skill spelling we recognise, as comparison keys. Used to tell a
+#: slash/"or"-joined claim that lists DISTINCT alternatives ("PyTorch/TensorFlow",
+#: "JavaScript/TypeScript") apart from a single token that merely contains a
+#: slash ("CI/CD", "TCP/IP", "A/B testing"). Built from the shared vocabulary and
+#: the display mapping so it tracks them automatically.
+KNOWN_SKILL_KEYS: set[str] = (
+    {canonical_skill_key(s) for s in SKILL_VOCAB}
+    | {canonical_skill_key(v) for v in CANONICAL_MAPPING.values()}
+    | {canonical_skill_key(k) for k in CANONICAL_MAPPING.keys()}
+) - {""}
+
+_OR_SEPARATOR_RE = re.compile(r"/|\bor\b", re.IGNORECASE)
+
+
+def _is_or_alternatives(claim: str, named_keys: set[str]) -> bool:
+    """True when the claim joins DISTINCT alternative skills with a slash or
+    "or" — so satisfying ANY one refutes the whole claim. False for a single
+    skill that just happens to contain a slash (CI/CD, TCP/IP), which stays an
+    all-tokens-required claim and is matched whole."""
+    if not _OR_SEPARATOR_RE.search(claim or ""):
+        return False
+    # Only OR when every part is independently a recognised skill; that is what
+    # separates "PyTorch/TensorFlow" (both real) from "CI/CD" (fragments).
+    return len(named_keys) >= 2 and named_keys.issubset(KNOWN_SKILL_KEYS)
 
 
 # ── Absence claims ──────────────────────────────────────────────────────────
@@ -281,13 +308,17 @@ def reconcile_analysis(
         for claim in kept_missing:
             claim_key = canonical_skill_key(claim)
             # A claim may name several skills and trail a qualifier: "React and
-            # TypeScript for internal tooling". If EVERY skill it names was
-            # extracted, the claim is wholly refuted. If only some were, it still
-            # carries a real gap and is left for the recruiter to read.
+            # TypeScript for internal tooling". For an AND-list (comma/"and") the
+            # claim is refuted only if EVERY skill it names was extracted — a
+            # partial list still carries a real gap. For OR-alternatives joined by
+            # a slash/"or" ("PyTorch/TensorFlow"), having ANY one satisfies it, so
+            # it must not be treated as needing every token.
             named_keys = _keys(_claim_skill_tokens(claim))
-            refuted = (claim_key and claim_key in skill_keys) or (
-                bool(named_keys) and named_keys.issubset(skill_keys)
-            )
+            if _is_or_alternatives(claim, named_keys):
+                satisfied = bool(named_keys & skill_keys)
+            else:
+                satisfied = bool(named_keys) and named_keys.issubset(skill_keys)
+            refuted = (claim_key and claim_key in skill_keys) or satisfied
             if refuted:
                 report.removed_missing_skills.append(claim)
             else:

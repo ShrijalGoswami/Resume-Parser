@@ -7,6 +7,7 @@ import {
   DrawerHeader,
   DrawerBody,
   DrawerTitle,
+  DrawerDescription,
 } from '../ui/drawer'
 import { ErrorState } from '../states/error-state'
 import { ComparisonReport } from './comparison-report'
@@ -37,9 +38,12 @@ export function ComparePanel({ open, count, result, onRetry, onClose }: CompareP
                 claim the panel did not back, because it discarded the
                 `sources_used` the response carried. The report now renders
                 that attribution, so the header can simply say what it is. */}
-            <p className="hl-body text-hl-fg-secondary">
+            {/* DrawerDescription rather than a bare <p> — same classes, same
+                render, but Radix wires it into `aria-describedby`, which this
+                content was warning about on every open. */}
+            <DrawerDescription>
               Side by side, from each candidate&rsquo;s analysis.
-            </p>
+            </DrawerDescription>
           </div>
         </DrawerHeader>
         <DrawerBody>

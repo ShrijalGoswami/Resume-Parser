@@ -15,7 +15,12 @@ from app.ai.providers.groq_provider import GroqProvider
 from app.ai.providers.gemini_provider import GeminiProvider
 from app.ai.providers.anthropic_provider import AnthropicProvider
 from app.ai.providers.fake_provider import FakeProvider
-from app.ai.providers.openai_compat import KimiProvider, OpenAIProvider, OpenRouterProvider
+from app.ai.providers.openai_compat import (
+    KimiProvider,
+    NvidiaProvider,
+    OpenAIProvider,
+    OpenRouterProvider,
+)
 from app.ai.utils.errors import AIConfigError
 
 # Factories so providers are constructed lazily (their SDK/client init is deferred).
@@ -29,6 +34,7 @@ _FACTORIES: dict[str, Callable[[], LLMProvider]] = {
     "openai": OpenAIProvider,
     "openrouter": OpenRouterProvider,
     "kimi": KimiProvider,
+    "nvidia": NvidiaProvider,
     # Offline, deterministic, no credential. Registered exactly like the others
     # so `AI_PROVIDER=fake` exercises the real gateway → health → retry ladder
     # path rather than a parallel one. It refuses to construct in production.

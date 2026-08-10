@@ -203,8 +203,17 @@ async def update_candidate_stage(
     response_model=RecruiterNote, status_code=status.HTTP_201_CREATED, dependencies=[RequireCandidateManage])
 async def create_note(
     campaign_id: str, candidate_id: str, payload: NoteCreate,
-    repo: NoteRepoDep, activity: ActivityRepoDep,
+    repo: NoteRepoDep, activity: ActivityRepoDep, candidates: CandidateRepoDep,
 ):
+    # Ownership gate (P3 fix). The note table is recruiter-scoped, so a note
+    # created against another tenant's candidate_id lands harmlessly in the
+    # caller's own space and the victim never sees it — but it should not be
+    # created at all, nor should it write an activity row or answer whether a
+    # foreign candidate exists. `candidates.get` is recruiter-scoped and raises a
+    # generic 404 ("Candidate not found") for a candidate that is foreign OR
+    # nonexistent, which is exactly the safe, non-disclosing response, and it
+    # runs before any note/activity write.
+    candidates.get(candidate_id)
     note = repo.create(campaign_id, candidate_id, payload)
     activity.record(
         "note_added", summary="Added a note",
@@ -249,6 +258,7 @@ async def persist_batch(
     campaigns: CampaignRepoDep,
     candidates: CandidateRepoDep,
     activity: ActivityRepoDep,
+    embeddings: EmbeddingRepoDep,
 ):
     """
     Persist an already-computed batch analysis under a campaign.
@@ -264,7 +274,8 @@ async def persist_batch(
     ctx.plan_service().can_upload_resume(max(successful, 1)).raise_for_denied()
 
     service = PersistenceService(campaigns, candidates, activity,
-                                 organization_id=ctx.organization_id)
+                                 organization_id=ctx.organization_id,
+                                 embedding_repo=embeddings)
     return service.persist_batch(campaign_id, batch)
 
 

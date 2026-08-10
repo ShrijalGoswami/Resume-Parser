@@ -20,8 +20,9 @@ from app.repositories import (
     CampaignRepository,
     CandidateRepository,
 )
+from app.ai.utils.errors import AIError
 from app.enterprise.usage import record_resumes
-from app.schemas.batch import BatchAnalysisResponse
+from app.schemas.batch import BatchAnalysisResponse, CandidateResult
 from app.schemas.campaign import Candidate
 
 logger = logging.getLogger(__name__)
@@ -34,11 +35,16 @@ class PersistenceService:
         candidate_repo: CandidateRepository,
         activity_repo: ActivityRepository,
         organization_id: str | None = None,
+        embedding_repo: Any = None,
     ):
         self._campaigns = campaign_repo
         self._candidates = candidate_repo
         self._activity = activity_repo
         self._organization_id = organization_id
+        #: Optional. When present, newly stored analyses are indexed for semantic
+        #: search here — see `_index_embeddings`. A caller without one (tests,
+        #: stateless paths) behaves exactly as before.
+        self._embeddings = embedding_repo
 
     def persist_batch(
         self, campaign_id: str, batch: BatchAnalysisResponse
@@ -53,6 +59,9 @@ class PersistenceService:
         campaign = self._campaigns.get(campaign_id)
         batch_id = str(uuid.uuid4())
         stored: list[Candidate] = []
+        #: (candidate_id, result) for rows whose analysis was written in this
+        #: call — the only candidates whose embedding can be missing or stale.
+        newly_analysed: list[tuple[str, CandidateResult]] = []
 
         # Idempotency by CONTENT HASH (production): never create a second
         # candidate for a resume whose SHA-256 already exists in this campaign.
@@ -131,6 +140,7 @@ class PersistenceService:
                 analysis_version=batch.analysis_version,
             )
             stored.append(candidate)
+            newly_analysed.append((candidate.id, c))
 
         # Optionally sync the campaign's JD if it was empty.
         if not campaign.job_description and batch.job_description:
@@ -165,8 +175,57 @@ class PersistenceService:
         if self._organization_id and stored:
             record_resumes(self._organization_id, len(stored))
 
+        # Index for semantic search LAST: everything above is already durable, so
+        # a vendor failure here cannot cost the caller their persisted batch.
+        self._index_embeddings(campaign_id, newly_analysed)
+
         logger.info(
             "Persisted batch %s to campaign %s: %d candidates stored",
             batch_id, campaign_id, len(stored),
         )
         return stored
+
+    def _index_embeddings(
+        self, campaign_id: str, pending: list[tuple[str, CandidateResult]]
+    ) -> None:
+        """Embed the analyses this call just wrote, so semantic search sees them.
+
+        WHY HERE. Embeddings were previously built only by an explicit reindex or
+        by the first search of a campaign that had NO vectors at all. Once a
+        campaign was indexed, every candidate persisted afterwards was invisible
+        to `/search/talent` — and any candidate whose analysis was rewritten kept
+        serving its old vector — with no error anywhere. Writing the analysis is
+        the moment the profile text changes, so it is the moment to re-embed.
+
+        NOT A SECOND INVALIDATION SYSTEM. This calls the existing
+        `ensure_candidate_embedding`, so the existing content-hash + model gate
+        still decides: an unchanged profile costs one metadata read and no vendor
+        call, and only genuinely changed content is re-embedded. Candidates this
+        call did not touch are never considered.
+
+        BEST EFFORT. The batch is already durable by the time this runs. A 429
+        must not turn a successful persist into a failed request, so provider
+        failures are logged and the vectors are simply left for the next reindex
+        — nothing is written when embedding fails.
+        """
+        if not self._embeddings or not pending:
+            return
+
+        from app.services.embedding_pipeline import ensure_candidate_embedding
+
+        for idx, (candidate_id, result) in enumerate(pending):
+            try:
+                ensure_candidate_embedding(
+                    candidate_id, campaign_id, result, embedding_repo=self._embeddings
+                )
+            except AIError as exc:
+                # A provider-level failure applies to every remaining candidate
+                # too. Stop rather than making N more calls that will all fail.
+                logger.warning(
+                    "Embedding indexing stopped for batch in campaign %s "
+                    "(%d candidate(s) left for the next reindex): %s",
+                    campaign_id, len(pending) - idx, exc,
+                )
+                return
+            except Exception as exc:  # noqa: BLE001 - one bad row must not stop the rest
+                logger.warning("Embedding skipped for candidate %s: %s", candidate_id, exc)

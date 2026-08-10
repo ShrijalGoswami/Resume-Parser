@@ -3,7 +3,14 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowUpRight } from 'lucide-react'
-import { Drawer, DrawerContent, DrawerHeader, DrawerBody, DrawerTitle } from '../ui/drawer'
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerBody,
+  DrawerTitle,
+  DrawerDescription,
+} from '../ui/drawer'
 import { Button } from '../ui/button'
 import { Kbd } from '../ui/kbd'
 import { LoadingLines } from '../states/loading'
@@ -60,6 +67,12 @@ export function CandidatePeek({
       <DrawerContent size="candidate" className="p-0">
         <DrawerHeader>
           <DrawerTitle className="sr-only">{c.model?.name ?? 'Candidate'}</DrawerTitle>
+          {/* sr-only, like the title above it: the visual header is the
+              CandidateHeader component; this pair exists for assistive tech
+              and Radix's aria wiring. */}
+          <DrawerDescription className="sr-only">
+            Candidate summary with analysis verdict and decision actions.
+          </DrawerDescription>
           {c.model ? (
             <div className="min-w-0 flex-1">
               <CandidateHeader model={c.model} dense />

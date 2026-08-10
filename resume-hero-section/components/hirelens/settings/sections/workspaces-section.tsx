@@ -21,6 +21,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '../../ui/dialog'
 import { ErrorState } from '../../states/error-state'
@@ -149,6 +150,11 @@ function CreateWorkspaceDialog({
       <DialogContent size="sm">
         <DialogHeader>
           <DialogTitle>New workspace</DialogTitle>
+          {/* sr-only: satisfies Radix's aria-describedby wiring without adding
+              visible copy the form doesn't need. */}
+          <DialogDescription className="sr-only">
+            Name and describe a new workspace for this organization.
+          </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4">
           <Field label="Name" htmlFor="workspace-name">

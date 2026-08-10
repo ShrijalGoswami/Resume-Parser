@@ -15,11 +15,12 @@ import math
 import re
 from typing import Any, Optional
 
-from app.ai.embeddings import embed_texts
+from app.ai.embeddings import active_embedding_model, embed_query
+from app.ai.utils.errors import AIConfigError, AIError, AIRateLimitError, AITimeoutError
 from app.schemas.batch import CandidateResult
 from app.schemas.search import SearchFilters, SearchResultItem, TalentSearchResponse
 from app.services.embedding_pipeline import ensure_candidate_embedding, reindex_campaign
-from app.services.vector_search import SupabaseVectorStore
+from app.services.vector_search import SupabaseVectorStore, VectorMatch
 
 logger = logging.getLogger(__name__)
 
@@ -244,6 +245,26 @@ class _Hydrator:
         )
 
 
+#: Embedding failure → stable, machine-readable cause for the client. The
+#: provider's own message is never forwarded: it can contain response text, and
+#: the client only needs to know WHICH kind of failure this was.
+_DEGRADED_REASONS: tuple[tuple[type, str], ...] = (
+    # Ordered most-specific first — AIRateLimitError and AITimeoutError are both
+    # AIProviderError subclasses, so a broad match must come last.
+    (AIRateLimitError, "embedding_rate_limited"),
+    (AITimeoutError, "embedding_timeout"),
+    (AIConfigError, "embedding_unconfigured"),
+    (AIError, "embedding_unavailable"),
+)
+
+
+def _degraded_reason(exc: Exception) -> str:
+    for exc_type, reason in _DEGRADED_REASONS:
+        if isinstance(exc, exc_type):
+            return reason
+    return "embedding_unavailable"  # pragma: no cover - AIError is exhaustive
+
+
 def search_talent(
     query: str,
     *,
@@ -258,15 +279,44 @@ def search_talent(
     indexed = 0
     # Lazily index a campaign the first time it is searched (cheap thereafter).
     if campaign_id and auto_index and not embedding_repo.list_for_recruiter(campaign_id):
-        stats = reindex_campaign(campaign_id, candidate_repo=candidate_repo, embedding_repo=embedding_repo)
-        indexed = stats["indexed"]
+        try:
+            stats = reindex_campaign(campaign_id, candidate_repo=candidate_repo, embedding_repo=embedding_repo)
+            indexed = stats["indexed"]
+        except AIError as exc:
+            # The provider is unavailable. Indexing writes nothing on failure, so
+            # the store is untouched; the search below still runs (degraded).
+            logger.warning("Auto-index skipped — embedding provider unavailable: %s", exc)
 
-    embedded = embed_texts([query])
-    qvec = embedded.vectors[0] if embedded.vectors else []
-    store = SupabaseVectorStore(embedding_repo)
-    # Over-fetch by embedding similarity, then hybrid re-rank. With hashing
-    # embeddings the cosine is noisy, so pull a wide candidate pool.
-    matches = store.search(qvec, campaign_id=campaign_id, limit=max(limit * 5, 30))
+    # Embedded as a QUERY, not a passage. NVIDIA retrieval models project the two
+    # into the same space differently, and using the wrong one does not raise —
+    # it just makes every ranking quietly worse. `embed_query` is the API that
+    # carries the distinction.
+    degraded_reason: Optional[str] = None
+    try:
+        qvec = embed_query(query)
+    except AIError as exc:
+        # A provider 429/timeout must not take the whole search down: the lexical
+        # half of the hybrid scorer carries 0.72 of the weight and can still
+        # answer. NO fallback to hashing or to another provider — a vector from a
+        # different model lands in a different space, which is worse than none —
+        # and nothing is written to the store.
+        qvec = []
+        degraded_reason = _degraded_reason(exc)
+        logger.warning("Talent search degraded to lexical-only (%s): %s", degraded_reason, exc)
+
+    if degraded_reason:
+        # Same recruiter-scoped read the vector store performs, so isolation is
+        # identical; the vectors are simply not used for scoring.
+        matches = [
+            VectorMatch(row["candidate_id"], row.get("campaign_id"), 0.0)
+            for row in embedding_repo.list_for_recruiter(campaign_id)
+            if row.get("candidate_id")
+        ]
+    else:
+        store = SupabaseVectorStore(embedding_repo)
+        # Over-fetch by embedding similarity, then hybrid re-rank. With hashing
+        # embeddings the cosine is noisy, so pull a wide candidate pool.
+        matches = store.search(qvec, campaign_id=campaign_id, limit=max(limit * 5, 30))
 
     concepts = _query_concepts(query)
     hydrator = _Hydrator(candidate_repo, campaign_id, candidate_ids=[m.candidate_id for m in matches])
@@ -295,9 +345,13 @@ def search_talent(
     scored.sort(key=lambda t: t[0], reverse=True)
     results = [it for _s, it in scored[:limit]]
 
+    # The label must not claim semantic ranking happened when it did not.
+    provider = "lexical-only" if degraded_reason else f"hybrid+{active_embedding_model()}"
+
     return TalentSearchResponse(
-        query=query, provider=f"hybrid+{embedded.provider}:{embedded.model}",
+        query=query, provider=provider,
         count=len(results), indexed=indexed, results=results,
+        degraded=bool(degraded_reason), degraded_reason=degraded_reason,
     )
 
 

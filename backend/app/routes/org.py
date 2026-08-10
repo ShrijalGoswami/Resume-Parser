@@ -21,6 +21,13 @@ from app.enterprise.deps import (
 )
 from app.enterprise.feature_flags import FEATURES
 from app.enterprise.rbac import Permission, role_permission_matrix
+from app.enterprise.member_policy import (
+    active_owner_count,
+    find_member,
+    guard_grant_owner,
+    guard_member_removal,
+    guard_member_role_change,
+)
 from app.enterprise.repositories import AuditRepository
 from app.enterprise.catalog import PLAN_LABELS
 from app.enterprise.schemas import (
@@ -153,6 +160,9 @@ async def invite_member(
     # every invite to save a rare re-invite from an accurate message.
     ctx.plan_service().can_invite_member().raise_for_denied()
 
+    # MEMBER_MANAGE gates the route; only an owner may grant the owner role.
+    guard_grant_owner(actor_role=ctx.role, new_role=payload.role.value)
+
     member = org_repo.add_member_by_email(payload.email, payload.role.value)
     _audit(ctx, "member.invited", resource_type="member", resource_id=member.id,
            metadata={"email": payload.email, "role": payload.role.value})
@@ -165,6 +175,16 @@ async def set_member_role(
     ctx: Annotated[OrgContext, Depends(require_permission(Permission.MEMBER_MANAGE))],
     org_repo: OrgRepoDep,
 ):
+    # Owner boundary beyond the MEMBER_MANAGE gate: only an owner may grant the
+    # owner role or demote an existing owner, and the last owner is protected.
+    members = org_repo.list_members()
+    target = find_member(members, member_id)
+    guard_member_role_change(
+        actor_role=ctx.role,
+        target_current_role=(target.role if target else None),
+        new_role=payload.role.value,
+        active_owner_count=active_owner_count(members),
+    )
     member = org_repo.set_member_role(member_id, payload.role.value)
     _audit(ctx, "member.role_changed", resource_type="member", resource_id=member_id,
            metadata={"role": payload.role.value})
@@ -177,6 +197,14 @@ async def remove_member(
     ctx: Annotated[OrgContext, Depends(require_permission(Permission.MEMBER_MANAGE))],
     org_repo: OrgRepoDep,
 ):
+    # Only an owner may remove an owner, and never the last one.
+    members = org_repo.list_members()
+    target = find_member(members, member_id)
+    guard_member_removal(
+        actor_role=ctx.role,
+        target_current_role=(target.role if target else None),
+        active_owner_count=active_owner_count(members),
+    )
     org_repo.remove_member(member_id)
     _audit(ctx, "member.removed", resource_type="member", resource_id=member_id)
 

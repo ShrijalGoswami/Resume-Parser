@@ -8,7 +8,7 @@ import { useSession } from '../lib/api/use-session'
 import { useProfile, usePendingRecommendations } from '../lib/api/hooks'
 import { useConversations, useAskSuggestions } from '../lib/api/ask'
 import { Button } from '../ui/button'
-import { Drawer, DrawerContent, DrawerTitle } from '../ui/drawer'
+import { Drawer, DrawerContent, DrawerTitle, DrawerDescription } from '../ui/drawer'
 import { LoadingScreen } from '../states/loading'
 import { GateState } from '../states/gate-state'
 import { ErrorState } from '../states/error-state'
@@ -266,6 +266,12 @@ function AuthedAsk({ initial }: { initial: AskInitial }) {
       <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
         <DrawerContent size="candidate">
           <DrawerTitle className="sr-only">Threads</DrawerTitle>
+          {/* sr-only, matching the title: the drawer body is the same nav the
+              desktop rail shows; this pair is for assistive tech and Radix's
+              aria wiring. */}
+          <DrawerDescription className="sr-only">
+            Thread history, the agent backlog, and suggested prompts.
+          </DrawerDescription>
           <div className="min-h-0 flex-1 pt-6">
             <AskNav {...navProps} />
           </div>

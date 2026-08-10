@@ -170,6 +170,11 @@ function CreateKeyDialog({
       <DialogContent size="sm">
         <DialogHeader>
           <DialogTitle>New API key</DialogTitle>
+          {/* sr-only: the sibling copy-key dialog has visible description copy;
+              this one's form needs none, but Radix still wants the wiring. */}
+          <DialogDescription className="sr-only">
+            Name a new API key for this organization.
+          </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4">
           <Field label="Name" htmlFor="key-name">

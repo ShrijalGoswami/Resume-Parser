@@ -26,8 +26,8 @@ const STATUS_TONE: Record<string, BadgeProps['variant']> = {
 /**
  * Agent backlog (UX Spec §9.2, mode 3) — the whole-picture audit view of the
  * agent's recommendations. Pending items are actionable ApprovalCards (approve
- * / dismiss apply optimistically with an Undo toast, shared with Home); decided
- * items are a read-only history.
+ * / dismiss are forward-only and permanent — see `act` below); decided items
+ * are a read-only history.
  */
 export function AgentBacklog() {
   const queryClient = useQueryClient()
@@ -41,13 +41,23 @@ export function AgentBacklog() {
 
   const act = (recommendation: Recommendation, status: 'approved' | 'dismissed') => {
     update.mutate({ id: recommendation.id, status })
+    // NO UNDO. This toast used to offer one, which PATCHed the record back to
+    // `pending` — an action the database refuses: the trigger behind
+    // `decided_at`/`decided_by` freezes both on write and rejects any
+    // re-decision (see `agent_repository.update_status`). So the control was
+    // offering a route that could only ever fail.
+    //
+    // The honest replacement is to say the decision is permanent — the same
+    // resolution already applied to the Decision Intelligence memo. A rollback
+    // faked on the client would be worse than the failing button: the Ledger is
+    // the record of what was decided, and it would disagree.
     toast({
       variant: status === 'approved' ? 'success' : 'info',
       title: `${status === 'approved' ? 'Approved' : 'Dismissed'}: ${recommendation.title}`,
-      action: {
-        label: 'Undo',
-        onClick: () => update.mutate({ id: recommendation.id, status: 'pending' }),
-      },
+      description:
+        status === 'approved'
+          ? 'Decision recorded. This decision is permanent.'
+          : 'Recorded as dismissed. This decision is permanent.',
     })
     void queryClient.invalidateQueries({ queryKey: askKeys.recommendations('all') })
   }

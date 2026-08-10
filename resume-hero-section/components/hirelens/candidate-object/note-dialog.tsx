@@ -1,7 +1,14 @@
 'use client'
 
 import * as React from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '../ui/dialog'
 import { Button } from '../ui/button'
 import { useCreateNote } from '../lib/api/candidate'
 import { toast } from '../ui/use-toast'
@@ -39,6 +46,11 @@ export function NoteDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Add a note for the record</DialogTitle>
+          {/* sr-only: satisfies Radix's aria-describedby wiring; the textarea
+              placeholder already carries the visible guidance. */}
+          <DialogDescription className="sr-only">
+            The note is saved to this candidate&rsquo;s record.
+          </DialogDescription>
         </DialogHeader>
         <textarea
           autoFocus

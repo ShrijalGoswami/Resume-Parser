@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { notFound, useRouter } from 'next/navigation'
 import { AppShell } from '../shell'
 import { useSession } from '../lib/api/use-session'
 import { useProfile } from '../lib/api/hooks'
@@ -19,9 +19,11 @@ import { FeatureFlagsSection } from './sections/feature-flags-section'
 import { IntegrationsSection } from './sections/integrations-section'
 import { AiGatewaySection } from './sections/ai-gateway-section'
 import { UsageAuditSection } from './sections/usage-audit-section'
+import type { SettingsSectionId } from './sections'
 
 interface SectionDef {
-  id: string
+  /** Constrained to the server-safe registry so the route and the rail agree. */
+  id: SettingsSectionId
   label: string
   group: 'Account' | 'Organization' | 'Platform'
   render: () => React.ReactNode
@@ -41,8 +43,6 @@ const SECTIONS: SectionDef[] = [
 ]
 
 const GROUPS: Array<SectionDef['group']> = ['Account', 'Organization', 'Platform']
-
-export const SETTINGS_SECTION_IDS = SECTIONS.map((section) => section.id)
 
 export function SettingsScreen({ section }: { section: string }) {
   const { session, loading, configured } = useSession()
@@ -83,7 +83,13 @@ function AuthedSettings({ section }: { section: string }) {
     ? { name: profile.data.full_name ?? profile.data.email, email: profile.data.email }
     : undefined
 
-  const active = SECTIONS.find((item) => item.id === section) ?? SECTIONS[0]
+  // NO FALLBACK TO SECTIONS[0]. An unknown id used to resolve to Profile, which
+  // meant an invalid URL rendered a real page and the rail highlighted a section
+  // the address bar did not name. The route validates the id before this
+  // renders; this guard keeps the masking from coming back if another caller
+  // ever mounts the screen directly.
+  const active = SECTIONS.find((item) => item.id === section)
+  if (!active) notFound()
 
   return (
     <AppShell

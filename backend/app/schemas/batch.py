@@ -44,6 +44,12 @@ class CandidateScore(BaseModel):
     overall: int = Field(default=0, ge=0, le=100, description="Weighted overall score 0-100")
     components: list[ScoreComponent] = Field(default_factory=list)
     missing_skills: list[str] = Field(default_factory=list, description="JD skills absent from the resume")
+    # Core-requirement gate (see ranking_engine). `None` when the JD gave too few
+    # specialised skills to gate on; then core_factor is 1.0 and no damping applied.
+    core_coverage: float | None = Field(
+        default=None, description="Fraction of the role's specialised (non-generic) skills the candidate has")
+    core_factor: float = Field(
+        default=1.0, description="Multiplier applied to the weighted score for core-requirement coverage")
 
 
 class CandidateResult(BaseModel):

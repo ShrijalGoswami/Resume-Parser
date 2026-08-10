@@ -2936,6 +2936,331 @@ failure fixed on its own before Phase 0 began.
 
 ---
 
+## 14. ATS / Fit calibration — D1 + D2 landed, awaiting live verification (10 Aug 2026)
+
+**Status: code complete, fully green offline, UNCOMMITTED, and NOT yet verified
+against live Groq through the product UI.** The one remaining gate is a 2×3
+visible-Chrome run (§14.9). Do not start the embedding work before it passes.
+
+### 14.1 The scoring pipeline as it now stands
+
+```
+Résumé PDF
+  → parsing (app/parser, PyMuPDF)
+  → detect_sections → extract_skills / extract_experience / extract_projects
+  → ResumeData{skills, experience, projects, education}
+      ├─► calculate_ats_score()          → ATS Readiness   (JD-INDEPENDENT)
+      └─► compute_candidate_score()      → Fit             (JD-DEPENDENT)
+              │
+   job_description
+      → jd_core_universe(jd)  =  {k ∈ extract_jd_skills(jd) | k ∉ GENERIC_SKILLS}
+              │                  ── AUTHORITATIVE. JD ONLY. No candidate input. ──
+              ▼
+      resume_keys      = canonicalised, generic-filtered résumé skills
+      deterministic    = resume_keys ∩ jd_core_universe        ← minimum source of truth
+      llm_matched      = generic-filtered LLM matched skills   ← AUGMENT ONLY
+      matched          = (resume_keys ∪ llm_matched) ∩ jd_core_universe
+      core_coverage    = |matched| / |jd_core_universe|
+              ▼
+      core_factor  = FLOOR + (1 − FLOOR) · min(1, coverage / TARGET)   ← curve UNCHANGED
+              ▼
+      Fit = round( Σ(dimension ratio × weight) × core_factor )         ← weights UNCHANGED
+```
+
+Recorded properties, all deliberate:
+
+- **ATS Readiness is JD-independent.** It measures résumé legibility/structure
+  only. Untouched by this work.
+- **Fit is JD-dependent.** It is the only score the gate damps.
+- **Fit weights were NOT changed.** Skills 30 · Experience 20 · Projects 15 ·
+  ATS 10 · Education 10 · Semantic 10 · Achievements 5.
+- `CORE_COVERAGE_TARGET = 0.5` — full credit at or above half the role's
+  specialised requirements.
+- `CORE_COVERAGE_FLOOR = 0.35` — the gate never damps below this.
+- `MIN_CORE_SKILLS = 3` — below this the JD is too thin to gate on; the score is
+  left exactly as it was.
+- **The core-factor curve is unchanged** from the 9 Aug accepted implementation.
+- **Generic skills are excluded from core coverage** (`GENERIC_SKILLS` in
+  `app/nlp/skills_vocab.py`) — "python", "java", "sql", "rest", "git" appear in
+  nearly every engineering JD and do not discriminate.
+- **Deterministic résumé∩JD matching is the minimum source of truth.** It is
+  always counted, so an LLM omission can never erase a real match.
+- **LLM output can augment matching but cannot define the denominator.**
+- **LLM-down mode remains JD-sensitive** — coverage falls back to
+  `resume_keys ∩ jd_core_universe`, which still differs per role.
+
+### 14.2 D1 — project extraction
+
+**The earlier audit's stated root cause was WRONG and is corrected here.**
+
+It was reported that the `Ð` (U+00D0) icon-font prefix defeated bullet
+detection. It does not: `Ð` is not in the bullet set, so the line was correctly
+read as a *title*. The real failures were:
+
+1. **`is_title_tech_list` rejected the whole entry.** These titles carry their
+   own stack — `Ð Hackathon Management Dashboard | Python, Flask, NLP,
+   PostgreSQL, REST APIs` — so the guard counted a separator plus 3+ known
+   skills and discarded the line as "nothing but a list of technologies",
+   taking the project with it.
+2. **The next project was absorbed into the previous one.** In the lookahead,
+   the second title matched `is_tech_stack` and was appended as a technologies
+   line of the first project rather than starting a new one.
+
+Fix, in `extract_projects()`:
+
+- strip the icon-font marker from the title (`_strip_title_marker`);
+- split `Project Name | tech, tech` (`_split_title_and_stack`) — title
+  preserved, stack appended to the description as `Technologies: …`;
+- a marker-prefixed line in the lookahead **ends** the current project, tested
+  *before* the tech-stack branch;
+- existing bullet/title formats (`•`, `-`, `*`, `chr(149)`, bare titles, inline
+  `Name - description`) all still parse;
+- the split is guarded both ways — the left side must be multi-word with <2
+  known skills and the right must name ≥2 — so a genuine bare tech list
+  (`Python, Flask, PostgreSQL, Docker`) is **still rejected**, and a real
+  subtitle (`Bharat Samachar AI | AI-Powered News Intelligence Platform`) is
+  left intact.
+
+`tests/test_project_extraction.py` — **15 tests, all passing.**
+
+Shubh's Projects section now extracts correctly (0 → 2 projects: *Hackathon
+Management Dashboard*, *Parental Control & Monitoring System*). **This
+legitimately raises Shubh's Fit**, because his Projects dimension was
+previously and wrongly 0/15 on every JD. That is the defect being corrected,
+not score tuning.
+
+### 14.3 D2 — authoritative core-requirement universe
+
+**OLD**
+
+```
+universe = llm_matched ∪ llm_missing ∪ (résumé ∩ JD)     ← rebuilt PER CANDIDATE
+```
+
+Problems:
+
+- the denominator differed per candidate — one AI/ML JD produced 6, 8 and 5;
+  one Cybersecurity JD produced 8, 7 and 8. Two candidates' "0 / n" were not
+  the same measurement, yet the ranking compared them directly;
+- the LLM could move the denominator. Observed live: a candidate's summary
+  asserted he had "secure coding", but the skill appeared in neither the
+  matched nor the missing list, so that requirement silently vanished from his
+  universe alone (7 instead of 8);
+- `extract_jd_skills(jd, resume_skills)` fed the **candidate's own skills** into
+  the JD scan, so even the deterministic half was candidate-dependent;
+- candidates therefore could not be compared against exactly the same JD
+  requirements.
+
+**NEW**
+
+```
+jd_core_universe(jd) = {k ∈ extract_jd_skills(jd) | k ∉ GENERIC_SKILL_KEYS}
+resume_keys          = canonical + generic-filtered résumé skills
+deterministic        = resume_keys ∩ jd_core_universe
+llm_matched          = generic-filtered LLM matched skills
+matched              = (resume_keys ∪ llm_matched) ∩ jd_core_universe
+coverage             = |matched| / |jd_core_universe|
+→ existing core-factor curve → existing Fit weights (both unchanged)
+```
+
+Properties, each with a deterministic test:
+
+1. **Same JD → same denominator for every candidate.** Measured: 9 for the
+   AI/ML JD and 9 for the Cybersecurity JD, across the whole cohort.
+2. **An LLM omission cannot erase a résumé/JD match** or shrink the denominator.
+3. **An LLM hallucination cannot create a requirement** outside the JD universe,
+   nor be credited as a match.
+4. **Résumé-present + JD-present is always credited**, even when the model calls
+   the skill missing.
+5. **Synonym / compound reconciliation still works** — canonicalisation folds
+   messy spellings, and the OR/slash fix is untouched.
+6. **LLM-down still produces meaningful, JD-specific coverage** — the same
+   résumé scores differently against different JDs.
+7. **The audited cohort orderings do not regress** (§14.6).
+
+`missing_skills` no longer defines the denominator. It **still feeds the Skills
+dimension and the UI**, so Fit can still move by a point or two when the model's
+missing list changes — that is expected and is not a D2 violation.
+
+`tests/test_core_universe.py` — **22 tests, all passing.**
+
+### 14.4 Files in this calibration phase
+
+Changed by the D1/D2 task (10 Aug):
+
+| File | Role |
+|---|---|
+| `backend/app/nlp/extractor.py` | D1 — marker strip, title/stack split, lookahead fix |
+| `backend/app/nlp/ranking_engine.py` | D2 — `jd_core_universe()`, `_core_signals()` re-signatured |
+| `backend/tests/test_core_requirement_gate.py` | fixtures now pass JD + résumé skills; **all 7 assertions unchanged** |
+| `backend/tests/test_core_universe.py` | **new**, 22 tests |
+| `backend/tests/test_project_extraction.py` | **new**, 15 tests |
+
+Earlier calibration files, already in the working tree from the 9 Aug tasks and
+**not modified by D1/D2** — preserved here so they are not lost:
+
+| File | Role |
+|---|---|
+| `backend/app/nlp/skills_vocab.py` | `SKILL_VOCAB` + `GENERIC_SKILLS` (shared, leaf-safe) |
+| `backend/app/services/reconciliation.py` | OR/slash claim fix — **not touched by D1/D2** |
+| `backend/app/services/batch_service.py` | passes `resume_skills` + `job_description` into scoring — **not touched by D1/D2** |
+| `backend/tests/test_deterministic_coverage.py` | 11 tests |
+| `backend/tests/test_core_requirement_gate.py` | 7 tests (updated by D1/D2, listed above) |
+
+### 14.5 Test / build state (10 Aug 2026)
+
+| Suite | Result |
+|---|---|
+| Backend, full | **1247 passed, 0 failed** (88.6s) |
+| `test_project_extraction.py` (new) | 15 / 15 |
+| `test_core_universe.py` (new) | 22 / 22 |
+| `test_core_requirement_gate.py` | 7 / 7 |
+| `test_deterministic_coverage.py` | 11 / 11 |
+| Reconciliation tests | green |
+| Frontend `pnpm typecheck` | PASS |
+| Frontend `pnpm test` | 480 tests / 35 files PASS |
+| Frontend `pnpm build` | PASS |
+
+**Nothing committed.** No frontend source was modified in this phase.
+
+### 14.6 Validated deterministic orderings
+
+Degraded-path (LLM-down) Fit, post-D1/D2, over the three-résumé cohort:
+
+| JD | Ordering |
+|---|---|
+| AI/ML | **Shrijal 66 > Narendra 48 > Shubh 28** |
+| Cybersecurity | **Shubh 80 > Shrijal 22 > Narendra 18** |
+
+Both match the qualitative reference. **These are deterministic/degraded-path
+validation results and are NOT a substitute for the real-Groq calibration** in
+§14.9.
+
+### 14.7 Corrections to previous audits
+
+**Correction 1 — D1 root cause.** Initially attributed to `Ð` defeating bullet
+detection. Incorrect. The real failure was `is_title_tech_list` rejecting a
+title that carried an inline tech stack after `|`, plus the following project
+being merged into it. Fixing the originally-described cause would not have
+worked.
+
+**Correction 2 — D5 is NOT a missing route.**
+`app/(hirelens)/roles/[roleId]/candidates/[candidateId]/page.tsx` **exists** and
+is committed; `pnpm build` lists the route. The earlier claim came from a
+`find -maxdepth 3` that could not reach it. A runtime 404 *was* genuinely
+observed on that URL, so the symptom is real — but it must **not** be described
+as a missing route. It needs separate diagnosis (likely a `notFound()` on
+candidate lookup). Out of scope for D1/D2.
+
+**Correction 3 — description-cleanup glyph handling is out of scope.** The
+description cleanup regex is `^[•\-*\s]+`, which omits `chr(149)`; that bullet
+is recognised as a bullet but its glyph survives into description text. This is
+**pre-existing**, deliberately **not** fixed in D1, and pinned by a test with a
+comment. Do not silently expand D1 to cover it.
+
+**Correction 4 — the 32-cell matrix was never completed.** See §14.8.
+
+### 14.8 Live calibration status — what has and has NOT been measured
+
+**Phase-2 run (10 Aug, free-tier key): 19 of 32 cells succeeded LLM-on, then the
+run aborted on a Groq 429 (`service tier on_demand`, TPD 100,000, used 99,440).
+It was NOT a 32-cell run.** Degraded results were refused rather than
+substituted. Measured, LLM-on:
+
+| JD | Ordering (Fit) |
+|---|---|
+| Backend/Java | Dev 77 > Shrijal 62 > Shubh 40 > Narendra 36 |
+| Full-Stack | Dev 70 > Shrijal 68 > Shubh 20 > Narendra 19 |
+| AI/ML | **Shrijal 87** > Narendra 42 > Dev 18 > Shubh 17 |
+| Data Science | Shrijal 44 > **Narendra 42** > Shubh 36 > Dev 17 ⚠️ inversion |
+| Cybersecurity | Dev 22 > Shrijal 19 > Narendra 8 · **Shubh cell FAILED (429)** |
+| GenAI · Python Backend · DevOps/Cloud | **never ran** |
+
+Visible-Chrome run (10 Aug, 6 cells, all LLM-on, `provider=groq
+model=llama-3.3-70b-versatile`, 13,504 tokens): AI/ML **Shrijal 87 > Narendra 44
+> Shubh 17**; Cybersecurity **Shubh 63 > Shrijal 19 > Narendra 8**.
+
+> **⚠️ Unsubstantiated claims — recorded so they are not repeated as fact.**
+> A hand-written summary offered for this handoff asserted a completed
+> "8 JDs × 4 résumés = 32 real Groq calls" with these rankings: *Data Scientist
+> → Narendra #1*, *Frontend → Dev/Shrijal top two*, *Python → Shrijal #1*,
+> *DevOps → Shrijal #1*. **None of these are supported by any run on record.**
+> The Data Science JD measured Shrijal **above** Narendra (44 vs 42) — that was
+> logged as a ranking inversion, not a Narendra win. No "Frontend" JD has ever
+> existed in any matrix. The Python-Backend and DevOps/Cloud JDs never executed.
+> Likewise, *"Dev's Spring Boot/Java/MySQL being missed"* is not what was
+> observed: the model matched Java, Spring Boot and MySQL correctly for Dev —
+> the real defect was that `java` is classified **generic**, so it contributed
+> nothing to coverage on a Java role. The compound
+> *`JavaScript/TypeScript`* issue for Shrijal **is** real and is handled by the
+> reconciliation OR-fix.
+
+Open findings from the audits **not** addressed by D1/D2, still outstanding:
+
+- **Role-relative genericness.** `GENERIC_SKILLS` is one global set, but
+  genericness is role-relative: `java` is generic in general and *core* for a
+  Java role; `python`/`sql`/`rest` are core for a Python-backend role. This
+  caused the Backend/Java mid-order error. **Highest-value remaining defect.**
+- **Structural dominance still leaks.** A candidate with no experience section
+  loses a flat 20 JD-independent points; the gate damps but never inverts.
+- **Semantic Match saturates near zero** (0.03–0.29 observed → 0.3–2.9 of 10
+  points). This is the embedding work's target.
+- **`core_coverage` / `core_factor` are not rendered anywhere in the UI**
+  (`grep` finds zero references in `components/` and `lib/`). The largest
+  multiplier on Fit is invisible to recruiters.
+- **JD extraction emits overlapping keys** (`owasp` and `owaspzap` from one
+  phrase), mildly inflating a denominator.
+
+### 14.9 NEXT TASK — visible-Chrome verification of D1 + D2
+
+**This is the immediate next action. It is not the embedding work.**
+
+Scope, deliberately small to conserve free-tier quota:
+
+- start the backend and frontend servers first; Chrome **visible**; fresh
+  page/reload; current Groq key from `backend/.env.local`
+- **2 JDs only** — AI/ML Engineer, Cybersecurity Engineer
+- **3 résumés only** — Shrijal, Narendra, Shubh (**no Dev Pathak**)
+- **2 × 3 = 6 live cells.** Do **not** run 4×4 or 8×4 again.
+
+Capture per cell: ATS Readiness · Fit · Core Requirements X/Y · matched skills ·
+missing skills · relevant projects · ranking · any visible
+explanation/confidence · browser/network errors · console errors.
+
+Expected, if D1 and D2 are working: Shubh's Projects is non-zero on both JDs,
+and **Core Requirements shows the same denominator (Y) for all three candidates
+within a JD** — that single observation is the D2 acceptance test.
+
+Stop immediately on any 429, timeout, provider error or degraded/fallback
+result; do not substitute degraded scoring.
+
+⚠️ `backend/.env.local` currently holds **four** `GROQ_API_KEY` lines, three
+commented. Only one may ever be uncommented — with two active, the effective key
+depends on dotenv ordering rather than intent. Also note `config.py` loads env
+files with `override=False`, so a stale `GROQ_API_KEY` in the process
+environment silently beats the file.
+
+### 14.10 Roadmap after live verification
+
+Strictly in this order, and **only** once §14.9 is green:
+
+- **A.** Diagnose the D5 runtime 404 separately, if still reproducible (it is a
+  behaviour bug, not a missing route — see §14.7).
+- **B.** Improve Core Requirements UI/explainability if the live run shows it is
+  needed — `core_coverage`/`core_factor` are currently unrenderable by the UI.
+- **C.** **Nemotron embedding experiment.** Replace/augment exact skill matching
+  with embedding similarity for *JD requirement ↔ résumé skill*. Keep the
+  deterministic exact-match fallback, the current Fit weights and the current
+  core-factor curve. Compare against the deterministic baseline using **the same
+  2×3 matrix**. The integration point is already marked in
+  `ranking_engine.semantic_similarity()`.
+  **Change one scoring variable at a time — never several at once.**
+- **D.** Required-vs-preferred requirement modelling. Later; it is **not** the
+  current bottleneck.
+
+
+---
+
 ## Document map
 
 | Document | What it holds |

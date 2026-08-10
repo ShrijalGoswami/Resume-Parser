@@ -8,6 +8,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
   DialogClose,
 } from '../ui/dialog'
@@ -54,6 +55,11 @@ export function AddToCollectionDialog({
           <DialogTitle>
             Add {items.length} candidate{items.length === 1 ? '' : 's'} to a collection
           </DialogTitle>
+          {/* sr-only: satisfies Radix's aria-describedby wiring without adding
+              visible copy the picker doesn't need. */}
+          <DialogDescription className="sr-only">
+            Pick an existing collection or create a new one.
+          </DialogDescription>
         </DialogHeader>
 
         {collections.length > 0 ? (
