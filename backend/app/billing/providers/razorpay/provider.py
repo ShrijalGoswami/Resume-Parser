@@ -28,6 +28,20 @@ from app.billing.providers.razorpay.config import RazorpaySettings, load_setting
 
 logger = logging.getLogger("app.billing.razorpay")
 
+#: Razorpay's sentinel for "return the existing customer instead of erroring".
+#:
+#: A STRING, per the API reference. The SDK serialises the request body with
+#: `json.dumps()` and no coercion, so an integer `0` reaches the API as JSON `0`
+#: — not the documented value — and the endpoint reverts to its default of
+#: refusing. That is a one-character defect that only ever fires for a returning
+#: customer, which is why it survived to production.
+FAIL_EXISTING_REUSE = "0"
+
+#: How many customers to scan when resolving one by email. Razorpay has no
+#: filter-by-email parameter on the list endpoint, so this is a bounded scan of
+#: the most recent records rather than a query.
+CUSTOMER_PAGE_SIZE = 100
+
 
 #: Declared, never inferred from the provider's name.
 #:
@@ -90,27 +104,115 @@ class RazorpayProvider:
     # ── BillingProvider ─────────────────────────────────────────────────────
 
     def ensure_customer(self, organization_id: str, email: str, name: str = "") -> str:
-        """Find or create the gateway customer.
+        """Find or create the gateway customer. Idempotent, twice over.
 
-        `fail_existing=0` makes Razorpay return the existing customer instead of
-        erroring when the email is already known — which is what makes this
-        idempotent. Without it a retried signup raises, and a customer who
-        double-clicked gets an error instead of a subscription.
+        RAZORPAY KEYS CUSTOMER IDENTITY ON EMAIL, not on anything we choose. So
+        the second organization created by the same person — a re-signup, a
+        second workspace, a retry after a half-finished checkout — collides with
+        a customer that already exists, and "create" is the wrong verb for what
+        we actually want.
+
+        WHY `fail_existing` IS A STRING
+        -------------------------------
+        `"0"` asks Razorpay to return the existing customer rather than erroring.
+        The API reference types it as a STRING, and the SDK sends the body
+        through `json.dumps()` verbatim (`client._update_request`) — so the
+        integer `0` this used to pass went over the wire as JSON `0`, did not
+        match the documented value, and the endpoint fell back to its default of
+        erroring. The observed failure was exactly that:
+
+            [razorpay] customer create failed: Customer already exists for the merchant
+
+        THE FALLBACK IS NOT BELT-AND-BRACES, IT IS THE CONTRACT
+        ------------------------------------------------------
+        Correcting the type is necessary and not sufficient. `fail_existing`
+        governs one gateway's behaviour on one endpoint; if it changes, or if a
+        collision arrives by a route it does not cover, checkout breaks again
+        for the same customers and in the same invisible way. So a failed create
+        is followed by a lookup, and an existing customer is reused. The
+        guarantee this method offers its caller — the same organization and
+        email always resolve to the same customer id — is then true because THIS
+        CODE makes it true, not because a flag held.
+
+        TENANT SAFETY: NOTHING REMOTE IS EVER MUTATED
+        ---------------------------------------------
+        A found customer is read and its id returned. `customer.edit` is never
+        called, so its `notes` — which may name a different organization, or a
+        deleted one — are left exactly as they are. That is safe because webhook
+        attribution never reads them: an event resolves through the
+        SUBSCRIPTION's `notes.organization_id` and the unique index on
+        `subscriptions.billing_subscription_id`, both of which we write per
+        subscription. Two organizations sharing a payer identity therefore
+        cannot mis-attribute each other's events, and neither can silently take
+        the other's customer record away.
         """
+        payload = {
+            "name": name or organization_id,
+            "email": email,
+            # A STRING. See above — the SDK json-encodes this verbatim.
+            "fail_existing": FAIL_EXISTING_REUSE,
+            "notes": {"organization_id": organization_id},
+        }
         try:
-            customer = self._client().customer.create({
-                "name": name or organization_id,
-                "email": email,
-                "fail_existing": 0,
-                "notes": {"organization_id": organization_id},
-            })
+            customer = self._client().customer.create(payload)
         except Exception as exc:  # noqa: BLE001 - translate every SDK failure
+            # A create can fail because the customer exists, or because the
+            # gateway is unwell. Only the first is recoverable, and the only
+            # honest way to tell them apart is to go and look: matching on the
+            # error string alone would break the moment Razorpay rewords it.
+            existing_id = self._find_customer_id_by_email(email)
+            if existing_id:
+                logger.info(
+                    "razorpay customer already existed for this email; reusing %s "
+                    "for organization %s (remote record left untouched)",
+                    existing_id, organization_id,
+                )
+                return existing_id
             raise ProviderError("razorpay", f"customer create failed: {exc}") from exc
 
         customer_id = (customer or {}).get("id")
         if not customer_id:
             raise ProviderError("razorpay", "customer create returned no id")
         return customer_id
+
+    def _find_customer_id_by_email(self, email: str) -> Optional[str]:
+        """The customer Razorpay already holds for this email, if any.
+
+        Returns None rather than raising: this runs on the recovery path of a
+        failure that has already happened, and a lookup that throws would
+        replace a useful error ("customer create failed: …") with a useless one
+        about listing.
+
+        Compared case-insensitively because an address is not case-sensitive in
+        the half that matters, and a customer who signs up as `Sam@…` after
+        `sam@…` is the same person to Razorpay's own uniqueness check.
+        """
+        if not email:
+            return None
+        wanted = email.strip().lower()
+        try:
+            response = self._client().customer.all({"count": CUSTOMER_PAGE_SIZE})
+        except Exception as exc:  # noqa: BLE001 - diagnostic only, never fatal
+            logger.warning("could not list razorpay customers to resolve %r: %s", wanted, exc)
+            return None
+
+        for item in (response or {}).get("items", []):
+            if (item.get("email") or "").strip().lower() == wanted:
+                notes = item.get("notes") or {}
+                owner = notes.get("organization_id")
+                if owner:
+                    # Informational, and deliberately not a refusal. The record
+                    # is not reassigned and its notes are not rewritten; only
+                    # its id is borrowed, and attribution does not flow through
+                    # it. Logged so "why do two organizations share a customer?"
+                    # has an answer in the record rather than in someone's memory.
+                    logger.warning(
+                        "razorpay customer %s is annotated for organization %s; "
+                        "reusing it by email without modifying it",
+                        item.get("id"), owner,
+                    )
+                return item.get("id")
+        return None
 
     def start_subscription(self, organization_id: str, plan: str, currency: str) -> CheckoutHandoff:
         """Create a subscription in `created` and hand off to Checkout.
@@ -161,6 +263,81 @@ class RazorpayProvider:
             raw = self._client().subscription.fetch(provider_subscription_id)
         except Exception as exc:  # noqa: BLE001
             raise ProviderError("razorpay", f"subscription fetch failed: {exc}") from exc
+        return self._to_provider_subscription(raw)
+
+    def fetch_scheduled_change(self, provider_subscription_id: str) -> Optional[dict]:
+        """The plan change already queued against this subscription, if any.
+
+        `GET /v1/subscriptions/{id}/retrieve_scheduled_changes` — a READ, and the
+        thing that makes scheduling idempotent. Razorpay holds at most one
+        pending update per subscription, so asking before writing is what stops
+        a customer who clicks twice from queueing two.
+
+        Returns None when there is nothing scheduled. Razorpay answers a
+        subscription with no pending update by erroring rather than returning an
+        empty object, so a failure here is NOT treated as fatal — it means
+        "nothing scheduled, or we could not tell", and the caller proceeds to
+        schedule. Scheduling the same plan twice is harmless at the gateway
+        (the second replaces the first); failing a customer's upgrade because a
+        diagnostic read blipped would not be.
+        """
+        try:
+            pending = self._client().subscription.pending_update(provider_subscription_id)
+        except Exception as exc:  # noqa: BLE001 - "none scheduled" arrives as an error
+            logger.info(
+                "no scheduled change readable for %s (%s)", provider_subscription_id, exc
+            )
+            return None
+        if not pending or not (pending.get("plan_id") or pending.get("id")):
+            return None
+        return pending
+
+    def change_plan(
+        self,
+        provider_subscription_id: str,
+        plan: str,
+        *,
+        at_cycle_end: bool = True,
+    ) -> ProviderSubscription:
+        """Move a LIVE subscription to a different plan, at cycle end.
+
+        `PATCH /v1/subscriptions/{id}` via the SDK's `subscription.edit`. The
+        existing subscription id is reused, so the customer, the mandate and the
+        payment relationship are all preserved — this is not a second
+        subscription and there is no second authorization.
+
+        SCHEDULED, NOT IMMEDIATE, AND THAT IS A PRODUCT DECISION.
+        `schedule_change_at="cycle_end"` means the customer keeps the plan they
+        have paid for until the period they paid for ends, and is billed the new
+        amount at the next renewal. **Nothing is charged today.** The
+        alternative — `"now"` — raises a proration question this product has not
+        answered (`BILLING_ARCHITECTURE.md` §17 Q4), and charging ₹2,499 while
+        silently forfeiting the unused remainder of a ₹999 month is the kind of
+        surprise that produces a chargeback rather than an upgrade.
+
+        THE RETURNED SUBSCRIPTION IS STILL ON THE OLD PLAN, and that is correct.
+        Razorpay reports the change as a PENDING update: `plan_id` still names
+        Plus and `has_scheduled_changes` becomes true. So the caller writes no
+        plan change today; `subscription.updated` at the cycle boundary is what
+        eventually moves it, through the ordinary reconciliation path.
+
+        Parameter names are Razorpay's documented Update Subscription contract.
+        The SDK imposes none of its own — `client._update_request` json-encodes
+        whatever dict it is handed — so these come from the API reference rather
+        than from anything the SDK would validate.
+        """
+        self.capabilities.require("supports_plan_change")
+        binding = plans.binding_for(plan)
+        try:
+            raw = self._client().subscription.edit(provider_subscription_id, {
+                "plan_id": binding.razorpay_plan_id,
+                # "cycle_end" defers to the end of the paid period. "now" would
+                # be an immediate change and is deliberately not used.
+                "schedule_change_at": "cycle_end" if at_cycle_end else "now",
+                "customer_notify": 1,
+            })
+        except Exception as exc:  # noqa: BLE001
+            raise ProviderError("razorpay", f"plan change failed: {exc}") from exc
         return self._to_provider_subscription(raw)
 
     def cancel_subscription(self, provider_subscription_id: str,
@@ -277,7 +454,16 @@ class RazorpayProvider:
             state=state,
             current_period_start=mapping.to_datetime(raw.get("current_start")),
             current_period_end=mapping.to_datetime(raw.get("current_end")),
-            cancel_at_period_end=bool(raw.get("cancel_at_cycle_end") or raw.get("has_scheduled_changes")),
+            # `cancel_at_cycle_end` ONLY.
+            #
+            # This used to also treat `has_scheduled_changes` as a cancellation,
+            # which was harmless while the only schedulable thing WAS a
+            # cancellation. Scheduling a Plus -> Pro upgrade sets that same flag,
+            # so the old reading would have told a customer who just upgraded
+            # that their access ends on the renewal date — Settings renders the
+            # period as "Access until" rather than "Renews" off this exact
+            # field. An upgrade must never be displayed as a cancellation.
+            cancel_at_period_end=bool(raw.get("cancel_at_cycle_end")),
             raw=raw,
         )
 

@@ -249,6 +249,34 @@ export function UpgradeDialogProvider({
   const [request, setRequest] = React.useState<UpgradeRequest | null>(null)
   const handle = React.useCallback((next: UpgradeRequest) => setRequest(next), [])
 
+  /**
+   * HAND OVER, DO NOT STACK. This dialog closes as checkout takes ownership.
+   *
+   * It used to stay open underneath, so two Radix dialogs were mounted at once
+   * — visibly, both headed "Move to Plus" — and that had a consequence far worse
+   * than the redundancy. A modal Radix dialog writes `pointer-events: none` onto
+   * <body>, and ONE is enough to hold it. Razorpay Checkout mounts
+   * `.razorpay-container` as a direct child of <body>, so it inherited the lock
+   * and every control in the payment modal became unclickable.
+   *
+   * Making the checkout dialog non-modal for the handoff was necessary and not
+   * sufficient: this one stayed modal behind it and kept the body locked.
+   * `elementFromPoint` at the centre of the screen returned a list item from
+   * THIS dialog's feature list rather than Razorpay's modal.
+   *
+   * The customer's symptom was precise and worth remembering: mouse dead,
+   * keyboard fine. `pointer-events` blocks hit-testing only, so tabbing still
+   * reached the payment fields — which is how the first Test Mode payment was
+   * completed at all.
+   */
+  const startCheckout = React.useCallback(
+    (next: UpgradeRequest) => {
+      setRequest(null)
+      onCheckout?.(next)
+    },
+    [onCheckout],
+  )
+
   return (
     <UpgradeActionProvider onUpgrade={handle}>
       {children}
@@ -257,7 +285,9 @@ export function UpgradeDialogProvider({
         onOpenChange={(open) => {
           if (!open) setRequest(null)
         }}
-        onCheckout={onCheckout}
+        // Undefined when there is no checkout, so the dialog keeps rendering its
+        // "contact us" footer rather than a button that would do nothing.
+        onCheckout={onCheckout ? startCheckout : undefined}
       />
     </UpgradeActionProvider>
   )

@@ -48,6 +48,18 @@ export interface Subscription {
   plan: string;
   status: string;
   limits: Record<string, number>;
+  /** Eight-value billing state (migration 0027). Null on manually-set plans and
+   *  on rows predating it, so absence means "unknown", not any given state. */
+  billing_state?: string | null;
+  /** End of the paid period — the renewal date, or when access ends if
+   *  `cancel_at_period_end` is set. Null for free and manual plans. */
+  current_period_end?: string | null;
+  cancel_at_period_end?: boolean;
+  /** A plan change queued for the end of the current period (migration 0029).
+   *  A PROMISE, NOT AN ENTITLEMENT — `plan` above is what the organization has
+   *  today. Rendered so an upgrade that is already booked is not offered twice. */
+  scheduled_plan?: string | null;
+  scheduled_plan_effective_at?: string | null;
 }
 
 export interface ApiKey {

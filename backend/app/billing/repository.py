@@ -52,7 +52,12 @@ _LEGACY_SUBSCRIPTION_COLUMNS = (
 )
 
 #: The same, plus the state enrichment added by migration 0027.
-_SUBSCRIPTION_COLUMNS = _LEGACY_SUBSCRIPTION_COLUMNS + ",billing_state"
+_STATE_SUBSCRIPTION_COLUMNS = _LEGACY_SUBSCRIPTION_COLUMNS + ",billing_state"
+
+#: The same again, plus the scheduled-change columns added by migration 0029.
+_SUBSCRIPTION_COLUMNS = (
+    _STATE_SUBSCRIPTION_COLUMNS + ",scheduled_plan,scheduled_plan_effective_at"
+)
 
 #: Whether `subscriptions.billing_state` exists in the database.
 #:
@@ -66,6 +71,13 @@ _SUBSCRIPTION_COLUMNS = _LEGACY_SUBSCRIPTION_COLUMNS + ",billing_state"
 #: than degrade to the behaviour it had yesterday. `None` means "not yet
 #: determined"; it is probed once, on first use.
 _state_column_available: Optional[bool] = None
+
+#: Whether `subscriptions.scheduled_plan` / `scheduled_plan_effective_at` exist
+#: (migration 0029). Same reason as the flag above: applied by hand, so there is
+#: a window where this code runs against a database without them. Absent, a
+#: scheduled upgrade simply does not persist — the change is still queued at the
+#: gateway, and the reconciler still applies it.
+_scheduled_columns_available: Optional[bool] = None
 
 #: Postgres SQLSTATE for "column does not exist".
 _UNDEFINED_COLUMN = "42703"
@@ -182,6 +194,46 @@ def _state_from_row(row: dict) -> BillingState:
     if status == BillingStatus.trialing.value:
         return BillingState.trialing
     if status == BillingStatus.active.value:
+        # A FREE PLAN IS NOT A RUNNING SUBSCRIPTION.
+        #
+        # `provision_default_org()` (migration 0008) inserts a subscription with
+        # only `(organization_id, plan)` and takes the column defaults for the
+        # rest — which means every organization ever created by signup carries
+        # `status='active'` with no `billing_state`. The five-value persisted
+        # vocabulary has no "free" member, so there was nothing else it could
+        # have written.
+        #
+        # Read literally, that made a brand-new unbilled organization
+        # indistinguishable from a paying one: `grants_paid_access` came back
+        # True, and `active` has no legal edge to `pending_activation`, so
+        # `start_checkout` refused every new customer. Nobody could buy
+        # anything. Found on a clean database with a real signup.
+        #
+        # An organization on the free plan, not billed through a gateway and
+        # holding no gateway subscription is `free` by definition, whatever
+        # `status` says. This is a projection repair, not a policy: it changes
+        # what the row MEANS, never what the customer is entitled to.
+        #
+        # THE GUARD IS DELIBERATELY NARROW, because each clause protects a real
+        # case that must keep reporting `active`:
+        #   plan == 'free'          an operator-granted Enterprise account is
+        #                           `billing_mode='none'` too, and it IS running
+        #   billing_mode != provider a gateway-billed row is a real subscription
+        #   no subscription id      belt and braces — a row carrying a gateway
+        #                           id is one, however its other columns read
+        #
+        # Fixing the reader rather than the trigger is deliberate: it repairs
+        # every existing row with no backfill, and it leaves `status='active'`
+        # alone. Writing `status='canceled'` at provisioning would have fixed
+        # checkout and told every free user "Your subscription is canceled.
+        # Reactivate billing" at each locked feature (`entitlements.py`
+        # REASON_INACTIVE), collapsing the upgrade target to `free`.
+        if (
+            (row.get("plan") or "free") == "free"
+            and (row.get("billing_mode") or "none") != BillingMode.provider.value
+            and not row.get("billing_subscription_id")
+        ):
+            return BillingState.free
         return BillingState.active
     # An unrecognised status is never guessed into something that grants access.
     logger.warning("unknown subscriptions.status %r; treating as free", status)
@@ -206,6 +258,8 @@ def _to_domain(row: dict) -> Subscription:
         payment_failed_at=_dt(row.get("payment_failed_at")),
         grace_period_ends_at=_dt(row.get("grace_period_ends_at")),
         plan_version=int(row.get("plan_version") or 1),
+        scheduled_plan=(row.get("scheduled_plan") or None),
+        scheduled_plan_effective_at=_dt(row.get("scheduled_plan_effective_at")),
     )
 
 
@@ -229,31 +283,56 @@ class BillingRepository:
 
     def _columns(self) -> str:
         """The select list, minus anything the database does not have yet."""
-        return (
-            _LEGACY_SUBSCRIPTION_COLUMNS
-            if _state_column_available is False
-            else _SUBSCRIPTION_COLUMNS
-        )
+        if _state_column_available is False:
+            return _LEGACY_SUBSCRIPTION_COLUMNS
+        if _scheduled_columns_available is False:
+            return _STATE_SUBSCRIPTION_COLUMNS
+        return _SUBSCRIPTION_COLUMNS
 
     def _select_subscriptions(self, column: str, value: str) -> list[dict]:
-        """Read subscriptions, retrying once without the 0027 column.
+        """Read subscriptions, degrading one migration at a time.
 
-        The retry is the whole point: code and schema deploy separately here, so
-        this must not turn a not-yet-applied migration into a billing outage. It
-        degrades to exactly the behaviour that existed before 0027 and says so
-        once, loudly enough to be actioned.
+        The retries are the whole point: code and schema deploy separately here
+        — migrations are applied by hand in the Supabase SQL editor — so a
+        not-yet-applied migration must not become a billing outage.
+
+        THREE TIERS, NARROWEST LOSS FIRST. Dropping straight to the legacy list
+        on any missing column would throw away `billing_state` because 0029 was
+        late, and that column is what tells `payment_failed` from `grace`. So
+        0029 is abandoned first, 0027 only if it is also absent, and each says
+        so once, loudly enough to be actioned.
         """
-        global _state_column_available
-        try:
-            rows = _rows(
+        global _state_column_available, _scheduled_columns_available
+
+        def read(columns: str) -> list[dict]:
+            return _rows(
                 self._t("subscriptions")
-                .select(self._columns())
+                .select(columns)
                 .eq(column, value)
                 .limit(1)
                 .execute()
             )
+
+        try:
+            rows = read(self._columns())
         except Exception as exc:  # noqa: BLE001
-            if _state_column_available is False or not _is_undefined_column(exc):
+            if not _is_undefined_column(exc):
+                raise
+            # Tier 2: assume 0029 is the missing one and keep the 0027 column.
+            if _scheduled_columns_available is not False:
+                _scheduled_columns_available = False
+                logger.warning(
+                    "subscriptions.scheduled_plan is missing — APPLY MIGRATION 0029. "
+                    "A scheduled plan change will not survive a page reload until "
+                    "then; the change itself is still queued at the gateway.",
+                )
+                try:
+                    return read(_STATE_SUBSCRIPTION_COLUMNS)
+                except Exception as inner:  # noqa: BLE001
+                    if not _is_undefined_column(inner):
+                        raise
+            # Tier 3: 0027 is missing too.
+            if _state_column_available is False:
                 raise
             _state_column_available = False
             logger.warning(
@@ -261,16 +340,12 @@ class BillingRepository:
                 "Billing states are being reconstructed from `status` until then, "
                 "which cannot distinguish payment_failed from grace (BILL-1).",
             )
-            rows = _rows(
-                self._t("subscriptions")
-                .select(_LEGACY_SUBSCRIPTION_COLUMNS)
-                .eq(column, value)
-                .limit(1)
-                .execute()
-            )
+            rows = read(_LEGACY_SUBSCRIPTION_COLUMNS)
         else:
             if _state_column_available is None:
                 _state_column_available = True
+            if _scheduled_columns_available is None:
+                _scheduled_columns_available = True
         return rows
 
     # ── subscriptions ───────────────────────────────────────────────────────
@@ -340,10 +415,19 @@ class BillingRepository:
             "trial_ends_at": _iso(subscription.trial_ends_at),
             "payment_failed_at": _iso(subscription.payment_failed_at),
             "grace_period_ends_at": _iso(subscription.grace_period_ends_at),
+            # The queued change (0029). WRITTEN ON EVERY SAVE, including when it
+            # is None — that is what clears it. The webhook that confirms the
+            # move sets `plan='pro'` and `scheduled_plan=None` in this one
+            # upsert, so the plan and the promise about it can never disagree.
+            "scheduled_plan": subscription.scheduled_plan,
+            "scheduled_plan_effective_at": _iso(subscription.scheduled_plan_effective_at),
         }
-        global _state_column_available
+        global _state_column_available, _scheduled_columns_available
         if _state_column_available is False:
             patch.pop("billing_state", None)
+        if _scheduled_columns_available is False:
+            patch.pop("scheduled_plan", None)
+            patch.pop("scheduled_plan_effective_at", None)
 
         try:
             self._t("subscriptions").upsert(
@@ -354,7 +438,27 @@ class BillingRepository:
             # important of the two to keep working: refusing to record an
             # activation because an enrichment column is missing would leave a
             # customer who has paid without their plan.
-            if _state_column_available is False or not _is_undefined_column(exc):
+            if not _is_undefined_column(exc):
+                raise
+            # Narrowest loss first, as on the read path: drop 0029 before 0027.
+            if _scheduled_columns_available is not False and "scheduled_plan" in patch:
+                _scheduled_columns_available = False
+                logger.warning(
+                    "subscriptions.scheduled_plan is missing — APPLY MIGRATION 0029. "
+                    "Writing without it; a scheduled upgrade will not persist "
+                    "locally until then.",
+                )
+                patch.pop("scheduled_plan", None)
+                patch.pop("scheduled_plan_effective_at", None)
+                try:
+                    self._t("subscriptions").upsert(
+                        patch, on_conflict="organization_id"
+                    ).execute()
+                    return self._mirror_plan(subscription)
+                except Exception as inner:  # noqa: BLE001
+                    if not _is_undefined_column(inner):
+                        raise
+            if _state_column_available is False:
                 raise
             _state_column_available = False
             logger.warning(
@@ -367,7 +471,14 @@ class BillingRepository:
                 patch, on_conflict="organization_id"
             ).execute()
 
-        # The denormalized copy. Second, for the reason above.
+        self._mirror_plan(subscription)
+
+    def _mirror_plan(self, subscription: Subscription) -> None:
+        """The denormalized copy on `organizations`. Second, for the reason above.
+
+        Mirrors `plan` only — never `scheduled_plan`. A queued change is not an
+        entitlement, and `resolve_org_context` falls back to this column.
+        """
         self._t("organizations").update({"plan": subscription.plan}).eq(
             "id", subscription.organization_id
         ).execute()

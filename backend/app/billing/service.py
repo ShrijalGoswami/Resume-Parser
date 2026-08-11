@@ -25,6 +25,8 @@ THREE RULES THIS MODULE EXISTS TO ENFORCE
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass, replace
+from datetime import datetime
 from typing import Optional
 
 from app.billing.domain import state_machine as machine
@@ -63,12 +65,42 @@ logger = logging.getLogger("app.billing.service")
 SELLABLE_PLANS = ("plus", "pro")
 
 
+#: Tier order, for deciding what is an upgrade. Mirrors the catalog's ranking;
+#: this module deliberately holds no prices, only the sequence.
+PLAN_ORDER = ("free", "plus", "pro", "enterprise")
+
+
+def plan_rank(plan: str) -> int:
+    try:
+        return PLAN_ORDER.index((plan or "free").strip().lower())
+    except ValueError:
+        return 0
+
+
 class CheckoutRefused(BillingError):
     """Checkout may not start. Carries a reason a customer can act on."""
 
     def __init__(self, reason: str) -> None:
         super().__init__(reason)
         self.reason = reason
+
+
+@dataclass(frozen=True)
+class ScheduledPlanChange:
+    """A plan change queued at the gateway, not yet in effect.
+
+    Deliberately NOT a `Subscription`: nothing about the organization's current
+    entitlement has changed, and returning a subscription object would invite a
+    caller to write it. This says what WILL happen and when, and nothing else.
+    """
+
+    organization_id: str
+    current_plan: str
+    scheduled_plan: str
+    effective_at: Optional[datetime]
+    #: True when this call found an identical change already queued and did not
+    #: create a second one. The customer clicked twice; both clicks succeeded.
+    already_scheduled: bool = False
 
 
 def get_provider() -> BillingProvider:
@@ -166,10 +198,55 @@ class BillingService:
         # one than a 500 — and every plan change goes through support today
         # anyway, so this describes what actually happens. See BILL-13.
         if current and current.grants_paid_access and current.is_gateway_billed:
+            # A LIVE SUBSCRIPTION CHANGES PLAN; IT DOES NOT CHECK OUT AGAIN.
+            #
+            # `active -> pending_activation` is deliberately not a legal edge: an
+            # organization with a working mandate is not re-authorizing one, it
+            # is changing what it is billed. Sending it through checkout would
+            # create a SECOND gateway subscription and a second mandate for the
+            # same customer, which is the outcome this refusal exists to prevent.
+            #
+            # This used to be the end of the road (BILL-13: "changing plan isn't
+            # self-serve yet"). It no longer is — `change_plan()` implements it
+            # properly against the existing subscription — so the message names
+            # the door rather than closing it.
             raise CheckoutRefused(
                 f"this organization is already subscribed to {current.plan}. "
-                "Changing plan isn't self-serve yet — contact us and we'll move "
-                "you across, usually the same working day."
+                "Use the plan-change endpoint to move between paid plans — "
+                "checkout is for starting a subscription, not changing one."
+            )
+
+        # THE SAME REFUSAL, FOR THE CASE THE CLAUSE ABOVE DOES NOT COVER.
+        #
+        # That guard requires `is_gateway_billed`, so it only catches an
+        # organization that bought its plan HERE. An organization granted a plan
+        # by an operator — `billing_mode='none'`, no gateway subscription, which
+        # is what every Enterprise and every manually-set account looks like —
+        # is `active` and NOT gateway-billed, so it fell straight through to
+        # `_to_pending`, where `active -> pending_activation` is not a legal edge.
+        #
+        # The result was an unhandled `IllegalTransitionError` escaping as a 500
+        # to an owner who clicked "Upgrade to Pro". Observed in the browser, not
+        # theorised: every organization in this deployment is exactly that shape.
+        #
+        # Asking the machine is better than enumerating the states that reach
+        # here. The table in `state_machine.TRANSITIONS` is the definition of
+        # what may follow what, and a second copy of that knowledge in a billing
+        # rule would be one to keep in step forever.
+        # `pending_activation` is exempt: the customer abandoned the modal and
+        # came back. That edge is absent from the table on purpose — nothing
+        # about their access changed — and `_to_pending` updates the ids in
+        # place instead. Asking `can_transition` about it would refuse the one
+        # retry the flow is designed to allow.
+        if (
+            current
+            and current.state is not BillingState.pending_activation
+            and not machine.can_transition(current.state, BillingState.pending_activation)
+        ):
+            raise CheckoutRefused(
+                f"this organization's plan is managed directly by us "
+                f"({current.plan}). Contact us and we'll make the change — "
+                "usually the same working day."
             )
 
         base = current or Subscription(
@@ -236,6 +313,143 @@ class BillingService:
             reason="checkout started",
             **changes,
         )
+
+    # ── plan change ─────────────────────────────────────────────────────────
+
+    def change_plan(self, *, organization_id: str, plan: str) -> "ScheduledPlanChange":
+        """Move a live subscription up a tier, effective at the cycle end.
+
+        THIS IS NOT A CHECKOUT AND MUST NOT BECOME ONE. There is no mandate to
+        authorize — the customer already has one — so there is no browser
+        handoff, no modal and no payment today. It is one server-to-server
+        `PATCH` against the subscription they already hold, which is exactly why
+        it gets its own method rather than a branch inside `start_checkout`.
+
+        NOTHING LOCAL CHANGES HERE, deliberately. The organization stays on Plus,
+        with Plus's entitlements, until the gateway says the change has actually
+        happened. Writing `pro` now would grant a tier the customer has not paid
+        for and would be a claim made by us rather than by the gateway — the
+        same mistake as trusting a browser callback. `subscription.updated` at
+        the cycle boundary moves it, through the ordinary reconciliation path
+        that already handles ordering and redelivery.
+
+        Replaces BILL-13, which refused this outright with a 409.
+        """
+        target = (plan or "").strip().lower()
+        if target not in SELLABLE_PLANS:
+            raise CheckoutRefused(
+                f"{target!r} is not a plan you can move to "
+                f"(available: {', '.join(SELLABLE_PLANS)})"
+            )
+
+        current = self.repo.get_subscription(organization_id)
+        if current is None:
+            raise CheckoutRefused("this organization has no subscription to change")
+        if current.is_founding:
+            raise CheckoutRefused(
+                "this organization is on the founding plan and is not billed"
+            )
+        if not current.is_gateway_billed or not current.provider_subscription_id:
+            # Nothing to PATCH. A free organization buys through checkout, and an
+            # operator-granted plan is changed by the operator who granted it.
+            raise CheckoutRefused(
+                "this organization has no self-serve subscription to change — "
+                "contact us and we'll make the change"
+            )
+        if not current.state.grants_paid_access:
+            # A cancelled or suspended subscription is not a live one to move;
+            # coming back is a new checkout, which re-establishes the mandate.
+            raise CheckoutRefused(
+                "this subscription isn't active — start a new checkout to subscribe"
+            )
+        if target == current.plan:
+            raise CheckoutRefused(f"this organization is already on {current.plan}")
+        if plan_rank(target) < plan_rank(current.plan):
+            # DOWNGRADES ARE NOT SELF-SERVE. Taking capability away is a
+            # different act from adding it, and the customer paid for the tier
+            # they are on until the period ends. Refused with a route out
+            # rather than half-implemented.
+            raise CheckoutRefused(
+                f"moving from {current.plan} down to {target} isn't self-serve — "
+                "contact us and we'll arrange it"
+            )
+
+        # IDEMPOTENCE, ASKED OF THE GATEWAY RATHER THAN ASSUMED. Razorpay holds
+        # at most one pending update per subscription, so a customer who clicks
+        # twice must not queue two — and the second click should show them what
+        # they already did rather than an error.
+        existing = self.provider.fetch_scheduled_change(current.provider_subscription_id)
+        if existing:
+            scheduled_plan = self._plan_of_scheduled(existing)
+            if scheduled_plan == target:
+                logger.info(
+                    "plan change to %s already scheduled for org %s; returning it",
+                    target, organization_id,
+                )
+                return ScheduledPlanChange(
+                    organization_id=organization_id,
+                    current_plan=current.plan,
+                    scheduled_plan=target,
+                    effective_at=current.current_period_end,
+                    already_scheduled=True,
+                )
+            raise CheckoutRefused(
+                "a different change is already scheduled on this subscription — "
+                "contact us and we'll sort it out"
+            )
+
+        # THE GATEWAY FIRST, THEN US. If the PATCH fails nothing local changed
+        # and the customer is still on Plus with no phantom promise on their
+        # billing screen — the honest outcome. Recording it first would leave us
+        # telling them Pro was coming when the gateway had never agreed.
+        updated = self.provider.change_plan(
+            current.provider_subscription_id, target, at_cycle_end=True
+        )
+        effective_at = updated.current_period_end or current.current_period_end
+
+        # Persist the PROMISE, not the plan. `plan` stays exactly as it was —
+        # this write must not move the organization onto a tier it has not paid
+        # for — but the queued change now survives a refresh, so Settings can
+        # stop offering an upgrade that is already booked.
+        self.repo.save_subscription(
+            replace(
+                current,
+                scheduled_plan=target,
+                scheduled_plan_effective_at=effective_at,
+            )
+        )
+
+        logger.info(
+            "plan change scheduled org=%s %s -> %s effective=%s",
+            organization_id, current.plan, target, effective_at,
+        )
+        return ScheduledPlanChange(
+            organization_id=organization_id,
+            current_plan=current.plan,
+            scheduled_plan=target,
+            # The gateway's period end when it gave us one, ours otherwise. This
+            # is the date the customer is told, so it comes from the gateway in
+            # preference to anything we cached.
+            effective_at=effective_at,
+            already_scheduled=False,
+        )
+
+    @staticmethod
+    def _plan_of_scheduled(pending: dict) -> Optional[str]:
+        """Our plan slug for whatever the gateway has queued.
+
+        Returns None for a plan id we do not recognise rather than raising: an
+        unknown pending change is a reason to refuse politely, not to 500.
+        """
+        from app.billing.providers.razorpay import plans as rzp_plans
+
+        plan_id = (pending or {}).get("plan_id")
+        if not plan_id:
+            return None
+        try:
+            return rzp_plans.plan_for_razorpay_id(str(plan_id))
+        except BillingError:
+            return None
 
     def verify_callback(self, payload: dict) -> bool:
         """Verify Razorpay's browser callback. **Grants nothing.**
@@ -469,6 +683,24 @@ class BillingService:
         target = remote.state
         plan = remote.plan or local.plan
 
+        # THE SCHEDULED CHANGE HAS LANDED — or was never for this plan.
+        #
+        # Cleared whenever the gateway now reports the plan that was queued. It
+        # is computed here, before the no-transition shortcut below, because a
+        # plan change at the cycle boundary can arrive on an event that moves
+        # nothing else: `active -> active` with a different plan. Leaving the
+        # promise behind would make Settings go on announcing an upgrade that
+        # had already happened.
+        scheduled_plan = local.scheduled_plan
+        scheduled_at = local.scheduled_plan_effective_at
+        if scheduled_plan and plan == scheduled_plan:
+            scheduled_plan = None
+            scheduled_at = None
+            logger.info(
+                "scheduled change to %s landed for org %s; clearing the promise",
+                plan, local.organization_id,
+            )
+
         if target is local.state and target is not BillingState.active:
             # Nothing changed. `active -> active` is excluded because it is a
             # real event — a renewal moves the period forward — and is the one
@@ -493,6 +725,8 @@ class BillingService:
             provider_subscription_id=remote.provider_subscription_id,
             billing_mode=BillingMode.provider,
             provider=BillingProviderId.razorpay,
+            scheduled_plan=scheduled_plan,
+            scheduled_plan_effective_at=scheduled_at,
         )
         self.repo.save_subscription(updated)
         logger.info(
@@ -534,4 +768,12 @@ class BillingService:
         )
 
 
-__all__ = ["BillingService", "CheckoutRefused", "SELLABLE_PLANS", "get_provider"]
+__all__ = [
+    "BillingService",
+    "CheckoutRefused",
+    "ScheduledPlanChange",
+    "SELLABLE_PLANS",
+    "PLAN_ORDER",
+    "plan_rank",
+    "get_provider",
+]

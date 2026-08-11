@@ -44,6 +44,16 @@ SETTINGS = RazorpaySettings(
 )
 
 
+class GatewayRefusal(Exception):
+    """Stands in for the SDK's `BadRequestError`.
+
+    Deliberately NOT the real class: the architecture guard forbids importing
+    the Razorpay SDK outside `providers/razorpay/`, and this whole file is
+    written to run with no SDK installed. The adapter matches on outcome rather
+    than on exception type, so a local class exercises the same path.
+    """
+
+
 class StubClient:
     """Stands in for `razorpay.Client`. Records calls; returns canned objects."""
 
@@ -75,6 +85,12 @@ class StubClient:
 
             def all(self, *a):
                 return self._call("all", *a)
+
+            def edit(self, *a):
+                return self._call("edit", *a)
+
+            def pending_update(self, *a):
+                return self._call("pending_update", *a)
 
         self.customer = _Res("customer")
         self.subscription = _Res("subscription")
@@ -417,13 +433,115 @@ class TestProvider:
         assert isinstance(provider(), BillingProvider)
 
     def test_ensure_customer_is_idempotent_at_the_gateway(self):
-        # fail_existing=0 makes Razorpay return the existing customer rather
-        # than erroring, so a retried signup does not 500.
+        # `fail_existing="0"` asks Razorpay to return the existing customer
+        # rather than erroring, so a retried signup does not 500.
+        #
+        # THE TYPE IS THE TEST. This asserted `== 0` and passed, because the
+        # assertion was checking what we sent rather than what the API accepts:
+        # the reference types this as a STRING, the SDK json-encodes the body
+        # verbatim, and an integer therefore arrives as JSON `0` and is ignored.
+        # `0 == False` and `"0" != 0`, so the loose version of this assertion is
+        # exactly the one that could not catch the bug.
         p = provider(**{"customer.create": {"id": "cust_1"}})
         assert p.ensure_customer("org-1", "a@b.test") == "cust_1"
         payload = p._client().calls[0][1][0]
-        assert payload["fail_existing"] == 0
+        assert payload["fail_existing"] == "0"
+        assert isinstance(payload["fail_existing"], str)
         assert payload["notes"]["organization_id"] == "org-1"
+
+    # ── the returning customer ──────────────────────────────────────────────
+    #
+    # Razorpay keys customer identity on EMAIL. Every one of these is the same
+    # person coming back: a re-signup, a second organization, a retry after a
+    # checkout that died halfway. Production returned 502 for all of them —
+    # `POST /billing/subscriptions -> [razorpay] customer create failed:
+    # Customer already exists for the merchant` — found by clicking Upgrade in a
+    # browser on a clean database.
+
+    def test_an_existing_customer_is_reused_when_create_is_refused(self):
+        """THE REGRESSION. Create is refused; the customer is found and reused."""
+        p = provider(**{
+            "customer.create": GatewayRefusal("Customer already exists for the merchant"),
+            "customer.all": {"items": [
+                {"id": "cust_OTHER", "email": "someone.else@b.test"},
+                {"id": "cust_EXISTING", "email": "a@b.test", "notes": {}},
+            ]},
+        })
+        assert p.ensure_customer("org-1", "a@b.test") == "cust_EXISTING"
+
+    def test_a_retried_checkout_resolves_to_the_same_customer(self):
+        """Idempotence as the caller experiences it: same inputs, same id.
+
+        `start_checkout` calls this before every gateway subscription, so a
+        customer who abandons the modal and comes back must land on the same
+        record rather than a 502.
+        """
+        p = provider(**{
+            "customer.create": GatewayRefusal("Customer already exists for the merchant"),
+            "customer.all": {"items": [{"id": "cust_EXISTING", "email": "a@b.test"}]},
+        })
+        first = p.ensure_customer("org-1", "a@b.test")
+        second = p.ensure_customer("org-1", "a@b.test")
+        assert first == second == "cust_EXISTING"
+
+    def test_a_customer_owned_by_another_organization_is_never_mutated(self):
+        """TENANT SAFETY. Its id is borrowed; the remote record is untouched.
+
+        The id is reused because two organizations belonging to one person share
+        a payer identity, and refusing would make the second organization
+        unbuyable. Nothing is reassigned: `customer.edit` is never called, the
+        remote `notes` keep naming the other organization, and attribution does
+        not read them — a webhook resolves through the SUBSCRIPTION's notes and
+        the unique index on `billing_subscription_id`.
+        """
+        p = provider(**{
+            "customer.create": GatewayRefusal("Customer already exists for the merchant"),
+            "customer.all": {"items": [
+                {"id": "cust_OTHERORG", "email": "a@b.test",
+                 "notes": {"organization_id": "org-SOMEONE-ELSE"}},
+            ]},
+        })
+        assert p.ensure_customer("org-2", "a@b.test") == "cust_OTHERORG"
+
+        methods = [name for name, _ in p._client().calls]
+        assert "customer.edit" not in methods, "the remote customer must not be rewritten"
+        assert not any(name.startswith("customer.") and "edit" in name for name in methods)
+
+    def test_a_genuine_gateway_failure_still_raises(self):
+        """Requirement 5. Not every failed create is a duplicate.
+
+        The lookup finds nothing, so the original failure surfaces unchanged —
+        `start_checkout` still translates it to the safe 502 and the customer is
+        told nothing was charged.
+        """
+        p = provider(**{
+            "customer.create": RuntimeError("network down"),
+            "customer.all": {"items": []},
+        })
+        with pytest.raises(ProviderError, match="customer create failed"):
+            p.ensure_customer("org-1", "a@b.test")
+
+    def test_a_failing_lookup_never_masks_the_original_error(self):
+        """The recovery path must not replace a useful error with its own."""
+        p = provider(**{
+            "customer.create": RuntimeError("network down"),
+            "customer.all": RuntimeError("list also down"),
+        })
+        with pytest.raises(ProviderError, match="network down"):
+            p.ensure_customer("org-1", "a@b.test")
+
+    def test_email_matching_ignores_case(self):
+        p = provider(**{
+            "customer.create": GatewayRefusal("Customer already exists for the merchant"),
+            "customer.all": {"items": [{"id": "cust_EXISTING", "email": "A@B.test"}]},
+        })
+        assert p.ensure_customer("org-1", "a@b.test") == "cust_EXISTING"
+
+    def test_a_new_email_is_created_normally(self):
+        """The happy path is untouched: no lookup, one create."""
+        p = provider(**{"customer.create": {"id": "cust_NEW"}})
+        assert p.ensure_customer("org-1", "brand.new@b.test") == "cust_NEW"
+        assert [name for name, _ in p._client().calls] == ["customer.create"]
 
     def test_start_subscription_sends_mandatory_total_count(self, monkeypatch):
         monkeypatch.setenv("RAZORPAY_PLAN_PRO_INR", "plan_pro_1")
@@ -476,6 +594,77 @@ class TestProvider:
         }})
         sub = p.fetch_subscription("sub_1")
         assert sub.state is BillingState.active and sub.state.grants_paid_access
+
+    def test_change_plan_patches_the_existing_subscription(self, monkeypatch):
+        """The exact request sent to Razorpay for a Plus -> Pro upgrade.
+
+        `subscription.edit` is `PATCH /v1/subscriptions/{id}` — the existing id,
+        so the customer, the mandate and the payment relationship all survive.
+        A `subscription.create` here would mean a second mandate and two live
+        subscriptions for one organization.
+        """
+        monkeypatch.setenv("RAZORPAY_PLAN_PRO_INR", "plan_pro_1")
+        p = provider(**{"subscription.edit": {
+            "id": "sub_EXISTING", "status": "active", "plan_id": "plan_plus_1",
+            "has_scheduled_changes": True,
+        }})
+        monkeypatch.setenv("RAZORPAY_PLAN_PLUS_INR", "plan_plus_1")
+
+        p.change_plan("sub_EXISTING", "pro", at_cycle_end=True)
+
+        name, args = p._client().calls[0]
+        assert name == "subscription.edit"
+        assert args[0] == "sub_EXISTING"
+        assert args[1]["plan_id"] == "plan_pro_1", "the TARGET plan, resolved server-side"
+        assert args[1]["schedule_change_at"] == "cycle_end", "never 'now' in this release"
+        assert args[1]["customer_notify"] == 1
+        # Nothing that would charge, prorate or restart the subscription.
+        assert "amount" not in args[1] and "start_at" not in args[1]
+
+    def test_change_plan_never_creates_anything(self, monkeypatch):
+        monkeypatch.setenv("RAZORPAY_PLAN_PRO_INR", "plan_pro_1")
+        monkeypatch.setenv("RAZORPAY_PLAN_PLUS_INR", "plan_plus_1")
+        p = provider(**{"subscription.edit": {
+            "id": "sub_EXISTING", "status": "active", "plan_id": "plan_plus_1"}})
+
+        p.change_plan("sub_EXISTING", "pro")
+
+        made = {name for name, _ in p._client().calls}
+        assert "subscription.create" not in made
+        assert "customer.create" not in made
+        assert "customer.edit" not in made
+
+    def test_a_scheduled_change_is_not_read_as_a_cancellation(self, monkeypatch):
+        """`has_scheduled_changes` is set by an UPGRADE too.
+
+        It used to feed `cancel_at_period_end`, which was harmless while a
+        cancellation was the only schedulable thing. Settings renders the period
+        as "Access until" rather than "Renews" off that field, so a customer who
+        had just upgraded would have been told their access was ending.
+        """
+        monkeypatch.setenv("RAZORPAY_PLAN_PLUS_INR", "plan_plus_1")
+        p = provider(**{"subscription.fetch": {
+            "id": "sub_1", "status": "active", "plan_id": "plan_plus_1",
+            "has_scheduled_changes": True, "cancel_at_cycle_end": 0,
+        }})
+        assert p.fetch_subscription("sub_1").cancel_at_period_end is False
+
+    def test_a_real_cancellation_is_still_reported(self, monkeypatch):
+        monkeypatch.setenv("RAZORPAY_PLAN_PLUS_INR", "plan_plus_1")
+        p = provider(**{"subscription.fetch": {
+            "id": "sub_1", "status": "active", "plan_id": "plan_plus_1",
+            "cancel_at_cycle_end": 1,
+        }})
+        assert p.fetch_subscription("sub_1").cancel_at_period_end is True
+
+    def test_no_scheduled_change_reads_as_none_rather_than_raising(self):
+        """Razorpay answers "nothing pending" with an error, not an empty body.
+
+        Treating that as fatal would fail a customer's upgrade because a
+        diagnostic read blipped.
+        """
+        p = provider(**{"subscription.pending_update": RuntimeError("no pending update")})
+        assert p.fetch_scheduled_change("sub_1") is None
 
     def test_cancel_sends_the_gateway_flag(self):
         p = provider(**{"subscription.cancel": {"id": "sub_1", "status": "active",

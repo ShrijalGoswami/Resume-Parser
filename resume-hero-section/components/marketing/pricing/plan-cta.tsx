@@ -2,9 +2,17 @@
 
 import * as React from 'react'
 import Link from 'next/link'
+import { useQuery } from '@tanstack/react-query'
 import { useSession } from '@/components/hirelens/lib/api/use-session'
 import { useUpgradeAction } from '@/components/hirelens/entitlements'
-import { PLAN_LABELS, type PlanKey } from '@/components/hirelens/lib/entitlements/catalog'
+import {
+  PLAN_LABELS,
+  normalizePlan,
+  planRank,
+  type PlanKey,
+} from '@/components/hirelens/lib/entitlements/catalog'
+import { settingsKeys } from '@/components/hirelens/lib/api/settings'
+import { getSubscription } from '@/services/org-api'
 import { DEFAULT_CURRENCY, isCheckoutSupported, isQuoted, type CurrencyCode } from '@/lib/pricing'
 
 /**
@@ -58,6 +66,32 @@ export function PlanCta({
   const { session } = useSession()
   const upgrade = useUpgradeAction()
 
+  /**
+   * WHAT THE VISITOR ALREADY HAS.
+   *
+   * The page used to offer "Upgrade to Pro" to everyone signed in, whatever
+   * they were on. For an organization whose plan is granted by us — every
+   * Enterprise account, and every operator-set one — that button led to a
+   * backend refusal, and before the guard that now returns 409, to a 500.
+   * Offering to sell somebody strictly less than they already have is the
+   * failure mode this prevents, and it was live on the highest-intent click in
+   * the funnel.
+   *
+   * Shares `settingsKeys.subscription` with Settings ▸ Billing, so a visitor
+   * arriving from the product pays nothing for it. `enabled` keeps it off the
+   * public page entirely: `authHeaders()` throws with no session, and a failed
+   * request on every anonymous pricing view would be noise in every log.
+   */
+  const subscription = useQuery({
+    queryKey: settingsKeys.subscription,
+    queryFn: getSubscription,
+    enabled: Boolean(session),
+    staleTime: 60_000,
+  })
+  const currentPlan: PlanKey | null = subscription.data
+    ? normalizePlan(subscription.data.plan)
+    : null
+
   const base =
     'inline-flex w-full items-center justify-center rounded-[0.25rem] py-2.5 text-center text-base font-medium transition-colors'
   const style =
@@ -108,6 +142,32 @@ export function PlanCta({
       <Link href="/home" className={cls}>
         Go to HireLens
       </Link>
+    )
+  }
+
+  // The tier they are on. Stated, not sold.
+  if (currentPlan && currentPlan === plan) {
+    return (
+      <span className={`${cls} cursor-default opacity-60`} aria-disabled>
+        Current plan
+      </span>
+    )
+  }
+
+  /**
+   * They are on something HIGHER. Not a purchase, and not a refusal either —
+   * the honest sentence is that this tier is already covered by theirs.
+   *
+   * A downgrade is deliberately not offered here. The backend has no
+   * self-serve path for one (BILL-13) and Razorpay schedules plan changes at
+   * cycle end rather than immediately, so a button promising it would be
+   * writing a cheque the gateway will not cash.
+   */
+  if (currentPlan && planRank(currentPlan) > planRank(plan)) {
+    return (
+      <span className={`${cls} cursor-default opacity-60`} aria-disabled>
+        Included in your plan
+      </span>
     )
   }
 

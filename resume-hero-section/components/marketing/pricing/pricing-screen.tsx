@@ -4,7 +4,8 @@ import * as React from 'react'
 import { MarketingNav } from '@/components/marketing/marketing-nav'
 import { MarketingFooter } from '@/components/marketing/marketing-footer'
 import { Reveal } from '@/components/marketing/motion'
-import { UpgradeDialogProvider } from '@/components/hirelens/entitlements'
+import { ApiProvider } from '@/components/hirelens/lib/api/query-client'
+import { BillingCheckoutProvider } from '@/components/hirelens/billing'
 import { FEATURED_PLAN, checkoutUnavailableReason } from '@/lib/pricing'
 import { PlanCards } from './plan-cards'
 import { ComparisonTable } from './comparison-table'
@@ -22,19 +23,26 @@ import { useCurrencyPreference } from './use-currency-preference'
  * remove the remaining doubts (FAQ). Nothing is asked of the visitor until
  * they have seen the whole matrix.
  *
- * `UpgradeDialogProvider` is mounted HERE rather than in the marketing layout.
- * It is the same provider the product uses, so a signed-in visitor gets the
- * exact dialog every lock and quota wall opens — one upgrade surface for the
- * whole product, including its public pages. It carries no data dependency of
- * its own, and `DialogContent` applies its own `.hl` scope, so it works inside
- * `.mkt` without dragging the product's provider stack onto a public page.
+ * The upgrade surface is mounted HERE rather than in the marketing layout. It
+ * is the same one the product uses, so a signed-in visitor gets the exact
+ * dialog every lock and quota wall opens — one upgrade surface for the whole
+ * product, including its public pages. `DialogContent` applies its own `.hl`
+ * scope, so it works inside `.mkt` without dragging the product's shell onto a
+ * public page.
+ *
+ * `ApiProvider` joins it now that the dialog leads to a real checkout: creating
+ * a subscription and then watching for the webhook are authenticated API calls,
+ * and React Query is how every other surface makes them. It is a bare
+ * `QueryClientProvider` — no data is fetched until a signed-in visitor actually
+ * starts a purchase, so a signed-out reader still pays nothing for it.
  */
 export function PricingScreen() {
   const [currency, setCurrency] = useCurrencyPreference()
   const unavailable = checkoutUnavailableReason(currency)
 
   return (
-    <UpgradeDialogProvider>
+    <ApiProvider>
+      <BillingCheckoutProvider>
       <div className="mkt-min-vh flex flex-col bg-mkt-canvas">
       <MarketingNav />
       <main className="flex-grow">
@@ -110,6 +118,7 @@ export function PricingScreen() {
       </main>
       <MarketingFooter />
       </div>
-    </UpgradeDialogProvider>
+      </BillingCheckoutProvider>
+    </ApiProvider>
   )
 }

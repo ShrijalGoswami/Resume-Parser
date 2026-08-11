@@ -82,6 +82,36 @@ class CallbackResponse(BaseModel):
     message: str
 
 
+class PlanChangeRequest(BaseModel):
+    """A slug, and deliberately nothing else.
+
+    No amount, no gateway plan id, no currency. If the client could name any of
+    those, anyone with dev tools could move themselves to a plan of their own
+    invention at a price of their own choosing.
+    """
+
+    plan: str = Field(..., description=f"One of: {', '.join(SELLABLE_PLANS)}")
+
+
+class PlanChangeResponse(BaseModel):
+    """What was QUEUED — never what is now true.
+
+    `scheduled_plan` is what the customer will be on from `effective_at`, not
+    what they are on today. `current_plan` is stated alongside it so the
+    interface cannot accidentally render the target as the present tense.
+    """
+
+    current_plan: str
+    scheduled_plan: str
+    #: ISO-8601 end of the paid period, from the gateway. Null if it did not
+    #: supply one — the UI then says "at the end of your current period" rather
+    #: than inventing a date.
+    effective_at: Optional[str] = None
+    #: The change was already queued; this request created nothing new. A second
+    #: click is a success, not an error.
+    already_scheduled: bool = False
+
+
 class CancelRequest(BaseModel):
     at_period_end: bool = True
 
@@ -197,6 +227,65 @@ async def verify_callback(
             if verified
             else "We could not verify that payment. If you were charged, contact us."
         ),
+    )
+
+
+@router.post(
+    "/subscriptions/plan-change",
+    response_model=PlanChangeResponse,
+    dependencies=[RequireOrgManage],
+)
+async def change_plan(
+    body: PlanChangeRequest,
+    ctx: OrgContextDep,
+    service: BillingServiceDep,
+):
+    """Schedule a move to a higher plan on the EXISTING subscription.
+
+    A dedicated endpoint rather than a branch inside checkout, because the two
+    are different operations wearing similar words. Checkout creates a
+    subscription and hands the browser to a modal so a mandate can be
+    authorized. This changes a subscription the customer already holds: one
+    server-to-server call, no modal, no new mandate, **no charge today**.
+
+    Nothing local changes here. The organization keeps the plan it is on — and
+    the entitlements that come with it — until Razorpay reports the change at
+    the cycle boundary and the ordinary webhook path applies it. A 200 from this
+    route means "queued", never "done", and the response says so with a date.
+
+    The client sends a plan SLUG and nothing else. The gateway plan id, the
+    amount and the currency are all resolved server-side, as they are for
+    checkout.
+    """
+    try:
+        scheduled = service.change_plan(
+            organization_id=ctx.organization_id, plan=body.plan
+        )
+    except CheckoutRefused as exc:
+        # 409 for the same reason checkout uses it: the request is well-formed
+        # and the caller is authorized; what is wrong is the organization's
+        # current state — already on the plan, a downgrade, or nothing to change.
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=exc.reason)
+    except ProviderError as exc:
+        logger.error("plan change failed for org %s: %s", ctx.organization_id, exc)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="The payment provider could not schedule the change. "
+                   "Nothing was charged and your plan is unchanged. Please try again.",
+        )
+
+    _audit(ctx, "billing.plan_change_scheduled",
+           from_plan=scheduled.current_plan, to_plan=scheduled.scheduled_plan,
+           effective_at=scheduled.effective_at.isoformat() if scheduled.effective_at else None,
+           already_scheduled=scheduled.already_scheduled)
+
+    return PlanChangeResponse(
+        current_plan=scheduled.current_plan,
+        scheduled_plan=scheduled.scheduled_plan,
+        effective_at=(
+            scheduled.effective_at.isoformat() if scheduled.effective_at else None
+        ),
+        already_scheduled=scheduled.already_scheduled,
     )
 
 

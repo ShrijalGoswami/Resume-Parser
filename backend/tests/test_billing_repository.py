@@ -142,6 +142,146 @@ class TestStateReconstruction:
         repo._client.store["subscriptions"] = [row(status="incomplete")]
         assert repo.get_subscription("org_1").state is BillingState.pending_activation
 
+    # ── a free plan is not a running subscription ───────────────────────────
+    #
+    # `provision_default_org()` writes `(organization_id, plan)` and takes the
+    # column defaults for everything else, so EVERY organization created by
+    # signup carries `status='active'` with no `billing_state`. Read literally
+    # that made a brand-new unbilled org look like a paying one — and `active`
+    # has no legal edge to `pending_activation`, so no new customer could buy
+    # anything. Reproduced on a clean database with a real signup, not theorised.
+    #
+    # The three tests after the first are the ones that matter on review: the
+    # repair must not turn genuinely-active rows into free ones.
+
+    def test_a_fresh_signup_row_reads_as_free(self, repo):
+        """THE REGRESSION. Exactly what `provision_default_org()` produces."""
+        from app.billing.domain import state_machine as machine
+
+        repo._client.store["subscriptions"] = [
+            row(
+                plan="free",
+                status="active",
+                billing_state=None,
+                billing_mode="none",
+                billing_provider=None,
+                billing_customer_id=None,
+                billing_subscription_id=None,
+            )
+        ]
+        subscription = repo.get_subscription("org_1")
+        assert subscription.state is BillingState.free
+        assert subscription.state.grants_paid_access is False
+        assert machine.can_transition(subscription.state, BillingState.pending_activation)
+
+    def test_an_operator_granted_enterprise_stays_active(self, repo):
+        """`billing_mode='none'` is TRUE of a manually-granted Enterprise too.
+
+        This is why the repair keys on the plan as well. Every organization in
+        the deployment that found the bug was this shape, and demoting one to
+        `free` would strip paid access from an account somebody negotiated.
+        """
+        repo._client.store["subscriptions"] = [
+            row(
+                plan="enterprise",
+                status="active",
+                billing_state=None,
+                billing_mode="none",
+                billing_provider=None,
+                billing_subscription_id=None,
+            )
+        ]
+        subscription = repo.get_subscription("org_1")
+        assert subscription.state is BillingState.active
+        assert subscription.state.grants_paid_access is True
+
+    def test_a_free_row_carrying_a_gateway_subscription_stays_active(self, repo):
+        """Belt and braces. A row holding a gateway subscription IS one.
+
+        The plan slug lagging behind the gateway — mid-upgrade, or a webhook
+        applied out of order — must never be read as "not billed", because that
+        is the reading that cancels somebody who is paying.
+        """
+        repo._client.store["subscriptions"] = [
+            row(
+                plan="free",
+                status="active",
+                billing_state=None,
+                billing_mode="provider",
+                billing_provider="razorpay",
+                billing_subscription_id="sub_LIVE",
+            )
+        ]
+        assert repo.get_subscription("org_1").state is not BillingState.free
+        assert repo.get_subscription("org_1").state is BillingState.active
+
+    def test_a_paid_gateway_subscription_is_untouched(self, repo):
+        """The ordinary paying customer. The default `row()` already is one."""
+        repo._client.store["subscriptions"] = [row(plan="pro", status="active")]
+        subscription = repo.get_subscription("org_1")
+        assert subscription.state is BillingState.active
+        assert subscription.is_gateway_billed is True
+
+    # ── the scheduled change (migration 0029) ───────────────────────────────
+
+    def test_a_scheduled_change_round_trips(self, repo):
+        """It has to survive a reload — that is the entire reason it is stored.
+
+        Held only in the browser tab that requested it, a refresh forgot it and
+        Settings offered "Upgrade to Pro" to somebody who had already booked
+        exactly that.
+        """
+        from datetime import datetime, timezone
+
+        effective = datetime(2026, 9, 11, tzinfo=timezone.utc)
+        repo._client.store["subscriptions"] = [
+            row(plan="plus", status="active", billing_state="active",
+                scheduled_plan="pro",
+                scheduled_plan_effective_at=effective.isoformat())
+        ]
+        subscription = repo.get_subscription("org_1")
+
+        assert subscription.plan == "plus", "the entitlement must not move"
+        assert subscription.scheduled_plan == "pro"
+        assert subscription.scheduled_plan_effective_at == effective
+        assert subscription.has_scheduled_change is True
+
+    def test_no_scheduled_change_reads_as_none(self, repo):
+        repo._client.store["subscriptions"] = [row(plan="plus", status="active")]
+        subscription = repo.get_subscription("org_1")
+        assert subscription.scheduled_plan is None
+        assert subscription.has_scheduled_change is False
+
+    def test_a_scheduled_change_is_never_an_entitlement(self, repo):
+        """The promise must not leak into anything that grants access.
+
+        `plan` is what the entitlement resolver reads. A customer who has
+        scheduled Pro has not bought Pro, and must keep receiving exactly Plus
+        until the gateway says otherwise.
+        """
+        repo._client.store["subscriptions"] = [
+            row(plan="plus", status="active", billing_state="active",
+                scheduled_plan="pro")
+        ]
+        subscription = repo.get_subscription("org_1")
+        assert subscription.plan == "plus"
+        assert subscription.state is BillingState.active
+
+    def test_an_explicit_free_enrichment_still_wins(self, repo):
+        """The pre-existing path is unchanged: `billing_state='free'` with the
+        `canceled` it projects onto is still read straight off the row."""
+        repo._client.store["subscriptions"] = [
+            row(
+                plan="free",
+                status="canceled",
+                billing_state="free",
+                billing_mode="none",
+                billing_provider=None,
+                billing_subscription_id=None,
+            )
+        ]
+        assert repo.get_subscription("org_1").state is BillingState.free
+
     def test_past_due_without_an_open_window_is_payment_failed(self, repo):
         """A row shape the PRODUCTION PATH NEVER PRODUCES.
 

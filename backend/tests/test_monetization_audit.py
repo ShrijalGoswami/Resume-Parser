@@ -103,6 +103,11 @@ NO_PAID_VALUE = {
     # wanted to keep quiet.
     "/api/v1/billing/subscriptions",
     "/api/v1/billing/subscriptions/verify",
+    # Moves a live subscription up a tier, effective at the cycle end. Same
+    # posture as its siblings: owner-only via `ORG_MANAGE`, and gating it on a
+    # paid capability would be the same circularity — you would have to already
+    # hold the tier you are trying to move to.
+    "/api/v1/billing/subscriptions/plan-change",
     "/api/v1/billing/subscriptions/cancel",
     "/api/v1/billing/webhook/razorpay",
 }

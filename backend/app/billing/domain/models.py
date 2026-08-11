@@ -234,6 +234,19 @@ class Subscription:
     payment_failed_at: Optional[datetime] = None
     grace_period_ends_at: Optional[datetime] = None
     plan_version: int = 1
+    #: A plan change queued at the gateway for the end of the current period.
+    #:
+    #: A PROMISE, NEVER AN ENTITLEMENT. `plan` stays authoritative for the whole
+    #: time this is set — a customer who scheduled Pro has not bought Pro yet,
+    #: and nothing in `app/enterprise/**` may read these. They exist so the
+    #: interface can say "Pro starts on the 11th" without asking the gateway on
+    #: a page load.
+    scheduled_plan: Optional[str] = None
+    scheduled_plan_effective_at: Optional[datetime] = None
+
+    @property
+    def has_scheduled_change(self) -> bool:
+        return bool(self.scheduled_plan)
 
     @property
     def is_founding(self) -> bool:

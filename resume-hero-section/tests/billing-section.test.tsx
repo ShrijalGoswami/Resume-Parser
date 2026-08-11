@@ -113,6 +113,169 @@ describe('there is a way to spend money', () => {
   })
 })
 
+/**
+ * Every tier a customer can buy, not the next one up.
+ *
+ * This surface offered a single CTA derived from `nextPlan()`, which turned a
+ * price list into a ladder: a Free organization was shown Plus and only Plus,
+ * so Pro was reachable only by buying Plus first. Nobody decided that — it fell
+ * out of a helper named "next" — and the backend never agreed with it:
+ * `start_checkout` accepts `plan='pro'` from a Free organization, verified
+ * directly against the service.
+ */
+describe('no forced upgrade ladder', () => {
+  it('offers a Free organization BOTH paid tiers', () => {
+    state.plan = 'free'
+    state.subscription = { plan: 'free' }
+    renderBilling()
+    expect(screen.getByRole('button', { name: 'Upgrade to Plus' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Upgrade to Pro' })).toBeInTheDocument()
+  })
+
+  it('sends the plan the customer actually chose', () => {
+    // THE REGRESSION. Free → Pro must send `pro`, not walk through `plus`.
+    state.plan = 'free'
+    state.subscription = { plan: 'free' }
+    renderBilling()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Upgrade to Pro' }))
+    expect(upgrades).toEqual([{ requiredPlan: 'pro', origin: 'plan' }])
+
+    upgrades.length = 0
+    fireEvent.click(screen.getByRole('button', { name: 'Upgrade to Plus' }))
+    expect(upgrades).toEqual([{ requiredPlan: 'plus', origin: 'plan' }])
+  })
+
+  it('offers a Plus organization Pro, and never Plus again', () => {
+    state.plan = 'plus'
+    state.subscription = { plan: 'plus' }
+    renderBilling()
+    expect(screen.getByRole('button', { name: 'Upgrade to Pro' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Upgrade to Plus' })).not.toBeInTheDocument()
+  })
+
+  it('never introduces a downgrade', () => {
+    // A Pro customer must not be offered Plus. Rank, not adjacency, is what
+    // decides — and a "change plan" control that quietly means "pay us less"
+    // is not something to arrive at by accident.
+    state.plan = 'pro'
+    state.subscription = { plan: 'pro' }
+    renderBilling()
+    expect(screen.queryByRole('button', { name: /Upgrade/ })).not.toBeInTheDocument()
+  })
+
+  it('never offers Enterprise as a purchase', () => {
+    // It has no list price. `isQuoted` keeps it a conversation here for the
+    // same reason it does on the pricing page.
+    state.plan = 'free'
+    state.subscription = { plan: 'free' }
+    renderBilling()
+    expect(screen.queryByRole('button', { name: /Upgrade to Enterprise/ })).not.toBeInTheDocument()
+  })
+})
+
+/**
+ * A scheduled upgrade, persisted (migration 0029).
+ *
+ * The state lived only in the tab that requested it, so a refresh forgot it and
+ * this screen offered "Upgrade to Pro" to a customer who had already booked
+ * exactly that — telling them, in effect, that it had not worked.
+ */
+describe('a scheduled upgrade', () => {
+  beforeEach(() => {
+    state.permissions = ['org.manage']
+    state.plan = 'plus'
+  })
+
+  it('states the scheduled tier, the date, the price and that nothing is charged', () => {
+    state.subscription = {
+      plan: 'plus',
+      scheduled_plan: 'pro',
+      scheduled_plan_effective_at: '2026-09-11T00:00:00Z',
+    }
+    renderBilling()
+    expect(screen.getByText('Pro upgrade scheduled')).toBeInTheDocument()
+    expect(screen.getByText('₹2,499/month')).toBeInTheDocument()
+    expect(screen.getByText(/Effective 11 September 2026/)).toBeInTheDocument()
+    expect(screen.getByText(/No charge today/)).toBeInTheDocument()
+    expect(
+      screen.getByText(/Plus plan remains active until your current billing period ends/),
+    ).toBeInTheDocument()
+  })
+
+  it('does not offer the upgrade that is already booked', () => {
+    state.subscription = {
+      plan: 'plus',
+      scheduled_plan: 'pro',
+      scheduled_plan_effective_at: '2026-09-11T00:00:00Z',
+    }
+    renderBilling()
+    expect(screen.queryByRole('button', { name: 'Upgrade to Pro' })).not.toBeInTheDocument()
+  })
+
+  it('still offers Pro when nothing is scheduled', () => {
+    // The control case — the suppression must be caused by the schedule, not
+    // by being on Plus.
+    state.subscription = { plan: 'plus' }
+    renderBilling()
+    expect(screen.getByRole('button', { name: 'Upgrade to Pro' })).toBeInTheDocument()
+    expect(screen.queryByText(/upgrade scheduled/)).not.toBeInTheDocument()
+  })
+
+  it('survives a reload, because it comes from the API not from memory', () => {
+    // What a refresh actually does: mount fresh, read the subscription again.
+    state.subscription = {
+      plan: 'plus',
+      scheduled_plan: 'pro',
+      scheduled_plan_effective_at: '2026-09-11T00:00:00Z',
+    }
+    renderBilling()
+    expect(screen.getByText('Pro upgrade scheduled')).toBeInTheDocument()
+
+    cleanup()
+    renderBilling() // a second, independent mount
+    expect(screen.getByText('Pro upgrade scheduled')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Upgrade to Pro' })).not.toBeInTheDocument()
+  })
+
+  it('shows the real plan once the upgrade has landed', () => {
+    // The webhook cleared the promise and moved the plan.
+    state.plan = 'pro'
+    state.subscription = { plan: 'pro', scheduled_plan: null }
+    renderBilling()
+    expect(screen.queryByText(/upgrade scheduled/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Upgrade/ })).not.toBeInTheDocument()
+  })
+
+  it('never renders a scheduled upgrade as a cancellation', () => {
+    // THE CANCELLATION BUG, from the UI side. `has_scheduled_changes` used to
+    // feed `cancel_at_period_end`, and this surface renders "Access until" off
+    // that field — so a customer who had just upgraded was told their access
+    // was ending.
+    state.subscription = {
+      plan: 'plus',
+      current_period_end: '2026-09-11T00:00:00Z',
+      cancel_at_period_end: false,
+      scheduled_plan: 'pro',
+      scheduled_plan_effective_at: '2026-09-11T00:00:00Z',
+    }
+    renderBilling()
+    expect(screen.queryByText('Access until')).not.toBeInTheDocument()
+    expect(screen.getByText('Renews')).toBeInTheDocument()
+  })
+
+  it('still shows a real cancellation correctly', () => {
+    state.subscription = {
+      plan: 'plus',
+      current_period_end: '2026-09-11T00:00:00Z',
+      cancel_at_period_end: true,
+    }
+    renderBilling()
+    expect(screen.getByText('Access until')).toBeInTheDocument()
+    expect(screen.queryByText('Renews')).not.toBeInTheDocument()
+  })
+})
+
 describe('who must never be offered an upgrade', () => {
   it('never sells to a founding organization', () => {
     // THE CASE THAT MATTERS. Founding is a RULESET, not a plan: it grants every
@@ -144,6 +307,22 @@ describe('copy that had gone stale', () => {
     // being told the thing they were waiting for had already arrived.
     renderBilling()
     expect(screen.queryByText(/pricing release/i)).not.toBeInTheDocument()
-    expect(screen.getByText(/no self-serve checkout yet/i)).toBeInTheDocument()
+  })
+
+  it('no longer denies that checkout exists, now that it does', () => {
+    // This assertion used to require the words "no self-serve checkout yet",
+    // and it was right to until Razorpay checkout landed. Keeping it would
+    // have pinned the interface to a sentence that became false the moment the
+    // CTA started working — the stalest copy in the product being held in
+    // place by a test written to prevent stale copy.
+    renderBilling()
+    expect(screen.queryByText(/no self-serve checkout yet/i)).not.toBeInTheDocument()
+  })
+
+  it('is honest that a change BETWEEN paid plans is still not self-serve', () => {
+    // The backend refuses it (BILL-13) rather than pretending, so the surface
+    // says so. Without this line a 409 reads as a bug rather than a policy.
+    renderBilling()
+    expect(screen.getByText(/Moving between paid plans/i)).toBeInTheDocument()
   })
 })

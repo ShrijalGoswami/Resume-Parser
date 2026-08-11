@@ -17,6 +17,7 @@ mechanism:
 """
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -262,22 +263,30 @@ class TestCheckout:
         with pytest.raises(CheckoutRefused, match="already on pro"):
             service.start_checkout(organization_id="org_1", plan="pro", email="a@b.com")
 
-    def test_changing_plan_is_refused_cleanly_not_with_a_500(self):
-        """BILL-13. This used to raise `IllegalTransitionError` straight out of
-        the service — an unhandled 500 for an existing Plus customer clicking
-        the "Upgrade to Pro" that both the pricing page and Settings ▸ Billing
-        show them.
+    def test_checkout_never_becomes_the_plan_change_path(self):
+        """Once BILL-13's interim refusal; now a permanent boundary.
 
-        A plan change is `subscription.update` at the gateway, not a second
-        checkout, and it is not built. Refusing with a route the customer can
-        take is the honest interim.
+        This used to raise `IllegalTransitionError` straight out of the service
+        — an unhandled 500 for an existing Plus customer clicking "Upgrade to
+        Pro". Plan changes are now implemented, in `change_plan()`, against the
+        subscription the customer already holds.
+
+        `start_checkout` must still refuse them, and for a reason that outlives
+        the feature: checkout CREATES a subscription. Letting a live subscriber
+        through would mint a second gateway subscription and a second mandate
+        for one organization, and both would look legitimate. The refusal now
+        names the endpoint that does the job.
         """
-        service, _, repo = make_service()
+        service, provider, repo = make_service()
         seed(repo, state=BillingState.active, plan="plus",
              billing_mode=BillingMode.provider, provider=BillingProviderId.razorpay,
              provider_subscription_id="sub_old")
-        with pytest.raises(CheckoutRefused, match="contact us"):
+        before = len(provider.created)
+
+        with pytest.raises(CheckoutRefused, match="plan-change endpoint"):
             service.start_checkout(organization_id="org_1", plan="pro", email="a@b.com")
+
+        assert len(provider.created) == before, "no second subscription may be created"
 
     def test_a_dunning_customer_cannot_start_a_second_subscription(self):
         """`payment_failed` and `grace` still grant paid access, so they are
@@ -462,6 +471,111 @@ class TestLifecycle:
         provider.envelope = envelope("subscription.activated", sub_id)
         service.handle_webhook(b"{}", {})
         assert repo.subs["org_1"].grants_paid_access is True
+
+    def test_a_scheduled_upgrade_lands_when_the_gateway_says_so(self):
+        """PLUS -> PRO, RECONCILED BY WEBHOOK — the other half of `change_plan`.
+
+        Scheduling writes nothing locally. The organization sits on Plus until
+        the cycle boundary, when Razorpay moves the subscription and emits
+        `subscription.updated`. The handler re-fetches from the API (rule 1) and
+        the machine's `active -> active` self-transition — annotated in the
+        table as "renewal, plan change" — carries the new plan across.
+        """
+        service, provider, repo = make_service()
+        self._activate(service, provider, repo)
+        assert repo.subs["org_1"].plan == "plus"
+
+        # The cycle boundary: the gateway is now on Pro.
+        provider.remote["sub_1"] = remote_sub(BillingState.active, plan="pro")
+        provider.envelope = envelope("subscription.updated", event_id="evt_upgrade")
+        service.handle_webhook(b"{}", {})
+
+        sub = repo.subs["org_1"]
+        assert sub.plan == "pro"
+        assert sub.state is BillingState.active
+        assert sub.grants_paid_access is True
+
+    def test_the_scheduled_promise_is_cleared_when_the_plan_lands(self):
+        """`plan -> pro` and `scheduled_plan -> NULL`, in one write.
+
+        Leaving the promise behind would make Settings go on announcing an
+        upgrade that had already happened — and would trip the database's
+        `scheduled_plan <> plan` check on the next write.
+        """
+        service, provider, repo = make_service()
+        self._activate(service, provider, repo)
+        repo.subs["org_1"] = replace(
+            repo.subs["org_1"],
+            scheduled_plan="pro",
+            scheduled_plan_effective_at=NOW,
+        )
+
+        provider.remote["sub_1"] = remote_sub(BillingState.active, plan="pro")
+        provider.envelope = envelope("subscription.updated", event_id="evt_landed")
+        service.handle_webhook(b"{}", {})
+
+        sub = repo.subs["org_1"]
+        assert sub.plan == "pro"
+        assert sub.scheduled_plan is None
+        assert sub.scheduled_plan_effective_at is None
+
+    def test_a_promise_for_a_different_plan_is_left_alone(self):
+        """Only the change that LANDED is cleared.
+
+        An unrelated event must not discard a promise that is still pending, or
+        the customer's booked upgrade would silently vanish from their billing
+        screen while remaining queued at the gateway.
+        """
+        service, provider, repo = make_service()
+        self._activate(service, provider, repo)
+        repo.subs["org_1"] = replace(
+            repo.subs["org_1"],
+            scheduled_plan="pro",
+            scheduled_plan_effective_at=NOW,
+        )
+
+        # A renewal on the SAME plan — nothing to do with the upgrade.
+        provider.remote["sub_1"] = remote_sub(BillingState.active, plan="plus")
+        provider.envelope = envelope("subscription.charged", event_id="evt_renewal")
+        service.handle_webhook(b"{}", {})
+
+        sub = repo.subs["org_1"]
+        assert sub.plan == "plus"
+        assert sub.scheduled_plan == "pro", "a pending promise must survive"
+
+    def test_a_redelivered_upgrade_event_is_idempotent(self):
+        """Razorpay redelivers. The second delivery must change nothing."""
+        service, provider, repo = make_service()
+        self._activate(service, provider, repo)
+        provider.remote["sub_1"] = remote_sub(BillingState.active, plan="pro")
+        provider.envelope = envelope("subscription.updated", event_id="evt_upgrade")
+
+        first = service.handle_webhook(b"{}", {})
+        version_after_first = repo.subs["org_1"].plan_version
+        second = service.handle_webhook(b"{}", {})
+
+        assert second.get("duplicate") is True
+        assert repo.subs["org_1"].plan == "pro"
+        assert repo.subs["org_1"].plan_version == version_after_first, (
+            "a redelivery must not bump the plan version again"
+        )
+
+    def test_a_stale_event_does_not_undo_the_upgrade(self):
+        """OUT OF ORDER. An older event arriving after the upgrade must not
+        regress the plan — the handler re-fetches, so the gateway's CURRENT
+        truth wins over whatever the payload happened to carry."""
+        service, provider, repo = make_service()
+        self._activate(service, provider, repo)
+        provider.remote["sub_1"] = remote_sub(BillingState.active, plan="pro")
+        provider.envelope = envelope("subscription.updated", event_id="evt_upgrade")
+        service.handle_webhook(b"{}", {})
+        assert repo.subs["org_1"].plan == "pro"
+
+        # A late `subscription.charged` from before the change. The gateway
+        # still reports Pro, so Pro is what gets written.
+        provider.envelope = envelope("subscription.charged", event_id="evt_late")
+        service.handle_webhook(b"{}", {})
+        assert repo.subs["org_1"].plan == "pro"
 
     def test_a_failed_charge_retains_access(self):
         """Dunning is a billing conversation, not a reason to lock a hiring team

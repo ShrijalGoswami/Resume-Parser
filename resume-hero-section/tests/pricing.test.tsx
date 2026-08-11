@@ -24,6 +24,14 @@ vi.mock('@/components/hirelens/lib/api/use-session', () => ({
 
 const sessionState = vi.hoisted(() => ({ current: null as unknown }))
 
+/** The organization's current plan, as the API would report it. Free by
+ *  default — the state every pre-existing case in this file was written for. */
+const subscriptionState = vi.hoisted(() => ({ plan: 'free' as string }))
+
+vi.mock('@/services/org-api', () => ({
+  getSubscription: () => Promise.resolve({ plan: subscriptionState.plan, status: 'active' }),
+}))
+
 vi.mock('next/navigation', () => ({
   usePathname: () => '/pricing',
   useRouter: () => ({ push: () => {}, replace: () => {}, prefetch: () => {}, back: () => {} }),
@@ -55,7 +63,28 @@ import { PlanCards } from '../components/marketing/pricing/plan-cards'
 import { PricingFaq } from '../components/marketing/pricing/pricing-faq'
 import { CurrencyToggle } from '../components/marketing/pricing/currency-toggle'
 import { PlanCta } from '../components/marketing/pricing/plan-cta'
-import { UpgradeDialogProvider } from '../components/hirelens/entitlements'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { BillingCheckoutProvider } from '../components/hirelens/billing'
+
+/**
+ * The provider stack the pricing page actually mounts.
+ *
+ * `BillingCheckoutProvider` replaced the bare `UpgradeDialogProvider` when
+ * checkout landed — it mounts the same dialog and supplies its `onCheckout` —
+ * and it needs React Query, exactly as `PricingScreen` provides it. Rendering
+ * the CTA without a client is a shape the real page cannot produce, so the
+ * harness matches the page rather than the other way round.
+ */
+function Providers({ children }: { children: React.ReactNode }) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  })
+  return (
+    <QueryClientProvider client={client}>
+      <BillingCheckoutProvider>{children}</BillingCheckoutProvider>
+    </QueryClientProvider>
+  )
+}
 import {
   useCurrencyPreference,
   __resetCurrencyPreference,
@@ -207,9 +236,9 @@ describe('comparison table is derived from the catalog', () => {
 describe('plan cards', () => {
   const renderCards = () =>
     render(
-      <UpgradeDialogProvider>
+      <Providers>
         <PlanCards currency="INR" />
-      </UpgradeDialogProvider>,
+      </Providers>,
     )
 
   it('shows all four plans with their prices', () => {
@@ -231,9 +260,9 @@ describe('plan cards', () => {
 describe('upgrade CTA flow', () => {
   it('sends a signed-out visitor to sign up', () => {
     render(
-      <UpgradeDialogProvider>
+      <Providers>
         <PlanCta plan="pro" />
-      </UpgradeDialogProvider>,
+      </Providers>,
     )
     expect(screen.getByRole('link', { name: 'Start with Pro' })).toHaveAttribute(
       'href',
@@ -246,9 +275,9 @@ describe('upgrade CTA flow', () => {
     // so billing only ever has to be wired in one place.
     sessionState.current = { user: { id: 'u1' } }
     render(
-      <UpgradeDialogProvider>
+      <Providers>
         <PlanCta plan="pro" />
-      </UpgradeDialogProvider>,
+      </Providers>,
     )
     fireEvent.click(screen.getByRole('button', { name: 'Upgrade to Pro' }))
     expect(screen.getByRole('heading', { name: 'Move to Pro' })).toBeInTheDocument()
@@ -262,9 +291,9 @@ describe('upgrade CTA flow', () => {
     // click in the entire funnel.
     sessionState.current = { user: { id: 'u1' } }
     render(
-      <UpgradeDialogProvider>
+      <Providers>
         <PlanCta plan="pro" />
-      </UpgradeDialogProvider>,
+      </Providers>,
     )
     fireEvent.click(screen.getByRole('button', { name: 'Upgrade to Pro' }))
     const dialog = screen.getByRole('dialog')
@@ -279,9 +308,9 @@ describe('upgrade CTA flow', () => {
     // webmail without a protocol handler, and fails silently — which on an
     // enterprise enquiry means the lead never arrives at all.
     render(
-      <UpgradeDialogProvider>
+      <Providers>
         <PlanCta plan="enterprise" />
-      </UpgradeDialogProvider>,
+      </Providers>,
     )
     expect(screen.getByRole('link', { name: 'Talk to sales' })).toHaveAttribute(
       'href',
@@ -292,11 +321,110 @@ describe('upgrade CTA flow', () => {
   it('does not offer a signed-in visitor an upgrade to Free', () => {
     sessionState.current = { user: { id: 'u1' } }
     render(
-      <UpgradeDialogProvider>
+      <Providers>
         <PlanCta plan="free" />
-      </UpgradeDialogProvider>,
+      </Providers>,
     )
     expect(screen.getByRole('link', { name: 'Go to HireLens' })).toBeInTheDocument()
+  })
+})
+
+/**
+ * What the page offers somebody who already has a plan.
+ *
+ * This block exists because of a defect found by clicking the button: every
+ * organization in the deployment is on an operator-granted Enterprise plan, the
+ * card offered all of them "Upgrade to Pro", and the backend answered 500 —
+ * `active -> pending_activation` is not a legal transition. The server-side
+ * guard is the real fix; this is the half that stops the offer being made at
+ * all, because a CTA that leads to a refusal is a broken promise either way.
+ */
+describe('current plan awareness', () => {
+  beforeEach(() => {
+    sessionState.current = { user: { id: 'u1' } }
+    subscriptionState.plan = 'free'
+  })
+
+  it('states the plan a customer is already on instead of selling it', async () => {
+    subscriptionState.plan = 'pro'
+    render(
+      <Providers>
+        <PlanCta plan="pro" />
+      </Providers>,
+    )
+    expect(await screen.findByText('Current plan')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Upgrade/ })).not.toBeInTheDocument()
+  })
+
+  it('never offers to sell a lower tier to a higher-tier customer', async () => {
+    // THE REGRESSION. Enterprise is above both paid tiers, so neither is a
+    // purchase — offering one is offering strictly less than they have.
+    subscriptionState.plan = 'enterprise'
+    render(
+      <Providers>
+        <PlanCta plan="pro" />
+      </Providers>,
+    )
+    expect(await screen.findByText('Included in your plan')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Upgrade/ })).not.toBeInTheDocument()
+  })
+
+  it('still offers a genuine upgrade', async () => {
+    subscriptionState.plan = 'plus'
+    render(
+      <Providers>
+        <PlanCta plan="pro" />
+      </Providers>,
+    )
+    expect(await screen.findByRole('button', { name: 'Upgrade to Pro' })).toBeInTheDocument()
+  })
+
+  it('lets a Free organization buy Pro without buying Plus first', async () => {
+    // The pricing page never had the ladder Settings ▸ Billing did, and this
+    // pins that: skipping a tier is a purchase the customer is entitled to make
+    // and one the backend accepts.
+    subscriptionState.plan = 'free'
+    render(
+      <Providers>
+        <PlanCta plan="pro" />
+      </Providers>,
+    )
+    expect(await screen.findByRole('button', { name: 'Upgrade to Pro' })).toBeInTheDocument()
+  })
+
+  it('offers a Free organization Plus as well', async () => {
+    subscriptionState.plan = 'free'
+    render(
+      <Providers>
+        <PlanCta plan="plus" />
+      </Providers>,
+    )
+    expect(await screen.findByRole('button', { name: 'Upgrade to Plus' })).toBeInTheDocument()
+  })
+
+  it('does not offer a Pro customer a downgrade to Plus', async () => {
+    subscriptionState.plan = 'pro'
+    render(
+      <Providers>
+        <PlanCta plan="plus" />
+      </Providers>,
+    )
+    expect(await screen.findByText('Included in your plan')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Upgrade/ })).not.toBeInTheDocument()
+  })
+
+  it('does not ask the API who a signed-out visitor is', async () => {
+    // `authHeaders()` throws with no session, so an ungated query would fail on
+    // every anonymous pricing view. The signed-out CTA must render from the
+    // session alone.
+    sessionState.current = null
+    render(
+      <Providers>
+        <PlanCta plan="pro" />
+      </Providers>,
+    )
+    expect(screen.getByRole('link', { name: 'Start with Pro' })).toBeInTheDocument()
+    expect(screen.queryByText('Current plan')).not.toBeInTheDocument()
   })
 })
 
@@ -325,9 +453,9 @@ describe('currency selector', () => {
 describe('currency selection', () => {
   it('quotes the US list when USD is selected', () => {
     render(
-      <UpgradeDialogProvider>
+      <Providers>
         <PlanCards currency="USD" />
-      </UpgradeDialogProvider>,
+      </Providers>,
     )
     expect(screen.getByText('$19')).toBeInTheDocument()
     expect(screen.getByText('$49')).toBeInTheDocument()
@@ -352,9 +480,9 @@ describe('a market we quote but cannot charge', () => {
 
   it('sends a paid plan to sales rather than into signup', () => {
     render(
-      <UpgradeDialogProvider>
+      <Providers>
         <PlanCta plan="plus" currency="USD" />
-      </UpgradeDialogProvider>,
+      </Providers>,
     )
     expect(screen.getByRole('link', { name: 'Talk to sales' })).toHaveAttribute(
       'href',
@@ -367,9 +495,9 @@ describe('a market we quote but cannot charge', () => {
     // Nothing is collected for Free, so there is no reason to block it — and
     // every reason not to, since it is how they evaluate the product at all.
     render(
-      <UpgradeDialogProvider>
+      <Providers>
         <PlanCta plan="free" currency="USD" />
-      </UpgradeDialogProvider>,
+      </Providers>,
     )
     expect(screen.getByRole('link', { name: 'Start free' })).toHaveAttribute(
       'href',
@@ -379,9 +507,9 @@ describe('a market we quote but cannot charge', () => {
 
   it('keeps the self-serve path intact for the market we can charge', () => {
     render(
-      <UpgradeDialogProvider>
+      <Providers>
         <PlanCta plan="plus" currency="INR" />
-      </UpgradeDialogProvider>,
+      </Providers>,
     )
     expect(screen.getByRole('link', { name: 'Start with Plus' })).toBeInTheDocument()
   })

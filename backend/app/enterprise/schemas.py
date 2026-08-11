@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -62,12 +63,50 @@ class UsageCounter(BaseModel):
 
 
 class Subscription(BaseModel):
+    """The organization's plan, as the client renders it.
+
+    READ-ONLY, AND STILL NOT A BILLING MODEL. The three fields below were added
+    so the checkout UI can tell "we are waiting for the gateway" apart from "you
+    are on this plan", and so Settings can state a renewal date instead of
+    implying one. They are projected straight from columns 0022 and 0027 already
+    persist; nothing here imports `app.billing`, and the one-way dependency in
+    BILLING_ARCHITECTURE §1.2 is intact.
+
+    `status` remains the five-value vocabulary the entitlement resolver reads.
+    `billing_state` is the eight-value enrichment 0027 added — an enrichment,
+    never a contradiction — and is the only field that can distinguish
+    `pending_activation` from `free`, which is exactly the distinction a
+    customer watching a spinner after paying needs us to get right.
+
+    Nothing provider-specific is exposed: no gateway subscription id, no
+    customer id, no key. A plan, a state and a date are what the interface
+    needs, and they are all it gets.
+    """
+
     model_config = ConfigDict(extra="ignore")
     id: Optional[str] = None
     organization_id: str
     plan: str = "free"
     status: str = "active"
     limits: dict[str, Any] = Field(default_factory=dict)
+    #: Eight-value billing state (0027). Null on rows written before it existed
+    #: and on manually-set plans, so the client must treat absence as "unknown"
+    #: rather than as any particular state.
+    billing_state: Optional[str] = None
+    #: End of the paid period — the renewal date, or the date access ends when
+    #: `cancel_at_period_end` is set. Null for free and manual plans.
+    current_period_end: Optional[datetime] = None
+    #: Cancellation requested, access retained until `current_period_end`.
+    cancel_at_period_end: bool = False
+    #: A plan change queued for the end of the current period (migration 0029).
+    #:
+    #: A PROMISE, NOT AN ENTITLEMENT. `plan` above is what the organization has
+    #: today and what the entitlement resolver reads; this is what it will have
+    #: from `scheduled_plan_effective_at`. The client renders it so an upgrade
+    #: that is already booked is not offered a second time — it must never be
+    #: read as the current tier.
+    scheduled_plan: Optional[str] = None
+    scheduled_plan_effective_at: Optional[datetime] = None
 
 
 class ApiKey(BaseModel):
