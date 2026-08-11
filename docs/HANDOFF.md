@@ -27,18 +27,20 @@ project stands.
 > §9A is the rules, §13 is the status of record. Update §11.3 and §13 the moment
 > a task completes — nowhere else.
 >
-> If you are about to touch billing, read §5A **first** — it is blocked, and
-> five specific shortcuts around that blocker are forbidden by decision.
+> If you are about to touch billing, read **§15 first** — it is no longer
+> blocked. Billing is BUILT and Test-Mode verified end to end as of
+> 11 Aug 2026. §5A and §11A are superseded and kept only as history.
 
-> **One-line status.** The product, its monetization and its public surface are
-> built, enforced and truthful. The billing domain, adapter, repository,
-> checkout endpoint, webhook route, lifecycle **and grace sweep** are all
-> written and tested offline. **Everything is now blocked on one external
-> thing: the Razorpay Subscriptions API returns 401 for this account, and the
-> credentials are valid** (§5A). Nothing further can be built against it, and
-> nothing is to be worked around.
+> **One-line status.** **Self-serve billing works.** A real Razorpay Test Mode
+> payment has been taken end to end: UPI mandate authorized, ₹2,499 captured,
+> three webhooks HMAC-verified and processed, redeliveries absorbed, plan
+> reconciled to Pro. Free → Plus and Free → Pro are self-serve; Plus → Pro is a
+> scheduled change on the existing subscription. Shipped as `606c661` on `main`.
+> Details, and the five bugs it took to get there, in **§15**.
 >
-> **Last updated:** 5 Aug 2026, end of day. The **Authentication milestone is
+> **Last updated:** 11 Aug 2026, end of day (§15).
+>
+> **Previously — 5 Aug 2026.** The **Authentication milestone is
 > complete and browser-verified end to end** (§8D) — reveal toggles, forgot
 > password, reset password, a real password policy, and `/auth/accept-invite`
 > now sharing the reset flow's session-validation architecture rather than
@@ -815,7 +817,16 @@ from the self-upgrade hole Phase 1 removed.
 
 ---
 
-## 5A. THE CURRENT BLOCKER — Razorpay Subscriptions is not available
+## 5A. ~~THE CURRENT BLOCKER~~ — RESOLVED 11 Aug 2026
+
+> **SUPERSEDED BY §15. Do not act on this section.** Subscriptions is enabled on
+> the account and `--doctor` now returns `✓ subscriptions HTTP 200`. Plans are
+> created, a real Test Mode payment has been taken, and every "must NOT happen
+> while this is blocked" rule below has expired with the blocker.
+>
+> Kept because the *diagnosis* is still worth reading: probing an endpoint known
+> to work is what separated "your key is wrong" from "this product is not
+> switched on", and `scripts/razorpay_plans.py --doctor` still encodes it.
 
 **Investigated 5 Aug 2026. Read this before touching anything billing-related.**
 
@@ -2765,7 +2776,11 @@ lets failover succeed. Golden **6/6**.
 
 ---
 
-## 11A. Billing — PAUSED, and what unpauses it
+## 11A. ~~Billing — PAUSED~~ — UNPAUSED AND SHIPPED 11 Aug 2026
+
+> **SUPERSEDED BY §15.** The gateway answered, the work resumed, and checkout
+> shipped. The section below is history; the standing rule it carried —
+> **the AI milestone must not touch `app/billing/**`** — still holds.
 
 ### The work is stopped, deliberately
 
@@ -3261,19 +3276,145 @@ Strictly in this order, and **only** once §14.9 is green:
 
 ---
 
+## 15. Billing SHIPPED — Razorpay checkout, verified end to end (11 Aug 2026)
+
+**Commit `606c661` on `main` and `manus-ui-v1`. 31 files, +4582/−116.**
+Supersedes §5A and §11A.
+
+### What now works
+
+| Path | Behaviour |
+|---|---|
+| Free → Plus | Self-serve checkout, ₹999/month, mandate + charge today |
+| Free → Pro | Self-serve checkout, ₹2,499/month. **No ladder** — Plus is not a prerequisite |
+| Plus → Pro | Scheduled change on the EXISTING subscription, effective at cycle end. **No charge today** |
+| Pro → Plus, → Free | Refused. Downgrades are not self-serve |
+| Enterprise | Unchanged — quoted, never self-serve |
+| Founding | Unchanged — never billed, no CTA anywhere |
+
+### The proof it works
+
+A real Test Mode payment, not a stub:
+
+```
+payment    pay_TOYV2WA6WJY5XP   ₹2,499 (249900 paise)  captured  method=upi
+gateway    sub_TOYURbJ0BUNfYC   active  paid_count=1
+webhooks   subscription.authenticated -> activated -> charged   all HTTP 200
+           source 52.66.75.174 (Razorpay) via the Cloudflare tunnel
+signature  zero rejections
+events     3 rows in billing_events, all `processed`
+redelivery all three redelivered; absorbed by the (provider, event_id) PK
+local      plan=pro  billing_state=active  billing_mode=provider
+           current_period_end=2026-09-10T18:30:00Z  plan_version=6
+```
+
+The UPI Autopay mandate is genuinely registered — the phone received the
+recurring-authorization message.
+
+### Five bugs found by using it, all fixed
+
+Each was invisible to the offline tests and appeared the moment a human clicked
+something. That is the lesson worth carrying: this integration was *fully unit
+tested* before any of these existed.
+
+1. **No new organization could buy anything.** `provision_default_org()` writes
+   `status='active'` (the column default) with no `billing_state`, which read
+   back as `BillingState.active` — a state with no legal edge to
+   `pending_activation`. Unhandled 500, then a 409 once guarded. Fixed in
+   `_state_from_row`: free + not gateway-billed + no subscription id is
+   `BillingState.free` whatever `status` says. Repairs every existing row with
+   no backfill, and leaves entitlement copy untouched — the tempting fix
+   (write `status='canceled'` at provisioning) would have told every free user
+   *"Your subscription is canceled. Reactivate billing"* at each locked feature.
+2. **Any returning customer got a 502.** `ensure_customer` sent
+   `fail_existing: 0` as an integer; the API documents a **string**, and the SDK
+   `json.dumps` the body verbatim — so the value never matched and Razorpay
+   errored with *"Customer already exists for the merchant"*. Fixed to `"0"`,
+   plus a lookup-by-email fallback so the guarantee survives the flag changing.
+   The pre-existing test asserted `== 0` and passed while broken.
+3. **Settings sold a ladder.** One CTA derived from `nextPlan()`, so a Free
+   organization was offered Plus and only Plus. The server never had that rule.
+4. **A scheduled upgrade rendered as a cancellation.** `has_scheduled_changes`
+   fed `cancel_at_period_end`, and Settings shows "Access until" off that field
+   — telling a customer who had just upgraded that their access was ending.
+5. **The payment modal was unclickable.** Two stacked Radix modals held
+   `pointer-events: none` on `<body>`; Razorpay mounts `.razorpay-container`
+   under `<body>`, inherited the lock, and its z-index of 2×10⁹ was no defence.
+   The symptom pair is the tell: **mouse dead, keyboard fine** —
+   `pointer-events` blocks hit-testing only. Fixed by closing `UpgradeDialog`
+   when checkout opens, plus `modal={false}` during the handoff.
+
+### Architecture, unchanged where it mattered
+
+- **The webhook is still the only thing that grants a plan.** The browser
+  callback is verified and grants nothing; the UI polls our own API and reaches
+  its "active" state from no other edge.
+- **Server-authoritative.** The client sends a plan slug. Gateway plan id,
+  amount, currency and schedule are all resolved server-side.
+- **One subscription per organization.** `start_checkout` still refuses a live
+  subscriber — a second checkout would mint a second mandate. Plan changes go
+  through `POST /billing/subscriptions/plan-change`.
+- **Migration 0029** adds `scheduled_plan` / `scheduled_plan_effective_at`
+  (nullable, three CHECKs). A promise, never an entitlement: `plan` stays `plus`
+  while a Pro upgrade is pending, and the confirming webhook clears both fields
+  in the same write.
+
+### Tests
+
+Backend **1358**, frontend **602**, typecheck clean, production build green.
+New: `test_billing_plan_change.py`, `test_billing_checkout_guards.py`,
+`test_subscription_projection.py`, `checkout-machine.test.ts`,
+`checkout-dialog.test.tsx`, `checkout-handoff.test.tsx`.
+
+`checkout-handoff.test.tsx` is the one to read. It renders the **full provider
+stack**, because the per-component tests passed while bug 5 was live in the
+product. Its discrimination was verified by reverting the fix: 6 of 7 fail.
+
+### NOT verified — start here
+
+1. **The mouse fix has never been confirmed against a real Razorpay modal.**
+   jsdom has no layout, so hit-testing cannot be asserted there. The successful
+   payment was completed by **keyboard**. Verifying it needs a **fresh Free
+   organization** — the current org holds an active Pro subscription that
+   `start_checkout` will correctly refuse.
+2. **Plus → Pro has never touched the real gateway.** Every plan-change test is
+   stubbed; `subscription.edit` with `schedule_change_at: "cycle_end"` has never
+   been sent. The parameters come from Razorpay's API reference, not from an
+   observed response.
+3. **Live mode: nothing.** Live plans must be created separately (test plans do
+   not carry over), the webhook needs a real endpoint rather than the tunnel,
+   and a real mandate + charge + cancellation should be done with both UPI and
+   a card.
+4. **The Cloudflare tunnel is ephemeral.** Its hostname changes on restart and
+   must be re-registered in the Razorpay dashboard.
+
+### Housekeeping
+
+- **6 orphaned Test Mode subscriptions** in `created` (never charged) and 2
+  customers, left by abandoned attempts. Razorpay subscriptions cannot be
+  deleted. Inert; ignore them.
+- The Supabase database was **fully reset** during this session at the owner's
+  explicit instruction, and the account re-created several times. The `rca/`
+  note about 69 organizations losing subscriptions now refers to data that no
+  longer exists.
+- `origin` still points at `Shri-AI-ML/Resume-Parser`; the remote reports it has
+  moved to `ShrijalGoswami/Resume-Parser`. Pushes follow the redirect today.
+
+---
+
 ## Document map
 
 | Document | What it holds |
 |---|---|
 | [RELEASE_CANDIDATE_CHECKLIST.md](./RELEASE_CANDIDATE_CHECKLIST.md) | **The release gate.** 267 boxes, none ticked |
 | [BROWSER_QA_CHECKLIST.md](./BROWSER_QA_CHECKLIST.md) | Browser blocker diagnosis + FREE-journey script |
-| [BILLING_TODO.md](./BILLING_TODO.md) | **Every open payment item**, with blast radius and priority |
+| [BILLING_TODO.md](./BILLING_TODO.md) | Open payment items. **Stale as of 11 Aug 2026 — BILL-B1/B2/B3 and BILL-13 are resolved; see §15** |
 | [BILLING_ARCHITECTURE.md](./BILLING_ARCHITECTURE.md) | Full billing design, Razorpay-specific detail |
 | [MONETIZATION_ARCHITECTURE.md](./MONETIZATION_ARCHITECTURE.md) | Plans, entitlements, quotas |
 | [rca/SUBSCRIPTION_ROWS_MISSING.md](./rca/SUBSCRIPTION_ROWS_MISSING.md) | Why 69 organizations lost their subscriptions |
 | [OPERATIONAL_HARDENING_BACKLOG.md](./OPERATIONAL_HARDENING_BACKLOG.md) | PITR, audit trail, retention (OPS-1…6) |
 | [GOVERNANCE_ALIGNMENT_BACKLOG.md](./GOVERNANCE_ALIGNMENT_BACKLOG.md) | 12 positioning/attribution items (GAB-*). **`GAB-D1` done (§8E); no open gate failures.** `GAB-D2` and the PDF `title=` drift remain |
-| [MIGRATION_ROLLBACK_NOTES.md](./MIGRATION_ROLLBACK_NOTES.md) | Per-migration rollback for 0022–0027 |
+| [MIGRATION_ROLLBACK_NOTES.md](./MIGRATION_ROLLBACK_NOTES.md) | Per-migration rollback for 0022–0027. **0028 and 0029 are not covered — 0029 is additive/nullable, so rollback is dropping two columns and three CHECKs** |
 | [AI_ARCHITECTURE.md](./AI_ARCHITECTURE.md) · [AI_GATEWAY.md](./AI_GATEWAY.md) · [AI_PIPELINE.md](./AI_PIPELINE.md) | The AI layer as built. **Each has drifted from the code** — `AI_GATEWAY.md` documents a `raw` field on `ProviderResponse` that was deliberately removed, and says rate-limits are "not retried" when transient 429s are retried twice. Reconciling them is Phase 1 work; until then **§11 is authoritative, not these** |
 | [TRUTHFUL_AI.md](./TRUTHFUL_AI.md) | The AI-honesty contract §11.5's disclaimer tiers are built to satisfy |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) · [DATABASE.md](./DATABASE.md) · [API.md](./API.md) · [SECURITY.md](./SECURITY.md) | The product itself |
