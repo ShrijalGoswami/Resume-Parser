@@ -93,19 +93,97 @@ export function CommandPalette() {
   )
   const flat = React.useMemo(() => sections.flatMap((section) => section.items), [sections])
 
+  /**
+   * WHERE FOCUS GOES WHEN THE PALETTE CLOSES.
+   *
+   * Radix's own focus restoration is not landing here. Measured 12 Aug 2026:
+   * open the palette from the Inbox nav link or from the top-bar launcher,
+   * press Escape, and `document.activeElement` is `<body>` — at 200ms and still
+   * at 3.5s, so it is not the exit animation. The trap itself works (focus
+   * stayed inside across 15 tabs), which is what makes the miss easy to ship:
+   * everything about the open dialog is correct.
+   *
+   * The cost is paid entirely by keyboard and screen-reader users. ⌘K is the
+   * product's universal entry point, so dismissing it drops you at the top of
+   * the document and you tab back through the whole shell to reach the control
+   * you were on. A mouse user never sees it.
+   *
+   * So the opener is captured on open and refocused on dismiss.
+   *
+   * RESTORE ONLY ON DISMISS, NEVER AFTER RUNNING AN ITEM. Selecting a command
+   * navigates; pulling focus back to a launcher on the page being left fights
+   * the destination for it, and on a route change the saved node is gone
+   * anyway. `ranItemRef` marks that case so this yields instead.
+   */
+  const openerRef = React.useRef<HTMLElement | null>(null)
+  const ranItemRef = React.useRef(false)
+
+  /**
+   * THE OPENER CANNOT BE CAPTURED WHEN THE PALETTE OPENS, BECAUSE NOTHING TELLS
+   * US THAT IT DID.
+   *
+   * `onOpenChange` fires only for changes Radix itself initiates — Escape, a
+   * click on the overlay. Both ways this palette actually opens (the global ⌘K
+   * listener in `shell-context`, and the top-bar launcher) set `commandOpen`
+   * straight on the shell context, so Radix's `Root` simply receives
+   * `open={true}` and no callback runs. An opener captured there is captured on
+   * close, when focus is already inside the dialog — which is why the first
+   * attempt at this fix restored focus to the palette's own input.
+   *
+   * So the last externally focused element is tracked continuously instead.
+   * Anything inside the dialog is ignored, leaving the ref holding whatever the
+   * user was on before it opened, however it was opened.
+   */
+  React.useEffect(() => {
+    const onFocusIn = (event: FocusEvent) => {
+      const target = event.target
+      if (!(target instanceof HTMLElement)) return
+      if (target.closest('[role="dialog"]')) return
+      openerRef.current = target
+    }
+    document.addEventListener('focusin', onFocusIn)
+    return () => document.removeEventListener('focusin', onFocusIn)
+  }, [])
+
   const onOpenChange = React.useCallback(
     (open: boolean) => {
+      if (open) ranItemRef.current = false
       setCommandOpen(open)
       if (!open) {
         setQuery('')
         setActiveIndex(0)
       }
+      // The refocus itself happens in `onCloseAutoFocus` on the Content, not
+      // here. Restoring from this callback does not survive: it runs before
+      // Radix unmounts its focus scope, and the scope's own handler then moves
+      // focus again — measured, with a `requestAnimationFrame` deferral, still
+      // landing on <body>. `onCloseAutoFocus` is the hook that runs at that
+      // moment and can preempt it.
     },
     [setCommandOpen],
   )
 
+  /**
+   * Put focus back where it came from. `preventDefault` suppresses Radix's own
+   * restore, which is the thing that was failing — without it this call is
+   * simply overwritten a tick later.
+   */
+  const onCloseAutoFocus = React.useCallback((event: Event) => {
+    const opener = openerRef.current
+    const ranItem = ranItemRef.current
+    ranItemRef.current = false
+    // After running a command we are navigating; the destination owns focus.
+    if (ranItem) return
+    // A detached node cannot take focus, and asking it to leaves focus on
+    // <body> — the exact bug this exists to fix.
+    if (!opener || !document.contains(opener)) return
+    event.preventDefault()
+    opener.focus()
+  }, [])
+
   const runItem = React.useCallback(
     (item: CommandItem) => {
+      ranItemRef.current = true
       item.perform()
       setCommandOpen(false)
     },
@@ -134,6 +212,7 @@ export function CommandPalette() {
         <DialogPrimitive.Overlay className="hl hl-rack-scrim fixed inset-0 z-[var(--hl-z-palette)] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0" />
         <DialogPrimitive.Content
           onKeyDown={onKeyDown}
+          onCloseAutoFocus={onCloseAutoFocus}
           className="hl fixed left-1/2 top-[15vh] z-[var(--hl-z-palette)] w-[calc(100%-2rem)] max-w-[640px] -translate-x-1/2 overflow-hidden rounded-hl-xl border border-hl-border bg-hl-canvas text-hl-fg shadow-[var(--hl-shadow-lg)] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0"
         >
           <DialogPrimitive.Title className="sr-only">Command palette</DialogPrimitive.Title>

@@ -96,11 +96,16 @@ Enforcement posture:
 
 Automated.
 
-- [ ] `npx vitest run` → **363 passed**, 29 files
+- [ ] `npx vitest run` → **637 passed**, 44 files
 - [ ] `npx tsc --noEmit` → clean
-- [ ] `npx eslint .` → **exactly 4 errors**, all `react-hooks/refs` in
-      `components/marketing/NeuralBackground.tsx` (known debt, `HANDOFF.md` §11.1).
-      **Any fifth error is a regression** and must be triaged before shipping.
+- [ ] `npx eslint .` → **clean: exit 0, no output.**
+      This line used to read "exactly 4 errors, all `react-hooks/refs` in
+      `components/marketing/NeuralBackground.tsx`", with any fifth treated as the
+      regression signal. That tolerance is gone as of 14 Aug 2026: the component
+      was dead code and was deleted, and the fifth error — in
+      `components/hirelens/billing/checkout-provider.tsx`, which the old wording
+      did not account for — was fixed. **Any error is now a regression**, which
+      is a far cheaper signal to read than "four, but only those four".
 - [ ] `npx next build` succeeds
 - [ ] `tests/entitlement-surface-coverage.test.tsx` passes — every catalog feature
       has either a client lock or a written reason it needs none

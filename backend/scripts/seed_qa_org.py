@@ -367,6 +367,25 @@ def seed(recruiter_id: str, organization_id: str) -> list[str]:
                             "match_category": category,
                             "recommendation": recommendation,
                             "result": {
+                                # `candidate_id` AND `filename` ARE REQUIRED BY
+                                # `app.schemas.batch.CandidateResult`, and their
+                                # absence is why the "KNOWN GAP" in this file's
+                                # docstring was worse than it said.
+                                #
+                                # It was not only that nothing wrote embeddings.
+                                # `reindex_campaign` parses this blob into a
+                                # `CandidateResult` before embedding, and every
+                                # seeded row failed that parse with "2 validation
+                                # errors" — so even after a reindex, every seeded
+                                # candidate stayed invisible to Talent search.
+                                # The skip is silent from the caller's side: the
+                                # endpoint cheerfully answers
+                                # `{"considered": 0, "indexed": 0, "total": 5}`.
+                                #
+                                # `filename` mirrors `resume_filename` on the
+                                # candidate row above so the two agree.
+                                "candidate_id": candidate_id,
+                                "filename": f"{handle}_resume.pdf",
                                 "name": name,
                                 "email": f"{handle}@example.com",
                                 "overall_score": overall,

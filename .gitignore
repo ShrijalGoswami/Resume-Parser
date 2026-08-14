@@ -245,3 +245,19 @@ backend/eval-runs/
 eval-runs/
 /Redesignv4
 /Test Resume/
+
+# Résumé scratch directories. The SAME reasoning as eval-runs above, one step
+# more direct: these hold the uploaded documents themselves, and five real
+# résumés — real names, real contact details — reached version control through
+# them before this rule existed.
+#
+# Nothing reads from these paths. The application writes uploads to
+# `TEMP_UPLOAD_DIR` (the OS temp directory by default), parses them, and deletes
+# them immediately; `backend/.dockerignore` already keeps them out of the image.
+# They exist only as leftovers from local runs.
+#
+# The QA résumé set is `/Test Resume/`, ignored above and unaffected by this.
+# Test fixtures that ARE required stay tracked and stay synthetic — see
+# `backend/tests/fixtures/drill_resume.pdf`, which invents its candidate.
+/uploads/
+backend/uploads/

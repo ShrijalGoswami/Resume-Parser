@@ -1,12 +1,7 @@
 import Link from 'next/link'
 
 import { CompressionEngine } from './compression-engine'
-import {
-  BlurReveal,
-  ConstellationBackground,
-  MaskReveal,
-  TiltCard,
-} from './fx'
+import { BlurReveal, ConstellationBackground, MaskReveal } from './fx'
 import { HeroWorkspace } from './hero-workspace'
 import { Reveal } from './motion'
 import { ProductVideo } from './product-video'

@@ -253,7 +253,6 @@ if (await field.count()) {
 // ── 10. Theme toggle, live ──────────────────────────────────────────────────
 await page.goto(`${BASE}/home`, { waitUntil: 'domcontentloaded' })
 await settle(2500)
-const toggle = page.locator('button:has(svg)').filter({ hasNot: page.locator('nav') })
 const themeBtn = page.getByRole('button', { name: /theme|dark|light/i }).first()
 if (await themeBtn.count()) {
   await themeBtn.click()

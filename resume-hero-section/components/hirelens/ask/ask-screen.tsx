@@ -246,6 +246,17 @@ function AuthedAsk({ initial }: { initial: AskInitial }) {
 
   return (
     <AppShell title="Ask" account={account}>
+      {/* THE PAGE'S `h1`. Every other product screen gets one from `PageHeader`;
+          Ask does not render a header — it is a conversation surface, and a
+          visible page title above the thread would be a layout change this
+          screen deliberately does not have. So the heading is supplied for
+          assistive tech only, which is the same trade the Threads drawer below
+          already makes with its sr-only title.
+
+          Without it the document opened at `h2` with no `h1` at all, so a
+          screen-reader user landing on Ask had no announced page name and the
+          heading outline began mid-level. */}
+      <h1 className="sr-only">Ask</h1>
       <div className="flex min-h-0 flex-1">
         <aside className="hidden w-72 shrink-0 border-r border-hl-border-subtle lg:block">
           <AskNav {...navProps} />

@@ -19,6 +19,10 @@ import { Button } from '@/components/hirelens/ui/button'
 export default function HireLensNotFound() {
   return (
     <div className="flex min-h-dvh items-center justify-center bg-hl-canvas px-6">
+      {/* Supplies the document's `h1`. `EmptyState` titles at `h2` by design
+          (it normally sits below a page title), so this state had no `h1` and
+          opened at heading level 2 — see the same note in `app/not-found.tsx`. */}
+      <h1 className="sr-only">Page not found</h1>
       <EmptyState
         icon={FileQuestion}
         title="This page doesn’t exist"

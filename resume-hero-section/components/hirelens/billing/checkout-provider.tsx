@@ -112,7 +112,19 @@ export function BillingCheckoutProvider({ children }: { children: React.ReactNod
    *  from — React state is async and a dismissed modal can still fire. */
   const runId = React.useRef(0)
   const phaseRef = React.useRef<CheckoutPhase>('confirm')
-  phaseRef.current = phase
+  // Mirrored in an effect rather than assigned during render. The assignment
+  // used to sit bare in the render body, which is a ref WRITE during render and
+  // the fifth `react-hooks/refs` error in the repo.
+  //
+  // Equivalent here because of WHERE this ref is read: every reader
+  // (`isBusy(phaseRef.current)` on reopen, the Razorpay dismiss handler, the
+  // slow-payment recovery) runs from a user gesture or a provider callback,
+  // all of which happen after the commit that this effect closes. None reads it
+  // during render, so there is no window in which the effect's later write
+  // could be observed as stale.
+  React.useEffect(() => {
+    phaseRef.current = phase
+  }, [phase])
 
   const send = React.useCallback((event: CheckoutEvent) => {
     setPhase((current) => nextPhase(current, event))

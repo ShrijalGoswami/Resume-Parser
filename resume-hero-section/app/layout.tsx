@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Analytics } from '@vercel/analytics/next'
+import { RedactedAnalytics } from '@/components/analytics/redacted-analytics'
 import { ThemeProvider } from '@/components/hirelens/theme/theme-provider'
 import { SITE_LOCALE, SITE_NAME, SITE_URL } from '@/lib/seo/site'
 import { SERVICE_DESCRIPTION } from '@/lib/legal'
@@ -82,7 +82,11 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="antialiased">
         <ThemeProvider>{children}</ThemeProvider>
-        {process.env.NODE_ENV === 'production' && <Analytics />}
+        {/* Page-view URLs are redacted before they are sent — the product
+            surface addresses candidates and campaigns by their real primary
+            keys, and those must not leave for a third party. See
+            `lib/analytics/redact.ts`. */}
+        {process.env.NODE_ENV === 'production' && <RedactedAnalytics />}
       </body>
     </html>
   )
