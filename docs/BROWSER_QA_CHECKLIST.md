@@ -36,7 +36,7 @@ was ever fixed; it was routed around.
 cd backend && python -m scripts.seed_qa_org
 
 # 2. a build to look at. `next dev` is NOT a valid QA target — see below.
-cd resume-hero-section && pnpm build && pnpm start
+cd frontend && pnpm build && pnpm start
 
 # 3. every screen, both themes, both widths, into .qa-shots/
 node tests/visual/capture.mjs --out .qa-shots --tag rc \

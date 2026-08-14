@@ -113,7 +113,7 @@ class TestPlanBindingCheck:
 
 class TestPublishedPrices:
     def test_the_published_figures_match_the_pricing_page(self):
-        """These are the numbers `resume-hero-section/lib/pricing.ts` shows, in
+        """These are the numbers `frontend/lib/pricing.ts` shows, in
         minor units. If the page changes, this must change with it — and then a
         NEW Razorpay plan must be created, because plans are immutable."""
         assert plans.PUBLISHED_PRICE["plus"].minor_units == 99_900

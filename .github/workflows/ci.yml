@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: resume-hero-section
+        working-directory: frontend
     steps:
       - uses: actions/checkout@v5
 
@@ -45,7 +45,7 @@ jobs:
         with:
           node-version: '24.15.0'
           cache: pnpm
-          cache-dependency-path: resume-hero-section/pnpm-lock.yaml
+          cache-dependency-path: frontend/pnpm-lock.yaml
 
       # --frozen-lockfile turns a stale lockfile into a build failure instead of
       # a silently different dependency tree than the one that was tested.
@@ -183,7 +183,7 @@ jobs:
       - name: Build web image
         uses: docker/build-push-action@v6
         with:
-          context: ./resume-hero-section
+          context: ./frontend
           push: false
           load: true
           tags: hirelens-web:ci

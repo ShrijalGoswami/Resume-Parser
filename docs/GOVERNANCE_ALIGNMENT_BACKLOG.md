@@ -136,7 +136,7 @@ Bible Ch. 2 (Resume Screening rejected as a component category) · Bible Ch. 11�
 |---|---|
 | **Backlog ID** | GAB-B2 |
 | **Severity** | Major |
-| **Repository Path** | `resume-hero-section/components/hero/hero-section.tsx` (line 83) |
+| **Repository Path** | `frontend/components/hero/hero-section.tsx` (line 83) |
 | **Estimated Effort** | S |
 | **Dependencies** | None |
 | **Owner** | Design Owner · review with Marketing Owner |
@@ -165,7 +165,7 @@ Remove the badge. If an eyebrow element is wanted in that position, it names the
 |---|---|
 | **Backlog ID** | GAB-C1 |
 | **Severity** | Critical |
-| **Repository Path** | `resume-hero-section/app/(legacy)/layout.tsx` (lines 16–18) |
+| **Repository Path** | `frontend/app/(legacy)/layout.tsx` (lines 16–18) |
 | **Estimated Effort** | S for `noindex` · M if copy is rewritten |
 | **Dependencies** | **Blocked on a decision** — see Required Action |
 | **Owner** | Design Ops · with Engineering Owner |
@@ -241,7 +241,7 @@ failing test, and the whole backend suite stayed green across the fix because
 | | |
 |---|---|
 | `backend/tests/test_export_attribution.py` | renders both PDFs and scans the page text **and** the document metadata |
-| `resume-hero-section/tests/export-attribution.test.ts` | captures the interview pack's HTML and scans it, including the degraded branch |
+| `frontend/tests/export-attribution.test.ts` | captures the interview pack's HTML and scans it, including the degraded branch |
 
 They test **rendered artifacts, not the repository.** `Groq` is referenced
 legitimately in the adapter, `GROQ_API_KEY`, the model registry, ADR-002, these
@@ -414,7 +414,7 @@ Recorded so a future audit does not re-raise them. **These are findings, not ove
 |---|---|
 | **Backlog ID** | GAB-X1 |
 | **Severity** | — |
-| **Repository Path** | `resume-hero-section/components/hero/upload-dialog.tsx` (line 134) |
+| **Repository Path** | `frontend/components/hero/upload-dialog.tsx` (line 134) |
 | **Owner** | Design Owner |
 | **Status** | **Closed — No Action** |
 

@@ -94,7 +94,7 @@ cp .env.example .env.local                         # fill in
 uvicorn app.main:app --reload
 
 # Frontend
-cd resume-hero-section
+cd frontend
 pnpm install --frozen-lockfile
 cp .env.example .env.local                         # fill in
 pnpm dev
@@ -118,7 +118,7 @@ Everything below must pass. CI runs all of it
 (`.github/workflows/ci.yml`); run it locally first.
 
 ```bash
-# Frontend — from resume-hero-section/
+# Frontend — from frontend/
 pnpm typecheck        # 0 errors. Strict mode; no `any` escape hatches
 pnpm lint             # 0 problems
 pnpm test             # 101 tests across 14 files

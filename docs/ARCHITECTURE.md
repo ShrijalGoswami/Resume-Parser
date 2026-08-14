@@ -78,7 +78,7 @@ graph TD
 
 ## Layer by layer
 
-### 1. Frontend — `resume-hero-section/`
+### 1. Frontend — `frontend/`
 
 Next.js 16 App Router, React 19, Tailwind v4, Radix primitives. The root layout is
 a minimal document skeleton; each **route group** supplies its own layout,
@@ -365,8 +365,8 @@ of what was decided, so it cannot be rewritten after the fact.
 
 | Component | Host | Entry |
 |---|---|---|
-| Frontend | Vercel | Next.js (`resume-hero-section/`) |
-| Frontend (portable) | any container host | `resume-hero-section/Dockerfile` |
+| Frontend | Vercel | Next.js (`frontend/`) |
+| Frontend (portable) | any container host | `frontend/Dockerfile` |
 | Backend | Render | `uvicorn app.main:app` via `render.yaml` |
 | Backend (portable) | any container host | `backend/Dockerfile` |
 | Database · Auth · Storage | Supabase | managed |

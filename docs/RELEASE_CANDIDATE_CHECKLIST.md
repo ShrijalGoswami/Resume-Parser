@@ -29,7 +29,7 @@ abandoned run. Do not tick anything on someone else's behalf.
 | `docs/HANDOFF.md` §11 | Known technical debt, no-lock decisions |
 | `docs/ROLLBACK.md` | Per-plane rollback runbook |
 | `docs/MONETIZATION_ARCHITECTURE.md` | The design being validated |
-| `resume-hero-section/lib/pricing.ts` | The prices §6 checks the page against |
+| `frontend/lib/pricing.ts` | The prices §6 checks the page against |
 | `docs/LAUNCH_CHECKLIST.md` | Broader V4 launch items, not monetization-specific |
 
 ---
@@ -374,7 +374,7 @@ The single most important check in this section.
 
 ### 6A.1 The blocker — do this before anything else in this section
 
-- [ ] **`resume-hero-section/lib/legal.ts` is filled in.** Registered entity
+- [ ] **`frontend/lib/legal.ts` is filled in.** Registered entity
       name, registration number, registered office, governing jurisdiction, tax
       registration, and a named Grievance Officer (DPDP Act 2023 §13 requires a
       named person, not a shared alias)

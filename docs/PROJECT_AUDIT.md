@@ -79,8 +79,8 @@ remove the `deployment/` reference, and bump `APP_VERSION`/gate it when V4 is cu
 ## Phase 2 — Environment variables
 
 Sources inspected: `backend/.env.example`, `backend/.env.local` (present, keys
-only — values redacted), `resume-hero-section/.env.example`,
-`resume-hero-section/.env.local` (present). No Vercel/Supabase dashboards are
+only — values redacted), `frontend/.env.example`,
+`frontend/.env.local` (present). No Vercel/Supabase dashboards are
 reachable from this environment; those columns reflect what the code expects.
 
 | Variable | Required | Present (local) | Used by | Description | Missing? |
@@ -387,7 +387,7 @@ no domain/monitoring/tests.
 1. Set `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
    `SUPABASE_JWT_SECRET` in `backend/.env.local` (+ Render).
 2. Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` in
-   `resume-hero-section/.env.local` (+ Vercel).
+   `frontend/.env.local` (+ Vercel).
 3. Apply `supabase/migrations/0001–0004` to a Supabase project.
 4. (When needed) `RESEND_API_KEY`, Razorpay keys — not yet required.
 

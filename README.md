@@ -198,7 +198,7 @@ HireLens/
 │   │   └── services/              # Business logic, persistence, storage, reports
 │   └── requirements.txt           # Python dependencies
 │
-├── resume-hero-section/           # Next.js 16 SaaS Frontend
+├── frontend/                      # Next.js 16 SaaS Frontend
 │   ├── app/                       # App Router (login, dashboard, campaigns, …)
 │   ├── components/                # Radix & Shadcn UI + auth/app components
 │   ├── lib/supabase/              # Browser + SSR Supabase clients (V4)
@@ -241,7 +241,7 @@ The **full reference** (every route, auth, request, response, errors) is in [`do
 ### Frontend (Vercel)
 The Next.js application is optimized for zero-config Vercel deployment.
 1. Connect your GitHub repository to Vercel.
-2. Select the `resume-hero-section` root directory.
+2. Select the `frontend` root directory.
 3. Set the environment variable:
    ```env
    NEXT_PUBLIC_API_URL=https://your-backend-url.onrender.com

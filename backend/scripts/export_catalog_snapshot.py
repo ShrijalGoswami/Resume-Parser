@@ -29,7 +29,7 @@ from app.enterprise.catalog import RULESET_V1, catalog_snapshot
 #: backend/scripts/ -> repo root -> the frontend entitlements module.
 ARTIFACT = (
     Path(__file__).resolve().parents[2]
-    / "resume-hero-section"
+    / "frontend"
     / "components"
     / "hirelens"
     / "lib"

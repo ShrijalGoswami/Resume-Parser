@@ -35,7 +35,7 @@ services:
 
   web:
     build:
-      context: ./resume-hero-section
+      context: ./frontend
       args:
         # Build-time, not runtime — these are inlined into the client bundle.
         # NEXT_PUBLIC_API_URL is resolved by the BROWSER, so it must be the

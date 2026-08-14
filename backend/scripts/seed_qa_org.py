@@ -67,7 +67,7 @@ QA_COMPANY = "Northwind Talent"
 
 ENV_CANDIDATES = [
     Path(__file__).resolve().parents[1] / ".env.local",
-    Path(__file__).resolve().parents[2] / "resume-hero-section" / ".env.local",
+    Path(__file__).resolve().parents[2] / "frontend" / ".env.local",
 ]
 
 

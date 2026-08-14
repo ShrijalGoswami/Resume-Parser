@@ -334,7 +334,7 @@ decision.**
 # backend (from repo root)
 cd backend && ../venv/Scripts/python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 # frontend
-cd resume-hero-section && pnpm dev --port 3000
+cd frontend && pnpm dev --port 3000
 ```
 Port 3000 sometimes retains a zombie `node` after a crash — check with
 `netstat -ano | grep :3000` and `taskkill //PID <pid> //F` before starting.
@@ -436,7 +436,7 @@ the **user's** deliberate deletions, unrelated to this work. Leave them alone.
 
 ```bash
 # Frontend
-cd resume-hero-section && npx next dev            # :3000
+cd frontend && npx next dev            # :3000
 
 # Backend  ← forgetting this costs an hour
 cd backend && .venv/Scripts/python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
@@ -968,7 +968,7 @@ work. `RazorpaySettings.__repr__` redacts, so a secret cannot reach a traceback.
 **The two plans must be created in Razorpay before Step 4.** Plans are
 **immutable** — "once a Plan is created, you cannot edit or delete it" — so a
 price change means a new plan object and a rebind, never an edit. Amounts must
-match `resume-hero-section/lib/pricing.ts`: ₹999 and ₹2,499, **GST-inclusive**
+match `frontend/lib/pricing.ts`: ₹999 and ₹2,499, **GST-inclusive**
 (the advertised price is what the customer pays, and as of 4 Aug the pricing
 page says so — see §8A).
 
@@ -1112,7 +1112,7 @@ no page; `#security` existed only on the homepage and so resolved to nothing fro
 was not even hyperlinked — you cannot bind anyone to terms you have not
 published.
 
-> ### ⚠️ `resume-hero-section/lib/legal.ts` MUST BE FILLED IN
+> ### ⚠️ `frontend/lib/legal.ts` MUST BE FILLED IN
 >
 > The pages carry a **"Draft — not yet in force"** banner naming exactly what is
 > missing, and will keep carrying it until someone supplies facts no codebase can
@@ -1666,7 +1666,7 @@ So this one is too:
 | Guard | Covers |
 |---|---|
 | `backend/tests/test_export_attribution.py` (11) | both PDFs — rendered page text **and** document metadata |
-| `resume-hero-section/tests/export-attribution.test.ts` (5) | the interview pack's HTML, including the degraded branch |
+| `frontend/tests/export-attribution.test.ts` (5) | the interview pack's HTML, including the degraded branch |
 
 **They guard rendered artifacts, not the repository.** `Groq` is referenced
 legitimately in the provider adapter, `GROQ_API_KEY`, the model registry,

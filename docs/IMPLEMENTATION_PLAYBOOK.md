@@ -60,7 +60,7 @@ This handbook governs the frontend implementation of HireLens V4: the marketing 
 
 ### Folder structure (this exists — extend it, don't reorganize)
 ```
-resume-hero-section/
+frontend/
 ├── app/
 │   ├── layout.tsx                 # root; loads fonts, providers
 │   ├── (legacy)/                  # FROZEN v1.0 — never touch

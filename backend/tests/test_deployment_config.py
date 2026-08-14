@@ -24,7 +24,7 @@ from app.core.config import Settings
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 REPO_DIR = BACKEND_DIR.parent
-FRONTEND_DIR = REPO_DIR / "resume-hero-section"
+FRONTEND_DIR = REPO_DIR / "frontend"
 
 SETTINGS_FIELDS = set(Settings.model_fields)
 

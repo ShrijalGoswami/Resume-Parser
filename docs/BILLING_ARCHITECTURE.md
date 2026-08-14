@@ -15,7 +15,7 @@ implementation. Razorpay is now the only provider for V1.
 Companion documents: [`MONETIZATION_ARCHITECTURE.md`](./MONETIZATION_ARCHITECTURE.md)
 (what plans include and how they are enforced) · [`HANDOFF.md`](./HANDOFF.md) §12
 (current state) · [`RELEASE_CANDIDATE_CHECKLIST.md`](./RELEASE_CANDIDATE_CHECKLIST.md)
-(the gate this must pass) · `resume-hero-section/lib/pricing.ts` (the prices).
+(the gate this must pass) · `frontend/lib/pricing.ts` (the prices).
 
 > **Verify before building.** Razorpay's mandate ceilings, supported recurring
 > methods and subscription semantics are set by RBI/NPCI policy and change

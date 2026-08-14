@@ -86,5 +86,5 @@ self-service over the caller's own record, scoped by RLS.
 2. Grant it in `ROLE_PERMISSIONS`.
 3. Add a `RequireX = Depends(require_permission(Permission.X))` in `enterprise/deps.py`.
 4. Attach it to routes via `dependencies=[RequireX]`.
-5. Mirror the string in `resume-hero-section/components/hirelens/settings/permissions.ts`
+5. Mirror the string in `frontend/components/hirelens/settings/permissions.ts`
    only if the UI needs to hide a control.

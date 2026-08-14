@@ -52,7 +52,7 @@ PLAN_ENV_VARS: dict[str, str] = {
 }
 
 #: What the pricing page publishes, in minor units. The single source of truth
-#: for the customer-facing figure is `resume-hero-section/lib/pricing.ts`;
+#: for the customer-facing figure is `frontend/lib/pricing.ts`;
 #: this is the copy the boot check compares the gateway against.
 #: GST-INCLUSIVE: the advertised price IS the amount charged.
 PUBLISHED_PRICE: dict[str, Money] = {

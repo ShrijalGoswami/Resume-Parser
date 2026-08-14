@@ -69,7 +69,7 @@ graph LR
 Resume-Parser/
 ├── backend/                 # FastAPI service (AI pipeline + persistence API)
 │   └── app/{core,db,llm,nlp,parser,repositories,routes,schemas,services}
-├── resume-hero-section/     # Next.js 16 frontend (App Router)
+├── frontend/                # Next.js 16 frontend (App Router)
 │   └── {app,components,lib,services,types}
 ├── supabase/migrations/     # SQL: schema, RLS, storage, auth triggers
 ├── docs/                    # ← you are here

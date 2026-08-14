@@ -132,7 +132,7 @@ pip freeze > requirements.lock.txt       # only once it is green
    `sync: false`, so Render prompts for each at apply time.
 4. **Verify the backend before touching the frontend** — §6.
 5. **Frontend.** Import the repo on Vercel with the project root set to
-   `resume-hero-section`; set the three `NEXT_PUBLIC_*` vars; deploy.
+   `frontend`; set the three `NEXT_PUBLIC_*` vars; deploy.
 6. **Smoke test** — §7. Do not announce until it passes.
 7. **Take a backup and verify it** (DR §3.2). The first backup happens *after* the
    first successful deploy, not before.
