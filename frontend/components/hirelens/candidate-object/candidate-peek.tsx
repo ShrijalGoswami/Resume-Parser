@@ -79,7 +79,7 @@ export function CandidatePeek({
         window.history.replaceState(null, '', url.pathname + url.search)
       }
     }
-    router.push(`/roles/${roleId}/candidates/${candidateId}`)
+    router.push(`/jobs/${roleId}/candidates/${candidateId}`)
   }, [roleId, candidateId, router])
 
   useCandidateShortcuts(

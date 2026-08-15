@@ -31,12 +31,12 @@ import { cn } from '@/lib/utils'
  * provider, command registry and checkout provider would all be mounted to
  * render two paragraphs and a link. This stays a server component.
  *
- * THE ACTION POINTS AT `/`, NOT `/home`. This page is reached by authenticated
+ * THE ACTION POINTS AT `/`, NOT `/today`. This page is reached by authenticated
  * and anonymous visitors alike and cannot tell them apart — reading the session
  * here would put a Supabase round trip on every stray URL, including the ones
  * crawlers generate. `/` is public, valid for both, and an authenticated user
  * landing there is one click from the product; an anonymous user sent to
- * `/home` would have been bounced to a sign-in form instead, which answers a
+ * `/today` would have been bounced to a sign-in form instead, which answers a
  * mistyped address with a demand for credentials.
  *
  * Deliberately NOT an error state, matching the group-level 404: a stale link

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { TalentScreen } from '@/components/hirelens/talent/talent-screen'
 
-export const metadata: Metadata = { title: 'Talent' }
+export const metadata: Metadata = { title: 'Candidates' }
 
 export default async function Page({
   searchParams,

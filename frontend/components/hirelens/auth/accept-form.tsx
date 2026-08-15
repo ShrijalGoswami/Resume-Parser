@@ -124,7 +124,7 @@ export function AcceptInviteForm() {
           size="lg"
           className="w-full"
           onClick={() => {
-            router.replace('/home')
+            router.replace('/today')
             router.refresh()
           }}
         >

@@ -4,9 +4,9 @@ import * as React from 'react'
 import Link from 'next/link'
 import { ClipboardList } from 'lucide-react'
 import { AppShell } from '../shell'
+import { RequireSession } from '../auth/require-session'
 import { stageLabel } from '../workspace/stages'
 import { PageHeader } from '../shell/page-header'
-import { useSession } from '../lib/api/use-session'
 import { useProfile, useActiveRoles } from '../lib/api/hooks'
 import { useQuery } from '@tanstack/react-query'
 import { listCampaigns } from '@/services/campaigns-api'
@@ -26,18 +26,6 @@ import type { Campaign } from '@/types/campaign'
 
 const INTERVIEW_CRUMBS = [{ label: 'Interviews' }]
 
-function Notice({ title, showSignIn }: { title: string; showSignIn?: boolean }) {
-  return (
-    <div className="mx-auto flex max-w-xl flex-col items-center gap-5 px-6 py-24 text-center">
-      <h1 className="hl-display-md">{title}</h1>
-      {showSignIn ? (
-        <Button variant="primary" asChild>
-          <Link href="/auth/login">Sign in</Link>
-        </Button>
-      ) : null}
-    </div>
-  )
-}
 
 /**
  * Interview workbench.
@@ -56,30 +44,11 @@ function Notice({ title, showSignIn }: { title: string; showSignIn?: boolean }) 
  * the same component the legacy candidate page mounts, unchanged.
  */
 export function InterviewsScreen({ initial }: { initial?: { role?: string; candidate?: string } }) {
-  const { session, loading, configured } = useSession()
-
-  if (!configured) {
-    return (
-      <AppShell breadcrumbs={INTERVIEW_CRUMBS}>
-        <Notice title="Sign-in isn’t configured" />
-      </AppShell>
-    )
-  }
-  if (loading) {
-    return (
-      <AppShell breadcrumbs={INTERVIEW_CRUMBS}>
-        <LoadingScreen />
-      </AppShell>
-    )
-  }
-  if (!session) {
-    return (
-      <AppShell breadcrumbs={INTERVIEW_CRUMBS}>
-        <Notice title="Sign in to continue" showSignIn />
-      </AppShell>
-    )
-  }
-  return <AuthedInterviews initial={initial} />
+  return (
+    <RequireSession breadcrumbs={INTERVIEW_CRUMBS}>
+      <AuthedInterviews initial={initial} />
+    </RequireSession>
+  )
 }
 
 const candidateColumns: DataTableColumn<CandidateRow>[] = [
@@ -203,7 +172,10 @@ function NoActiveRoles() {
       }
       action={
         <Button variant="primary" asChild>
-          <Link href="/roles">{total === 0 ? 'Go to Roles' : 'Review your roles'}</Link>
+          {/* The destination is named for the surface it reaches (Jobs); the
+              copy above still says "role" for the thing itself, which is the
+              word the product uses everywhere for a single opening. */}
+          <Link href="/jobs">{total === 0 ? 'Go to Jobs' : 'Review your jobs'}</Link>
         </Button>
       }
     />

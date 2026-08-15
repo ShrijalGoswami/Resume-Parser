@@ -141,7 +141,7 @@ await settle(700)
 // ── 4. Roles: card hover ────────────────────────────────────────────────────
 await page.goto(`${BASE}/roles`, { waitUntil: 'domcontentloaded' })
 await settle(2500)
-await page.locator('a[href^="/roles/"]').first().hover()
+await page.locator('a[href^="/jobs/"]').first().hover()
 await settle(600)
 await shot('role-card-hover', 'role card hover — lift/elevation change')
 

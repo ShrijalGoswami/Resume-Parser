@@ -35,12 +35,12 @@ vi.mock('../components/hirelens/lib/api/org-context', () => ({
 }))
 
 vi.mock('next/navigation', () => ({
-  usePathname: () => '/home',
+  usePathname: () => '/today',
   useRouter: () => ({ push: () => {}, replace: () => {}, prefetch: () => {}, back: () => {} }),
 }))
 
 import { LeftNav } from '../components/hirelens/shell/left-nav'
-import { navGroups } from '../components/hirelens/shell/nav-config'
+import { primaryNav } from '../components/hirelens/shell/nav-config'
 import { ShellProvider } from '../components/hirelens/shell/shell-context'
 import { TooltipProvider } from '../components/hirelens/ui/tooltip'
 import { QuotaMeter } from '../components/hirelens/entitlements'
@@ -113,15 +113,20 @@ describe('navigation: permission hides, entitlement locks', () => {
     advanced_analytics: { enabled: false, required_plan: 'pro', label: 'Advanced Analytics' },
   }
 
+  // These assert the rule through REPORTS, not Ask. Ask carried the same
+  // permission+entitlement pairing until Phase 9.1 moved it off the rail into
+  // the command palette, so it is no longer a rendered rail link to inspect.
+  // Reports is: `usage.view` hides it, `advanced_analytics` locks it — the same
+  // two rules, still on screen, so the behaviour under test is unchanged.
   it('keeps a locked destination visible and navigable', () => {
     // A hidden feature sells nothing. The customer must be able to see that
-    // Ask exists, and reach the surface that explains what it costs.
+    // Reports exists, and reach the surface that explains what it costs.
     ready({ entitlements: lockedCopilot })
     renderNav()
-    const ask = screen.getByRole('link', { name: /Ask/ })
-    expect(ask).toBeInTheDocument()
-    expect(ask).toHaveAttribute('href', '/ask')
-    expect(ask).toHaveAttribute('data-locked', 'true')
+    const reports = screen.getByRole('link', { name: /Reports/ })
+    expect(reports).toBeInTheDocument()
+    expect(reports).toHaveAttribute('href', '/reports')
+    expect(reports).toHaveAttribute('data-locked', 'true')
   })
 
   it('announces the lock rather than relying on a glyph', () => {
@@ -131,10 +136,11 @@ describe('navigation: permission hides, entitlement locks', () => {
   })
 
   it('still HIDES a destination the role cannot use', () => {
-    // The opposite rule, unchanged: no amount of money gets a viewer into Ask.
+    // The opposite rule, unchanged: no amount of money gets a viewer into
+    // Reports.
     ready({ permissions: [], entitlements: lockedCopilot })
     renderNav()
-    expect(screen.queryByRole('link', { name: /Ask/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Reports/ })).not.toBeInTheDocument()
   })
 
   it('does not lock anything for an entitled organization', () => {
@@ -146,7 +152,7 @@ describe('navigation: permission hides, entitlement locks', () => {
       },
     })
     renderNav()
-    expect(screen.getByRole('link', { name: /Ask/ })).not.toHaveAttribute('data-locked')
+    expect(screen.getByRole('link', { name: /Reports/ })).not.toHaveAttribute('data-locked')
   })
 
   it('does not lock a founding organization', () => {
@@ -157,7 +163,7 @@ describe('navigation: permission hides, entitlement locks', () => {
       },
     })
     renderNav()
-    expect(screen.getByRole('link', { name: /Ask/ })).not.toHaveAttribute('data-locked')
+    expect(screen.getByRole('link', { name: /Reports/ })).not.toHaveAttribute('data-locked')
   })
 
   it('locks nothing while the context is loading or failed', () => {
@@ -167,13 +173,15 @@ describe('navigation: permission hides, entitlement locks', () => {
       cleanup()
       ctx.state = state
       renderNav()
-      expect(screen.getByRole('link', { name: /Ask/ })).not.toHaveAttribute('data-locked')
+      expect(screen.getByRole('link', { name: /Reports/ })).not.toHaveAttribute('data-locked')
     }
   })
 
   it('every nav entitlement key exists in the catalog', async () => {
     const { FEATURE_KEYS } = await import('../components/hirelens/lib/entitlements/catalog')
-    const keys = navGroups.flatMap((g) => g.items.map((i) => i.entitlement)).filter(Boolean)
+    // `primaryNav` is rail + palette-only destinations, so a feature key on
+    // something that left the rail is still audited against the catalog.
+    const keys = primaryNav.map((i) => i.entitlement).filter(Boolean)
     expect(keys.length).toBeGreaterThan(0)
     for (const key of keys) {
       expect(FEATURE_KEYS, `nav references unknown feature "${key}"`).toContain(key)

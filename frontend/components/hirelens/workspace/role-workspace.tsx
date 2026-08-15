@@ -1,10 +1,9 @@
 'use client'
 
 import * as React from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AppShell } from '../shell'
-import { useSession } from '../lib/api/use-session'
+import { RequireSession } from '../auth/require-session'
 import { useProfile } from '../lib/api/hooks'
 import {
   useCampaign,
@@ -18,7 +17,6 @@ import { PipelineLens } from './pipeline-lens'
 import { TriageLens } from './triage/triage-lens'
 import { AnalyticsLens } from './analytics-lens'
 import { ActivityLens } from './activity-lens'
-import { DeferredLens } from './deferred-lens'
 import { AddCandidatesDialog } from './add-candidates-dialog'
 import { ComparePanel } from './compare-panel'
 import { CandidatePeek } from '../candidate-object'
@@ -26,21 +24,8 @@ import { RoleFormDialog } from '../roles/role-form-dialog'
 import { TypedConfirmDialog } from '../settings/typed-confirm-dialog'
 import { LoadingScreen } from '../states/loading'
 import { ErrorState } from '../states/error-state'
-import { Button } from '../ui/button'
 import { toast } from '../ui/use-toast'
 
-function Notice({ title, showSignIn }: { title: string; showSignIn?: boolean }) {
-  return (
-    <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-6 py-24 text-center">
-      <h1 className="hl-display">{title}</h1>
-      {showSignIn ? (
-        <Button variant="primary" asChild>
-          <Link href="/auth/login">Sign in</Link>
-        </Button>
-      ) : null}
-    </div>
-  )
-}
 
 /** Role Workspace (Design Bible §7). Lens comes from the `?lens=` param (server). */
 export function RoleWorkspace({
@@ -52,30 +37,11 @@ export function RoleWorkspace({
   lens: string
   initialCandidateId: string | null
 }) {
-  const { session, loading, configured } = useSession()
-
-  if (!configured) {
-    return (
-      <AppShell title="Role">
-        <Notice title="Sign-in isn’t configured" />
-      </AppShell>
-    )
-  }
-  if (loading) {
-    return (
-      <AppShell title="Role">
-        <LoadingScreen />
-      </AppShell>
-    )
-  }
-  if (!session) {
-    return (
-      <AppShell title="Role">
-        <Notice title="Sign in to continue" showSignIn />
-      </AppShell>
-    )
-  }
-  return <AuthedWorkspace roleId={roleId} lens={lens} initialCandidateId={initialCandidateId} />
+  return (
+    <RequireSession title="Role">
+      <AuthedWorkspace roleId={roleId} lens={lens} initialCandidateId={initialCandidateId} />
+    </RequireSession>
+  )
 }
 
 /** Current path with/without the `?candidate=` param (no navigation). */
@@ -164,7 +130,7 @@ function AuthedWorkspace({
             title: 'Role archived',
             action: { label: 'Undo', onClick: () => updateRole.mutate({ status: previous }) },
           })
-          router.push('/roles')
+          router.push('/jobs')
         },
         onError: (err) =>
           toast({
@@ -180,7 +146,7 @@ function AuthedWorkspace({
     deleteRole.mutate(roleId, {
       onSuccess: () => {
         toast({ title: 'Role deleted' })
-        router.replace('/roles')
+        router.replace('/jobs')
       },
       onError: (err) =>
         toast({
@@ -215,7 +181,7 @@ function AuthedWorkspace({
 
   const crumbs =
     lens === 'triage'
-      ? [{ label: campaign.data.title, href: `/roles/${roleId}` }, { label: 'Triage' }]
+      ? [{ label: campaign.data.title, href: `/jobs/${roleId}` }, { label: 'Triage' }]
       : [{ label: campaign.data.title }]
 
   return (
@@ -254,10 +220,6 @@ function AuthedWorkspace({
           <AnalyticsLens roleId={roleId} />
         ) : lens === 'activity' ? (
           <ActivityLens roleId={roleId} />
-        ) : lens === 'forecast' ? (
-          <DeferredLens kind="forecast" />
-        ) : lens === 'report' ? (
-          <DeferredLens kind="report" />
         ) : (
           <PipelineLens
             roleId={roleId}

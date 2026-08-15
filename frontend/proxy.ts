@@ -4,7 +4,10 @@
  * pure function (`resolveMiddlewareAction` in lib/auth-routing) so the security
  * logic is unit-tested in isolation; this file only wires it to Supabase + Next.
  *
- * Legacy protected routes → /login; V4 (hirelens) protected routes → /auth/login.
+ * ONE app, one auth surface: unauthenticated hits on a protected route →
+ * /auth/login; already-authenticated hits on an entry auth page → /today. The
+ * legacy group and its /login page are gone (Phase 9.1); /login and /signup are
+ * now redirects declared in next.config.mjs, which never reach this guard.
  * If Supabase env vars are absent (stateless mode), this is a no-op so the
  * existing public app keeps working.
  *
@@ -149,24 +152,24 @@ export const config = {
      * guards everything else, and the product routes are unchanged — this
      * removes work, not protection.
      */
-    '/home/:path*',
-    '/roles/:path*',
-    '/talent/:path*',
+    '/today/:path*',
+    '/jobs/:path*',
+    '/candidates/:path*',
+    '/decisions/:path*',
     '/interviews/:path*',
     '/ask/:path*',
-    '/analytics/:path*',
-    '/ledger/:path*',
-    '/learning/:path*',
+    '/reports/:path*',
+    '/ai-audit/:path*',
     '/notifications/:path*',
     '/settings/:path*',
-    '/foundations/:path*',
     // Every `/auth/*` page, not only the two that bounce a signed-in user:
     // callback, reset-password, accept-invite and forgot-password all run
     // mid-session and need the refreshed cookie.
     '/auth/:path*',
-    // The frozen legacy entry points.
-    '/login',
-    '/signup',
+    // `/login` and `/signup` are gone with the legacy group (Phase 9.1). They
+    // are now permanent redirects into `/auth/*`, and a redirect has no session
+    // to refresh, so matching them here would buy an auth round trip for a
+    // response that never renders.
   ],
 };
 

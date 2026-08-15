@@ -44,7 +44,7 @@ describe('the protected product surface is explicitly noindex', () => {
     // are expected to be present — this asserts the header did not arrive as a
     // REPLACEMENT for the crawl hint.
     for (const path of V4_PROTECTED) {
-      expect(DISALLOWED_PATHS).toContain(path === '/home' ? '/home' : path)
+      expect(DISALLOWED_PATHS).toContain(path === '/today' ? '/today' : path)
     }
   })
 
@@ -77,11 +77,11 @@ describe('application-wide 404', () => {
   })
 
   it('sends the visitor somewhere valid whether or not they are signed in', () => {
-    // `/home` would bounce an anonymous visitor to a sign-in form — answering a
+    // `/today` would bounce an anonymous visitor to a sign-in form — answering a
     // mistyped address with a demand for credentials. `/` is public and valid
     // for both.
     expect(notFound).toContain('href="/"')
-    expect(notFound).not.toContain('href="/home"')
+    expect(notFound).not.toContain('href="/today"')
   })
 
   it('is itself noindex', () => {

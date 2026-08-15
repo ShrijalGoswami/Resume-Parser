@@ -172,19 +172,19 @@ const nextConfig = {
     return [
       // Search → Talent (Talent is a superset: semantic search + similar +
       // collections + compare; it is the app's active discovery surface).
-      { source: '/search', destination: '/talent', permanent: false },
+      { source: '/search', destination: '/candidates', permanent: false },
 
       // Campaigns → Roles (same backend campaign IDs; Role Workspace is a superset
       // of the legacy campaign detail). Static/specific sources first.
-      { source: '/campaigns/new', destination: '/roles?new=1', permanent: false },
+      { source: '/campaigns/new', destination: '/jobs?new=1', permanent: false },
       {
         source: '/campaigns/:id/candidates/:candidateId',
-        destination: '/roles/:id/candidates/:candidateId',
+        destination: '/jobs/:id/candidates/:candidateId',
         permanent: false,
       },
-      { source: '/campaigns/:id/compare', destination: '/roles/:id?compare=1', permanent: false },
-      { source: '/campaigns/:id', destination: '/roles/:id', permanent: false },
-      { source: '/campaigns', destination: '/roles', permanent: false },
+      { source: '/campaigns/:id/compare', destination: '/jobs/:id?compare=1', permanent: false },
+      { source: '/campaigns/:id', destination: '/jobs/:id', permanent: false },
+      { source: '/campaigns', destination: '/jobs', permanent: false },
 
       // Integrations → Settings ▸ Integrations. The V4 Settings surface already
       // ships the full Integration Hub section (providers, connections, health,
@@ -196,10 +196,70 @@ const nextConfig = {
       // & roles, workspaces, billing, API keys, feature flags, usage & audit.
       { source: '/admin', destination: '/settings/members', permanent: false },
 
-      // Dashboard → Inbox. The legacy dashboard was a campaign list plus
-      // navigation tiles; campaigns are Roles (already redirected above) and the
-      // V4 landing surface is the Decision Inbox.
-      { source: '/dashboard', destination: '/home', permanent: false },
+      // Dashboard → Today. The legacy dashboard was a campaign list plus
+      // navigation tiles; campaigns are Jobs (already redirected above) and the
+      // landing surface is Today.
+      { source: '/dashboard', destination: '/today', permanent: false },
+
+      // ── Phase 9.1 · IA rename ───────────────────────────────────────────────
+      // The recruiter-facing vocabulary moved to Today · Jobs · Candidates ·
+      // Reports · Decisions, and the URLs moved with the labels rather than
+      // leaving a second set of names only the address bar knows. Every prior
+      // path is kept working here; nothing 404s.
+      //
+      // `permanent: false` throughout, matching the rule above: a 308 is cached
+      // by the browser indefinitely, and these are one product cycle old.
+      //
+      // NOTE the backend is untouched. `campaigns` is still the entity, the API
+      // is still `/campaigns/...`, and `/analytics/overview` is still the
+      // endpoint behind the screen now called Reports.
+      { source: '/home', destination: '/today', permanent: false },
+      { source: '/home/:path*', destination: '/today/:path*', permanent: false },
+
+      // Roles → Jobs. Deeper sources first: the nested `decisions` segment was
+      // renamed to `recommendations` because it holds AI recommendation memos,
+      // and "Decisions" now means hiring outcomes.
+      {
+        source: '/roles/:id/decisions/:decisionId',
+        destination: '/jobs/:id/recommendations/:decisionId',
+        permanent: false,
+      },
+      {
+        source: '/roles/:id/candidates/:candidateId',
+        destination: '/jobs/:id/candidates/:candidateId',
+        permanent: false,
+      },
+      { source: '/roles/:id', destination: '/jobs/:id', permanent: false },
+      { source: '/roles', destination: '/jobs', permanent: false },
+      // A role URL that survived the earlier campaigns→roles redirect.
+      {
+        source: '/jobs/:id/decisions/:decisionId',
+        destination: '/jobs/:id/recommendations/:decisionId',
+        permanent: false,
+      },
+
+      { source: '/talent', destination: '/candidates', permanent: false },
+      { source: '/talent/:path*', destination: '/candidates/:path*', permanent: false },
+
+      { source: '/analytics', destination: '/reports', permanent: false },
+      { source: '/analytics/:path*', destination: '/reports/:path*', permanent: false },
+
+      // Ledger → AI Audit. The surface is the immutable record of AI
+      // recommendations that reached a call; it is NOT the hiring-decision
+      // record, and it stopped borrowing that word.
+      { source: '/ledger', destination: '/ai-audit', permanent: false },
+      { source: '/ledger/:path*', destination: '/ai-audit/:path*', permanent: false },
+
+      // Learning was removed: it had no backend and could not be delivered, so
+      // it was a permanent dead end in the rail. Send it to Today rather than
+      // 404 an existing bookmark.
+      { source: '/learning', destination: '/today', permanent: false },
+
+      // The legacy auth surface is gone. It ran a different design system and
+      // announced itself as a consumer résumé product; `/auth/*` is the only
+      // sign-in now.
+      { source: '/login', destination: '/auth/login', permanent: false },
+      { source: '/signup', destination: '/auth/signup', permanent: false },
     ]
   },
 }

@@ -7,8 +7,8 @@ import { HireLensProviders } from '@/components/hirelens/shell/providers'
  * scope, fonts, theme, toasts) but renders NO app shell — auth is a full-screen
  * Split-Editorial surface.
  *
- * Coexistence: the frozen legacy app owns `/login`, so V4 auth lives under
- * `/auth/*` (mirrors the V3 `/home` pattern).
+ * The legacy app and its `/login` route are gone; `/auth/*` is now the only
+ * sign-in surface, and `/login` redirects here.
  */
 export const metadata: Metadata = {
   title: { default: 'Sign in', template: '%s · HireLens' },

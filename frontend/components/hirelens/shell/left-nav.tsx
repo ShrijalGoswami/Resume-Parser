@@ -270,7 +270,10 @@ export function LeftNav({ account }: LeftNavProps) {
         <WorkspaceSwitcher collapsed={collapsed} />
       </div>
 
-      {/* Grouped navigation (WORKSPACE · INTELLIGENCE). */}
+      {/* Navigation. Phase 9.1 collapsed the two labelled groups into one
+          unlabelled list of five, so no heading renders — but the grouped
+          shape is kept so a future group costs a config change, not a
+          rewrite. */}
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-2 pt-3">
         {visibleGroups.map((group) => (
           <div key={group.label} className="flex flex-col gap-0.5">
@@ -278,7 +281,7 @@ export function LeftNav({ account }: LeftNavProps) {
                 mono in nav is the single strongest "developer tool" signal
                 the audit named. Mono is reserved for scores, IDs and
                 timestamps — a heading is none of those. */}
-            {collapsed ? null : (
+            {collapsed || !group.label ? null : (
               <span className="mb-1.5 px-3 hl-label text-hl-fg-tertiary">
                 {group.label}
               </span>

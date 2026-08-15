@@ -39,7 +39,7 @@ export function InboxHeader({ name, org }: { name?: string; org?: string }) {
     (e: React.FormEvent) => {
       e.preventDefault()
       const q = query.trim()
-      if (q) router.push(`/talent?q=${encodeURIComponent(q)}`)
+      if (q) router.push(`/candidates?q=${encodeURIComponent(q)}`)
     },
     [query, router],
   )
@@ -77,14 +77,14 @@ export function InboxHeader({ name, org }: { name?: string; org?: string }) {
         <div className="flex items-center gap-2">
           {canManage ? (
             <Button variant="primary" asChild>
-              <Link href="/roles?new=1">
+              <Link href="/jobs?new=1">
                 <Plus aria-hidden /> New role
               </Link>
             </Button>
           ) : null}
           {canUpload ? (
             <Button variant="secondary" asChild>
-              <Link href="/roles">
+              <Link href="/jobs">
                 <Upload aria-hidden /> Upload candidates
               </Link>
             </Button>

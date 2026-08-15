@@ -139,7 +139,7 @@ export function PlanCta({
   // Send them back to the product rather than offering to "upgrade" downward.
   if (plan === 'free') {
     return (
-      <Link href="/home" className={cls}>
+      <Link href="/today" className={cls}>
         Go to HireLens
       </Link>
     )

@@ -119,7 +119,7 @@ function FullEvaluationLink({
   if (!roleId) return null
   return (
     <Link
-      href={`/roles/${roleId}/candidates/${candidateId}`}
+      href={`/jobs/${roleId}/candidates/${candidateId}`}
       className="hl-caption inline-flex items-center gap-1 whitespace-nowrap rounded-hl-md px-1.5 py-0.5 text-hl-fg-secondary outline-none hover:bg-hl-subtle hover:text-hl-fg focus-visible:bg-hl-subtle [&_svg]:size-hl-icon-sm"
       aria-label={`Full evaluation of ${name}`}
     >

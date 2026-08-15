@@ -15,9 +15,9 @@ export async function GET(request: Request) {
   const code = searchParams.get('code')
   const tokenHash = searchParams.get('token_hash')
   const type = searchParams.get('type') as EmailOtpType | null
-  const nextParam = searchParams.get('next') ?? '/home'
+  const nextParam = searchParams.get('next') ?? '/today'
   // Open-redirect guard: only same-origin relative paths are honored.
-  const next = nextParam.startsWith('/') ? nextParam : '/home'
+  const next = nextParam.startsWith('/') ? nextParam : '/today'
 
   const supabase = await getSupabaseServerClient()
 

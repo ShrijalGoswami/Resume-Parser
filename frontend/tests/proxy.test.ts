@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import {
-  LEGACY_AUTH_ROUTES,
   V4_AUTH_REDIRECT,
   V4_PROTECTED,
   resolveMiddlewareAction,
@@ -39,12 +38,12 @@ describe('proxy matcher covers every guarded route', () => {
   const block = source.slice(start, source.indexOf('],', start) + 2)
   const patterns = [...block.matchAll(/'([^']+)'/g)].map((m) => m[1])
 
-  /** The first segment each pattern guards: `/roles/:path*` -> `roles`. */
+  /** The first segment each pattern guards: `/jobs/:path*` -> `roles`. */
   const guarded = new Set(patterns.map((p) => p.replace(/^\//, '').split('/')[0]))
 
   const firstSegment = (route: string) => route.replace(/^\//, '').split('/')[0]
 
-  it.each([...V4_PROTECTED, ...V4_AUTH_REDIRECT, ...LEGACY_AUTH_ROUTES])(
+  it.each([...V4_PROTECTED, ...V4_AUTH_REDIRECT])(
     'guards %s',
     (route) => {
       expect(
@@ -78,36 +77,36 @@ describe('proxy matcher covers every guarded route', () => {
 
 describe('resolveMiddlewareAction — V4 route protection', () => {
   it('unauthenticated → protected V4 route redirects to /auth/login (preserving next)', () => {
-    expect(resolveMiddlewareAction('/home', false)).toEqual({
+    expect(resolveMiddlewareAction('/today', false)).toEqual({
       kind: 'redirect',
       pathname: '/auth/login',
       withNext: true,
     })
-    expect(resolveMiddlewareAction('/roles/abc-123', false)).toMatchObject({
+    expect(resolveMiddlewareAction('/jobs/abc-123', false)).toMatchObject({
       kind: 'redirect',
       pathname: '/auth/login',
     })
-    expect(resolveMiddlewareAction('/ledger', false)).toMatchObject({ pathname: '/auth/login' })
+    expect(resolveMiddlewareAction('/ai-audit', false)).toMatchObject({ pathname: '/auth/login' })
     expect(resolveMiddlewareAction('/settings/profile', false)).toMatchObject({
       pathname: '/auth/login',
     })
   })
 
   it('authenticated → protected V4 route passes through', () => {
-    expect(resolveMiddlewareAction('/home', true)).toEqual({ kind: 'pass' })
-    expect(resolveMiddlewareAction('/roles/abc-123', true)).toEqual({ kind: 'pass' })
+    expect(resolveMiddlewareAction('/today', true)).toEqual({ kind: 'pass' })
+    expect(resolveMiddlewareAction('/jobs/abc-123', true)).toEqual({ kind: 'pass' })
     expect(resolveMiddlewareAction('/settings/profile', true)).toEqual({ kind: 'pass' })
   })
 
   it('authenticated → /auth/login or /auth/signup redirects to /home', () => {
     expect(resolveMiddlewareAction('/auth/login', true)).toEqual({
       kind: 'redirect',
-      pathname: '/home',
+      pathname: '/today',
       withNext: false,
     })
     expect(resolveMiddlewareAction('/auth/signup', true)).toEqual({
       kind: 'redirect',
-      pathname: '/home',
+      pathname: '/today',
       withNext: false,
     })
   })
@@ -127,25 +126,26 @@ describe('resolveMiddlewareAction — V4 route protection', () => {
   })
 
   it('no longer guards the removed Classic routes', () => {
-    // /insights, /reports, /agent, /knowledge and /predictions were the "Classic"
+    // /insights, /agent, /knowledge and /predictions were the "Classic"
     // group and have been deleted. The proxy must NOT bounce them to the legacy
     // /login: doing so would send a visitor to a sign-in page in order to reach a
     // route that no longer exists, so the honest outcome is a plain 404.
-    for (const route of ['/insights', '/reports', '/agent', '/knowledge', '/predictions']) {
+    for (const route of ['/insights', '/agent', '/knowledge', '/predictions']) {
       expect(resolveMiddlewareAction(route, false)).toEqual({ kind: 'pass' })
       expect(resolveMiddlewareAction(route, true)).toEqual({ kind: 'pass' })
     }
   })
 
-  it('still bounces a signed-in user off the legacy sign-in page', () => {
-    // /login is the one legacy surface left, and /dashboard redirects to /home
-    // via next.config.
-    expect(resolveMiddlewareAction('/login', true)).toEqual({
-      kind: 'redirect',
-      pathname: '/dashboard',
-      withNext: false,
-    })
-    expect(resolveMiddlewareAction('/login', false)).toEqual({ kind: 'pass' })
+  it('lets the retired legacy sign-in paths fall through to their redirect', () => {
+    // Phase 9.1 deleted the legacy group. `/login` and `/signup` are now
+    // permanent `next.config` redirects into `/auth/*`, so the proxy must NOT
+    // act on them — a redirect renders nothing, and the `/auth/*` destination
+    // carries its own guard. Bouncing a signed-in user off `/login` would also
+    // have sent them to `/dashboard`, which is itself only a redirect.
+    for (const route of ['/login', '/signup']) {
+      expect(resolveMiddlewareAction(route, true)).toEqual({ kind: 'pass' })
+      expect(resolveMiddlewareAction(route, false)).toEqual({ kind: 'pass' })
+    }
   })
 
   it('lets migrated legacy routes fall through to their next.config redirect', () => {
@@ -162,7 +162,7 @@ describe('resolveMiddlewareAction — V4 route protection', () => {
     // This is what actually keeps the migrated surfaces private: the legacy path
     // redirects to V4, and the V4 path is guarded. If a destination ever drops
     // out of V4_PROTECTED, the old URL becomes an unauthenticated way in.
-    const destinations = ['/home', '/roles', '/talent', '/settings', '/settings/members']
+    const destinations = ['/today', '/jobs', '/candidates', '/settings', '/settings/members']
     for (const route of destinations) {
       expect(resolveMiddlewareAction(route, false)).toMatchObject({
         kind: 'redirect',
@@ -172,7 +172,7 @@ describe('resolveMiddlewareAction — V4 route protection', () => {
   })
 
   it('guards the surfaces added after the V4 migration', () => {
-    for (const route of ['/analytics', '/interviews', '/notifications']) {
+    for (const route of ['/reports', '/interviews', '/notifications']) {
       expect(resolveMiddlewareAction(route, false)).toEqual({
         kind: 'redirect',
         pathname: '/auth/login',

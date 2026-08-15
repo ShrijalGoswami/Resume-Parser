@@ -4,8 +4,8 @@ import * as React from 'react'
 import Link from 'next/link'
 import { BarChart3, Download } from 'lucide-react'
 import { AppShell } from '../shell'
+import { RequireSession } from '../auth/require-session'
 import { PageHeader } from '../shell/page-header'
-import { useSession } from '../lib/api/use-session'
 import { useProfile } from '../lib/api/hooks'
 import { useAnalyticsOverview } from '../lib/api/analytics'
 import { LoadingScreen } from '../states/loading'
@@ -23,20 +23,10 @@ import { DayColumns, Distribution, MagnitudeRows, NoData, Panel, SplitBar } from
 import { escapeCsvCell } from './csv'
 import type { AnalyticsOverview, CandidateBrief, SkillCount } from '@/types/analytics'
 
-const ANALYTICS_CRUMBS = [{ label: 'Analytics' }]
-
-function Notice({ title, showSignIn }: { title: string; showSignIn?: boolean }) {
-  return (
-    <div className="mx-auto flex max-w-xl flex-col items-center gap-5 px-6 py-24 text-center">
-      <h1 className="hl-display-md">{title}</h1>
-      {showSignIn ? (
-        <Button variant="primary" asChild>
-          <Link href="/auth/login">Sign in</Link>
-        </Button>
-      ) : null}
-    </div>
-  )
-}
+// The screen is called Reports (Phase 9.1). The endpoint behind it is still
+// `GET /analytics/overview`, and this module keeps its name — the rename was
+// recruiter-facing vocabulary, not an API or a file move.
+const ANALYTICS_CRUMBS = [{ label: 'Reports' }]
 
 /**
  * Analytics (Executive Overview). Restores the surface the nav rail had been
@@ -49,7 +39,19 @@ function Notice({ title, showSignIn }: { title: string; showSignIn?: boolean }) 
  * computes them yet. A panel with no data renders its own empty state.
  */
 export function AnalyticsScreen() {
-  const { session, loading, configured } = useSession()
+  return (
+    <RequireSession breadcrumbs={ANALYTICS_CRUMBS}>
+      <GatedAnalytics />
+    </RequireSession>
+  )
+}
+
+/**
+ * Everything past the session gate. Split out so `RequireSession` owns the
+ * signed-out branch and this function owns only the two gates that are specific
+ * to Reports — the permission and the plan.
+ */
+function GatedAnalytics() {
   // The whole screen is one endpoint, `GET /analytics/overview`, gated by
   // `usage.view`. A recruiter reaching this URL used to get a full page of empty
   // charts built from a 403; now it says why. Export CSV needs no separate gate —
@@ -62,27 +64,6 @@ export function AnalyticsScreen() {
   // could not open the screen takes money for nothing.
   const plan = usePlanGate('advanced_analytics')
 
-  if (!configured) {
-    return (
-      <AppShell breadcrumbs={ANALYTICS_CRUMBS}>
-        <Notice title="Sign-in isn’t configured" />
-      </AppShell>
-    )
-  }
-  if (loading) {
-    return (
-      <AppShell breadcrumbs={ANALYTICS_CRUMBS}>
-        <LoadingScreen />
-      </AppShell>
-    )
-  }
-  if (!session) {
-    return (
-      <AppShell breadcrumbs={ANALYTICS_CRUMBS}>
-        <Notice title="Sign in to continue" showSignIn />
-      </AppShell>
-    )
-  }
   if (gate.state === 'loading') {
     return (
       <AppShell breadcrumbs={ANALYTICS_CRUMBS}>
@@ -494,7 +475,7 @@ function AuthedAnalytics() {
                   {actions.stale_active_campaigns.map((c) => (
                     <li key={c.campaign_id} className="hl-body">
                       <Link
-                        href={`/roles/${c.campaign_id}`}
+                        href={`/jobs/${c.campaign_id}`}
                         className="text-hl-fg underline-offset-4 hover:underline"
                       >
                         {c.title ?? 'Untitled role'}
@@ -599,7 +580,7 @@ function AuthedAnalytics() {
     <AppShell breadcrumbs={ANALYTICS_CRUMBS} account={account}>
       <div className="mx-auto flex w-full max-w-[1440px] flex-col px-6 pb-12 pt-6">
         <PageHeader
-          title="Analytics"
+          title="Reports"
           // The time context, stated rather than implied. There is no date
           // filter and the endpoint applies no window, so every figure is
           // all-time. Saying so is cheaper than letting a reader assume these

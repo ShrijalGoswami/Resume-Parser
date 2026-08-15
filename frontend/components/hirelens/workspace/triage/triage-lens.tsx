@@ -67,7 +67,7 @@ export function TriageLens({ roleId }: TriageLensProps) {
 
   // "Deeper" is sustained evaluation — it leaves the queue for the full Dossier.
   const openDeepReview = React.useCallback(
-    (id: string) => router.push(`/roles/${roleId}/candidates/${id}`),
+    (id: string) => router.push(`/jobs/${roleId}/candidates/${id}`),
     [router, roleId],
   )
 

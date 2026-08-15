@@ -226,7 +226,7 @@ export function PipelineTable({
                 </td>
                 <td className="px-3 py-2">
                   <Link
-                    href={`/roles/${roleId}/candidates/${row.id}`}
+                    href={`/jobs/${roleId}/candidates/${row.id}`}
                     className="hl-caption inline-flex items-center gap-1 whitespace-nowrap rounded-hl-md px-1.5 py-1 text-hl-fg-secondary outline-none hover:bg-hl-subtle hover:text-hl-fg focus-visible:bg-hl-subtle [&_svg]:size-hl-icon-sm"
                     aria-label={`Full review of ${row.name}`}
                   >

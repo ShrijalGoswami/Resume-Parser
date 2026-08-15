@@ -4,7 +4,7 @@ import { detectPageContext } from '../lib/copilot-context'
 /**
  * The copilot's grounding context is derived from the route. This mapping was
  * written against the V1 `/campaigns/**` paths and never updated when those
- * surfaces became `/roles/**`, so after the migration nothing produced a
+ * surfaces became `/jobs/**`, so after the migration nothing produced a
  * `candidate` or `campaign` context: the backend could ground an answer on a
  * specific record, but no route in the product ever asked it to.
  *
@@ -12,7 +12,7 @@ import { detectPageContext } from '../lib/copilot-context'
  */
 describe('detectPageContext — V4 routes', () => {
   it('grounds on a candidate under a role', () => {
-    expect(detectPageContext('/roles/role-1/candidates/cand-2')).toEqual({
+    expect(detectPageContext('/jobs/role-1/candidates/cand-2')).toEqual({
       type: 'candidate',
       campaign_id: 'role-1',
       candidate_id: 'cand-2',
@@ -20,28 +20,28 @@ describe('detectPageContext — V4 routes', () => {
   })
 
   it('grounds on the role itself', () => {
-    expect(detectPageContext('/roles/role-1')).toEqual({
+    expect(detectPageContext('/jobs/role-1')).toEqual({
       type: 'campaign',
       campaign_id: 'role-1',
     })
   })
 
   it('grounds a role sub-lens on the role', () => {
-    expect(detectPageContext('/roles/role-1/decisions/dec-9')).toEqual({
+    expect(detectPageContext('/jobs/role-1/decisions/dec-9')).toEqual({
       type: 'campaign',
       campaign_id: 'role-1',
     })
   })
 
   it('maps the V4 landing and analytics surfaces', () => {
-    expect(detectPageContext('/home')).toEqual({ type: 'dashboard' })
-    expect(detectPageContext('/analytics')).toEqual({ type: 'analytics' })
+    expect(detectPageContext('/today')).toEqual({ type: 'dashboard' })
+    expect(detectPageContext('/reports')).toEqual({ type: 'analytics' })
   })
 
   it('falls back to global off a grounded record', () => {
     expect(detectPageContext('/ask')).toEqual({ type: 'global' })
-    expect(detectPageContext('/talent')).toEqual({ type: 'global' })
-    expect(detectPageContext('/roles')).toEqual({ type: 'global' })
+    expect(detectPageContext('/candidates')).toEqual({ type: 'global' })
+    expect(detectPageContext('/jobs')).toEqual({ type: 'global' })
   })
 })
 
@@ -70,7 +70,7 @@ describe('detectPageContext — retired legacy path shapes', () => {
   it('treats the removed Classic routes as ungrounded', () => {
     // /insights used to map to `analytics`. The page is gone and there is no
     // redirect, so the route can only be a 404 — it must not claim a context.
-    for (const route of ['/insights', '/reports', '/agent', '/knowledge', '/predictions']) {
+    for (const route of ['/insights', '/agent', '/knowledge', '/predictions']) {
       expect(detectPageContext(route)).toEqual({ type: 'global' })
     }
   })

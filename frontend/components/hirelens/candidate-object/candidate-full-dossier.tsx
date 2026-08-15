@@ -1,14 +1,12 @@
 'use client'
 
 import * as React from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AppShell } from '../shell'
-import { useSession } from '../lib/api/use-session'
+import { RequireSession } from '../auth/require-session'
 import { useProfile } from '../lib/api/hooks'
 import { LoadingScreen } from '../states/loading'
 import { ErrorState } from '../states/error-state'
-import { Button } from '../ui/button'
 import { useCandidateObject, useCandidateShortcuts } from './use-candidate-object'
 import { NoteDialog } from './note-dialog'
 import { PendingAnalysis } from './sections/primitives'
@@ -25,18 +23,6 @@ import { CandidateScorecard } from './sections/scorecard'
 import { CandidateResumeRecord } from './sections/resume-record'
 import { CandidateDecisionBar } from './sections/decision-bar'
 
-function Notice({ title, showSignIn }: { title: string; showSignIn?: boolean }) {
-  return (
-    <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-6 py-24 text-center">
-      <h1 className="hl-display-md">{title}</h1>
-      {showSignIn ? (
-        <Button variant="primary" asChild>
-          <Link href="/auth/login">Sign in</Link>
-        </Button>
-      ) : null}
-    </div>
-  )
-}
 
 /**
  * CandidateFullDossier — the deep-linkable candidate object at full density. One
@@ -45,30 +31,11 @@ function Notice({ title, showSignIn }: { title: string; showSignIn?: boolean }) 
  * section components as the Peek. Deep-link home: /roles/[roleId]/candidates/[id].
  */
 export function CandidateFullDossier({ roleId, candidateId }: { roleId: string; candidateId: string }) {
-  const { session, loading, configured } = useSession()
-
-  if (!configured) {
-    return (
-      <AppShell title="Candidate review">
-        <Notice title="Sign-in isn’t configured" />
-      </AppShell>
-    )
-  }
-  if (loading) {
-    return (
-      <AppShell title="Candidate review">
-        <LoadingScreen />
-      </AppShell>
-    )
-  }
-  if (!session) {
-    return (
-      <AppShell title="Candidate review">
-        <Notice title="Sign in to continue" showSignIn />
-      </AppShell>
-    )
-  }
-  return <AuthedDossier roleId={roleId} candidateId={candidateId} />
+  return (
+    <RequireSession title="Candidate review">
+      <AuthedDossier roleId={roleId} candidateId={candidateId} />
+    </RequireSession>
+  )
 }
 
 function AuthedDossier({ roleId, candidateId }: { roleId: string; candidateId: string }) {
@@ -94,7 +61,7 @@ function AuthedDossier({ roleId, candidateId }: { roleId: string; candidateId: s
     ? { name: profile.data.full_name ?? profile.data.email, email: profile.data.email }
     : undefined
   const crumbs = [
-    { label: c.roleTitle ?? 'Role', href: `/roles/${roleId}` },
+    { label: c.roleTitle ?? 'Role', href: `/jobs/${roleId}` },
     { label: c.model?.name ?? 'Candidate' },
   ]
 

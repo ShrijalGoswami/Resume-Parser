@@ -260,7 +260,7 @@ describe('sitemap and robots agree with the routes that exist', () => {
       expect(DISALLOWED_PATHS).not.toContain(route.path)
     }
     expect(DISALLOWED_PATHS).toContain('/auth/')
-    expect(DISALLOWED_PATHS).toContain('/home')
+    expect(DISALLOWED_PATHS).toContain('/today')
   })
 
   it('the agent files exist as routes', () => {

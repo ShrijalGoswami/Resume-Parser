@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useQueryClient } from '@tanstack/react-query'
 import { Plus, Upload } from 'lucide-react'
 import { AppShell } from '../shell'
-import { useSession } from '../lib/api/use-session'
+import { RequireSession } from '../auth/require-session'
 import {
   useProfile,
   usePendingRecommendations,
@@ -27,25 +27,9 @@ import { InboxActivityFeed } from './inbox-activity-feed'
 import { useInboxAnalytics, summaryStats, aiReviewCount } from './inbox-data'
 import type { ApprovalStatus } from '@/types/agent'
 
-const INBOX_CRUMBS = [{ label: 'Inbox' }]
-
-function CenteredNotice({
-  title,
-  description,
-  action,
-}: {
-  title: string
-  description: string
-  action?: React.ReactNode
-}) {
-  return (
-    <div className="mx-auto flex max-w-xl flex-col items-center gap-5 px-6 py-24 text-center">
-      <h1 className="hl-display-md">{title}</h1>
-      <p className="hl-body text-hl-fg-secondary">{description}</p>
-      {action}
-    </div>
-  )
-}
+// "Today", not "Inbox" (Phase 9.1). An inbox promises a queue you process to
+// zero; this screen is a briefing that is allowed to be quiet.
+const INBOX_CRUMBS = [{ label: 'Today' }]
 
 const SHELL = 'mx-auto flex w-full max-w-[1100px] flex-col gap-7 px-6 pb-14 pt-6'
 
@@ -75,44 +59,18 @@ function InboxSkeleton() {
  * frozen CandidatePeek (v1.x) without modifying or forking it.
  */
 export function InboxScreen() {
-  const { session, loading, configured } = useSession()
-
-  if (!configured) {
-    return (
-      <AppShell breadcrumbs={INBOX_CRUMBS}>
-        <CenteredNotice
-          title="Sign-in isn’t configured"
-          description="This deployment is missing its Supabase environment variables."
-        />
-      </AppShell>
-    )
-  }
-
-  if (loading) {
-    return (
-      <AppShell breadcrumbs={INBOX_CRUMBS}>
-        <InboxSkeleton />
-      </AppShell>
-    )
-  }
-
-  if (!session) {
-    return (
-      <AppShell breadcrumbs={INBOX_CRUMBS}>
-        <CenteredNotice
-          title="Sign in to continue"
-          description="Your inbox is waiting."
-          action={
-            <Button variant="primary" asChild>
-              <Link href="/auth/login">Sign in</Link>
-            </Button>
-          }
-        />
-      </AppShell>
-    )
-  }
-
-  return <AuthedInbox />
+  return (
+    // `loadingFallback` is why the shared gate takes one: this screen had the
+    // only session-loading state in the product that wasn't a generic spinner,
+    // and a layout-shaped skeleton is worth keeping.
+    <RequireSession
+      breadcrumbs={INBOX_CRUMBS}
+      description="Your day starts here."
+      loadingFallback={<InboxSkeleton />}
+    >
+      <AuthedInbox />
+    </RequireSession>
+  )
 }
 
 function AuthedInbox() {
@@ -214,7 +172,7 @@ function AuthedInbox() {
         action={
           <div className="flex flex-wrap items-center justify-center gap-2">
             <Button variant="primary" asChild>
-              <Link href="/roles?new=1">
+              <Link href="/jobs?new=1">
                 <Plus aria-hidden /> Create role
               </Link>
             </Button>
@@ -223,7 +181,7 @@ function AuthedInbox() {
                 only once a role exists. */}
             {!firstRun ? (
               <Button variant="secondary" asChild>
-                <Link href="/roles">
+                <Link href="/jobs">
                   <Upload aria-hidden /> Upload candidates
                 </Link>
               </Button>

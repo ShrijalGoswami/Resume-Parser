@@ -194,7 +194,7 @@ export function LedgerRecordDrawer({
 
               {rec.campaign_id && rec.candidate_id ? (
                 <Link
-                  href={`/roles/${rec.campaign_id}/candidates/${rec.candidate_id}`}
+                  href={`/jobs/${rec.campaign_id}/candidates/${rec.candidate_id}`}
                   className="hl-small flex items-center gap-1 self-start text-hl-accent-fg outline-none hover:underline"
                 >
                   Read full review <ArrowUpRight className="size-3.5" aria-hidden />

@@ -19,7 +19,7 @@ import { useFocusOnMount } from './use-focus-on-mount'
 export function LoginForm() {
   const router = useRouter()
   const params = useSearchParams()
-  const next = params.get('next') || '/home'
+  const next = params.get('next') || '/today'
   const linkError = params.get('error') === 'link_invalid'
   const configured = isSupabaseConfigured()
 

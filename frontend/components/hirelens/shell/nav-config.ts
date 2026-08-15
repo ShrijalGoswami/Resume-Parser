@@ -1,29 +1,35 @@
 import {
-  Inbox,
+  Sun,
   Briefcase,
   Users,
+  Gavel,
+  BarChart3,
   ClipboardList,
   MessageSquareText,
   BookText,
-  GraduationCap,
   Settings,
-  BarChart3,
   type LucideIcon,
 } from 'lucide-react'
 import { PERMS, type PermissionKey } from '../settings/permissions'
 
 /**
- * Primary navigation (Stitch RC-1 "Instrument Rail" · UX Spec §2 · Design Bible
- * §5.1). Two labeled groups, order fixed:
- *   WORKSPACE     Inbox · Roles · Talent
- *   INTELLIGENCE  Ask · Ledger · Learning
- * Settings is pinned separately at the rail foot.
+ * Primary navigation — Phase 9.1.
  *
- * Ask has a visible rail entry AND stays reachable via ⌘K + contextual AI
- * surfaces (both, by design). Analytics is back in INTELLIGENCE now that the
- * Executive Overview surface ships at `/analytics` (it had been removed while
- * the route 404'd). Inbox points at the current `/home` landing as a
- * transitional placeholder; the href moves to `/inbox` when that surface is built.
+ * Five destinations, ungrouped, in the order the recruiter's day runs:
+ *   Today · Jobs · Candidates · Reports · Decisions
+ *
+ * The two labelled groups (WORKSPACE / INTELLIGENCE) are gone. At five items a
+ * group label costs more than it clarifies: it asks the reader to hold a
+ * taxonomy in mind to find five things, and the taxonomy was the product's own
+ * ("Intelligence"), not the recruiter's.
+ *
+ * WHAT LEFT THE RAIL, AND WHY IT IS STILL REACHABLE
+ *
+ * Interviews, Ask and AI Audit moved to `secondaryNav` below. They are still
+ * real destinations and the command palette still lists them — removing a row
+ * from the rail is a statement about priority, not about access. Learning was
+ * deleted outright: it had no backend, so it was a dead end rather than a
+ * low-priority destination.
  */
 export interface NavItem {
   label: string
@@ -34,11 +40,11 @@ export interface NavItem {
   shortcut?: string
   /**
    * Permission required for the destination to hold anything. Omitted means
-   * every member can reach it — Inbox, Roles, Talent, Interviews and Ledger all
-   * read data gated by `campaign.view` / `candidate.view`, which every role has.
+   * every member can reach it — Today, Jobs, Candidates and Decisions all read
+   * data gated by `campaign.view` / `candidate.view`, which every role has.
    *
-   * Only Ask and Analytics carry one, because those two surfaces are *entirely*
-   * one permission: every Ask request is `ai.use`, and `/analytics` is a single
+   * Only Ask and Reports carry one, because those two surfaces are *entirely*
+   * one permission: every Ask request is `ai.use`, and Reports is a single
    * `usage.view` endpoint. Listing a destination that can only render a gate
    * state is a promise the rail cannot keep. The route still gates itself — a
    * hidden rail entry is not access control, and deep links exist.
@@ -65,100 +71,112 @@ export interface NavGroup {
   items: NavItem[]
 }
 
+/**
+ * The rail, in day order. `navGroups` keeps its shape (one group) so `LeftNav`
+ * needs no structural change; the empty label is what suppresses the heading.
+ */
 export const navGroups: NavGroup[] = [
   {
-    label: 'Workspace',
+    label: '',
     items: [
       {
-        label: 'Inbox',
-        href: '/home',
-        icon: Inbox,
-        isActive: (p) => p.startsWith('/home') || p.startsWith('/inbox'),
-        shortcut: 'G I',
-      },
-      {
-        label: 'Roles',
-        href: '/roles',
-        icon: Briefcase,
-        isActive: (p) => p.startsWith('/roles'),
-        shortcut: 'G R',
-      },
-      {
-        label: 'Talent',
-        href: '/talent',
-        icon: Users,
-        isActive: (p) => p.startsWith('/talent'),
+        label: 'Today',
+        href: '/today',
+        // Was "Inbox", pointing at `/home`, reached by a `/dashboard` redirect —
+        // three names for one screen. The label, the route and the redirect
+        // target now agree. "Today" also frees the word Inbox, which promises a
+        // queue you process to zero; this screen is a briefing.
+        icon: Sun,
+        isActive: (p) => p.startsWith('/today'),
         shortcut: 'G T',
       },
       {
-        label: 'Interviews',
-        href: '/interviews',
-        icon: ClipboardList,
-        isActive: (p) => p.startsWith('/interviews'),
-        shortcut: 'G V',
-      },
-    ],
-  },
-  {
-    label: 'Intelligence',
-    items: [
-      {
-        label: 'Ask',
-        href: '/ask',
-        // MessageSquareText, not Sparkles (V2 §8/§23). The rail names
-        // destinations; a sparkle names a technology. Every other row here
-        // says what you will find when you arrive, and this one should too.
-        icon: MessageSquareText,
-        isActive: (p) => p.startsWith('/ask'),
-        shortcut: 'G K',
-        perm: PERMS.AI_USE,
-        // Server counterpart: the whole copilot router is behind
-        // `require_entitlement("ai_copilot")` (main.py).
-        entitlement: 'ai_copilot',
+        label: 'Jobs',
+        href: '/jobs',
+        icon: Briefcase,
+        isActive: (p) => p.startsWith('/jobs'),
+        shortcut: 'G J',
       },
       {
-        label: 'Analytics',
-        href: '/analytics',
+        label: 'Candidates',
+        href: '/candidates',
+        // Was "Talent". Search is not a separate place — it is how you use the
+        // pool — so the destination is named for what it holds.
+        icon: Users,
+        isActive: (p) => p.startsWith('/candidates'),
+        shortcut: 'G C',
+      },
+      {
+        label: 'Reports',
+        href: '/reports',
         icon: BarChart3,
-        isActive: (p) => p.startsWith('/analytics'),
-        shortcut: 'G A',
+        isActive: (p) => p.startsWith('/reports'),
         perm: PERMS.USAGE_VIEW,
         // Server counterpart: `/analytics/overview` carries
-        // `require_entitlement("advanced_analytics")`.
+        // `require_entitlement("advanced_analytics")`. The endpoint keeps its
+        // name; only the screen was renamed.
         entitlement: 'advanced_analytics',
-      },
-      // Learning is deliberately NOT given an entitlement. `org_knowledge` is a
-      // Pro capability server-side, but this screen is an honest "not built
-      // yet" placeholder with no backend behind it. Locking it would put an
-      // upgrade CTA on something the customer cannot receive after paying.
-      // Add the key here when a real calibration backend ships.
-      {
-        label: 'Ledger',
-        href: '/ledger',
-        icon: BookText,
-        isActive: (p) => p.startsWith('/ledger'),
-        shortcut: 'G L',
+        shortcut: 'G R',
       },
       {
-        label: 'Learning',
-        href: '/learning',
-        icon: GraduationCap,
-        isActive: (p) => p.startsWith('/learning'),
-        shortcut: 'G E',
+        label: 'Decisions',
+        href: '/decisions',
+        // HIRING OUTCOMES — offers, hires, rejections — read from the candidate
+        // pipeline. NOT the AI-recommendation record, which is `secondaryNav`'s
+        // "AI Audit" and used to be called the Decision Ledger. Two records,
+        // two names, no shared vocabulary.
+        icon: Gavel,
+        isActive: (p) => p.startsWith('/decisions'),
+        shortcut: 'G D',
       },
     ],
   },
-  // The "Classic" group is gone. It was a migration bridge holding Insights,
-  // Reports, Agent, Knowledge and Predictions visible while V4 replacements were
-  // built — "no feature inaccessible before its replacement is production-ready."
-  // Intelligence (Ask · Analytics · Ledger · Learning) is now the single source of
-  // truth for those capabilities, so the bridge and its five legacy pages were
-  // removed rather than left as a second, diverging way to reach the same work.
-  //
-  // The other legacy routes were retired earlier by redirecting to their V4
-  // replacements, which is why they never appeared here: Search → Talent,
-  // Campaigns → Roles, Integrations → Settings ▸ Integrations, Admin →
-  // Settings ▸ Members, Dashboard → Inbox.
+]
+
+/**
+ * Reachable, deliberately not on the rail.
+ *
+ * The command palette lists these alongside the rail items, so none of them
+ * became undiscoverable when the rail shrank to five. Each is here for its own
+ * reason:
+ *
+ *   Interviews  a per-candidate action wearing a destination's clothes. The
+ *               endpoint is already candidate-scoped, so the generator moves
+ *               onto the candidate record in a later phase and this entry
+ *               disappears rather than being relocated again.
+ *   Ask         intelligence belongs in the work, not in a room you visit. ⌘K
+ *               already routes a typed question here WITH page context; the
+ *               standing destination is the one entry point that cannot carry
+ *               any, which is why it reads as bolted on.
+ *   AI Audit    the immutable record of AI recommendations that reached a call.
+ *               Real, rarely visited, and no longer permitted to occupy the
+ *               word "Decisions".
+ */
+export const secondaryNav: NavItem[] = [
+  {
+    label: 'Interviews',
+    href: '/interviews',
+    icon: ClipboardList,
+    isActive: (p) => p.startsWith('/interviews'),
+  },
+  {
+    label: 'Ask',
+    href: '/ask',
+    // MessageSquareText, not Sparkles (V2 §8/§23). The palette names
+    // destinations; a sparkle names a technology.
+    icon: MessageSquareText,
+    isActive: (p) => p.startsWith('/ask'),
+    perm: PERMS.AI_USE,
+    // Server counterpart: the whole copilot router is behind
+    // `require_entitlement("ai_copilot")` (main.py).
+    entitlement: 'ai_copilot',
+  },
+  {
+    label: 'AI Audit',
+    href: '/ai-audit',
+    icon: BookText,
+    isActive: (p) => p.startsWith('/ai-audit'),
+  },
 ]
 
 export const settingsNav: NavItem = {
@@ -169,7 +187,11 @@ export const settingsNav: NavItem = {
 }
 
 /**
- * Flattened primary items — the command palette's "Jump to" source. Derived from
- * `navGroups` so the rail and the palette can never drift.
+ * Flattened destinations — the command palette's "Jump to" source. Derived from
+ * `navGroups` + `secondaryNav` so the rail and the palette can never drift, and
+ * so shrinking the rail cannot silently strand a surface.
  */
-export const primaryNav: NavItem[] = navGroups.flatMap((group) => group.items)
+export const primaryNav: NavItem[] = [...navGroups.flatMap((group) => group.items), ...secondaryNav]
+
+/** Rail items only — what `LeftNav` renders. */
+export const railNav: NavItem[] = navGroups.flatMap((group) => group.items)

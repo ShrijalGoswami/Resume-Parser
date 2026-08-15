@@ -111,16 +111,14 @@ export const PUBLIC_ROUTES: PublicRoute[] = [
 export const DISALLOWED_PATHS = [
   '/api/',
   '/auth/',      // sign-in, sign-up, callback, password reset
-  '/login',      // frozen legacy route
-  '/home',       // the product itself begins here
-  '/roles',
-  '/talent',
-  '/analytics',
+  '/today',      // the product itself begins here
+  '/jobs',
+  '/candidates',
+  '/decisions',
+  '/reports',
   '/ask',
   '/interviews',
-  '/ledger',
+  '/ai-audit',
   '/notifications',
-  '/learning',
   '/settings',
-  '/foundations',
 ]

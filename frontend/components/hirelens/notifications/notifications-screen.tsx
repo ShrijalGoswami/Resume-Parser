@@ -1,14 +1,13 @@
 'use client'
 
 import * as React from 'react'
-import Link from 'next/link'
 import { Bell, CheckCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AppShell } from '../shell'
+import { RequireSession } from '../auth/require-session'
 import { PageHeader } from '../shell/page-header'
-import { useSession } from '../lib/api/use-session'
 import { useProfile } from '../lib/api/hooks'
-import { LoadingScreen, LoadingLines } from '../states/loading'
+import { LoadingLines } from '../states/loading'
 import { EmptyState } from '../states/empty-state'
 import { ErrorState } from '../states/error-state'
 import { Button } from '../ui/button'
@@ -40,18 +39,6 @@ function matches(item: NotificationView, filter: FilterId): boolean {
   }
 }
 
-function Notice({ title, showSignIn }: { title: string; showSignIn?: boolean }) {
-  return (
-    <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-6 py-24 text-center">
-      <h1 className="hl-display-md">{title}</h1>
-      {showSignIn ? (
-        <Button variant="primary" asChild>
-          <Link href="/auth/login">Sign in</Link>
-        </Button>
-      ) : null}
-    </div>
-  )
-}
 
 /**
  * Notifications Center — the full surface behind the top-bar panel.
@@ -62,30 +49,11 @@ function Notice({ title, showSignIn }: { title: string; showSignIn?: boolean }) 
  * the filter ids map onto its query params.
  */
 export function NotificationsScreen() {
-  const { session, loading, configured } = useSession()
-
-  if (!configured) {
-    return (
-      <AppShell breadcrumbs={NOTIFICATION_CRUMBS}>
-        <Notice title="Sign-in isn’t configured" />
-      </AppShell>
-    )
-  }
-  if (loading) {
-    return (
-      <AppShell breadcrumbs={NOTIFICATION_CRUMBS}>
-        <LoadingScreen />
-      </AppShell>
-    )
-  }
-  if (!session) {
-    return (
-      <AppShell breadcrumbs={NOTIFICATION_CRUMBS}>
-        <Notice title="Sign in to continue" showSignIn />
-      </AppShell>
-    )
-  }
-  return <AuthedNotifications />
+  return (
+    <RequireSession breadcrumbs={NOTIFICATION_CRUMBS}>
+      <AuthedNotifications />
+    </RequireSession>
+  )
 }
 
 function AuthedNotifications() {

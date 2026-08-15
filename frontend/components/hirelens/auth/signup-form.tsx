@@ -64,7 +64,7 @@ export function SignupForm() {
       })
       if (signUpError) throw signUpError
       if (data.session) {
-        router.replace('/home')
+        router.replace('/today')
         router.refresh()
       } else {
         setSent(true)

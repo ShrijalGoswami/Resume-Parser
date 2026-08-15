@@ -25,17 +25,17 @@ function toSeverity(value: string): NotificationSeverity {
 
 function recommendationHref(rec: Recommendation): string | undefined {
   if (rec.campaign_id && rec.candidate_id) {
-    return `/roles/${rec.campaign_id}/candidates/${rec.candidate_id}`
+    return `/jobs/${rec.campaign_id}/candidates/${rec.candidate_id}`
   }
-  if (rec.campaign_id) return `/roles/${rec.campaign_id}`
-  return '/home'
+  if (rec.campaign_id) return `/jobs/${rec.campaign_id}`
+  return '/today'
 }
 
 function activityHref(event: ActivityEvent): string | undefined {
   if (event.campaign_id && event.candidate_id) {
-    return `/roles/${event.campaign_id}/candidates/${event.candidate_id}`
+    return `/jobs/${event.campaign_id}/candidates/${event.candidate_id}`
   }
-  if (event.campaign_id) return `/roles/${event.campaign_id}`
+  if (event.campaign_id) return `/jobs/${event.campaign_id}`
   return undefined
 }
 

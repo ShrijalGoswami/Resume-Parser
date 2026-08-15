@@ -17,18 +17,22 @@ import type { CopilotPageContext } from '@/types/copilot';
 /**
  * Derive the grounded page context from a pathname.
  *
- * Both the V4 (`/roles/…`) and legacy (`/campaigns/…`) shapes are matched. This
+ * Both the V4 (`/jobs/…`) and legacy (`/campaigns/…`) shapes are matched. This
  * originally recognised only `/campaigns/**`, which meant that once those routes
- * were migrated to `/roles/**` nothing produced a `candidate` or `campaign`
+ * were migrated to `/jobs/**` nothing produced a `candidate` or `campaign`
  * context any more — the backend's grounded per-candidate copilot was reachable
  * over the API but had no route in the product that would ask it anything other
  * than a global question. The legacy patterns are kept so the Classic surfaces
  * behave unchanged.
  */
 export function detectPageContext(pathname: string): CopilotPageContext {
-  // /roles/[roleId]/candidates/[candidateId] · /campaigns/[id]/candidates/[candidateId]
+  // /jobs/[roleId]/candidates/[candidateId], plus the two older spellings.
+  // `roles` and `campaigns` are kept because both still redirect here and a
+  // stale client bundle can hold either — the context this resolves is what
+  // grounds a Copilot answer, so failing open to `global` would silently
+  // un-scope the question rather than error.
   const candidateMatch = pathname.match(
-    /^\/(?:roles|campaigns)\/([^/]+)\/candidates\/([^/]+)/,
+    /^\/(?:jobs|roles|campaigns)\/([^/]+)\/candidates\/([^/]+)/,
   );
   if (candidateMatch) {
     return {
@@ -38,17 +42,17 @@ export function detectPageContext(pathname: string): CopilotPageContext {
     };
   }
 
-  // /roles/[roleId] · /campaigns/[id], excluding the legacy /campaigns/new
-  const campaignMatch = pathname.match(/^\/(?:roles|campaigns)\/([^/]+)/);
+  // /jobs/[roleId] · /roles/[roleId] · /campaigns/[id], excluding /campaigns/new
+  const campaignMatch = pathname.match(/^\/(?:jobs|roles|campaigns)\/([^/]+)/);
   if (campaignMatch && campaignMatch[1] !== 'new') {
     return { type: 'campaign', campaign_id: campaignMatch[1] };
   }
 
-  if (pathname === '/home' || pathname === '/dashboard') return { type: 'dashboard' };
+  if (pathname === '/today' || pathname === '/dashboard') return { type: 'dashboard' };
   // `/insights` was mapped here too. That page has been removed and has no
   // redirect, so the path can only 404 — claiming an analytics context for it
   // would ground a question against a surface the user is not looking at.
-  if (pathname === '/analytics') return { type: 'analytics' };
+  if (pathname === '/reports') return { type: 'analytics' };
 
   return { type: 'global' };
 }

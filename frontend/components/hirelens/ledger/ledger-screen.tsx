@@ -4,7 +4,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { BookText } from 'lucide-react'
 import { AppShell } from '../shell'
-import { useSession } from '../lib/api/use-session'
+import { RequireSession } from '../auth/require-session'
 import { useProfile } from '../lib/api/hooks'
 import { useAllRecommendations } from '../lib/api/ask'
 import { LoadingScreen } from '../states/loading'
@@ -16,21 +16,12 @@ import { LedgerRecordDrawer } from './ledger-record-drawer'
 import { isResolved, sortLedger, fmtDate, decidedAt } from './ledger-meta'
 import type { Recommendation } from '@/types/agent'
 
-const LEDGER_CRUMBS = [{ label: 'Ledger' }]
+// The screen is called AI Audit (Phase 9.1). The module, its types and the
+// endpoint behind it keep the "ledger" name — the rename was recruiter-facing
+// vocabulary, not a file move or an API change.
+const LEDGER_CRUMBS = [{ label: 'AI Audit' }]
 const PAGE_SIZE = 12
 
-function Notice({ title, showSignIn }: { title: string; showSignIn?: boolean }) {
-  return (
-    <div className="mx-auto flex max-w-xl flex-col items-center gap-5 px-6 py-24 text-center">
-      <h1 className="hl-display-md">{title}</h1>
-      {showSignIn ? (
-        <Button variant="primary" asChild>
-          <Link href="/auth/login">Sign in</Link>
-        </Button>
-      ) : null}
-    </div>
-  )
-}
 
 /**
  * Decision Ledger (Stitch "The Permanent Record"). The immutable audit journal of
@@ -39,30 +30,11 @@ function Notice({ title, showSignIn }: { title: string; showSignIn?: boolean }) 
  * retrospective scoring.
  */
 export function LedgerScreen() {
-  const { session, loading, configured } = useSession()
-
-  if (!configured) {
-    return (
-      <AppShell breadcrumbs={LEDGER_CRUMBS}>
-        <Notice title="Sign-in isn’t configured" />
-      </AppShell>
-    )
-  }
-  if (loading) {
-    return (
-      <AppShell breadcrumbs={LEDGER_CRUMBS}>
-        <LoadingScreen />
-      </AppShell>
-    )
-  }
-  if (!session) {
-    return (
-      <AppShell breadcrumbs={LEDGER_CRUMBS}>
-        <Notice title="Sign in to continue" showSignIn />
-      </AppShell>
-    )
-  }
-  return <AuthedLedger />
+  return (
+    <RequireSession breadcrumbs={LEDGER_CRUMBS}>
+      <AuthedLedger />
+    </RequireSession>
+  )
 }
 
 function AuthedLedger() {

@@ -105,15 +105,15 @@ export function summaryStats(a: AnalyticsOverview | undefined): SummaryStat[] {
     {
       label: 'Open roles',
       value: known ? (a?.overview.active_campaigns ?? 0) : null,
-      href: '/roles',
+      href: '/jobs',
     },
     {
       label: 'Awaiting review',
       value: known ? (a?.action_center.awaiting_review_count ?? 0) : null,
-      href: '/roles',
+      href: '/jobs',
     },
-    { label: 'Interviews pending', value: stage('interview'), href: '/roles' },
-    { label: 'Offers outstanding', value: stage('offer'), href: '/roles' },
+    { label: 'Interviews pending', value: stage('interview'), href: '/jobs' },
+    { label: 'Offers outstanding', value: stage('offer'), href: '/jobs' },
   ]
 }
 

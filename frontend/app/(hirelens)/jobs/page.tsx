@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { RolesScreen } from '@/components/hirelens/roles/roles-screen'
 
-export const metadata: Metadata = { title: 'Roles' }
+export const metadata: Metadata = { title: 'Jobs' }
 
 export default async function Page({
   searchParams,

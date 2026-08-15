@@ -238,7 +238,7 @@ function AuthedTalent({ initial }: { initial: TalentInitial }) {
     selected.size >= 2 && selected.size <= 5 && sharedCampaignId !== null
 
   return (
-    <AppShell title="Talent" account={account}>
+    <AppShell title="Candidates" account={account}>
       <div className="flex min-h-0 flex-1">
         <aside className="hidden w-56 shrink-0 overflow-y-auto border-r border-hl-border-subtle p-4 lg:block">
           <TalentSidebar
@@ -252,7 +252,7 @@ function AuthedTalent({ initial }: { initial: TalentInitial }) {
           <div className="px-4 pt-6">
             <div className="mx-auto max-w-[1100px]">
               <PageHeader
-                title="Talent"
+                title="Candidates"
                 description="Search your entire candidate pool in plain language."
                 spacing="compact"
               />

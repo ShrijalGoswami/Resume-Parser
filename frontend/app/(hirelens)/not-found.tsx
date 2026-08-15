@@ -29,7 +29,7 @@ export default function HireLensNotFound() {
         description="The address may be mistyped, or the page may have been renamed or moved."
         action={
           <Button variant="primary" asChild>
-            <Link href="/home">Back to Inbox</Link>
+            <Link href="/today">Back to Today</Link>
           </Button>
         }
       />

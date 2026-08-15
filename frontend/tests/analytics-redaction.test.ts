@@ -27,36 +27,36 @@ const CANDIDATE = 'c9b1a2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d'
 
 describe('redactPathname', () => {
   it('removes a campaign (role) identifier', () => {
-    const out = redactPathname(`/roles/${CAMPAIGN}`)
+    const out = redactPathname(`/jobs/${CAMPAIGN}`)
     expect(out).not.toContain(CAMPAIGN)
-    expect(out).toBe('/roles/[roleId]')
+    expect(out).toBe('/jobs/[jobId]')
   })
 
   it('removes a candidate identifier', () => {
-    const out = redactPathname(`/roles/${CAMPAIGN}/candidates/${CANDIDATE}`)
+    const out = redactPathname(`/jobs/${CAMPAIGN}/candidates/${CANDIDATE}`)
     expect(out).not.toContain(CANDIDATE)
-    expect(out).toBe('/roles/[roleId]/candidates/[candidateId]')
+    expect(out).toBe('/jobs/[jobId]/candidates/[candidateId]')
   })
 
-  it('removes both identifiers from a decision URL', () => {
-    const out = redactPathname(`/roles/${CAMPAIGN}/decisions/${CANDIDATE}`)
+  it('removes both identifiers from a recommendation URL', () => {
+    const out = redactPathname(`/jobs/${CAMPAIGN}/recommendations/${CANDIDATE}`)
     expect(out).not.toContain(CAMPAIGN)
     expect(out).not.toContain(CANDIDATE)
-    expect(out).toBe('/roles/[roleId]/decisions/[decisionId]')
+    expect(out).toBe('/jobs/[jobId]/recommendations/[recommendationId]')
   })
 
   it('keeps the route structure distinguishable', () => {
     // The point of naming each placeholder after its collection: these three
     // journeys stay three distinct rows in an analytics report. A generic
     // `[id]` would still have passed every assertion above.
-    const role = redactPathname(`/roles/${CAMPAIGN}`)
-    const candidate = redactPathname(`/roles/${CAMPAIGN}/candidates/${CANDIDATE}`)
-    const decision = redactPathname(`/roles/${CAMPAIGN}/decisions/${CANDIDATE}`)
+    const role = redactPathname(`/jobs/${CAMPAIGN}`)
+    const candidate = redactPathname(`/jobs/${CAMPAIGN}/candidates/${CANDIDATE}`)
+    const decision = redactPathname(`/jobs/${CAMPAIGN}/recommendations/${CANDIDATE}`)
     expect(new Set([role, candidate, decision]).size).toBe(3)
   })
 
   it('leaves static product routes untouched', () => {
-    for (const path of ['/home', '/talent', '/ledger', '/settings/billing']) {
+    for (const path of ['/today', '/candidates', '/ai-audit', '/settings/billing']) {
       expect(redactPathname(path)).toBe(path)
     }
   })
@@ -76,8 +76,8 @@ describe('redactPathname', () => {
   })
 
   it('redacts numeric and other opaque identifiers, not only UUIDs', () => {
-    expect(redactPathname('/roles/48291')).toBe('/roles/[roleId]')
-    expect(redactPathname('/roles/pay_RxKq81mNvZbT4a')).toBe('/roles/[roleId]')
+    expect(redactPathname('/jobs/48291')).toBe('/jobs/[jobId]')
+    expect(redactPathname('/jobs/pay_RxKq81mNvZbT4a')).toBe('/jobs/[jobId]')
   })
 })
 
@@ -92,17 +92,17 @@ describe('redactAnalyticsUrl', () => {
   })
 
   it('drops the query string on private routes', () => {
-    // Talent search puts its terms in the URL. A recruiter searching a person
-    // by name is more identifying than the UUID this module exists to remove,
-    // so the query does not survive on the product surface.
-    const out = redactAnalyticsUrl('https://hirelens.app/talent?q=Jane%20Doe&stage=offer')
-    expect(out).toBe('https://hirelens.app/talent')
+    // Candidate search puts its terms in the URL. A recruiter searching a
+    // person by name is more identifying than the UUID this module exists to
+    // remove, so the query does not survive on the product surface.
+    const out = redactAnalyticsUrl('https://hirelens.app/candidates?q=Jane%20Doe&stage=offer')
+    expect(out).toBe('https://hirelens.app/candidates')
     expect(out.toLowerCase()).not.toContain('jane')
   })
 
   it('drops the hash on private routes', () => {
-    expect(redactAnalyticsUrl(`https://hirelens.app/roles/${CAMPAIGN}#notes`)).toBe(
-      'https://hirelens.app/roles/[roleId]',
+    expect(redactAnalyticsUrl(`https://hirelens.app/jobs/${CAMPAIGN}#notes`)).toBe(
+      'https://hirelens.app/jobs/[jobId]',
     )
   })
 

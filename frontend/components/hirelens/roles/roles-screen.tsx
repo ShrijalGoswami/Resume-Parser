@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation'
 import { Plus, Search, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AppShell } from '../shell'
+import { RequireSession } from '../auth/require-session'
 import { PageHeader } from '../shell/page-header'
-import { useSession } from '../lib/api/use-session'
 import { useProfile } from '../lib/api/hooks'
 import { useRoles } from '../lib/api/workspace'
 import { LoadingScreen } from '../states/loading'
@@ -20,7 +20,7 @@ import { Input } from '../ui/input'
 import { RoleFormDialog } from './role-form-dialog'
 import type { Campaign, CampaignStatus } from '@/types/campaign'
 
-const ROLES_CRUMBS = [{ label: 'Roles' }]
+const ROLES_CRUMBS = [{ label: 'Jobs' }]
 const FILTERS: Array<{ value: 'all' | CampaignStatus; label: string }> = [
   { value: 'active', label: 'Active' },
   { value: 'paused', label: 'Paused' },
@@ -36,25 +36,13 @@ const STATUS_TONE: Record<CampaignStatus, string> = {
   archived: 'text-hl-fg-tertiary',
 }
 
-function Notice({ title, showSignIn }: { title: string; showSignIn?: boolean }) {
-  return (
-    <div className="mx-auto flex max-w-xl flex-col items-center gap-5 px-6 py-24 text-center">
-      <h1 className="hl-display-md">{title}</h1>
-      {showSignIn ? (
-        <Button variant="primary" asChild>
-          <Link href="/auth/login">Sign in</Link>
-        </Button>
-      ) : null}
-    </div>
-  )
-}
 
 function RoleCard({ role }: { role: Campaign }) {
   const count = role.total_candidates ?? role.candidate_count ?? 0
   const subtitle = [role.company, role.role_title].filter(Boolean).join(' · ')
   return (
     <Link
-      href={`/roles/${role.id}`}
+      href={`/jobs/${role.id}`}
       className="flex flex-col gap-3 rounded-hl-xl border border-hl-border-subtle bg-hl-canvas p-5 outline-none transition-colors hover:border-hl-border hover:bg-hl-subtle"
     >
       <div className="flex items-start justify-between gap-3">
@@ -75,30 +63,11 @@ function RoleCard({ role }: { role: Campaign }) {
 }
 
 export function RolesScreen({ initialNew = false }: { initialNew?: boolean }) {
-  const { session, loading, configured } = useSession()
-
-  if (!configured) {
-    return (
-      <AppShell breadcrumbs={ROLES_CRUMBS}>
-        <Notice title="Sign-in isn’t configured" />
-      </AppShell>
-    )
-  }
-  if (loading) {
-    return (
-      <AppShell breadcrumbs={ROLES_CRUMBS}>
-        <LoadingScreen />
-      </AppShell>
-    )
-  }
-  if (!session) {
-    return (
-      <AppShell breadcrumbs={ROLES_CRUMBS}>
-        <Notice title="Sign in to continue" showSignIn />
-      </AppShell>
-    )
-  }
-  return <AuthedRoles initialNew={initialNew} />
+  return (
+    <RequireSession breadcrumbs={ROLES_CRUMBS}>
+      <AuthedRoles initialNew={initialNew} />
+    </RequireSession>
+  )
 }
 
 function AuthedRoles({ initialNew }: { initialNew: boolean }) {
@@ -174,7 +143,7 @@ function AuthedRoles({ initialNew }: { initialNew: boolean }) {
     <AppShell breadcrumbs={ROLES_CRUMBS} account={account}>
       <div className="mx-auto w-full max-w-[1440px] px-6 pb-12 pt-6">
         <PageHeader
-          title="Roles"
+          title="Jobs"
           description="Every open role and its candidate pipeline."
           actions={
             canManage ? (
@@ -227,7 +196,7 @@ function AuthedRoles({ initialNew }: { initialNew: boolean }) {
         mode="create"
         open={createOpen}
         onOpenChange={setCreateOpen}
-        onCreated={(role) => router.push(`/roles/${role.id}`)}
+        onCreated={(role) => router.push(`/jobs/${role.id}`)}
       />
     </AppShell>
   )

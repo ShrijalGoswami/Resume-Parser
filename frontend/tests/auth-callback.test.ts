@@ -22,20 +22,20 @@ beforeEach(() => {
 describe('auth callback route', () => {
   it('exchanges a PKCE ?code= for a session and redirects to next', async () => {
     exchangeCodeForSession.mockResolvedValue({ error: null })
-    const res = await GET(new Request('http://localhost/auth/callback?code=abc123&next=/home'))
+    const res = await GET(new Request('http://localhost/auth/callback?code=abc123&next=/today'))
     expect(exchangeCodeForSession).toHaveBeenCalledWith('abc123')
     expect(verifyOtp).not.toHaveBeenCalled()
-    expect(res.headers.get('location')).toBe('http://localhost/home')
+    expect(res.headers.get('location')).toBe('http://localhost/today')
   })
 
   it('verifies an OTP ?token_hash=&type= link and redirects to next', async () => {
     verifyOtp.mockResolvedValue({ error: null })
     const res = await GET(
-      new Request('http://localhost/auth/callback?token_hash=xyz&type=recovery&next=/home'),
+      new Request('http://localhost/auth/callback?token_hash=xyz&type=recovery&next=/today'),
     )
     expect(verifyOtp).toHaveBeenCalledWith({ type: 'recovery', token_hash: 'xyz' })
     expect(exchangeCodeForSession).not.toHaveBeenCalled()
-    expect(res.headers.get('location')).toBe('http://localhost/home')
+    expect(res.headers.get('location')).toBe('http://localhost/today')
   })
 
   it('returns to sign-in with an error when neither code nor token_hash is present', async () => {
@@ -54,6 +54,6 @@ describe('auth callback route', () => {
     const res = await GET(
       new Request('http://localhost/auth/callback?code=abc&next=https://evil.example.com'),
     )
-    expect(res.headers.get('location')).toBe('http://localhost/home')
+    expect(res.headers.get('location')).toBe('http://localhost/today')
   })
 })

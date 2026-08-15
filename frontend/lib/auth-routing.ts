@@ -3,40 +3,31 @@
  * `next/server` and Supabase imports so the security logic is deterministic and
  * unit-testable in isolation.
  *
- * Two coexisting apps, each with its own auth surface:
- *   - Legacy (frozen): protected → /login; authed users bounced to /dashboard.
- *   - V4 (hirelens):   protected → /auth/login; authed users bounced to /home.
+ * ONE app, one auth surface: protected → /auth/login; authed users bounced
+ * to /today.
+ *
+ * Phase 9.1 removed the legacy group. `LEGACY_AUTH_ROUTES` and its guard branch
+ * went with it: the frozen v1.0 `/login` page was the last thing either
+ * referenced, and `/login` and `/signup` are now permanent redirects to their
+ * `/auth/*` equivalents in `next.config.mjs`. A redirect needs no session guard
+ * — it never renders — so leaving an empty array here would have read like a
+ * live control over a surface that no longer exists.
  */
 
-// The legacy app no longer owns any protected page. `LEGACY_PROTECTED` used to
-// list /insights, /reports, /agent, /knowledge and /predictions — the "Classic"
-// nav group — and those five pages have been removed now that Intelligence
-// (Ask · Analytics · Ledger · Learning) covers the same ground. The constant and
-// its guard branch went with them rather than being left as an empty array that
-// reads like a live control.
-//
-// The earlier legacy routes were never listed here either: /campaigns, /search,
-// /integrations, /admin and /dashboard are redirected to V4 by `next.config.mjs`
-// and their V4 destinations are themselves in V4_PROTECTED, so an unauthenticated
-// request lands on `/auth/login` rather than the legacy `/login`.
-//
-// `/login` itself still exists and still bounces an already-signed-in user, which
-// is why this list remains.
-export const LEGACY_AUTH_ROUTES = ['/login', '/signup']
-
-// V4 (hirelens) authenticated product surfaces.
+// The authenticated product surfaces. `lib/analytics/redact.ts` derives
+// `isPrivatePath` from this list, so a route added here is redacted from
+// analytics automatically; one omitted leaks its URL.
 export const V4_PROTECTED = [
-  '/home',
-  '/roles',
-  '/talent',
+  '/today',
+  '/jobs',
+  '/candidates',
+  '/decisions',
   '/interviews',
   '/ask',
-  '/analytics',
-  '/ledger',
-  '/learning',
+  '/reports',
+  '/ai-audit',
   '/notifications',
   '/settings',
-  '/foundations',
 ]
 // Only the entry auth pages bounce an already-authenticated user. /auth/callback,
 // /auth/reset-password, /auth/accept-invite and /auth/forgot-password run
@@ -49,9 +40,9 @@ export type MiddlewareAction =
 
 /**
  * Decide what the proxy should do for a request. `withNext` means the requested
- * path should be preserved as `?next=` so sign-in can return there. V4 uses
- * precise matching (exact segment or `prefix/…`); legacy keeps its original loose
- * `startsWith` matching untouched.
+ * path should be preserved as `?next=` so sign-in can return there. Matching is
+ * precise — an exact segment or `prefix/…` — so `/todays-report` is not treated
+ * as `/today`.
  */
 export function resolveMiddlewareAction(
   pathname: string,
@@ -59,19 +50,12 @@ export function resolveMiddlewareAction(
 ): MiddlewareAction {
   const matchExact = (prefixes: string[]) =>
     prefixes.some((p) => pathname === p || pathname.startsWith(p + '/'))
-  const matchLoose = (prefixes: string[]) => prefixes.some((p) => pathname.startsWith(p))
 
-  // V4
   if (matchExact(V4_PROTECTED) && !isAuthenticated) {
     return { kind: 'redirect', pathname: '/auth/login', withNext: true }
   }
   if (matchExact(V4_AUTH_REDIRECT) && isAuthenticated) {
-    return { kind: 'redirect', pathname: '/home', withNext: false }
-  }
-
-  // Legacy — only the sign-in surface is left to handle.
-  if (matchLoose(LEGACY_AUTH_ROUTES) && isAuthenticated) {
-    return { kind: 'redirect', pathname: '/dashboard', withNext: false }
+    return { kind: 'redirect', pathname: '/today', withNext: false }
   }
 
   return { kind: 'pass' }

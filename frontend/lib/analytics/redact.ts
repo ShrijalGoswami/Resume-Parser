@@ -31,8 +31,8 @@ import { V4_PROTECTED } from '@/lib/auth-routing'
  *
  * The placeholder is named after the segment before it (`roles/<uuid>` →
  * `roles/[roleId]`), which reproduces the names Next.js already uses for those
- * params. A generic `[id]` would have collapsed `/roles/[roleId]` and
- * `/roles/[roleId]/candidates/[candidateId]` into shapes that no longer say
+ * params. A generic `[id]` would have collapsed `/jobs/[roleId]` and
+ * `/jobs/[roleId]/candidates/[candidateId]` into shapes that no longer say
  * which one was viewed.
  *
  * ─────────────────────────────────────────────────────────────────────────────
@@ -87,7 +87,7 @@ export function isPrivatePath(pathname: string): boolean {
   return V4_PROTECTED.some((p) => pathname === p || pathname.startsWith(`${p}/`))
 }
 
-/** `/roles/<uuid>/candidates/<uuid>` → `/roles/[roleId]/candidates/[candidateId]`. */
+/** `/jobs/<uuid>/candidates/<uuid>` → `/jobs/[roleId]/candidates/[candidateId]`. */
 export function redactPathname(pathname: string): string {
   const segments = pathname.split('/')
   return segments

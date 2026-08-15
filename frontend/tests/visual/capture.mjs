@@ -37,20 +37,19 @@ const ROUTES = [
   { id: 'marketing-pricing', url: '/pricing', public: true },
   { id: 'auth-login', url: '/auth/login', public: true, anon: true },
   { id: 'auth-signup', url: '/auth/signup', public: true, anon: true },
-  { id: 'dashboard', url: '/home' },
-  { id: 'roles', url: '/roles' },
+  { id: 'dashboard', url: '/today' },
+  { id: 'roles', url: '/jobs' },
   { id: 'role-pipeline', url: '__ROLE__' },
   { id: 'candidate-detail', url: '__CANDIDATE__' },
   { id: 'ask-copilot', url: '/ask' },
   { id: 'interviews', url: '/interviews' },
-  { id: 'analytics', url: '/analytics' },
-  { id: 'talent', url: '/talent' },
-  { id: 'ledger', url: '/ledger' },
+  { id: 'analytics', url: '/reports' },
+  { id: 'talent', url: '/candidates' },
+  { id: 'ledger', url: '/ai-audit' },
   { id: 'notifications', url: '/notifications' },
   { id: 'settings', url: '/settings' },
   { id: 'settings-billing', url: '/settings/billing' },
   { id: 'settings-members', url: '/settings/members' },
-  { id: 'foundations', url: '/foundations' },
 ]
 
 const VIEWPORTS = [
@@ -87,18 +86,18 @@ async function resolveDynamicRoutes(ctx) {
   const page = await ctx.newPage()
   await page.goto(`${BASE}/roles`, { waitUntil: 'networkidle' })
   const roleHref = await page
-    .locator('a[href^="/roles/"]')
+    .locator('a[href^="/jobs/"]')
     .first()
     .getAttribute('href')
     .catch(() => null)
 
-  // Ids, never paths: a `/roles/...` argument gets rewritten to a Windows path by
+  // Ids, never paths: a `/jobs/...` argument gets rewritten to a Windows path by
   // Git Bash's MSYS path conversion before node ever sees it, which silently
   // produced blank captures for both of these routes.
   const roleId = arg('role-id', null)
   const candidateId = arg('candidate-id', null)
 
-  const resolvedRole = roleId ? `/roles/${roleId}` : roleHref
+  const resolvedRole = roleId ? `/jobs/${roleId}` : roleHref
   const candidateHref =
     resolvedRole && candidateId ? `${resolvedRole}/candidates/${candidateId}` : null
 

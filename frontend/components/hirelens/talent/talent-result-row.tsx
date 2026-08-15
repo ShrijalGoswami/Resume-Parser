@@ -125,7 +125,7 @@ export function TalentResultRow({
         {result.campaign_id ? (
           <Button size="sm" variant="ghost" asChild>
             <Link
-              href={`/roles/${result.campaign_id}/candidates/${result.candidate_id}`}
+              href={`/jobs/${result.campaign_id}/candidates/${result.candidate_id}`}
               aria-label={`Full review of ${result.name}`}
             >
               Full review <ArrowUpRight aria-hidden />

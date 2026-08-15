@@ -11,12 +11,15 @@ import { useCan, PERMS } from '../lib/use-can'
  * without a five-file sub-route tree; it can be promoted to sub-route paths
  * later with no UI change.
  */
+// Forecast and Report were removed in Phase 9.1. Both rendered a "coming soon"
+// card because forecasting and the report generator are org-wide with no
+// per-role backend, so they were two dead ends inside the main workspace. They
+// return as one `Insights` lens when `/analytics/overview` accepts a
+// `campaign_id` filter; until then the tab set only lists lenses that answer.
 const lenses = [
   { label: 'Pipeline', value: 'pipeline' },
   { label: 'Triage', value: 'triage' },
   { label: 'Analytics', value: 'analytics' },
-  { label: 'Forecast', value: 'forecast' },
-  { label: 'Report', value: 'report' },
   { label: 'Activity', value: 'activity' },
 ] as const
 

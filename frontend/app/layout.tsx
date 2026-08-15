@@ -21,7 +21,7 @@ import './globals.css'
  * the route-group layouts. next-themes emits its no-flash `<script>` as part of
  * the provider's own output; a provider that lives in a route-group layout is
  * unmounted and re-mounted when navigating between groups (e.g. `/auth/login`
- * → `/home`), so React re-renders that `<script>` on the client and React 19
+ * → `/today`), so React re-renders that `<script>` on the client and React 19
  * warns that client-rendered scripts never execute. Mounted at the root the
  * provider renders once into the server HTML and survives every navigation.
  */

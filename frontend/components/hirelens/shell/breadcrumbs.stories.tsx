@@ -9,7 +9,7 @@ export const Default: Story = {
   render: () => (
     <Breadcrumbs
       items={[
-        { label: 'Roles', href: '/roles' },
+        { label: 'Roles', href: '/jobs' },
         { label: 'Senior Backend Engineer' },
       ]}
     />

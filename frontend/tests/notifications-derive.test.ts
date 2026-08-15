@@ -83,12 +83,12 @@ describe('deriveNotifications', () => {
 
   it('links a recommendation to the candidate when both ids are present', () => {
     const [item] = deriveNotifications({ recommendations: [rec()] })
-    expect(item.href).toBe('/roles/camp1/candidates/cand1')
+    expect(item.href).toBe('/jobs/camp1/candidates/cand1')
   })
 
   it('falls back to the role when there is no candidate', () => {
     const [item] = deriveNotifications({ recommendations: [rec({ candidate_id: null })] })
-    expect(item.href).toBe('/roles/camp1')
+    expect(item.href).toBe('/jobs/camp1')
   })
 
   it('normalizes an unrecognized severity rather than passing it through', () => {

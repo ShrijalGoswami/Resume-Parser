@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { ArrowUpRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AppShell } from '../shell'
-import { useSession } from '../lib/api/use-session'
+import { RequireSession } from '../auth/require-session'
 import { useProfile, useUpdateRecommendation } from '../lib/api/hooks'
 import { useCampaign } from '../lib/api/workspace'
 import { useAllRecommendations } from '../lib/api/ask'
@@ -27,18 +27,6 @@ import type { Recommendation } from '@/types/agent'
 
 type Account = { name: string; email: string } | undefined
 
-function Notice({ title, showSignIn }: { title: string; showSignIn?: boolean }) {
-  return (
-    <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-6 py-24 text-center">
-      <h1 className="hl-display-md">{title}</h1>
-      {showSignIn ? (
-        <Button variant="primary" asChild>
-          <Link href="/auth/login">Sign in</Link>
-        </Button>
-      ) : null}
-    </div>
-  )
-}
 
 /**
  * Severity, stated in words. The backend carries `severity` on every
@@ -68,12 +56,11 @@ function SeverityMark({ severity }: { severity: string }) {
  * /roles/[roleId]/decisions/[decisionId].
  */
 export function DecisionMemo({ roleId, decisionId }: { roleId: string; decisionId: string }) {
-  const { session, loading, configured } = useSession()
-
-  if (!configured) return <AppShell title="Decision"><Notice title="Sign-in isn’t configured" /></AppShell>
-  if (loading) return <AppShell title="Decision"><LoadingScreen /></AppShell>
-  if (!session) return <AppShell title="Decision"><Notice title="Sign in to continue" showSignIn /></AppShell>
-  return <AuthedMemo roleId={roleId} decisionId={decisionId} />
+  return (
+    <RequireSession title="Recommendation">
+      <AuthedMemo roleId={roleId} decisionId={decisionId} />
+    </RequireSession>
+  )
 }
 
 function AuthedMemo({ roleId, decisionId }: { roleId: string; decisionId: string }) {
@@ -85,7 +72,7 @@ function AuthedMemo({ roleId, decisionId }: { roleId: string; decisionId: string
     ? { name: profile.data.full_name ?? profile.data.email, email: profile.data.email }
     : undefined
   const roleTitle = campaign.data?.title ?? 'Role'
-  const crumbs = [{ label: roleTitle, href: `/roles/${roleId}` }, { label: 'Decision' }]
+  const crumbs = [{ label: roleTitle, href: `/jobs/${roleId}` }, { label: 'Decision' }]
 
   if (recs.isLoading) {
     return (
@@ -212,7 +199,7 @@ function MemoLayout({
   // correct number of ways to irreversibly approve a hiring decision without
   // touching the control is zero.
 
-  const crumbs = [{ label: roleTitle, href: `/roles/${roleId}` }, { label: 'Decision' }]
+  const crumbs = [{ label: roleTitle, href: `/jobs/${roleId}` }, { label: 'Decision' }]
 
   return (
     <AppShell breadcrumbs={crumbs} account={account}>
@@ -294,7 +281,7 @@ function MemoLayout({
 
         {rec.candidate_id ? (
           <Link
-            href={`/roles/${roleId}/candidates/${rec.candidate_id}`}
+            href={`/jobs/${roleId}/candidates/${rec.candidate_id}`}
             className="hl-small flex items-center gap-1 self-start text-hl-accent-fg outline-none hover:underline"
           >
             Read full review <ArrowUpRight className="size-3.5" aria-hidden />

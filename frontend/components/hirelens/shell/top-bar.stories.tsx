@@ -18,7 +18,7 @@ export const WithBreadcrumbs: Story = {
     <div className="-m-6">
       <TopBar
         breadcrumbs={[
-          { label: 'Roles', href: '/roles' },
+          { label: 'Roles', href: '/jobs' },
           { label: 'Senior Backend Engineer' },
         ]}
         unreadCount={2}

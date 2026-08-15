@@ -82,7 +82,7 @@ function DrawerInner({ roleId, candidateId }: { roleId: string; candidateId: str
           </DrawerDescription>
         </div>
         <Button asChild variant="secondary" size="sm" className="shrink-0">
-          <Link href={`/roles/${roleId}/candidates/${candidateId}`}>
+          <Link href={`/jobs/${roleId}/candidates/${candidateId}`}>
             Full review <ArrowUpRight />
           </Link>
         </Button>

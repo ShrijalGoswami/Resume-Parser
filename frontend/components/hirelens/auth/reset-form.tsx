@@ -35,7 +35,7 @@ import { useLinkSession } from './use-link-session'
  *   ready    → the form
  *   done     → a success screen, not a silent redirect
  *
- * WHY `done` IS A SCREEN. It used to `router.replace('/home')` the moment the
+ * WHY `done` IS A SCREEN. It used to `router.replace('/today')` the moment the
  * update succeeded. Changing a password is a security event, and the only
  * confirmation was arriving somewhere else — indistinguishable, to the person
  * who just did it, from the form having thrown them out. It now says the
@@ -136,7 +136,7 @@ export function ResetForm() {
           size="lg"
           className="w-full"
           onClick={() => {
-            router.replace('/home')
+            router.replace('/today')
             router.refresh()
           }}
         >
