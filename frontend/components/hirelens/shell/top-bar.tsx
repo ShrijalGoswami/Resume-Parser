@@ -1,15 +1,20 @@
 'use client'
 
-import { Search } from 'lucide-react'
+import Link from 'next/link'
+// MessageSquareText, not Sparkles (V2 §8/§23) — the same glyph the palette and
+// `nav-config` already use for Ask. It names the act of asking a question, not
+// the technology answering it.
+import { Search, MessageSquareText } from 'lucide-react'
 import { useShell } from './shell-context'
+import { useCan, PERMS } from '../lib/use-can'
 import { Kbd } from '../ui/kbd'
 import { Notifications } from './notifications'
 import { Breadcrumbs, type Crumb } from './breadcrumbs'
 
 /**
  * Top bar (Design Bible §5.2) — 52px, sticky. Breadcrumb/title on the left; the
- * ⌘K launcher (the product's single search/command entry), notifications, and
- * account on the right.
+ * ⌘K launcher (the product's single search/command entry), the Ask entry point,
+ * notifications, and account on the right.
  */
 export interface TopBarProps {
   breadcrumbs?: Crumb[]
@@ -19,6 +24,18 @@ export interface TopBarProps {
 
 export function TopBar({ breadcrumbs, title, unreadCount }: TopBarProps) {
   const { setCommandOpen } = useShell()
+  /*
+    Same rule as the command palette (`command-palette.tsx`): every Ask request
+    is `ai.use` server-side, so without the permission the offer is withdrawn
+    rather than made and broken. `useCan` reads "not known yet" as false, so the
+    control appears on resolve instead of flashing and withdrawing.
+
+    Permission HIDES; the `ai_copilot` entitlement does NOT — a plan lock is
+    shown, not hidden, so the customer can discover the feature exists
+    (`nav-config.ts`). `/ask` still gates itself on both, so this is
+    discoverability, never access control.
+  */
+  const canAsk = useCan(PERMS.AI_USE)
 
   return (
     <header className="sticky top-0 z-[var(--hl-z-sticky)] flex h-[var(--hl-topbar-h)] shrink-0 items-center gap-3 border-b border-hl-border-subtle bg-hl-canvas px-4">
@@ -72,6 +89,28 @@ export function TopBar({ breadcrumbs, title, unreadCount }: TopBarProps) {
         </span>
         <Kbd className="hidden shrink-0 sm:inline-flex">⌘K</Kbd>
       </button>
+
+      {/*
+        Ask is reachable from ⌘K, but a keystroke is not an entry point a
+        recruiter discovers — Phase 9.1 moved Ask off the rail on the strength of
+        contextual entry points that do not exist yet, which left the Copilot
+        with no visible door. This is that door. ⌘K is untouched and stays what
+        it is: search and navigation.
+
+        The label is hidden below `md` for the same reason the breadcrumb trail
+        is: at 390px the ⌘K launcher already takes 45vw, and two words of chrome
+        would push the bell off the bar. The icon keeps its accessible name.
+      */}
+      {canAsk ? (
+        <Link
+          href="/ask"
+          aria-label="Ask HireLens"
+          className="inline-flex h-hl-control-md shrink-0 items-center gap-2 rounded-hl-md px-2.5 text-hl-fg-secondary outline-none transition-colors duration-[var(--hl-dur-base)] ease-[var(--hl-ease-out)] hover:bg-hl-subtle hover:text-hl-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--hl-focus-ring,var(--hl-accent-secondary))]"
+        >
+          <MessageSquareText className="size-[18px] shrink-0" aria-hidden />
+          <span className="hl-body-medium hidden md:inline">Ask</span>
+        </Link>
+      ) : null}
 
       <Notifications unreadCount={unreadCount} />
     </header>
