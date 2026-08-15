@@ -71,10 +71,21 @@ export function PipelineTable({
       ref={scrollRef}
       className="max-h-[calc(100dvh-17rem)] overflow-auto rounded-hl-lg border border-hl-border"
     >
+      {/*
+        Cell padding is `px-2`, not `px-3`, and that is load-bearing.
+
+        Ten columns at `px-3` gave the table a 985px floor against the 918px
+        this scroller gets at 1024 — 67px hidden, with the "Full review" column
+        the part behind the edge. `px-2` removes exactly that 67px and the table
+        lands at 918: a native fit, no nested horizontal scroll, all ten columns
+        intact. At 1440 the table is `w-full` and still fills 1102px, so the
+        desktop layout is unchanged — this buys the tablet width back without
+        compressing anything above it.
+      */}
       <table className="w-full border-collapse text-left">
         <thead className="sticky top-0 z-10 bg-hl-subtle">
           <tr className="hl-label text-hl-fg-tertiary">
-            <th className="w-9 px-3 py-2">
+            <th className="w-9 px-2 py-2">
               <input
                 type="checkbox"
                 checked={allSelected}
@@ -88,25 +99,25 @@ export function PipelineTable({
                 candidates read "Moderate Match", ORDER is the differentiator
                 the reader can trust — V2 §3.6's rule that position, not hue,
                 carries a sequence. */}
-            <th className="w-10 px-3 py-2 text-right font-medium" aria-label="Position">
+            <th className="w-10 px-2 py-2 text-right font-medium" aria-label="Position">
               #
             </th>
-            <th className="px-3 py-2 font-medium">Candidate</th>
-            <th className="px-3 py-2 font-medium">Fit</th>
+            <th className="px-2 py-2 font-medium">Candidate</th>
+            <th className="px-2 py-2 font-medium">Fit</th>
             {/* Numeric column, right-aligned (V2 §14). */}
-            <th className="px-3 py-2 text-right font-medium">ATS</th>
+            <th className="px-2 py-2 text-right font-medium">ATS</th>
             {/* Matched skills, not "top skills": evidence against THIS role's
                 requirements rather than generic résumé keywords. */}
-            <th className="px-3 py-2 font-medium">Matched skills</th>
-            <th className="px-3 py-2 font-medium">Stage</th>
-            <th className="px-3 py-2 font-medium">Verdict</th>
-            <th className="px-3 py-2 font-medium">Updated</th>
+            <th className="px-2 py-2 font-medium">Matched skills</th>
+            <th className="px-2 py-2 font-medium">Stage</th>
+            <th className="px-2 py-2 font-medium">Verdict</th>
+            <th className="px-2 py-2 font-medium">Updated</th>
             {/* Clicking the name opens the quick-review drawer, which is the
                 right default — but it was also the ONLY way out of this table,
                 so the complete evaluation was reachable only by someone who
                 already knew to look inside the drawer for it. This column is
                 the direct route. */}
-            <th className="px-3 py-2 font-medium">Review</th>
+            <th className="px-2 py-2 font-medium">Review</th>
           </tr>
         </thead>
         <tbody>
@@ -133,7 +144,7 @@ export function PipelineTable({
                     : 'hover:bg-hl-subtle',
                 )}
               >
-                <td className="px-3 py-2">
+                <td className="px-2 py-2">
                   <input
                     type="checkbox"
                     checked={selected.has(row.id)}
@@ -145,10 +156,10 @@ export function PipelineTable({
                 {/* Standing under the current sort — mono, because it is a
                     count, and quiet, because it is context rather than a
                     score. `item.index` is the post-sort position. */}
-                <td className="hl-mono px-3 py-2 text-right text-hl-fg-tertiary">
+                <td className="hl-mono px-2 py-2 text-right text-hl-fg-tertiary">
                   {item.index + 1}
                 </td>
-                <td className="px-3 py-2">
+                <td className="px-2 py-2">
                   <div className="flex items-center gap-2">
                     <Avatar name={row.name} size={24} />
                     <button
@@ -183,7 +194,7 @@ export function PipelineTable({
                     </button>
                   </div>
                 </td>
-                <td className="px-3 py-2">
+                <td className="px-2 py-2">
                   {row.overallScore !== null ? (
                     <ScoreMeter score={row.overallScore} showLabel={false} />
                   ) : row.status === 'awaiting' || row.status === 'analyzing' ? (
@@ -199,10 +210,10 @@ export function PipelineTable({
                     the audit found ATS values clustering (49 repeated down the
                     column), so the number stays available without pretending
                     to differentiate. */}
-                <td className="hl-mono px-3 py-2 text-right text-hl-fg-tertiary">
+                <td className="hl-mono px-2 py-2 text-right text-hl-fg-tertiary">
                   {row.atsScore !== null ? Math.round(row.atsScore) : '—'}
                 </td>
-                <td className="px-3 py-2">
+                <td className="px-2 py-2">
                   {(() => {
                     // Evidence against this role first; generic top skills only
                     // when the analysis produced no matches to show.
@@ -221,19 +232,19 @@ export function PipelineTable({
                     )
                   })()}
                 </td>
-                <td className="px-3 py-2">
+                <td className="px-2 py-2">
                   <StageMenu
                     stage={row.raw.stage}
                     onChange={(stage) => onStageChange(row.id, stage)}
                   />
                 </td>
-                <td className="px-3 py-2">
+                <td className="px-2 py-2">
                   <HireBadge hire={row.hire} />
                 </td>
-                <td className="hl-caption px-3 py-2 text-hl-fg-tertiary">
+                <td className="hl-caption px-2 py-2 text-hl-fg-tertiary">
                   {relativeTime(row.analysisAt ?? row.uploadedAt)}
                 </td>
-                <td className="px-3 py-2">
+                <td className="px-2 py-2">
                   <Link
                     href={`/jobs/${roleId}/candidates/${row.id}`}
                     className="hl-caption inline-flex items-center gap-1 whitespace-nowrap rounded-hl-md px-1.5 py-1 text-hl-fg-secondary outline-none hover:bg-hl-subtle hover:text-hl-fg focus-visible:bg-hl-subtle [&_svg]:size-hl-icon-sm"
