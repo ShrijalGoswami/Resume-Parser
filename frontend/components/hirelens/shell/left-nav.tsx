@@ -295,26 +295,60 @@ export function LeftNav({ account }: LeftNavProps) {
 
       {/* RC-1 bottom rail: controls + account (dropdown preserved) + collapse. */}
       <div className="flex flex-col border-t border-hl-border-subtle px-2 pb-2 pt-2">
-        {collapsed ? null : <RailControls />}
+        {/*
+          Collapsed, Settings is a NavLink like any other destination; expanded,
+          it stays inside `RailControls` beside the theme control, exactly as
+          before.
+
+          `RailControls` lays its two icons out in a row, which does not fit a
+          56px rail — which is why it was simply dropped when collapsed. The
+          effect was that below 1280 (where the rail is ALWAYS collapsed)
+          Settings had no visible entry point at all: it was reachable only
+          through the account dropdown or ⌘K. Routing it through `NavLink`
+          reuses the icon, the active state, the tooltip and the `aria-label`
+          the collapsed rail already uses for the other five, so this adds a
+          destination rather than a new pattern.
+
+          Theme is deliberately NOT duplicated here: it is a button, not a
+          destination, and the full segmented control already lives in the
+          account dropdown below.
+        */}
+        {collapsed ? (
+          <NavLink item={settingsNav} collapsed />
+        ) : (
+          <RailControls />
+        )}
         <AccountMenu {...account} collapsed={collapsed} />
-        <button
-          type="button"
-          onClick={toggleNav}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className={cn(
-            'mt-1 flex h-hl-control-md items-center gap-3 rounded-hl-md px-3 text-hl-fg-tertiary outline-none transition-colors hover:bg-hl-muted hover:text-hl-fg',
-            collapsed && 'justify-center px-0',
-          )}
-        >
-          {collapsed ? (
-            <PanelLeft className="size-hl-icon-sm" />
-          ) : (
-            <>
-              <PanelLeftClose className="size-hl-icon-sm" />
-              <span className="hl-ui">Collapse</span>
-            </>
-          )}
-        </button>
+        {/*
+          The collapse toggle exists only where collapsing is possible.
+
+          Below `xl` the effect above pins the rail collapsed, so this button
+          rendered as "Expand sidebar", took a tab stop, and did nothing at all
+          when pressed — verified at 390 and 768. Making mobile expansion work
+          would mean an overlay rail (a 216px pushed rail leaves 174px of
+          content at 390), which is a different product decision; the dead
+          control simply goes. At `xl` and above nothing here changes.
+        */}
+        {belowXl ? null : (
+          <button
+            type="button"
+            onClick={toggleNav}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className={cn(
+              'mt-1 flex h-hl-control-md items-center gap-3 rounded-hl-md px-3 text-hl-fg-tertiary outline-none transition-colors hover:bg-hl-muted hover:text-hl-fg',
+              collapsed && 'justify-center px-0',
+            )}
+          >
+            {collapsed ? (
+              <PanelLeft className="size-hl-icon-sm" />
+            ) : (
+              <>
+                <PanelLeftClose className="size-hl-icon-sm" />
+                <span className="hl-ui">Collapse</span>
+              </>
+            )}
+          </button>
+        )}
       </div>
     </nav>
   )
