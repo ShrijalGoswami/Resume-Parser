@@ -166,8 +166,17 @@ export function PipelineTable({
                           analysis summary is the evidence line the audit asked
                           for. The category survives only as a fallback for
                           analyses that produced no summary. */}
+                      {/* `line-clamp-1`, not `truncate`. Both show one line and
+                          ellipsise the rest, but `truncate` sets
+                          `white-space: nowrap`, which makes this line's
+                          MIN-content its full text width. That pinned the
+                          Candidate column at 360px and the table at a rigid
+                          1181px, so at 1440 the last column ("Full review")
+                          sat 79px past the scroller and rendered as "Full".
+                          Clamping wraps internally instead, so the column
+                          flexes and the table fits the width it is given. */}
                       {row.summary || row.matchCategory ? (
-                        <p className="hl-caption max-w-[38ch] truncate text-hl-fg-tertiary">
+                        <p className="hl-caption line-clamp-1 max-w-[38ch] text-hl-fg-tertiary">
                           {row.summary ?? row.matchCategory}
                         </p>
                       ) : null}

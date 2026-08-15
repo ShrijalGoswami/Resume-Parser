@@ -35,11 +35,18 @@ export function LensSwitcher() {
   const visible = lenses.filter((lens) => lens.value !== 'triage' || canTriage)
 
   return (
-    <div
-      role="tablist"
-      aria-label="Workspace lens"
-      className="inline-flex items-center gap-1 rounded-hl-md bg-hl-muted p-1"
-    >
+    /* At 390 the four tabs need ~403px, so "Activity" was cut in half by the
+       viewport edge with nothing to indicate more existed. The strip now
+       scrolls inside its own track — `max-w-full` keeps that scrolling
+       contained, so the page itself still never scrolls sideways. The
+       scrollbar is the affordance; `min-w-max` stops the tabs from being
+       squeezed into two-line stubs instead. */
+    <div className="max-w-full overflow-x-auto">
+      <div
+        role="tablist"
+        aria-label="Workspace lens"
+        className="inline-flex min-w-max items-center gap-1 rounded-hl-md bg-hl-muted p-1"
+      >
       {visible.map((lens) => {
         const active = current === lens.value
         const href = lens.value === 'pipeline' ? pathname : `${pathname}?lens=${lens.value}`
@@ -50,7 +57,7 @@ export function LensSwitcher() {
             role="tab"
             aria-selected={active}
             className={cn(
-              'hl-body-medium rounded-hl-sm px-3 py-1 outline-none transition-colors',
+              'hl-body-medium shrink-0 whitespace-nowrap rounded-hl-sm px-3 py-1 outline-none transition-colors',
               active
                 ? 'bg-hl-canvas text-hl-accent-fg shadow-[var(--hl-shadow-xs)]'
                 : 'text-hl-fg-secondary hover:text-hl-fg',
@@ -58,8 +65,9 @@ export function LensSwitcher() {
           >
             {lens.label}
           </Link>
-        )
-      })}
+          )
+        })}
+      </div>
     </div>
   )
 }

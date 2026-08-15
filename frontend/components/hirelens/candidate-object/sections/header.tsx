@@ -24,7 +24,13 @@ export function CandidateHeader({ model, dense }: { model: CandidateModel; dense
             of their time — it takes `hl-h1` (24px) rather than the section
             step, so it reads as the subject of the panel and everything under
             it reads as attributes of that subject. */}
-        <h1 className={dense ? 'hl-h1 truncate' : 'hl-display-md'}>{model.name}</h1>
+        {/* Wraps rather than truncates. At 390 the drawer is full-screen and
+            the "Full review" button beside this takes ~160px, leaving ~110px
+            for a 32px line — "Hana Suzuki" rendered as "Hana S…". The name is
+            the subject of the panel, so it is the one string here that must
+            never be abbreviated; a second line costs less than an unreadable
+            name. Above 390 there is room and it stays on one line anyway. */}
+        <h1 className={dense ? 'hl-h1 break-words' : 'hl-display-md'}>{model.name}</h1>
         <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
           <span className="hl-small text-hl-fg-tertiary">
             Stage · {stageLabel(model.stage)}

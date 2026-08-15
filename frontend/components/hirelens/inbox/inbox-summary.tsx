@@ -39,7 +39,12 @@ export function InboxSummary({ stats, loading }: { stats: SummaryStat[]; loading
         <Link
           key={s.label}
           href={s.href}
-          className="group flex items-baseline gap-2 rounded-hl-sm outline-none focus-visible:ring-2 focus-visible:ring-hl-accent"
+          // `min-h-6` (24px) is the WCAG 2.5.8 minimum target; these rendered
+          // 18px tall. A min-height rather than padding, so the hit area grows
+          // without the row getting taller or the "one quiet line" above
+          // becoming a set of plates again — the baseline alignment, the type
+          // and the spacing are all unchanged.
+          className="group flex min-h-6 items-baseline gap-2 rounded-hl-sm outline-none focus-visible:ring-2 focus-visible:ring-hl-accent"
         >
           {loading ? (
             <Skeleton className="h-4 w-6" />

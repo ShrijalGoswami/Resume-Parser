@@ -126,7 +126,11 @@ export function CandidatePeek({
             className="shrink-0"
             title="Open the complete evaluation — fit breakdown, core requirements, résumé evidence"
           >
-            <ArrowUpRight /> Full review <Kbd className="ml-1">F</Kbd>
+            {/* The key hint is hidden below `sm`: it advertises a keyboard
+                shortcut to a reader who has no keyboard, and the ~24px it
+                takes came out of the candidate's name beside it. The action
+                and its label are unchanged at every width. */}
+            <ArrowUpRight /> Full review <Kbd className="ml-1 hidden sm:inline-flex">F</Kbd>
           </Button>
         </DrawerHeader>
 
