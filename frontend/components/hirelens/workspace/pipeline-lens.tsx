@@ -8,7 +8,9 @@ import {
   useBulkDeleteCandidates,
 } from '../lib/api/workspace'
 import { PipelineTable } from './pipeline-table'
+import { PipelineCardList } from './pipeline-card-list'
 import { PipelineBoard } from './pipeline-board'
+import { useIsDesktop } from '../lib/use-media-query'
 import {
   PipelineFilterBar,
   type PipelineFilters,
@@ -73,6 +75,9 @@ export function PipelineLens({
   const updateStage = useUpdateStage(roleId)
   const bulkDelete = useBulkDeleteCandidates(roleId)
   const canManage = useCan(PERMS.CANDIDATE_MANAGE)
+  // ≥1024px. Selects the table vs the card list for the `table` view; see the
+  // note at the render site for why the boundary is here and not at `md`.
+  const isDesktop = useIsDesktop()
 
   const [selected, setSelected] = React.useState<Set<string>>(() => new Set())
   const [view, setView] = React.useState<ViewMode>('table')
@@ -224,15 +229,53 @@ export function PipelineLens({
           }
         />
       ) : view === 'table' ? (
-        <PipelineTable
-          rows={rows}
-          roleId={roleId}
-          selected={selected}
-          onToggle={toggle}
-          onToggleAll={toggleAll}
-          onStageChange={(id, stage) => updateStage.mutate({ candidateId: id, stage })}
-          onOpenCandidate={onOpenCandidate}
-        />
+        /*
+          Same rows, same props, same handlers — only the presentation differs.
+          The ten-column table has a ~985px floor, so below `lg` the card list
+          renders instead (see `pipeline-card-list`). The TABLE IS UNCHANGED at
+          `lg` and above.
+
+          THE BOUNDARY IS `lg` (1024), NOT `md` (768), and that was measured
+          rather than chosen. At 768 the table's scroller is 662px, so 323px —
+          a third of the table — sits behind a nested horizontal scroll, and
+          Verdict, Updated and Full review are all unreachable without it. At
+          1024 the scroller is 918px and only 67px is hidden. Cards at 1024 were
+          also measured: they drop to three candidates on screen against the
+          table's five, with a ~900px-wide Full review button. The pipeline is
+          where candidates get COMPARED, so rows-on-screen is the thing worth
+          protecting once the fields are reachable at all.
+
+          Chosen with `useIsTablet` rather than a `hidden md:block` CSS pair so
+          only one of the two is ever mounted: the table virtualizes ≥100 rows,
+          and rendering a second full list behind `display: none` would pay that
+          cost twice on desktop. The hook is `useSyncExternalStore`-based with a
+          server snapshot of `false`, the same SSR-safe pattern `left-nav`
+          already uses for the rail.
+
+          This does NOT change the view toggle: `view === 'table'` is still the
+          default and Board is still opt-in.
+        */
+        isDesktop ? (
+          <PipelineTable
+            rows={rows}
+            roleId={roleId}
+            selected={selected}
+            onToggle={toggle}
+            onToggleAll={toggleAll}
+            onStageChange={(id, stage) => updateStage.mutate({ candidateId: id, stage })}
+            onOpenCandidate={onOpenCandidate}
+          />
+        ) : (
+          <PipelineCardList
+            rows={rows}
+            roleId={roleId}
+            selected={selected}
+            onToggle={toggle}
+            onToggleAll={toggleAll}
+            onStageChange={(id, stage) => updateStage.mutate({ candidateId: id, stage })}
+            onOpenCandidate={onOpenCandidate}
+          />
+        )
       ) : (
         <PipelineBoard
           rows={rows}
