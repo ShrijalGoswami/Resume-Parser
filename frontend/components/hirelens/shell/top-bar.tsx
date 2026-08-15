@@ -84,8 +84,24 @@ export function TopBar({ breadcrumbs, title, unreadCount }: TopBarProps) {
           className="size-hl-icon-md shrink-0 text-hl-fg-tertiary transition-colors duration-[var(--hl-dur-base)] ease-[var(--hl-ease-out)] group-hover:text-hl-fg-secondary"
           aria-hidden
         />
+        {/*
+          The org's own name is what drops below `sm`, and only there.
+
+          At 390 the launcher is capped at 45vw (176px), which leaves 116px for
+          a placeholder needing 163px — it rendered "Search or ask HireLen…".
+          Widening was measured first and cannot solve it: the flex spacer to
+          the left is 17px at that width (the breadcrumb trail is already
+          hidden), so even consuming all of it leaves 137px, still short.
+
+          So the one redundant word goes instead. "HireLens" tells a reader
+          inside HireLens nothing; "Search or ask" is the whole proposition —
+          that this control does both — and that survives intact. The button's
+          `aria-label` above is unchanged at every width, so the accessible
+          name stays "Search or ask HireLens" whatever is painted here.
+        */}
         <span className="hl-body flex-1 truncate text-hl-fg-tertiary">
-          Search or ask HireLens&hellip;
+          <span className="sm:hidden">Search or ask&hellip;</span>
+          <span className="hidden sm:inline">Search or ask HireLens&hellip;</span>
         </span>
         <Kbd className="hidden shrink-0 sm:inline-flex">⌘K</Kbd>
       </button>
