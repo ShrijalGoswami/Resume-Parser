@@ -287,7 +287,32 @@ export function DataTable<T>({
           ) : null}
         </div>
       ) : (
-        <div className="overflow-x-auto">
+        /*
+          A scroll container that a keyboard can actually operate.
+
+          Below `sm` these tables are wider than the space they are given —
+          measured at 390: Reports 416px in 284px, Interviews 504px, Settings
+          usage 473px. That part is fine and stays: the overflow is BOUNDED
+          here, so the page itself never scrolls sideways, and a pointer or
+          touch user drags the table to reach the last columns.
+
+          A keyboard or screen-reader user could not. The container had no
+          `tabindex`, so it was never focusable, and nothing else scrolls it —
+          which meant the "Match" and "ATS" headers and their sort buttons were
+          reachable by mouse and by nothing else. `tabindex="0"` on a scrollable
+          region is the standard remedy (WCAG 2.1.1); `role="region"` plus a
+          name is what stops that new tab stop from being an unlabelled one,
+          and it reuses the caption these tables already pass.
+
+          `focus:outline-none` is deliberately NOT set: the focus ring is the
+          only thing telling a keyboard user this strip is scrollable.
+        */
+        <div
+          className="overflow-x-auto"
+          tabIndex={0}
+          role="region"
+          aria-label={caption ? `${caption} (scrollable)` : 'Table (scrollable)'}
+        >
           <table
             className="w-full border-collapse text-left"
             style={minWidth ? { minWidth } : undefined}
