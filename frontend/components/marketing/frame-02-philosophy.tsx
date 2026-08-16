@@ -242,7 +242,7 @@ function FocusThread() {
 }
 
 const MANIFESTO = [
-  'The modern talent pipeline is choked with noise. Resumes are optimized for parsers, not for truth. Searching for signal in a sea of keywords guarantees you will miss the outliers.',
+  'The modern talent pipeline is choked with noise. Résumés are optimized for parsers, not for truth. Searching for signal in a sea of keywords guarantees you will miss the outliers.',
   'We designed HireLens as an instrument of clarity, not a warehouse for data. It does not measure how many candidates you have. It measures how closely they align with the actual work.',
   'By applying deep semantic understanding to unstructured career trajectories, we elevate the few who matter. The result is a calmer, more decisive hiring process.',
 ]
