@@ -45,7 +45,7 @@ export function CommandPalette() {
   const [activeIndex, setActiveIndex] = React.useState(0)
 
   // The palette is a second door onto the same rail, so it honours the same
-  // `perm` field — otherwise hiding Ask from the rail would just move it to ⌘K.
+  // `perm` field — otherwise hiding Copilot from the rail would just move it to ⌘K.
   const ctx = useOrgContext()
   const permissions = ctx.data?.permissions
   const canAsk = useCan(PERMS.AI_USE)

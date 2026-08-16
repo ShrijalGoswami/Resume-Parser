@@ -69,21 +69,21 @@ export function AskScreen({ initial }: { initial: AskInitial }) {
 
   if (!configured) {
     return (
-      <AppShell title="Ask">
+      <AppShell title="Copilot">
         <div className="hl-display-md p-12 text-center">Sign-in isn’t configured</div>
       </AppShell>
     )
   }
   if (loading) {
     return (
-      <AppShell title="Ask">
+      <AppShell title="Copilot">
         <LoadingScreen />
       </AppShell>
     )
   }
   if (!session) {
     return (
-      <AppShell title="Ask">
+      <AppShell title="Copilot">
         <div className="mx-auto flex max-w-xl flex-col items-center gap-5 px-6 py-24 text-center">
           <h1 className="hl-display">Sign in to continue</h1>
           <Button variant="primary" asChild>
@@ -95,25 +95,25 @@ export function AskScreen({ initial }: { initial: AskInitial }) {
   }
   if (gate.state === 'loading') {
     return (
-      <AppShell title="Ask">
+      <AppShell title="Copilot">
         <LoadingScreen />
       </AppShell>
     )
   }
   if (gate.state === 'error') {
     return (
-      <AppShell title="Ask">
+      <AppShell title="Copilot">
         <ErrorState variant="route" title="Couldn’t check your access" onRetry={gate.retry} />
       </AppShell>
     )
   }
   if (gate.state === 'denied') {
     return (
-      <AppShell title="Ask">
+      <AppShell title="Copilot">
         <div className="mx-auto w-full max-w-xl px-6 py-24">
           <GateState
             reason="permission"
-            title="Ask needs AI access. Your role can read roles and candidates, but not run AI on them."
+            title="Copilot needs AI access. Your role can read roles and candidates, but not run AI on them."
           />
         </div>
       </AppShell>
@@ -121,7 +121,7 @@ export function AskScreen({ initial }: { initial: AskInitial }) {
   }
   if (plan.state === 'denied') {
     return (
-      <AppShell title="Ask">
+      <AppShell title="Copilot">
         <div className="mx-auto w-full max-w-xl px-6 py-24">
           <FeatureLock feature="ai_copilot" requiredPlan={plan.requiredPlan} />
         </div>
@@ -245,7 +245,7 @@ function AuthedAsk({ initial }: { initial: AskInitial }) {
     )
 
   return (
-    <AppShell title="Ask" account={account}>
+    <AppShell title="Copilot" account={account} fills>
       {/* THE PAGE'S `h1`. Every other product screen gets one from `PageHeader`;
           Ask does not render a header — it is a conversation surface, and a
           visible page title above the thread would be a layout change this
@@ -256,7 +256,7 @@ function AuthedAsk({ initial }: { initial: AskInitial }) {
           Without it the document opened at `h2` with no `h1` at all, so a
           screen-reader user landing on Ask had no announced page name and the
           heading outline began mid-level. */}
-      <h1 className="sr-only">Ask</h1>
+      <h1 className="sr-only">Copilot</h1>
       <div className="flex min-h-0 flex-1">
         <aside className="hidden w-72 shrink-0 border-r border-hl-border-subtle lg:block">
           <AskNav {...navProps} />

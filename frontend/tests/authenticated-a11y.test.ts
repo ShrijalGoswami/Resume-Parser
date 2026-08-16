@@ -18,14 +18,18 @@ import { resolve } from 'node:path'
 const root = resolve(__dirname, '..')
 const read = (p: string) => readFileSync(resolve(root, p), 'utf8')
 
-describe('Ask has a page heading', () => {
+describe('Copilot has a page heading', () => {
   const ask = read('components/hirelens/ask/ask-screen.tsx')
 
   it('renders an h1', () => {
-    // Every other product screen gets its h1 from PageHeader. Ask renders no
+    // Every other product screen gets its h1 from PageHeader. Copilot renders no
     // header — it is a conversation surface — so it had no h1 at all and its
     // outline began at level 2.
-    expect(ask).toMatch(/<h1[^>]*className="sr-only"[^>]*>\s*Ask\s*<\/h1>/)
+    //
+    // The heading text follows the VISIBLE product name, which Phase 9.3 changed
+    // from "Ask" to "Copilot". The file is still `ask-screen.tsx` and the route
+    // is still `/ask` — only the name the reader hears moved.
+    expect(ask).toMatch(/<h1[^>]*className="sr-only"[^>]*>\s*Copilot\s*<\/h1>/)
   })
 
   it('keeps that heading visually hidden', () => {

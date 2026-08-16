@@ -82,10 +82,21 @@ export function AskThread({
     [create, post, pending, threadId, onThreadCreated, context],
   )
 
-  // Keep the newest turn in view as the conversation grows.
+  // Keep the newest turn in view as the conversation grows — but ONLY when the
+  // reader is already at the bottom. Scrolling up is a deliberate act (reading
+  // back through a long answer), and yanking the view down mid-read because an
+  // answer arrived is the thing that makes a chat feel broken. Returning to the
+  // bottom re-arms the follow.
+  const atBottomRef = React.useRef(true)
+  const trackAtBottom = React.useCallback(() => {
+    const node = scrollRef.current
+    if (!node) return
+    atBottomRef.current = node.scrollHeight - node.scrollTop - node.clientHeight < 120
+  }, [])
+
   React.useEffect(() => {
     const node = scrollRef.current
-    if (node) node.scrollTop = node.scrollHeight
+    if (node && atBottomRef.current) node.scrollTop = node.scrollHeight
   }, [turns.length, pending, errorText])
 
   // `/` focuses the composer when not already typing (UX Spec §9).
@@ -109,7 +120,7 @@ export function AskThread({
 
   return (
     <div className="flex h-full flex-col">
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
+      <div ref={scrollRef} onScroll={trackAtBottom} className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto max-w-[880px] px-6 py-8">
           {threadId && messages.isLoading ? (
             <div className="flex flex-col gap-6">

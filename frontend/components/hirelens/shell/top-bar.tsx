@@ -107,11 +107,16 @@ export function TopBar({ breadcrumbs, title, unreadCount }: TopBarProps) {
       </button>
 
       {/*
-        Ask is reachable from ⌘K, but a keystroke is not an entry point a
-        recruiter discovers — Phase 9.1 moved Ask off the rail on the strength of
+        Copilot is reachable from ⌘K, but a keystroke is not an entry point a
+        recruiter discovers — Phase 9.1 moved it off the rail on the strength of
         contextual entry points that do not exist yet, which left the Copilot
-        with no visible door. This is that door. ⌘K is untouched and stays what
-        it is: search and navigation.
+        with no visible door. This was that door.
+
+        Phase 9.3 put Copilot BACK on the rail, so this is now a second route to
+        the same place. It is kept deliberately: the rail hides itself below
+        `xl` (collapsed to icons) while this stays a labelled target in the bar,
+        and removing a working entry point is a separate decision from renaming
+        one. ⌘K is untouched and stays what it is: search and navigation.
 
         The label is hidden below `md` for the same reason the breadcrumb trail
         is: at 390px the ⌘K launcher already takes 45vw, and two words of chrome
@@ -120,11 +125,11 @@ export function TopBar({ breadcrumbs, title, unreadCount }: TopBarProps) {
       {canAsk ? (
         <Link
           href="/ask"
-          aria-label="Ask HireLens"
+          aria-label="Copilot"
           className="inline-flex h-hl-control-md shrink-0 items-center gap-2 rounded-hl-md px-2.5 text-hl-fg-secondary outline-none transition-colors duration-[var(--hl-dur-base)] ease-[var(--hl-ease-out)] hover:bg-hl-subtle hover:text-hl-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--hl-focus-ring,var(--hl-accent-secondary))]"
         >
           <MessageSquareText className="size-[18px] shrink-0" aria-hidden />
-          <span className="hl-body-medium hidden md:inline">Ask</span>
+          <span className="hl-body-medium hidden md:inline">Copilot</span>
         </Link>
       ) : null}
 

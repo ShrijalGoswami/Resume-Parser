@@ -17,9 +17,23 @@ import type { AccountMenuProps } from './account-menu'
 export interface AppShellProps extends TopBarProps {
   children: React.ReactNode
   account?: AccountMenuProps
+  /**
+   * Opt in for screens that fill the viewport and own their scrolling
+   * INTERNALLY (Ask: a thread pane that scrolls with the composer pinned
+   * beneath it). `min-h-full` below is a MINIMUM, so such a screen's layout
+   * grew past the viewport instead of being bounded by it: the child's
+   * `min-h-0 flex-1 overflow-y-auto` had nothing to shrink against, so it
+   * never became a scroll port, and `main` scrolled the whole page instead —
+   * taking the composer and the thread sidebar with it.
+   *
+   * A definite height is what a nested scroll port needs, and `overflow-hidden`
+   * makes the containment explicit: the page cannot scroll, so the only
+   * scrollers are the ones the screen declares.
+   */
+  fills?: boolean
 }
 
-export function AppShell({ children, account, ...topBarProps }: AppShellProps) {
+export function AppShell({ children, account, fills = false, ...topBarProps }: AppShellProps) {
   // Keyed on the route so the content region replays its entrance on every
   // navigation. This is a CSS animation on a remounted node — no transition
   // library, no effect on the router, and nothing in the tree below re-renders
@@ -41,7 +55,11 @@ export function AppShell({ children, account, ...topBarProps }: AppShellProps) {
           // screen — atmosphere standing in for substance, and it tinted every
           // neutral surface above it, which defeats the point of a neutral
           // ramp. V2's answer to a sparse screen is space and typography.
-          className="flex-1 overflow-y-auto outline-none"
+          className={
+            fills
+              ? 'min-h-0 flex-1 overflow-hidden outline-none'
+              : 'flex-1 overflow-y-auto outline-none'
+          }
         >
           {/* `flex flex-col` is here so a screen can say `flex-1` and actually
               fill the viewport. `min-h-full` alone gives this wrapper a minimum,
@@ -52,7 +70,14 @@ export function AppShell({ children, account, ...topBarProps }: AppShellProps) {
               only shows up once a screen is assembled and under-filled.
               `min-h-full` is kept rather than `h-full` so tall screens still
               grow and scroll instead of being pinned to one viewport. */}
-          <div key={pathname} className="hl-route-enter flex min-h-full flex-col">
+          <div
+            key={pathname}
+            className={
+              fills
+                ? 'hl-route-enter flex h-full min-h-0 flex-col'
+                : 'hl-route-enter flex min-h-full flex-col'
+            }
+          >
             {children}
           </div>
         </main>

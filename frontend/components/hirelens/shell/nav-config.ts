@@ -13,23 +13,28 @@ import {
 import { PERMS, type PermissionKey } from '../settings/permissions'
 
 /**
- * Primary navigation — Phase 9.1.
+ * Primary navigation — Phase 9.1, amended by Phase 9.3.
  *
- * Five destinations, ungrouped, in the order the recruiter's day runs:
- *   Today · Jobs · Candidates · Reports · Decisions
+ * Six destinations, ungrouped, in the order the recruiter's day runs:
+ *   Today · Jobs · Candidates · Reports · Decisions · Copilot
  *
- * The two labelled groups (WORKSPACE / INTELLIGENCE) are gone. At five items a
+ * The two labelled groups (WORKSPACE / INTELLIGENCE) are gone. At six items a
  * group label costs more than it clarifies: it asks the reader to hold a
- * taxonomy in mind to find five things, and the taxonomy was the product's own
+ * taxonomy in mind to find six things, and the taxonomy was the product's own
  * ("Intelligence"), not the recruiter's.
  *
  * WHAT LEFT THE RAIL, AND WHY IT IS STILL REACHABLE
  *
- * Interviews, Ask and AI Audit moved to `secondaryNav` below. They are still
- * real destinations and the command palette still lists them — removing a row
- * from the rail is a statement about priority, not about access. Learning was
+ * Interviews and AI Audit moved to `secondaryNav` below. They are still real
+ * destinations and the command palette still lists them — removing a row from
+ * the rail is a statement about priority, not about access. Learning was
  * deleted outright: it had no backend, so it was a dead end rather than a
  * low-priority destination.
+ *
+ * Ask went with them in 9.1 and CAME BACK in 9.3 as Copilot — the contextual
+ * entry points that were supposed to replace it never shipped, so the rail is
+ * once again where a recruiter finds it. Settings stays below, outside this
+ * list, so Copilot sits last among the destinations and above Settings.
  */
 export interface NavItem {
   label: string
@@ -43,11 +48,11 @@ export interface NavItem {
    * every member can reach it — Today, Jobs, Candidates and Decisions all read
    * data gated by `campaign.view` / `candidate.view`, which every role has.
    *
-   * Only Ask and Reports carry one, because those two surfaces are *entirely*
-   * one permission: every Ask request is `ai.use`, and Reports is a single
-   * `usage.view` endpoint. Listing a destination that can only render a gate
-   * state is a promise the rail cannot keep. The route still gates itself — a
-   * hidden rail entry is not access control, and deep links exist.
+   * Only Copilot and Reports carry one, because those two surfaces are
+   * *entirely* one permission: every Copilot request is `ai.use`, and Reports is
+   * a single `usage.view` endpoint. Listing a destination that can only render a
+   * gate state is a promise the rail cannot keep. The route still gates itself —
+   * a hidden rail entry is not access control, and deep links exist.
    */
   perm?: PermissionKey
   /**
@@ -55,8 +60,8 @@ export interface NavItem {
    * NOT hide it, and that is the exact opposite of `perm` above.
    *
    * The two rules diverge because the remedies do. A hidden item is right for a
-   * permission: no amount of money gets a viewer into Ask, so listing it is a
-   * promise the rail cannot keep. It is wrong for a plan: a hidden feature
+   * permission: no amount of money gets a viewer into Copilot, so listing it is
+   * a promise the rail cannot keep. It is wrong for a plan: a hidden feature
    * sells nothing and teaches nothing, and the customer never discovers the
    * product does the thing they need. Locked-and-visible is how they find out.
    *
@@ -129,6 +134,31 @@ export const navGroups: NavGroup[] = [
         isActive: (p) => p.startsWith('/decisions'),
         shortcut: 'G D',
       },
+      {
+        // Phase 9.3 promotes the conversation surface to the rail and renames it
+        // Copilot for the reader. 9.1 had moved it off "on the strength of
+        // contextual entry points that do not exist yet" (top-bar.tsx's words) —
+        // so the bet did not pay, and the destination comes back.
+        //
+        // ONLY THE VISIBLE NAME CHANGES. The route stays `/ask`, the components
+        // stay `ask-*`, the endpoints stay `/copilot`, and the capability stays
+        // `recruiter_copilot`. Renaming those to match the label would be a
+        // large diff that buys the reader nothing.
+        label: 'Copilot',
+        href: '/ask',
+        // MessageSquareText, not Sparkles (V2 §8/§23): it answers questions; it
+        // does not do magic. Same icon the top-bar door and the palette use.
+        icon: MessageSquareText,
+        isActive: (p) => p.startsWith('/ask'),
+        perm: PERMS.AI_USE,
+        // Server counterpart: the whole copilot router is behind
+        // `require_entitlement("ai_copilot")` (main.py).
+        entitlement: 'ai_copilot',
+        // NO `shortcut` DELIBERATELY. `shell-context.tsx` derives the live `g`
+        // chord map from whichever rail items declare one, so adding a hint here
+        // would register a NEW keybinding — a behaviour change nobody asked for,
+        // in a file this phase is not meant to touch. The row works without one.
+      },
     ],
   },
 ]
@@ -137,17 +167,12 @@ export const navGroups: NavGroup[] = [
  * Reachable, deliberately not on the rail.
  *
  * The command palette lists these alongside the rail items, so none of them
- * became undiscoverable when the rail shrank to five. Each is here for its own
- * reason:
+ * became undiscoverable when the rail shrank. Each is here for its own reason:
  *
  *   Interviews  a per-candidate action wearing a destination's clothes. The
  *               endpoint is already candidate-scoped, so the generator moves
  *               onto the candidate record in a later phase and this entry
  *               disappears rather than being relocated again.
- *   Ask         intelligence belongs in the work, not in a room you visit. ⌘K
- *               already routes a typed question here WITH page context; the
- *               standing destination is the one entry point that cannot carry
- *               any, which is why it reads as bolted on.
  *   AI Audit    the immutable record of AI recommendations that reached a call.
  *               Real, rarely visited, and no longer permitted to occupy the
  *               word "Decisions".
@@ -158,18 +183,6 @@ export const secondaryNav: NavItem[] = [
     href: '/interviews',
     icon: ClipboardList,
     isActive: (p) => p.startsWith('/interviews'),
-  },
-  {
-    label: 'Ask',
-    href: '/ask',
-    // MessageSquareText, not Sparkles (V2 §8/§23). The palette names
-    // destinations; a sparkle names a technology.
-    icon: MessageSquareText,
-    isActive: (p) => p.startsWith('/ask'),
-    perm: PERMS.AI_USE,
-    // Server counterpart: the whole copilot router is behind
-    // `require_entitlement("ai_copilot")` (main.py).
-    entitlement: 'ai_copilot',
   },
   {
     label: 'AI Audit',
