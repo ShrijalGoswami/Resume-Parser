@@ -61,7 +61,19 @@ export function AskNav({
         <Plus /> New thread
       </Button>
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      {/* A FLOOR, NOT `min-h-0`.
+          Once the shell bounds this column to the viewport (AppShell `fills`),
+          the three siblings below are fixed-size — Suggested alone is ~343px —
+          and every pixel of shrinkage landed on this one child, because it was
+          the only flex item whose `min-height` allowed it to reach zero. The
+          list still held real threads; it just had no height to show them in,
+          and the page could no longer scroll to reveal them.
+
+          `min-h-28` keeps roughly the heading plus three rows visible at any
+          height this app is used at, and `flex-1` still lets it take the whole
+          column when there is room. Its own `overflow-y-auto` (unchanged) is
+          what makes the list scroll inside that floor. */}
+      <div className="min-h-28 flex-1 overflow-y-auto">
         <p className="hl-label px-1 pb-2 text-hl-fg-tertiary">Threads</p>
         {conversationsLoading ? (
           <div className="flex flex-col gap-1.5">
@@ -118,7 +130,13 @@ export function AskNav({
       </div>
 
       {suggestions.length > 0 ? (
-        <div className="flex flex-col gap-1.5 border-t border-hl-border-subtle pt-3">
+        // `min-h-0` lets this block SHRINK. A flex item defaults to
+        // `min-height: auto`, which means "never smaller than my content" — so
+        // this 343px stack refused to give up a single pixel and the threads
+        // list above absorbed the entire deficit. Shrinking is paired with
+        // `overflow-y-auto` so the prompts stay reachable by scrolling inside
+        // the block rather than being clipped away.
+        <div className="flex min-h-0 flex-col gap-1.5 overflow-y-auto border-t border-hl-border-subtle pt-3">
           <p className="hl-label px-1 pb-1 text-hl-fg-tertiary">Suggested</p>
           {suggestions.map((suggestion) => (
             <button
