@@ -21,7 +21,7 @@ graph LR
 | Frontend | **Vercel** | Native Next.js 16, Node runtime for `proxy.ts` |
 | Backend | **Render** | Long-running ASGI, no cold-start cap on multi-second LLM calls, PyMuPDF-friendly |
 | Database · Auth · Storage | **Supabase** | Managed Postgres + GoTrue + Storage. **Paid tier required for PITR** |
-| LLM | **Groq** | `llama-3.3-70b-versatile`; swappable by configuration |
+| LLM | **Groq** | `openai/gpt-oss-120b`; swappable by configuration |
 
 **Co-locate the backend with Supabase.** Cross-region round-trips dominate
 everything else: measured ~2 s per query from a distant host versus tens of

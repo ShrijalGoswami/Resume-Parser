@@ -57,9 +57,13 @@ def all_models() -> list[ModelSpec]:
 def _seed() -> None:
     seeds = [
         # ── Groq ──────────────────────────────────────────────────────────
-        ModelSpec("llama-3.3-70b-versatile", "groq", cost_tier="cheap", context_window=131072,
-                  max_output_tokens=32768, supports_tools=True, supports_streaming=True,
-                  input_price_per_1m=0.59, output_price_per_1m=0.79),
+        # Replaced `llama-3.3-70b-versatile`, which is no longer usable here. The
+        # `openai/` segment is part of Groq's model id (the weights' origin), not
+        # a provider prefix — the provider is whatever this spec says it is, and
+        # `capability_routing` infers it from here rather than from the name.
+        ModelSpec("openai/gpt-oss-120b", "groq", cost_tier="cheap", context_window=131072,
+                  max_output_tokens=65536, supports_tools=True, supports_streaming=True,
+                  input_price_per_1m=0.15, output_price_per_1m=0.75),
         ModelSpec("llama-3.1-8b-instant", "groq", cost_tier="cheap", context_window=131072,
                   max_output_tokens=8192, supports_streaming=True,
                   input_price_per_1m=0.05, output_price_per_1m=0.08),

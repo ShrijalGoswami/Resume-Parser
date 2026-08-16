@@ -98,7 +98,7 @@ Weights are per-campaign overridable (stored in `campaigns.ranking_weights`).
 
 ## Stage 4 — LLM processing (`app/llm/`)
 
-**Client** (`groq_client.call_groq`): model **`llama-3.3-70b-versatile`**,
+**Client** (`groq_client.call_groq`): model **`openai/gpt-oss-120b`**,
 `temperature=0.2`, `max_tokens=2048`, `timeout=30s`, **3 network retries**.
 `GroqConfigError` (missing/placeholder key) is never retried.
 

@@ -43,11 +43,15 @@ class GroqProvider(LLMProvider):
     ctx_window = 131072
     max_output = 32768
     role_models = {
-        ModelRole.DEFAULT_REASONING: "llama-3.3-70b-versatile",
+        # `llama-3.3-70b-versatile` was retired from this deployment; the three
+        # roles it served now resolve to `openai/gpt-oss-120b`. The slash is part
+        # of the model id Groq publishes — it is NOT a provider prefix, and the
+        # registry still maps it to provider "groq".
+        ModelRole.DEFAULT_REASONING: "openai/gpt-oss-120b",
         ModelRole.FAST_REASONING: "llama-3.1-8b-instant",
         ModelRole.CHEAP_REASONING: "llama-3.1-8b-instant",
-        ModelRole.LONG_CONTEXT: "llama-3.3-70b-versatile",
-        ModelRole.PREMIUM_REASONING: "llama-3.3-70b-versatile",
+        ModelRole.LONG_CONTEXT: "openai/gpt-oss-120b",
+        ModelRole.PREMIUM_REASONING: "openai/gpt-oss-120b",
     }
 
     _client: Any = None  # lazily-constructed singleton Groq() client

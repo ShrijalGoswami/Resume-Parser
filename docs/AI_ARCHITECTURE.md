@@ -106,7 +106,7 @@ which the gateway treats as a fallback signal. **Adding a provider** = implement
 
 | Provider | Status |
 |----------|--------|
-| Groq (`llama-3.3-70b-versatile`) | ✅ active (default) |
+| Groq (`openai/gpt-oss-120b`) | ✅ active (default) |
 | Gemini · Anthropic · OpenAI · OpenRouter | ✅ registered — enable by config (`AI_PROVIDER` + key) |
 | Embeddings: hashing (default) · OpenAI · Gemini | ✅ configurable (`EMBEDDING_PROVIDER`) |
 
@@ -146,7 +146,7 @@ settings — no scattered constants:
 | Setting | Default |
 |---------|---------|
 | `AI_DEFAULT_PROVIDER` | `groq` |
-| `AI_DEFAULT_MODEL` | `llama-3.3-70b-versatile` |
+| `DEFAULT_REASONING_MODEL` | blank → the provider's declared default (Groq: `openai/gpt-oss-120b`) |
 | `AI_TEMPERATURE` | `0.2` |
 | `AI_MAX_TOKENS` | `2048` |
 | `AI_TIMEOUT_SECONDS` | `30` |

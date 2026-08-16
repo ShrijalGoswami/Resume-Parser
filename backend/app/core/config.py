@@ -133,7 +133,8 @@ class Settings(BaseSettings):
 
     # ── AI Foundation Layer (V5 / Sprint 3) ──────────────────────────────────
     # Centralized AI configuration consumed by app.ai.config.AIConfig. Defaults
-    # preserve the historical Groq behavior exactly (llama-3.3-70b, temp 0.2).
+    # preserve the historical Groq behavior exactly (temp 0.2); the reasoning
+    # model itself is declared by the provider (now `openai/gpt-oss-120b`).
     AI_DEFAULT_PROVIDER: str = "groq"
     # NOTE: `AI_DEFAULT_MODEL` was REMOVED (C4). It was one vendor's model
     # name used as the cross-provider last resort, so any provider with an
@@ -211,7 +212,7 @@ class Settings(BaseSettings):
     # their dedicated env vars (above) for clarity — this block is timeout/retry/
     # model policy. Keys accept provider names or aliases (e.g. "claude").
     #   AI_PROVIDERS={"groq":{"timeout_seconds":30,"max_network_retries":3,
-    #                         "default_model":"llama-3.3-70b-versatile"},
+    #                         "default_model":"openai/gpt-oss-120b"},
     #                 "claude":{"timeout_seconds":60}}
     AI_PROVIDERS: dict = {}
 

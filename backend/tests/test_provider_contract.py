@@ -212,7 +212,7 @@ def layer_a() -> None:
             record("A", "validation rejects a model whose provider key is missing", "SKIPPED",
                    "all providers configured in this env")
         # A valid, configured model (Groq) passes.
-        settings.AI_CAPABILITY_MODELS = {"resume_analysis": "llama-3.3-70b-versatile"}
+        settings.AI_CAPABILITY_MODELS = {"resume_analysis": "openai/gpt-oss-120b"}
         settings.AI_ENABLE_CAPABILITY_ROUTING = True
         passed = True
         try:

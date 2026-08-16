@@ -370,7 +370,7 @@ of what was decided, so it cannot be rewritten after the fact.
 | Backend | Render | `uvicorn app.main:app` via `render.yaml` |
 | Backend (portable) | any container host | `backend/Dockerfile` |
 | Database · Auth · Storage | Supabase | managed |
-| LLM | Groq (`llama-3.3-70b-versatile`) | provider-agnostic via the orchestrator |
+| LLM | Groq (`openai/gpt-oss-120b`) | provider-agnostic via the orchestrator |
 
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for the procedure and
 [OPERATIONS.md](./OPERATIONS.md) for running it.

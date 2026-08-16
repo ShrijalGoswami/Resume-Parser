@@ -12,7 +12,10 @@ call per resume and Copilot is interactive.
 
 ## Decision
 
-Use **Groq** with the **`llama-3.3-70b-versatile`** model via the official
+Use **Groq** with the **`openai/gpt-oss-120b`** model (amended 16 Aug 2026 —
+this ADR originally specified `llama-3.3-70b-versatile`, which is no longer
+usable for our production setup; only the model identifier changed, the
+provider decision and every call parameter below stand) via the official
 `groq` SDK (`groq_client.call_groq`, `temperature=0.2`, `max_tokens=2048`,
 `timeout=30s`, 3 retries). All LLM output is validated against Pydantic schemas
 that contain **no score fields**, so the model cannot override deterministic
