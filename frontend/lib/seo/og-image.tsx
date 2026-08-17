@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og'
 
-import { LOGO_BLADE_PATHS } from '@/components/brand/logo'
+import { LOGO_APERTURE, LOGO_BODY_PATHS, LOGO_GRADIENT } from '@/components/brand/logo'
 import { SITE_NAME } from '@/lib/seo/site'
 import { SERVICE_DESCRIPTION } from '@/lib/legal'
 
@@ -42,15 +42,33 @@ export default async function OpengraphImage() {
         }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
-          {/* The lockup. Satori resolves neither Tailwind nor CSS custom
-              properties, so the mark is drawn here from the shared path data
-              with the DARK prism stops written literally — this card always
-              sits on ink, so there is no light variant to switch to. */}
+          {/* The lockup, drawn from the shared geometry in components/brand/logo.
+              Satori supports neither CSS custom properties nor SVG masks, so the
+              aperture is not knocked out here — it is painted in this card's own
+              ink, which is equivalent because this card only ever sits on ink. */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <svg width="64" height="64" viewBox="0 0 32 32">
-              {LOGO_BLADE_PATHS.map((d, i) => (
-                <path key={d} d={d} fill={['#8B7BFF', '#6C97FF', '#7FE2FF'][i]} />
+            <svg width="51" height="68" viewBox="0 0 48 64">
+              {LOGO_BODY_PATHS.map((d) => (
+                <path key={d} d={d} fill={LOGO_GRADIENT.dark.from} />
               ))}
+              <circle
+                cx={LOGO_APERTURE.cx}
+                cy={LOGO_APERTURE.cy}
+                r={LOGO_APERTURE.rOuter}
+                fill="#0A0C18"
+              />
+              <circle
+                cx={LOGO_APERTURE.cx}
+                cy={LOGO_APERTURE.cy}
+                r={LOGO_APERTURE.rPupil}
+                fill={LOGO_GRADIENT.dark.to}
+              />
+              <circle
+                cx={LOGO_APERTURE.catchlight.cx}
+                cy={LOGO_APERTURE.catchlight.cy}
+                r={LOGO_APERTURE.catchlight.r}
+                fill="#0A0C18"
+              />
             </svg>
             <div
               style={{
@@ -75,13 +93,17 @@ export default async function OpengraphImage() {
           </div>
         </div>
 
-        {/* The prism hairline the product uses as its signature mark. */}
+        {/* The brand hairline. It carried the old violet/cyan prism, which is
+            not a HireLens colour any more — it read as a second, unrelated
+            palette sitting under a terracotta mark. It now draws the SAME
+            gradient as the logo above it rather than a parallel literal, so the
+            card cannot drift out of step with the mark again. */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div
             style={{
               height: '4px',
               width: '240px',
-              background: 'linear-gradient(90deg, #5B5BD6 0%, #7C6BF0 50%, #4FB8E8 100%)',
+              background: `linear-gradient(90deg, ${LOGO_GRADIENT.dark.from} 0%, ${LOGO_GRADIENT.dark.to} 100%)`,
             }}
           />
           <div style={{ fontSize: 24, color: '#6E7391' }}>
