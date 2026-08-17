@@ -5,10 +5,10 @@
 ## 1. Environment
 
 - **Environment:** `development`
-- **Provider:** `anthropic` · model `claude-sonnet-5`
-- **Date/time:** 2026-08-06 17:46 UTC
-- **Totals:** 8 PASS · 0 FAIL · 0 SKIPPED
-- **Overall:** ✅ PASS
+- **Provider:** `groq` · model `openai/gpt-oss-120b`
+- **Date/time:** 2026-08-17 12:08 UTC
+- **Totals:** 7 PASS · 1 FAIL · 0 SKIPPED
+- **Overall:** ❌ FAIL
 
 ## 2. Behavioral Validation — deterministic fault injection
 
@@ -22,7 +22,7 @@ _In-process fake providers drive the real orchestrator retry ladder. No network;
 | Quota exhaustion NOT retried (exactly 1 call) | ✅ PASS | calls=1 |
 | Retry-After honored over backoff (waited ~retry_after, not base) | ✅ PASS | elapsed=0.047s, calls=2 |
 | Recovers after transient failures (success on 3rd attempt) | ✅ PASS | calls=3 |
-| Total added latency bounded by the delay cap | ✅ PASS | elapsed=0.156s (cap=100ms × 2 waits) |
+| Total added latency bounded by the delay cap | ✅ PASS | elapsed=0.157s (cap=100ms × 2 waits) |
 
 ## 3. Live Provider Validation — real Groq smoke
 
@@ -30,14 +30,16 @@ _One real call to Groq, proving the real provider path and no regression. Record
 
 | Check | Result | Detail |
 |---|---|---|
-| Live Groq smoke — real provider path | ✅ PASS | model=llama-3.3-70b-versatile, tokens=55 |
+| Live Groq smoke — real provider path | ❌ FAIL | empty response |
 
 ## 4. Failure classification
 
-No failures. (Any live-smoke SKIP is an External Dependency, by design.)
+| Result | Check | Classification |
+|---|---|---|
+| FAIL | Live Groq smoke — real provider path | REQUIRES ROOT-CAUSE |
 
 ## 5. Release recommendation
 
-✅ **Ready to close A4.** Transient network/timeout/rate-limit failures recover with bounded, jittered backoff (honoring Retry-After); quota exhaustion fails fast without burning more quota; total added latency stays bounded — proven by deterministic fault injection, with the real Groq path validated by a live smoke.
+❌ **Do not close A4.** 1 check(s) FAILED — stop for root-cause per protocol.
 
 _A1 = tenant isolation · A6 = workflow · A2 = ledger immutability · A3 = résumé storage · A4 = AI reliability._

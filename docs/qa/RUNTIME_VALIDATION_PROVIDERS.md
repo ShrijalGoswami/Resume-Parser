@@ -5,9 +5,9 @@
 ## 1. Environment
 
 - **Environment:** `development`
-- **Registered providers:** anthropic, contract_fake, fake, gemini, groq, kimi, openai, openrouter, routefake
-- **Active provider:** `anthropic`
-- **Date/time:** 2026-08-06 17:46 UTC
+- **Registered providers:** anthropic, contract_fake, fake, gemini, groq, kimi, nvidia, openai, openrouter, routefake
+- **Active provider:** `groq`
+- **Date/time:** 2026-08-17 12:07 UTC
 - **Totals:** 35 PASS · 0 FAIL · 5 SKIPPED
 - **Overall:** ✅ PASS
 
@@ -27,8 +27,8 @@ _In-process; no network. Contract conformance, provider-sourced metadata, health
 | gemini declares vision + embeddings; groq does not | ✅ PASS |  |
 | every provider reports a non-empty model_name + positive context_window | ✅ PASS |  |
 | groq: health() reports configured when key present | ✅ PASS |  |
-| anthropic: health() reports configured when key present | ✅ PASS |  |
-| gemini: health() reports configured when key present | ✅ PASS |  |
+| anthropic: health() reports NOT configured when key absent | ✅ PASS |  |
+| gemini: health() reports NOT configured when key absent | ✅ PASS |  |
 | kimi: health() reports NOT configured when key absent | ✅ PASS |  |
 | openai: health() reports NOT configured when key absent | ✅ PASS |  |
 | openrouter: health() reports NOT configured when key absent | ✅ PASS |  |
@@ -48,7 +48,7 @@ _In-process; no network. Contract conformance, provider-sourced metadata, health
 | Kimi registered as an OpenAI-compatible provider | ✅ PASS |  |
 | validation rejects an unknown model | ✅ PASS |  |
 | validation rejects an invalid capability | ✅ PASS |  |
-| validation rejects a model whose provider key is missing (kimi) | ✅ PASS |  |
+| validation rejects a model whose provider key is missing (anthropic) | ✅ PASS |  |
 | validation passes for a valid, configured model (groq) | ✅ PASS |  |
 | orchestrator routes capability → model → provider end-to-end | ✅ PASS |  |
 
@@ -58,9 +58,9 @@ _A real request for each provider whose key is configured. **SKIPPED (Not Config
 
 | Check | Result | Detail |
 |---|---|---|
-| groq: live smoke | ✅ PASS | model=llama-3.3-70b-versatile |
-| anthropic: live smoke | ⚠️ SKIPPED | External Dependency: ping failed: The 'anthropic' package is not installed. |
-| gemini: live smoke | ⚠️ SKIPPED | External Dependency: ping failed: The 'google-generativeai' package is not installed. |
+| groq: live smoke | ✅ PASS | model=openai/gpt-oss-120b |
+| anthropic: live smoke | ⚠️ SKIPPED | Not Configured |
+| gemini: live smoke | ⚠️ SKIPPED | Not Configured |
 | kimi: live smoke | ⚠️ SKIPPED | Not Configured |
 | openai: live smoke | ⚠️ SKIPPED | Not Configured |
 | openrouter: live smoke | ⚠️ SKIPPED | Not Configured |
