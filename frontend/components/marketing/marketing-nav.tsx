@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { Logo } from '@/components/brand/logo'
 
 /**
  * Top navigation for the composed marketing page.
@@ -102,14 +103,19 @@ export function MarketingNav() {
           Vercel's 64 and Linear's 73. Height is NOT hardcoded here: the global
           scale owns it, so this stays at the design's authored value. */}
       <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between px-6 py-4 md:px-20">
-        {/* Brand */}
+        {/* Brand. `tone="mono"` rather than the product's prism: the marketing
+            palette is deliberately monochromatic terracotta (globals.css
+            collapses `--mkt-prism-*` to one hue), and the `--hl-prism-*` tokens
+            are not in scope here at all. The mark inherits the link's colour,
+            so it crosses the ink/canvas transition with the wordmark instead of
+            sitting on it as a fixed-colour sticker. */}
         <Link
           href="/"
           className={`font-mkt-display text-[32px] leading-[40px] tracking-tighter transition-colors duration-500 ${
             onInk ? 'text-mkt-dark-fg' : 'text-mkt-fg'
           }`}
         >
-          HireLens
+          <Logo tone="mono" />
         </Link>
 
         {/* Desktop nav */}

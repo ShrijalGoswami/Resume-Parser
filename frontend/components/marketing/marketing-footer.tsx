@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Logo } from '@/components/brand/logo'
 
 /**
  * Footer — Stitch frame 5 (`hirelens_marketing_the_conclusion_frame_5`).
@@ -34,11 +35,15 @@ export function MarketingFooter() {
     <footer className="w-full border-t border-mkt-subtle bg-mkt-canvas">
       <div className="mx-auto flex w-full max-w-[1280px] flex-col items-center justify-between px-12 py-16 md:flex-row">
         <div className="mb-8 md:mb-0">
+          {/* `inline-flex` replaces `block` so the mark and wordmark share a
+              baseline row; the link keeps its own width rather than stretching
+              the column. Italic stays on the wordmark alone — the mark is
+              geometry and must not be skewed with the type. */}
           <Link
             href="/"
-            className="mb-2 block font-mkt-display text-xl italic text-mkt-fg"
+            className="mb-2 inline-flex font-mkt-display text-xl text-mkt-fg"
           >
-            HireLens
+            <Logo tone="mono" wordmarkClassName="italic" />
           </Link>
           {/* The year is derived, not typed. It read "© 2024" throughout 2026 —
               a small thing that quietly tells a visitor the site is unmaintained,

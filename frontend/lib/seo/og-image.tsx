@@ -1,5 +1,6 @@
 import { ImageResponse } from 'next/og'
 
+import { LOGO_BLADE_PATHS } from '@/components/brand/logo'
 import { SITE_NAME } from '@/lib/seo/site'
 import { SERVICE_DESCRIPTION } from '@/lib/legal'
 
@@ -41,15 +42,26 @@ export default async function OpengraphImage() {
         }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
-          <div
-            style={{
-              fontSize: 60,
-              color: '#EEF0FA',
-              letterSpacing: '-0.03em',
-              fontWeight: 500,
-            }}
-          >
-            {SITE_NAME}
+          {/* The lockup. Satori resolves neither Tailwind nor CSS custom
+              properties, so the mark is drawn here from the shared path data
+              with the DARK prism stops written literally — this card always
+              sits on ink, so there is no light variant to switch to. */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <svg width="64" height="64" viewBox="0 0 32 32">
+              {LOGO_BLADE_PATHS.map((d, i) => (
+                <path key={d} d={d} fill={['#8B7BFF', '#6C97FF', '#7FE2FF'][i]} />
+              ))}
+            </svg>
+            <div
+              style={{
+                fontSize: 60,
+                color: '#EEF0FA',
+                letterSpacing: '-0.03em',
+                fontWeight: 500,
+              }}
+            >
+              {SITE_NAME}
+            </div>
           </div>
           <div
             style={{

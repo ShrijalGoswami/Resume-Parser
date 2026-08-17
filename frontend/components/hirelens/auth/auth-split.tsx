@@ -1,5 +1,6 @@
 import * as React from 'react'
 import Link from 'next/link'
+import { Logo } from '@/components/brand/logo'
 import { EditorialPanel } from './editorial-panel'
 
 /**
@@ -27,12 +28,19 @@ export function AuthSplit({ children }: { children: React.ReactNode }) {
             invisible click target across the whole top of the form. The focus
             ring is inherited from the global `.hl :focus-visible` rule, and
             `prefetch` is left at the Next default so `/` is warmed on hover. */}
+        {/* `tone="prism"` here and `mono` on the marketing site is deliberate,
+            not an inconsistency: auth renders inside the `.hl` scope, so the
+            prism tokens resolve and re-hue with the product's own light/dark
+            themes. This is the first product surface a user sees, and it is
+            the right place for the brand to arrive in full colour. The mark is
+            decorative — the link is already named by `aria-label`, so it must
+            not add a second announcement of the word. */}
         <Link
           href="/"
           aria-label="Go to HireLens home"
-          className="hl-body-lg w-fit cursor-pointer font-semibold tracking-tight text-hl-fg no-underline"
+          className="hl-body-lg flex w-fit cursor-pointer items-center font-semibold tracking-tight text-hl-fg no-underline"
         >
-          HireLens
+          <Logo />
         </Link>
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-[380px] py-10">{children}</div>
