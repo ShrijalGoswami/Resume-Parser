@@ -1,306 +1,285 @@
-# ✦ Hirevo ✦
-**AI-Powered Resume Intelligence & ATS Compatibility Engine**
+# Hirevo
 
-<p align="center">
-  <img src="https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi" alt="FastAPI">
-  <img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" alt="Next.js">
-  <img src="https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React">
-  <img src="https://img.shields.io/badge/Groq_LLM-f3a536?style=for-the-badge" alt="Groq">
-  <img src="https://img.shields.io/badge/Python_3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/Vercel-Deployed-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel">
-  <img src="https://img.shields.io/badge/Render-Backend-46E3B7?style=for-the-badge&logo=render&logoColor=white" alt="Render">
-  <img src="https://img.shields.io/badge/Version-4.3.0-blue?style=for-the-badge" alt="Version 4.3.0">
-  <img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge" alt="License">
-</p>
+**Resume and recruiter intelligence for hiring teams.**
 
-<h3 align="center">
-  Stop guessing. Start hiring.<br>
-  Transform raw resumes into actionable, deterministic intelligence within seconds.
-</h3>
+Hirevo reads every résumé submitted for a role against that role's job description, scores it deterministically, explains the result with evidence, and records the hiring decisions a team makes on top of it. Production domain: [https://hirevo.in](https://hirevo.in).
 
 ---
 
-## 📖 Table of Contents
-1. [Executive Overview](#-executive-overview)
-2. [What's New in v1.2](#-whats-new-in-v12)
-3. [Product Flow: How Hirevo Works](#-product-flow-how-hirevo-works)
-4. [System Architecture](#-system-architecture)
-5. [Technical Highlights](#-technical-highlights)
-6. [ATS Scoring Methodology](#-ats-scoring-methodology)
-7. [Screenshots](#-screenshots)
-8. [Project Folder Structure](#-project-folder-structure)
-9. [API Endpoints](#-api-endpoints)
-10. [Production Deployment](#-production-deployment)
-11. [Roadmap](#-roadmap)
-12. [Contributing & License](#-contributing--license)
+## Table of Contents
+
+1. [Overview](#overview)
+2. [Key Features](#key-features)
+3. [How It Works](#how-it-works)
+4. [Architecture](#architecture)
+5. [Tech Stack](#tech-stack)
+6. [Project Structure](#project-structure)
+7. [Local Development](#local-development)
+8. [Environment Variables](#environment-variables)
+9. [Testing](#testing)
+10. [Deployment](#deployment)
+11. [Payments](#payments)
+12. [Current Status](#current-status)
+13. [Roadmap](#roadmap)
+14. [Contributing & License](#contributing--license)
 
 ---
 
-## 🎯 Executive Overview
+## Overview
 
-Recruiting teams at high-growth companies receive thousands of resumes per job posting. Traditional **Applicant Tracking Systems (ATS)** suffer from major limitations:
-* **Keyword Matching Vices:** Dumb keyword filters encourage candidates to "stuff keywords," letting weak candidates pass while filtering out qualified individuals with non-standard formatting.
-* **Layout Failures:** Traditional parsers routinely fail on multi-column resumes, tables, or mixed PDF/DOCX structures.
-* **LLM Hallucinations & Latency:** Relying entirely on LLMs to parse and score resumes is slow, expensive, non-deterministic, and prone to hallucinating scores, making candidate comparison unreliable.
+Traditional ATS filters reduce candidates to keyword counts: they reward keyword stuffing, fail on non-standard layouts, and — when an LLM is asked to invent the score — produce numbers that change between runs. Hirevo separates the concerns:
 
-### The Solution: A Hybrid Approach
-Hirevo introduces a **hybrid parsing-scoring-explanation architecture**:
-1. **High-Fidelity Document Parsers** handle raw content extraction from PDF/DOCX formats cleanly.
-2. **Deterministic Heuristics Engine** extracts details and scores candidates mathematically based on a fixed scoring rubric (eliminating LLM scoring hallucination and guaranteeing 100% consistency across runs).
-3. **Structured Generative LLM Layer** (powered by Groq Llama-3) is only used where humans excel: generating contextual summaries, analyzing strengths/gaps, evaluating interview readiness, and suggesting career recommendations.
+1. **High-fidelity parsing** extracts structured content from PDF and DOCX résumés (PyMuPDF, python-docx).
+2. **A deterministic scoring engine** computes ATS and job-match scores from a fixed rubric in plain Python — the same résumé always gets the same score.
+3. **An LLM layer** (Groq) is used only for what humans would otherwise write: evidence-linked summaries, strengths and gaps, comparisons, interview questions, and copilot answers. Every LLM call in the backend goes through a single orchestrator with instrumentation and QA caching.
 
----
+On top of that stateless analysis core sits a full multi-tenant product: organizations, roles (hiring campaigns), a candidate pipeline, a decision ledger, entitlement-gated plans, and Razorpay subscription billing.
 
-## 🚀 What's New in v1.2
+## Key Features
 
-Hirevo has evolved from a simple Python prototype into a premium SaaS product ready for enterprise recruiting teams.
+**Analysis engine**
 
-* **Job Description Match Analysis:** Upload a Job Description alongside a resume. The engine cross-references required skills against the candidate's parsed experience to highlight missing skills and calculate a rigorous Job Match Score.
-* **Recruiter-Grade Results Dashboard:** A complete overhaul of the frontend using Next.js 16, React 19, and Tailwind CSS. The new dashboard offers beautiful data visualizations, metric score rings, and structured feedback cards.
-* **Professional PDF Export:** Recruiters can now export beautifully formatted PDF reports (generated dynamically via ReportLab on the backend) for ATS Analysis or Match Analysis, perfect for sharing with hiring managers.
-* **Premium SaaS Frontend:** Utilizing Shadcn UI and Radix UI primitives, the application feels natively premium with micro-animations, glassmorphism, and seamless UX flows.
-* **Unified Intelligence Extraction:** Deeper insight generation for interview readiness, candidate strengths, and actionable hiring recommendations.
+- Résumé upload and parsing (PDF/DOCX) with strict size/extension limits and clean error propagation for corrupted files
+- Deterministic ATS analysis and confidence (parse-completeness) scoring
+- Job-description match analysis: coverage of JD-required skills, missing-skill detection, fit scoring with a core-requirements gate
+- Batch analysis: rank many résumés against one JD in a single request
+- AI recruiter copilot ("Ask") grounded in workspace context, plus candidate comparison and agent-style briefs
+- Semantic talent search backed by pluggable embedding providers (NVIDIA NIM in production, dependency-free hashing provider for dev/CI)
 
----
+**Recruiter workspace** (`app/(hirelens)` route group)
 
-## 🔄 Product Flow: How Hirevo Works
+- **Today** — triage inbox for new candidates and pending work
+- **Jobs** — hiring campaigns with per-role candidate pipelines, stages, notes, and activity
+- **Candidates** — the Candidate Object: a deep-review record with claim/evidence sections, résumé record, and AI analysis tabs
+- **Decisions** — a logged, reversible decision ledger with reasoning
+- **Interviews** — interview intelligence with exportable interview packs (PDF)
+- **Reports, Analytics** — role and pipeline analytics with CSV export (injection-safe cell escaping)
+- **AI Audit** — visibility into what the AI layer did and why
+- **Ask, Notifications, Settings** — copilot threads, notification center, org/profile/billing/API-key settings
+
+**Platform**
+
+- Authentication with Supabase (email + password: sign-up, login, password reset, invite acceptance), org membership and role-based permissions, Postgres RLS tenant isolation
+- Entitlement system: a single plan/feature catalog enforced in the backend (`402` gates) and mirrored byte-for-byte in the frontend for gating UI
+- Subscription billing via Razorpay (Plus / Pro monthly plans) — checkout, verification callback, webhook-driven state, cancellation
+- Branded PDF report generation (ATS report and match report) via ReportLab
+- Marketing site with pricing generated from the same entitlement catalog the product enforces, legal pages (terms, privacy, refunds), contact
+- SEO surface derived from one site-identity module: sitemap, robots, canonical/OG metadata, JSON-LD structured data, `llms.txt`, `security.txt`
+- Security posture: CSP (report-only/enforce modes), CORS locked down by explicit origin list (refuses to boot unset in production), rate limiting, signed URLs for private storage, destructive tenant-isolation test suite
+
+## How It Works
 
 ```mermaid
 graph TD
-    A[User Uploads Resume & Optional JD] --> B[High-Fidelity Resume Parsing]
-    B --> C[Deterministic ATS Scoring Engine]
-    C --> D[Groq AI Intelligence Layer]
-    D --> E[Interactive Results Dashboard]
-    E --> F[Professional PDF Export]
+    A[Recruiter uploads resumes + JD] --> B[Parser layer: PyMuPDF / python-docx]
+    B --> C[Deterministic extraction & scoring engine]
+    C --> D[AI orchestrator → Groq LLM]
+    D --> E[Workspace: triage, deep review, decisions]
+    E --> F[Supabase: campaigns, candidates, decisions, storage]
+    E --> G[PDF reports & CSV exports]
 ```
 
-1. **User Uploads Resume:** Drag and drop PDF/DOCX files into the sleek Next.js UI.
-2. **Resume Parsing:** The FastAPI backend securely extracts raw text and normalizes structures using PyMuPDF and python-docx.
-3. **ATS Analysis & Scoring:** The deterministic Python engine calculates completeness, skills density, and quantified impact.
-4. **AI Intelligence:** The Groq Llama-3 model interprets the structured data to identify strengths, weaknesses, and interview readiness.
-5. **Results Dashboard:** Data is visualized in an interactive, responsive Next.js frontend dashboard.
-6. **PDF Export:** Generate branded, comprehensive PDF summaries instantly for offline review.
+1. A recruiter signs in, opens a role, and uploads résumés (drag-and-drop, batch supported).
+2. The FastAPI backend parses each document and runs the deterministic extraction and scoring pipeline.
+3. The AI orchestrator enriches the structured result with evidence-linked explanations from Groq, validated against Pydantic schemas.
+4. Results land in the workspace — triage queue, candidate deep review, comparisons, copilot — and are persisted to Supabase rather than recomputed.
+5. Decisions are recorded in the ledger; reports export as branded PDFs, analytics as CSV.
 
----
-
-## 🏗️ System Architecture
-
-Hirevo separates responsibilities between a modern frontend ecosystem and an ultra-fast Python backend.
+## Architecture
 
 ```mermaid
 graph TD
-    Client((Client Browser))
-    
-    subgraph Frontend [Next.js SaaS Application - Vercel]
-        UI[React 19 / Shadcn UI]
-        State[React Hooks & Session Storage]
+    Client((Browser))
+
+    subgraph Frontend [Next.js App Router]
+        MKT[Marketing + pricing + legal]
+        APPUI[Recruiter workspace]
+        MW[middleware: session refresh + route protection]
     end
-    
-    subgraph Backend [FastAPI Microservice - Render]
-        API[API Router /upload, /export]
-        Parser[Parser Layer: PyMuPDF / docx2txt]
-        Extract[NLP & Regex Extractor]
-        Scorer[Deterministic ATS Rules Engine]
-        PDF[ReportLab PDF Generator]
+
+    subgraph Backend [FastAPI]
+        Routes[Routes: analyze · match · batch · copilot · agent · campaigns · billing · analytics · search · export …]
+        Parser[Parser factory: PDF / DOCX]
+        NLP[Extraction + deterministic ATS/fit scoring]
+        Orch[AI orchestrator — single path for every LLM call]
+        PDFGen[ReportLab report generator]
+        Ent[Entitlement enforcement]
     end
-    
-    subgraph External [External Services]
-        Groq[Groq Llama-3 API]
+
+    subgraph Services [External services]
+        Groq[Groq LLM]
+        NIM[NVIDIA NIM embeddings]
+        SB[(Supabase: Postgres + Auth + Storage, RLS)]
+        RZP[Razorpay subscriptions + webhook]
     end
-    
-    Client -->|HTTP POST| UI
-    UI <-->|JSON over HTTP| API
-    API --> Parser
-    Parser --> Extract
-    Extract --> Scorer
-    Scorer <-->|Pydantic JSON| Groq
-    API <--> PDF
+
+    Client --> MKT
+    Client --> APPUI
+    APPUI -->|JSON over HTTP, JWT| Routes
+    Routes --> Parser --> NLP
+    NLP --> Orch --> Groq
+    Routes --> PDFGen
+    Routes --> Ent
+    Routes <--> SB
+    Routes <--> RZP
+    Orch --> NIM
 ```
 
-### Layer Responsibilities
-1. **Frontend (Next.js):** Communicates with the FastAPI REST API, handles file uploads, orchestrates states, and renders the premium multi-column user interface.
-2. **Upload & API Router:** Handles multipart uploads, checks constraints (file size & extension), and routes requests.
-3. **Parsing Layer (`ParserFactory`):** Detects mime-types and routes incoming documents to `PDFParser` or `DOCXParser`. Implements clean error propagation for corrupted files.
-4. **Extraction Layer (`ResumeService` & `Extractor`):** Runs NLP heuristics to segment files. Applies validators for email/phone patterns and runs skill mapping to normalize tokens and eliminate duplicates.
-5. **ATS Scorer Engine (`ats_scorer.py`):** Takes structured data and calculates scores mathematically. Calculates the parsing completeness metric (`confidence_score`) and structural points.
-6. **Groq Analysis Layer (`analyzer.py`):** Constructs user prompts with the structured JSON and scoring details already injected. Dispatches requests to the Groq API and validates the returned qualitative explanations against Pydantic schemas.
-7. **Report Generator (`report_generator.py`):** Compiles the analysis and candidate metadata into a beautifully branded PDF download.
+Key structural decisions:
 
----
+- **Stateless AI core, stateful shell.** The analysis endpoints work with no database configured; Supabase adds auth, campaigns, persistence, and storage on top without touching the AI pipeline.
+- **One orchestrator.** All backend LLM calls flow through `app/ai/orchestrator` — one place for provider config, instrumentation, and QA-mode caching. Reasoning is Groq-only by design.
+- **Deterministic scores, generative prose.** Scores come from code; the LLM never invents a number.
+- **Catalog parity.** The entitlements catalog exists as matching TypeScript and Python files; backend enforcement and frontend gating cannot drift.
+- **Repository pattern + RLS.** Data access goes through repositories; Postgres row-level security isolates tenants even below the application layer.
 
-## ⚙️ Technical Highlights
+## Tech Stack
 
-* **Deterministic ATS Scoring:** We do not rely on LLMs to generate arbitrary scores. Our 100-point rubric is mathematically calculated based on normalized text structures to guarantee 100% consistency and eliminate scoring hallucinations.
-* **Groq AI Analysis:** By utilizing Groq's Llama-3 API infrastructure, we achieve blazing-fast inference times for generating qualitative recruiter insights, making the platform feel instantaneous.
-* **Hybrid Architecture:** Deeply separating the extraction layer (Python heuristics) from the intelligence layer (LLMs) from the presentation layer (Next.js) ensures ultimate scalability and maintainability.
-* **Structured Resume Parsing:** Self-healing schema enforcement relying on Pydantic v2 ensures that AI responses adhere to strict JSON contracts, with built-in retry and repair mechanisms.
+| Layer | Technology |
+| :--- | :--- |
+| Frontend | Next.js 16 (App Router, Turbopack), React 19, TypeScript 5, Tailwind CSS 4, Radix UI primitives, TanStack Query, Storybook |
+| Backend | FastAPI (Python 3.11), Pydantic v2, Uvicorn |
+| Database / Auth / Storage | Supabase (Postgres with RLS, email+password auth, private storage buckets with signed URLs); SQL migrations in `supabase/migrations/` |
+| AI / LLM | Groq (reasoning), NVIDIA NIM Nemotron embeddings (semantic search) with a hashing fallback provider for offline dev/CI |
+| Parsing | PyMuPDF (PDF), python-docx (DOCX) |
+| Reports | ReportLab (server-generated PDF) |
+| Payments | Razorpay subscriptions (Plus/Pro plans, signature-verified webhook) |
+| Testing | pytest (backend), Vitest + Testing Library (frontend), Playwright-style visual scripts in `frontend/tests/visual/` |
+| Infrastructure | Render blueprint (`backend/render.yaml`), Vercel-ready frontend, Dockerfiles + `docker-compose.yml` for a local/self-hosted stack, GitHub Actions CI |
 
----
-
-## 📊 ATS Scoring Methodology
-
-The platform calculates a deterministic ATS compatibility score out of **100 points** using the following rubric. This ensures scoring stability:
-
-| Category | Max Score | Evaluation Heuristics |
-| :--- | :---: | :--- |
-| **Technical Skills** | 30 | Evaluated based on the count of unique, normalized skills found. *(Profiles with strong core modern frontend stacks receive partial credit bonuses for high learning agility).*<br>• 1-4 skills: `10 pts`<br>• 5-8 skills: `16 pts`<br>• 9-12 skills: `22 pts`<br>• 13-16 skills: `27 pts`<br>• 17+ skills: `30 pts` |
-| **Projects** | 25 | Evaluated based on the quantity and depth of project descriptions.<br>• 0 projects: `0 pts`<br>• 1 project (brief): `5 pts`<br>• 1 project (detailed, bullets present): `10 pts`<br>• 2 projects (basic descriptions): `18 pts`<br>• 2 detailed projects (3+ bullets each): `20 pts`<br>• 2+ projects with outcomes containing quantified metrics: `25 pts` |
-| **Work Experience** | 20 | Evaluated based on career history length and detail richness.<br>• 0 experience entries: `0 pts`<br>• 1 experience entry (short description, <2 bullets): `12 pts`<br>• 1 experience entry (rich description, 2+ bullets): `16 pts`<br>• 2+ experience entries: `20 pts` |
-| **Education** | 10 | Evaluated based on academic history, degree, and grade points (GPA/CGPA).<br>• 0 education records: `0 pts`<br>• 1 education entry (no GPA provided): `6 pts`<br>• 1 education entry with GPA/CGPA provided: `8 pts`<br>• 1 entry with CGPA ≥ 7.5 (or GPA ≥ 3.3/4.0): `10 pts`<br>• 2+ education entries: `10 pts` |
-| **Quantified Impact** | 15 | Evaluated on presence of metrics (%, $, x multiplier, values, metrics) in work/projects.<br>• Content present, but no numbers/metrics found: `5 pts` *(Interns: `10 pts`)*<br>• 1 metric found: `9 pts` *(Interns: `13 pts`)*<br>• 2-3 metrics found: `12 pts` *(Interns: `15 pts`)*<br>• 4+ metrics found: `15 pts` |
-| **Total** | **100** | **Comprehensive mathematical sum of all categories.** |
-
-### Confidence Score (Completeness)
-In addition to the ATS score, a **Confidence Score (0-100)** is calculated. It evaluates parsing completeness and penalizes missing crucial fields:
-* Starting value: **100**
-* Missing Name: **-30**
-* Missing Email: **-20**
-* Missing Phone: **-15**
-* Missing Skills list: **-15**
-* Missing Education: **-10**
-* Missing Experience: **-10**
-
----
-
-## 📷 Screenshots
-
-### Landing Page
-*A premium SaaS landing experience welcoming users to analyze their profiles.*
-
-### Upload Dialog
-*Seamless resume and Job Description upload workflow.*
-
-### ATS Analysis Dashboard
-*Beautiful data visualizations presenting candidate completeness and skill densities.*
-
-### Job Match Results
-*Deep comparative insights highlighting exactly which required skills the candidate is missing.*
-
-### PDF Report Export
-*Instantly generated, recruiter-ready PDF intelligence briefs.*
-
----
-
-## 📂 Project Folder Structure
+## Project Structure
 
 ```text
-Hirevo/
-├── backend/                       # FastAPI Python Backend
+Resume-Parser/
+├── backend/
 │   ├── app/
-│   │   ├── core/                  # Config, auth, DI, observability, startup
-│   │   ├── db/                    # Supabase client factories (V4)
-│   │   ├── llm/                   # Groq client and prompts
-│   │   ├── nlp/                   # NLP extraction, ATS rules, ranking
-│   │   ├── parser/                # PDF/DOCX parser factory
-│   │   ├── repositories/          # Repository pattern data access (V4)
-│   │   ├── routes/                # FastAPI endpoints (AI + persistence)
-│   │   ├── schemas/               # Pydantic v2 models
-│   │   └── services/              # Business logic, persistence, storage, reports
-│   └── requirements.txt           # Python dependencies
-│
-├── frontend/                      # Next.js 16 SaaS Frontend
-│   ├── app/                       # App Router (login, dashboard, campaigns, …)
-│   ├── components/                # Radix & Shadcn UI + auth/app components
-│   ├── lib/supabase/              # Browser + SSR Supabase clients (V4)
-│   ├── middleware.ts              # Route protection + session refresh (V4)
-│   ├── services/                  # Backend API fetch wrappers (+ authed layer)
-│   └── types/                     # TypeScript interfaces matching backend models
-│
-├── supabase/migrations/           # SQL: schema, RLS, storage, auth triggers (V4)
-├── docs/                          # 📚 Engineering docs (see docs/README.md)
-│   ├── sprints/  decisions/       # Sprint records + Architecture Decision Records
-└── README.md                      # Project overview
+│   │   ├── ai/                # Orchestrator, providers, prompts, embeddings, agent
+│   │   ├── core/              # Config, auth, DI, observability, startup checks
+│   │   ├── db/                # Supabase client factories & transport
+│   │   ├── nlp/               # Extraction, deterministic ATS/fit scoring, ranking
+│   │   ├── parser/            # PDF/DOCX parser factory
+│   │   ├── repositories/      # Data access (repository pattern)
+│   │   ├── routes/            # analyze · match · batch · copilot · agent · campaigns ·
+│   │   │                      # billing · analytics · search · reports · export · org · admin …
+│   │   ├── schemas/           # Pydantic v2 models
+│   │   └── services/          # Business logic, persistence, storage, report generator
+│   ├── scripts/               # Razorpay plan setup, QA org seeding, backup/restore …
+│   ├── tests/                 # pytest suites
+│   └── render.yaml            # Render deployment blueprint
+├── frontend/
+│   ├── app/
+│   │   ├── (marketing)/       # Landing, pricing, contact, terms/privacy/refunds
+│   │   ├── (hirelens)/        # Workspace: today, jobs, candidates, decisions,
+│   │   │                      # interviews, reports, ask, ai-audit, notifications, settings
+│   │   └── auth/              # Login, signup, reset, invite acceptance
+│   ├── components/            # Workspace components, marketing frames, brand mark
+│   ├── lib/                   # SEO/site identity, pricing, legal, analytics, supabase clients
+│   └── tests/                 # Vitest suites + visual walkthrough scripts
+├── supabase/migrations/       # Schema, RLS policies, storage buckets, auth triggers
+├── docs/                      # Engineering docs: architecture, API, AI pipeline, security,
+│                              # billing, deployment, runbooks, ADRs (see docs/README.md)
+└── docker-compose.yml         # Local/self-hosted full stack
 ```
 
-> 📚 **Full engineering documentation** lives in [`docs/`](docs/README.md) —
-> architecture, database, API, AI pipeline, security, deployment, roadmap,
-> changelog, sprints, and ADRs.
+> The `(hirelens)` route group and `components/hirelens/` paths are internal identifiers retained from before the rebrand; they never appear in user-facing URLs.
 
----
+## Local Development
 
-## ⚡ API Endpoints
+Prerequisites: Python 3.11+, Node 24+, pnpm.
 
-FastAPI exposes REST endpoints under `/api/v1`; interactive docs are auto-generated at `/docs`.
-The **full reference** (every route, auth, request, response, errors) is in [`docs/API.md`](docs/API.md).
+**Backend**
 
-**Stateless AI (no auth):**
-* **`POST /api/v1/ats-analysis`** — single-resume ATS analysis + Groq insights.
-* **`POST /api/v1/match-analysis`** — resume-vs-JD match score + missing skills.
-* **`POST /api/v1/batch-analysis`** — rank many resumes against one JD.
-* **`POST /api/v1/copilot/chat`** · **`GET /api/v1/copilot/suggestions`** — AI Recruiter Copilot.
-* **`POST /api/v1/export-report`** · **`POST /api/v1/export-match-report`** — PDF reports.
+```bash
+cd backend
+python -m venv venv && venv/Scripts/activate   # or source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env                            # fill in at least GROQ_API_KEY
+uvicorn app.main:app --reload --port 8000
+```
 
-**Persistence (require recruiter JWT):**
-* **`/api/v1/campaigns`** (+ nested candidates, notes, stage, resume, `persist-batch`, activity).
-* **`/api/v1/me`** · **`/api/v1/activity`** — recruiter profile & activity feed.
+Interactive API docs are served at `http://localhost:8000/docs`. Without Supabase credentials the backend runs fully stateless — the analysis endpoints work; auth and persistence routes stay disabled.
 
----
+**Frontend**
 
-## ☁️ Production Deployment
+```bash
+cd frontend
+pnpm install
+cp .env.example .env.local                      # points at http://localhost:8000 by default
+pnpm dev
+```
 
-### Frontend (Vercel)
-The Next.js application is optimized for zero-config Vercel deployment.
-1. Connect your GitHub repository to Vercel.
-2. Select the `frontend` root directory.
-3. Set the environment variable:
-   ```env
-   NEXT_PUBLIC_API_URL=https://your-backend-url.onrender.com
-   ```
-4. Click **Deploy**.
+**Full stack via Docker**
 
-### Backend (Render)
-The FastAPI backend is designed to run seamlessly as a Render Web Service.
-1. Connect your repository to Render.
-2. Set the Root Directory to `backend`.
-3. Build Command: `pip install -r requirements.txt`
-4. Start Command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-5. Environment Variables:
-   ```env
-   GROQ_API_KEY=your_groq_api_key
-   MAX_FILE_SIZE_MB=10
-   ```
+```bash
+docker compose up --build                       # API on :8000, web on :3000
+```
 
----
+## Environment Variables
 
-## 🗺️ Roadmap
+Each side documents every variable it reads in its `.env.example` — those files are the reference. The important ones:
 
-> Full vision, phases, priority matrix, and cost-scaling plan live in
-> [`docs/ROADMAP.md`](docs/ROADMAP.md). Version history is in
-> [`CHANGELOG.md`](CHANGELOG.md).
+| Variable | Where | Purpose |
+| :--- | :--- | :--- |
+| `GROQ_API_KEY` | backend | LLM analysis (analysis endpoints return 503 without it) |
+| `ALLOWED_ORIGINS` | backend | Explicit CORS allowlist; production refuses to boot if unset |
+| `SUPABASE_URL` / `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` / `SUPABASE_JWT_SECRET` | backend | Database, auth verification, storage |
+| `EMBEDDING_PROVIDER` / `EMBEDDING_MODEL` / `NVIDIA_API_KEY` | backend | Semantic search (`nvidia` in production, `hashing` for dev/CI) |
+| `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` / `RAZORPAY_WEBHOOK_SECRET` | backend | Payment credentials (never hardcoded) |
+| `RAZORPAY_PLAN_PLUS_INR` / `RAZORPAY_PLAN_PRO_INR` | backend | Dashboard-created plan ids, verified at boot against the pricing catalog |
+| `ENTITLEMENT_ENFORCEMENT` | backend | Rollback lever for plan gating (`on` by default) |
+| `NEXT_PUBLIC_API_URL` | frontend | Backend base URL |
+| `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | frontend | Auth + persistence (blank = stateless mode) |
+| `NEXT_PUBLIC_SITE_URL` | frontend | Canonical origin; defaults to `https://hirevo.in` |
+| `CSP_MODE` | frontend | `off` / `report-only` / `enforce` |
 
-### Implemented
-* ✅ High-Fidelity PDF & DOCX Parsing
-* ✅ Deterministic ATS Rule Engine
-* ✅ Generative AI Intelligence (Groq Llama-3.3)
-* ✅ Job Description Match Analysis
-* ✅ Batch Resume Ranking + AI Recruiter Copilot
-* ✅ Premium Next.js Recruiter Dashboard & PDF Export
-* ✅ **Recruiter Authentication** (Supabase, email + password)
-* ✅ **Hiring Campaigns** + persistent candidates, pipeline stages, notes, activity
-* ✅ **Persistence of AI outputs** (stored, not recomputed) + private storage & RLS
+## Testing
 
-### In Progress
-* 🚧 Copilot conversation persistence (tables + repository exist)
-* 🚧 Client-side resume upload to storage during batch
+```bash
+# Backend
+cd backend && pytest
 
-### Planned
-* 🗓️ Realtime pipeline board · Interview packs · Pagination & search
-* 🗓️ OAuth providers · Organizations/teams · Billing · Rate limiting
+# Frontend
+cd frontend && pnpm test        # Vitest
+cd frontend && pnpm typecheck   # tsc --noEmit
+cd frontend && pnpm lint        # ESLint
+```
 
----
+Both suites are substantial (1,300+ backend tests, 600+ frontend tests) and cover, among other things: tenant isolation, entitlement enforcement on every gated surface, checkout state machine and billing UI, CSV injection safety, crawl/SEO safety, analytics URL redaction, accessibility of authenticated screens, and export attribution. A separate opt-in destructive suite (`HL_ALLOW_DESTRUCTIVE_TESTS=1`) exercises runtime tenant isolation against a live non-production stack. CI (GitHub Actions) runs tests plus Docker image builds for both services.
 
-## 🤝 Contributing & License
+## Deployment
 
-Contributions to improve parsing heuristics, design system UI, or scoring algorithms are welcome!
-1. Fork the Project.
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`).
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`).
-4. Push to the Branch (`git push origin feature/AmazingFeature`).
-5. Open a Pull Request.
+- **Backend — Render.** `backend/render.yaml` is a ready Render blueprint; secrets (`GROQ_API_KEY`, Supabase, Razorpay, `ALLOWED_ORIGINS`) are set in the dashboard. A production boot fails fast on unsafe configuration (missing CORS allowlist, mismatched Razorpay plans).
+- **Frontend — Vercel.** Standard Next.js deployment from the `frontend/` directory; set `NEXT_PUBLIC_API_URL`, the Supabase publics, and `NEXT_PUBLIC_SITE_URL` per environment (previews should declare their own origin rather than claiming `hirevo.in`).
+- **Self-hosted.** Multi-stage Dockerfiles for both services and `docker-compose.yml` for a complete local stack.
 
-**License:** Distributed under the MIT License. See `LICENSE` for more information.
+Operational docs — deployment, monitoring, disaster recovery, rollback — live in [`docs/`](docs/README.md).
 
----
-<p align="center">
-  <i>Built with precision for the modern recruiting workflow.</i>
-</p>
+## Payments
+
+Billing is subscription-based through Razorpay:
+
+- Plans (**Plus**, **Pro**; monthly, INR) are created once in the Razorpay dashboard and bound by id via environment variables; the app verifies them at boot against its own pricing catalog and never creates plans at runtime.
+- Checkout runs through Razorpay's hosted modal; the backend verifies the callback signature, and the **webhook** (`/api/v1/billing/webhook/razorpay`, signature-verified) is the single source of truth for subscription state transitions.
+- Plan limits and features are enforced server-side through the entitlement catalog (`402` responses), with `ENTITLEMENT_ENFORCEMENT=off` as a no-deploy rollback lever.
+- Card details never touch Hirevo servers.
+
+## Current Status
+
+Hirevo is an actively developed product. Working today, verified by the test suites in this repository:
+
+- Next.js frontend: marketing site, auth flows, and the full recruiter workspace
+- FastAPI backend: analysis, matching, batch ranking, copilot/agent, campaigns, analytics, search, exports
+- Supabase integration: auth, multi-tenant data with RLS, private storage
+- Razorpay subscription billing with entitlement enforcement
+- Groq-powered AI layer behind a single orchestrator
+- ReportLab PDF reports and CSV analytics export
+
+The backend reached feature-complete status for V1 in August 2026 and is in production-hardening mode (bug fixes only); active development is focused on frontend/UX.
+
+## Roadmap
+
+The maintained roadmap lives in [`docs/ROADMAP.md`](docs/ROADMAP.md); version history is in [`CHANGELOG.md`](CHANGELOG.md).
+
+## Contributing & License
+
+Contribution guidelines are in [`CONTRIBUTING.md`](CONTRIBUTING.md). This repository does not currently ship an open-source license file; all rights reserved unless a license is added.
