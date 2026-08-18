@@ -106,7 +106,7 @@ export function CandidateClaimEvidence({
         {model.resumeData ? (
           <p className="hl-caption text-hl-fg-tertiary">
             Related résumé lines are found by matching wording — they are not
-            citations. HireLens cannot yet point to the passage an assessment
+            citations. Hirevo cannot yet point to the passage an assessment
             came from.
           </p>
         ) : null}

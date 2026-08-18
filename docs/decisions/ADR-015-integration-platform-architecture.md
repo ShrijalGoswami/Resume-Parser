@@ -4,11 +4,11 @@
 
 ## Context
 
-V6 made HireLens enterprise-ready internally. To fit into a real hiring
+V6 made Hirevo enterprise-ready internally. To fit into a real hiring
 organization it must connect to the tools recruiters already use — email
 (Gmail/Outlook), calendars, Slack/Teams, Zoom/Meet, ATSs, and generic webhooks —
 and automate hand-offs between them. The goal is to **orchestrate**, not replace,
-these tools, keeping all AI reasoning, approvals, and governance inside HireLens.
+these tools, keeping all AI reasoning, approvals, and governance inside Hirevo.
 
 Hard constraints: no feature may call an external API directly; integrations must
 be organization-scoped with encrypted credentials; and the Autonomous Agent must
@@ -57,7 +57,7 @@ workflow engine.
 - ✅ **Secure** — org-scoped, Fernet-encrypted credentials, HMAC-verified webhooks,
   no secrets to the frontend.
 - ✅ **Reliable** — retry + backoff, idempotency, execution history + replay.
-- ✅ **AI governance preserved** — reasoning/approvals stay in HireLens; integrations
+- ✅ **AI governance preserved** — reasoning/approvals stay in Hirevo; integrations
   are downstream of human approval.
 - ⚠️ **Providers ship in dry-run** — live API calls need OAuth app registrations +
   per-provider `_perform`; the interface and everything above it are already done.

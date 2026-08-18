@@ -27,7 +27,7 @@ export function ErrorState({
   description,
   requestId,
   onRetry,
-  supportHref = 'mailto:support@hirelens.app',
+  supportHref = 'mailto:support@hirevo.in',
   className,
 }: ErrorStateProps) {
   const [copied, setCopied] = React.useState(false)

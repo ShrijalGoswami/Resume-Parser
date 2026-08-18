@@ -10,14 +10,14 @@ import { PricingStructuredData } from '@/components/seo/structured-data-blocks'
  * the visitor (signed in or not, which currency, which panel is open).
  */
 export const metadata: Metadata = {
-  title: 'Pricing — HireLens',
+  title: 'Pricing — Hirevo',
   description:
-    'Every HireLens plan runs the same analysis on every résumé. Compare Free, Plus, Pro and Enterprise — limits, capabilities, and what each tier adds.',
+    'Every Hirevo plan runs the same analysis on every résumé. Compare Free, Plus, Pro and Enterprise — limits, capabilities, and what each tier adds.',
   alternates: { canonical: '/pricing' },
   openGraph: {
-    title: 'Pricing — HireLens',
+    title: 'Pricing — Hirevo',
     description:
-      'Priced by what you read, not by who reads it. Compare every HireLens plan side by side.',
+      'Priced by what you read, not by who reads it. Compare every Hirevo plan side by side.',
     url: '/pricing',
     type: 'website',
   },

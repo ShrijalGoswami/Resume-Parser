@@ -1,4 +1,4 @@
-# Architecture — HireLens V4 (final)
+# Architecture — Hirevo V4 (final)
 
 > **This document describes a frozen architecture.** V4 is the baseline for all
 > future development: no structural changes, no API-contract changes, no schema
@@ -9,7 +9,7 @@
 > [SECURITY.md](./SECURITY.md) · [AI_ARCHITECTURE.md](./AI_ARCHITECTURE.md) ·
 > [DEPLOYMENT.md](./DEPLOYMENT.md) · [MONITORING.md](./MONITORING.md)
 
-HireLens is a **hybrid AI SaaS**: a Next.js frontend, a stateless FastAPI AI
+Hirevo is a **hybrid AI SaaS**: a Next.js frontend, a stateless FastAPI AI
 service, and a Supabase persistence platform (Postgres + Auth + Storage) layered
 on top.
 
@@ -103,7 +103,7 @@ app/
 │   └─ ask/  foundations/             → Ask · dev showcase
 ├─ auth/            /auth/login|signup|forgot|reset|accept|callback
 ├─ (marketing)/     Public landing — no shell, no providers, no auth
-└─ (legacy)/        HireLens V1 — FROZEN. Reachable through the "Classic" nav group.
+└─ (legacy)/        Hirevo V1 — FROZEN. Reachable through the "Classic" nav group.
 ```
 
 `proxy.ts` (the Next.js 16 successor to `middleware.ts`) refreshes the Supabase

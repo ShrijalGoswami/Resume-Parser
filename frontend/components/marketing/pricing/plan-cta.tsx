@@ -140,7 +140,7 @@ export function PlanCta({
   if (plan === 'free') {
     return (
       <Link href="/today" className={cls}>
-        Go to HireLens
+        Go to Hirevo
       </Link>
     )
   }

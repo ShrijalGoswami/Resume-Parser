@@ -37,7 +37,7 @@ export function AuthSplit({ children }: { children: React.ReactNode }) {
             not add a second announcement of the word. */}
         <Link
           href="/"
-          aria-label="Go to HireLens home"
+          aria-label="Go to Hirevo home"
           className="hl-body-lg flex w-fit cursor-pointer items-center font-semibold tracking-tight text-hl-fg no-underline"
         >
           <Logo />

@@ -1,4 +1,4 @@
-# Render Blueprint for the HireLens FastAPI backend.
+# Render Blueprint for the Hirevo FastAPI backend.
 # Deploy: point Render at this repo with Root Directory = "backend".
 services:
   - type: web

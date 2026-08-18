@@ -1,6 +1,6 @@
 # API Reference
 
-> Every HTTP endpoint HireLens exposes. Base path: **`/api/v1`**. Interactive
+> Every HTTP endpoint Hirevo exposes. Base path: **`/api/v1`**. Interactive
 > OpenAPI docs are auto-served by FastAPI at **`/docs`** and **`/openapi.json`**.
 > Cross-refs: [SECURITY.md](./SECURITY.md), [DATABASE.md](./DATABASE.md),
 > [AI_PIPELINE.md](./AI_PIPELINE.md).

@@ -8,7 +8,7 @@ import { Inter, JetBrains_Mono, Newsreader, Public_Sans } from 'next/font/google
  * surface. Kept separate from `(hirelens)` and `(legacy)` so the public site's
  * palette and typography can never leak into the product shell.
  *
- * The four families below are the ones the HireLens V4 Stitch marketing frames
+ * The four families below are the ones the Hirevo V4 Stitch marketing frames
  * load: Newsreader (display/headline), Inter (body), Public Sans (labels) and
  * JetBrains Mono (data/meta). Weights match the frames' Google Fonts requests.
  */
@@ -49,9 +49,9 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'HireLens — Precision Systems',
+  title: 'Hirevo — Precision Systems',
   description:
-    'HireLens reads the whole pile, brings the few who matter into focus, and tells you what you’d regret — so your best judgment reaches everyone, not just the top of the stack.',
+    'Hirevo reads the whole pile, brings the few who matter into focus, and tells you what you’d regret — so your best judgment reaches everyone, not just the top of the stack.',
 }
 
 export default function MarketingLayout({

@@ -1,6 +1,6 @@
 # Monitoring
 
-> What HireLens emits, what to watch, and what should page someone. Running the
+> What Hirevo emits, what to watch, and what should page someone. Running the
 > system is [OPERATIONS.md](./OPERATIONS.md); getting it deployed is
 > [DEPLOYMENT.md](./DEPLOYMENT.md).
 

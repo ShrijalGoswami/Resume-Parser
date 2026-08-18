@@ -1,4 +1,4 @@
-# Exact dependency set HireLens is VERIFIED against — generated with `pip freeze`
+# Exact dependency set Hirevo is VERIFIED against — generated with `pip freeze`
 # from the environment in which the Release Candidate gates passed.
 #
 # Why this file exists: `requirements.txt` declares open lower bounds

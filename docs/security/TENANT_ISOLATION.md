@@ -1,14 +1,14 @@
-# Tenant Isolation — HireLens Security Reference
+# Tenant Isolation — Hirevo Security Reference
 
 > **Status:** Approved architecture reference (A1, Launch Sprint). Documents the *as-built* tenant-isolation design.
-> **Scope:** How HireLens keeps one customer's data (candidates, résumés, notes, decisions, org data) inaccessible to any other customer.
+> **Scope:** How Hirevo keeps one customer's data (candidates, résumés, notes, decisions, org data) inaccessible to any other customer.
 > **What this is not:** an investigation or a to-do list. Open runtime proofs live in §11 and are tracked by the A1-execution task, not here.
 
 ---
 
 ## 1. Purpose
 
-HireLens is a multi-tenant SaaS handling candidate PII (résumés, contact details, evaluations). The baseline promise to every customer is that their data is invisible and immutable to every other tenant. This document is the permanent, canonical description of the mechanisms that deliver that promise, the invariants that must never be violated, and the runtime checks that must pass before any release.
+Hirevo is a multi-tenant SaaS handling candidate PII (résumés, contact details, evaluations). The baseline promise to every customer is that their data is invisible and immutable to every other tenant. This document is the permanent, canonical description of the mechanisms that deliver that promise, the invariants that must never be violated, and the runtime checks that must pass before any release.
 
 Two isolation layers work together:
 
@@ -86,7 +86,7 @@ Two isolation layers work together:
 
 ## 5. Tenant Models
 
-HireLens has **two** tenant models, applied to disjoint sets of tables.
+Hirevo has **two** tenant models, applied to disjoint sets of tables.
 
 ### 5.1 `recruiter_id` (per-recruiter) — product data
 - Rule: `recruiter_id = auth.uid()`.
@@ -224,4 +224,4 @@ These are non-negotiable. Any change that violates one is a release blocker.
 
 ---
 
-*Maintenance: update this document whenever a new tenant-scoped table, bucket, RPC, service-role usage, or client path is added. It is the canonical tenant-isolation reference for HireLens.*
+*Maintenance: update this document whenever a new tenant-scoped table, bucket, RPC, service-role usage, or client path is added. It is the canonical tenant-isolation reference for Hirevo.*

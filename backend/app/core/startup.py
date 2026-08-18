@@ -19,7 +19,7 @@ class StartupError(RuntimeError):
 def validate_startup() -> None:
     """Validate critical runtime preconditions. Raises StartupError if fatal."""
     logger.info(
-        f"Starting HireLens API | env={settings.ENVIRONMENT} "
+        f"Starting Hirevo API | env={settings.ENVIRONMENT} "
         f"| max_upload={settings.MAX_FILE_SIZE_MB}MB "
         f"| allowed_ext={settings.ALLOWED_EXTENSIONS}"
     )

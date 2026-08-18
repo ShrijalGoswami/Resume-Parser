@@ -23,7 +23,7 @@
  * the 4 Aug truth pass removed from the prose, and it would be worse here
  * because a machine would repeat it without hedging.
  *
- * `JobPosting` — HireLens *processes* job descriptions; it does not publish
+ * `JobPosting` — Hirevo *processes* job descriptions; it does not publish
  * them. Emitting it would miscategorise the product to every system that reads
  * it.
  *
@@ -93,10 +93,10 @@ export function websiteSchema(): Json {
 // ── SoftwareApplication — ungated ───────────────────────────────────────────
 
 /**
- * What HireLens IS, in the vocabulary a machine already understands.
+ * What Hirevo IS, in the vocabulary a machine already understands.
  *
  * This is the single most valuable block on the site. Asked "what is
- * HireLens?", a model reading the page has to infer a category from prose
+ * Hirevo?", a model reading the page has to infer a category from prose
  * written to be evocative — "Your judgment, on every candidate" is a good
  * headline and tells a classifier nothing. `applicationCategory` answers it
  * outright.

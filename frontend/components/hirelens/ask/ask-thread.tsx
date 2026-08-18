@@ -249,7 +249,7 @@ function LandingHero({ onPick }: { onPick: (prompt: string) => void }) {
         ))}
       </div>
       <p className="hl-body text-hl-fg-tertiary">
-        The more you use HireLens, the smarter this gets.
+        The more you use Hirevo, the smarter this gets.
       </p>
     </EmptyState>
   )

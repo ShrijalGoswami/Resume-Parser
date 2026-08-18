@@ -1,6 +1,6 @@
 # Security
 
-> How HireLens authenticates recruiters, authorizes data access, protects files,
+> How Hirevo authenticates recruiters, authorizes data access, protects files,
 > and manages secrets. Cross-refs: [ARCHITECTURE.md](./ARCHITECTURE.md),
 > [DATABASE.md](./DATABASE.md), [API.md](./API.md).
 

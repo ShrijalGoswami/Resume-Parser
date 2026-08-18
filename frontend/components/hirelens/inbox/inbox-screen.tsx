@@ -166,7 +166,7 @@ function AuthedInbox() {
         title={firstRun ? 'Start with your first role' : 'No work needs your attention'}
         description={
           firstRun
-            ? 'Describe the role you are hiring for, add the résumés you have, and HireLens will read all of them and bring the few worth your time into focus.'
+            ? 'Describe the role you are hiring for, add the résumés you have, and Hirevo will read all of them and bring the few worth your time into focus.'
             : "When candidates arrive or roles need a decision, they’ll show up here."
         }
         action={

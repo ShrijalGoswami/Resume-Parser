@@ -10,9 +10,9 @@ import { Frame04Regret } from '@/components/marketing/frame-04-regret'
 import { Frame05Conclusion } from '@/components/marketing/frame-05-conclusion'
 
 /**
- * The HireLens production homepage.
+ * The Hirevo production homepage.
  *
- * Source of truth: the five HireLens V4 Stitch marketing frames, composed in
+ * Source of truth: the five Hirevo V4 Stitch marketing frames, composed in
  * frame order into one continuous scroll. Each frame is shipped as its own
  * screen in Stitch (so each carries its own nav and footer); composed here, the
  * page takes frame 1's dark nav at the top and frame 5's footer at the bottom,

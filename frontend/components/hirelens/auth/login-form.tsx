@@ -304,7 +304,7 @@ export function LoginForm() {
 
       <div className="border-t border-hl-border-subtle pt-6">
         <p className="hl-body text-hl-fg-secondary">
-          New to HireLens?{' '}
+          New to Hirevo?{' '}
           <Link href="/auth/signup" className="font-medium text-hl-accent-fg outline-none hover:underline">
             Create an account
           </Link>

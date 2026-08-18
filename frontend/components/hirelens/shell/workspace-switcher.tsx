@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils'
  */
 export function WorkspaceSwitcher({
   collapsed = false,
-  workspaceName = 'HireLens',
+  workspaceName = 'Hirevo',
   role = 'Recruiter',
 }: {
   collapsed?: boolean

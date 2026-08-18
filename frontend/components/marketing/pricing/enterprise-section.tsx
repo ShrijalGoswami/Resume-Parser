@@ -63,7 +63,7 @@ export function EnterpriseSection() {
             Your identity, your rules.
           </h2>
           <p className="mkt-body text-[color:var(--mkt-dark-fg-variant)]">
-            For organizations that need HireLens to run inside their own boundaries — their
+            For organizations that need Hirevo to run inside their own boundaries — their
             sign-on, their retention policy, their audit trail. Priced against what you actually
             need rather than a tier.
           </p>

@@ -173,7 +173,7 @@ function ActiveProvider({ config }: { config: AiConfig }) {
       </div>
 
       {/* There was a provider dropdown and an Apply button here until 6 Aug 2026.
-          They are gone with the feature, not hidden: HireLens is Groq-only for
+          They are gone with the feature, not hidden: Hirevo is Groq-only for
           V1, so there is nothing to switch to, and the switch itself mutated
           process-global state from an org-scoped permission check — one
           organization's admin changed the provider for every organization in the

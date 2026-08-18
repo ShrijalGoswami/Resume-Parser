@@ -437,7 +437,7 @@ export function AddCandidatesDialog({
         <DialogHeader>
           <DialogTitle>Add candidates</DialogTitle>
           <DialogDescription>
-            Upload résumés (PDF or DOCX, up to 10MB). HireLens ranks them against this role.
+            Upload résumés (PDF or DOCX, up to 10MB). Hirevo ranks them against this role.
           </DialogDescription>
         </DialogHeader>
 

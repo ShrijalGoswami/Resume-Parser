@@ -128,7 +128,7 @@ export function SignupForm() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="hl-display-md hl-serif">Start with HireLens.</h1>
+      <h1 className="hl-display-md hl-serif">Start with Hirevo.</h1>
       {/* `noValidate` hands validation to the checklist below. The browser's own
           bubble says "Please lengthen this text to 8 characters or more", is not
           announced to a screen reader, and disappears on the next keystroke —

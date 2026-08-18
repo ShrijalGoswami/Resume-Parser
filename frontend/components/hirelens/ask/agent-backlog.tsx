@@ -105,8 +105,8 @@ export function AgentBacklog() {
             title="No recommendations yet"
             description={
               canRunScan
-                ? 'Recommendations from HireLens appear here after an AI scan of your candidates. Run one any time to check.'
-                : 'Recommendations from HireLens appear here after an AI scan of your candidates.'
+                ? 'Recommendations from Hirevo appear here after an AI scan of your candidates. Run one any time to check.'
+                : 'Recommendations from Hirevo appear here after an AI scan of your candidates.'
             }
             action={
               canRunScan ? (

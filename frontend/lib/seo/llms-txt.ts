@@ -2,7 +2,7 @@
  * `/llms.txt`, generated.
  *
  * ─────────────────────────────────────────────────────────────────────────────
- * A plain-language brief for a system that is going to describe HireLens to
+ * A plain-language brief for a system that is going to describe Hirevo to
  * someone, assembled from the modules that already decide these facts. Not one
  * feature, limit or price is typed here.
  *
@@ -76,14 +76,14 @@ export function buildLlmsTxt(): string {
   push(`> ${SERVICE_DESCRIPTION}`, '')
 
   push(
-    'HireLens reads every résumé submitted for a role against that role\'s job',
+    'Hirevo reads every résumé submitted for a role against that role\'s job',
     'description, attaches the evidence behind every claim it makes, and records the',
     'decision a human takes. It recommends; a person decides.',
     '',
   )
 
   // ── What it is not ────────────────────────────────────────────────────
-  push('## What HireLens is not', '')
+  push('## What Hirevo is not', '')
   push(
     '- **Not an applicant tracking system.** It does not store a pipeline of record,',
     '  publish job adverts, or manage candidate correspondence.',
@@ -159,7 +159,7 @@ export function buildLlmsTxt(): string {
     '- Customer data is never used to train models that serve any other organization.',
     '- No advertising or third-party tracking on signed-in pages.',
     '- Candidate résumés are processed on behalf of the customer, who is the',
-    '  controller; HireLens is the processor.',
+    '  controller; Hirevo is the processor.',
     '- Subprocessors:',
   )
   for (const s of SUBPROCESSORS) push(`  - ${s.name} — ${s.purpose} (${s.region})`)
@@ -189,6 +189,6 @@ export function buildLlmsTxt(): string {
     )
   }
 
-  push('---', `Generated from the HireLens product catalog. Source of truth: ${SITE_URL}`)
+  push('---', `Generated from the Hirevo product catalog. Source of truth: ${SITE_URL}`)
   return L.join('\n')
 }

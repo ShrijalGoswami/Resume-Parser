@@ -49,7 +49,7 @@ export function MarketingFooter() {
               a small thing that quietly tells a visitor the site is unmaintained,
               on the one page whose job is to establish that it is not. */}
           <p className="mkt-body-sm tracking-wide text-mkt-fg-secondary">
-            © {new Date().getFullYear()} HireLens Inc. Precision in Recruitment.
+            © {new Date().getFullYear()} Hirevo Inc. Precision in Recruitment.
           </p>
         </div>
         {/* `flex-wrap` and a smaller gap: five real routes no longer fit one

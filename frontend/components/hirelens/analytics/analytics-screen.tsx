@@ -253,7 +253,7 @@ function AuthedAnalytics() {
     const url = URL.createObjectURL(new Blob([toCsv(data)], { type: 'text/csv;charset=utf-8' }))
     const link = document.createElement('a')
     link.href = url
-    link.download = 'hirelens-analytics.csv'
+    link.download = 'hirevo-analytics.csv'
     link.click()
     URL.revokeObjectURL(url)
   }, [data])

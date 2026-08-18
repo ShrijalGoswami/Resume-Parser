@@ -1,4 +1,4 @@
-# HireLens — Billing & Subscription Architecture
+# Hirevo — Billing & Subscription Architecture
 
 **Phase 4 · 1 Aug 2026 · Status updated 5 Aug 2026**
 **Status:** **Largely built.** This was "Proposed. No billing code exists" until
@@ -484,7 +484,7 @@ until the first outage and wrong afterwards, with no way to notice.
 Razorpay's vocabulary is richer than ours; the adapter collapses it into the
 five values `subscriptions.status` already pins.
 
-| Razorpay | HireLens | Entitlement effect |
+| Razorpay | Hirevo | Entitlement effect |
 |---|---|---|
 | `created` | `incomplete` | No paid access — mandate not yet authorized |
 | `authenticated` | `incomplete` | Mandate registered, first charge not settled |
@@ -572,7 +572,7 @@ Moving an org off `founding` stays a deliberate, audited, human act through
 
 ## 12. International customers — and a live inconsistency to resolve
 
-Razorpay-only means **HireLens can charge INR and nothing else in V1.**
+Razorpay-only means **Hirevo can charge INR and nothing else in V1.**
 
 The pricing page does not currently know that. `lib/pricing.ts` marks USD
 `confirmed: true` with real prices ($19 / $49), the currency selector offers it,

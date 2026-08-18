@@ -6,11 +6,11 @@ import { ENTITY, POLICY_UPDATED, SERVICE_DESCRIPTION, contactAddress } from '@/l
 import { LIMITS, PLAN_LABELS } from '@/components/hirelens/lib/entitlements/catalog'
 
 export const metadata: Metadata = {
-  title: 'Terms of Service — HireLens',
+  title: 'Terms of Service — Hirevo',
   description:
-    'The agreement between HireLens and the organizations that use it: what we provide, what you are responsible for, and how either side ends it.',
+    'The agreement between Hirevo and the organizations that use it: what we provide, what you are responsible for, and how either side ends it.',
   alternates: { canonical: '/terms' },
-  openGraph: { title: 'Terms of Service — HireLens', url: '/terms', type: 'article' },
+  openGraph: { title: 'Terms of Service — Hirevo', url: '/terms', type: 'article' },
 }
 
 /**
@@ -40,14 +40,14 @@ export default function TermsPage() {
   return (
     <LegalPage
       title="Terms of Service"
-      summary="The agreement between HireLens and your organization. It covers what we provide, what you are responsible for, and how either side can end it."
+      summary="The agreement between Hirevo and your organization. It covers what we provide, what you are responsible for, and how either side can end it."
       updated={POLICY_UPDATED.terms}
       path="/terms"
     >
       <Clause title="1. Who this agreement is with">
         <P>
           These terms are between{' '}
-          <Fact value={ENTITY.name} label="registered entity" /> (“HireLens”,
+          <Fact value={ENTITY.name} label="registered entity" /> (“Hirevo”,
           “we”, “us”) and the organization whose account accepts them
           (“you”). If you accept them on behalf of an employer, you confirm you are
           authorised to bind that employer.
@@ -96,11 +96,11 @@ export default function TermsPage() {
             'You confirm you have a lawful basis to upload each résumé and to have it analysed.',
             'You will not upload special-category data (health, biometrics, and similar) — the service is not designed to hold it.',
             'You will respond to candidates exercising their rights over their own data. We will help you do so; see the Privacy Policy.',
-            'You will not use HireLens to make a decision producing a legal or similarly significant effect on a candidate without a human reviewing it.',
+            'You will not use Hirevo to make a decision producing a legal or similarly significant effect on a candidate without a human reviewing it.',
           ]}
         />
         <P>
-          That last point is not boilerplate. HireLens recommends and evidences; a person decides.
+          That last point is not boilerplate. Hirevo recommends and evidences; a person decides.
           The product is built that way and the agreement says so.
         </P>
       </Clause>
@@ -141,7 +141,7 @@ export default function TermsPage() {
 
       <Clause title="7. Your data stays yours">
         <P>
-          You own the content you put into HireLens. We claim no ownership over your résumés,
+          You own the content you put into Hirevo. We claim no ownership over your résumés,
           notes, decisions or reports, and we do not use them to train models that serve anyone
           other than your organization.
         </P>

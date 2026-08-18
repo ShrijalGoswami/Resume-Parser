@@ -83,7 +83,7 @@ function ApiKeysManager() {
           surface
           icon={KeyRound}
           title="No API keys yet"
-          description="Create a key to access HireLens programmatically."
+          description="Create a key to access Hirevo programmatically."
         />
       ) : (
         <Card className="divide-y divide-hl-border-subtle">

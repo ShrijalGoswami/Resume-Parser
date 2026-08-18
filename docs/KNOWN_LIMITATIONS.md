@@ -1,6 +1,6 @@
 # Known Limitations — v1.0
 
-An honest, current inventory of what HireLens v1.0 does **not** do, plus the
+An honest, current inventory of what Hirevo v1.0 does **not** do, plus the
 conditions under which each limitation matters. None are release blockers (see
 [the RC audit](#release-status)); each has a planned resolution in
 [ROADMAP.md](./ROADMAP.md).

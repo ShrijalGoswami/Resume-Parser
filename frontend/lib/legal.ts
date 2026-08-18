@@ -95,7 +95,7 @@ export const GRIEVANCE_OFFICER: GrievanceOfficer = {
  * they are carried over rather than reset to the sentinel. Blanking a contact
  * route that may well be working would be a regression dressed as caution.
  *
- * WHAT IS STILL UNVERIFIED: whether `hirelens.app` has MX records and whether
+ * WHAT IS STILL UNVERIFIED: whether `hirevo.in` has MX records and whether
  * anyone reads these mailboxes. That cannot be checked from the codebase, and
  * an unmonitored support address is worse than none — it converts "we never
  * replied" into "they wrote and we never knew". Confirm before launch.
@@ -105,9 +105,9 @@ export const GRIEVANCE_OFFICER: GrievanceOfficer = {
  * problem, not just a missed email.
  */
 export const CONTACTS = {
-  support: 'support@hirelens.app',
-  sales: 'sales@hirelens.app',
-  privacy: 'support@hirelens.app',
+  support: 'support@hirevo.in',
+  sales: 'sales@hirevo.in',
+  privacy: 'support@hirevo.in',
 } as const
 
 export type ContactKey = keyof typeof CONTACTS
@@ -169,7 +169,7 @@ export const POLICY_UPDATED = {
 
 /** The single line every page uses to describe the product in legal prose. */
 export const SERVICE_DESCRIPTION =
-  'HireLens, a hosted service that analyses résumés against a job description and helps a hiring team record and defend its decisions.'
+  'Hirevo, a hosted service that analyses résumés against a job description and helps a hiring team record and defend its decisions.'
 
 /**
  * Third parties that process customer data on our behalf.

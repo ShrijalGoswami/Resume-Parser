@@ -1,4 +1,4 @@
-# HireLens frontend — container image.
+# Hirevo frontend — container image.
 #
 # Vercel is the deployed target; this image is the portable path (self-hosting,
 # `docker-compose.yml`, air-gapped installs). It mirrors the Vercel build with

@@ -1,6 +1,6 @@
 # Operations
 
-> Running HireLens once it is live. Getting it there is
+> Running Hirevo once it is live. Getting it there is
 > [DEPLOYMENT.md](./DEPLOYMENT.md); what to watch is
 > [MONITORING.md](./MONITORING.md); backup and restore procedures are
 > [DISASTER_RECOVERY.md](./DISASTER_RECOVERY.md).

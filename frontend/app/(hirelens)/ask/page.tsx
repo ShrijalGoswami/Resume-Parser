@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { AskScreen, type AskView } from '@/components/hirelens/ask/ask-screen'
 
-// Renders as "Copilot · HireLens" through the route group's title template.
+// Renders as "Copilot · Hirevo" through the route group's title template.
 // The ROUTE stays `/ask` (Phase 9.3 renames the product name, not the URL).
 export const metadata: Metadata = { title: 'Copilot' }
 

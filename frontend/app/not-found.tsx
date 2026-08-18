@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils'
  * `(hirelens)`, so it matched no boundary and fell through to Next's own
  * default 404 — unstyled black-on-white, in none of the product's type or
  * colour, with no way back. The one page guaranteed to be reached by mistake
- * was the one page that did not look like HireLens.
+ * was the one page that did not look like Hirevo.
  *
  * WHY THIS FILE REPEATS THE SCOPE THE GROUP LAYOUT WOULD HAVE GIVEN IT.
  * Only the root layout wraps this file, and the root layout is deliberately

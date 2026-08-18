@@ -172,7 +172,7 @@ external infrastructure or a product decision, not because they are defects. See
 
 ```mermaid
 timeline
-    title HireLens Delivery Phases
+    title Hirevo Delivery Phases
     v1.0 : PDF/DOCX parsing : Deterministic ATS scoring : Groq analysis
     v1.1 : Batch ranking : Downloadable reports
     v1.2 : JD match : Premium dashboard : PDF export : Copilot

@@ -20,7 +20,7 @@ import * as React from 'react'
  * fabricated candidates is a strange promise to open with, and the reader has
  * no way to tell it from the real thing until they are inside.
  *
- * What replaces it is the claim itself, set plainly: what HireLens does, in the
+ * What replaces it is the claim itself, set plainly: what Hirevo does, in the
  * product's own voice, with a copper rule as the only mark on the panel —
  * copper being the colour this product uses for evidence.
  */
@@ -42,7 +42,7 @@ export function EditorialPanel() {
             screens draw beside a quoted line. */}
         <div className="mt-8 flex flex-col gap-4 border-l-2 border-[var(--hl-accent-secondary)] pl-5">
           <p className="hl-body text-hl-editorial-muted">
-            HireLens reads each résumé against the role you actually wrote, then shows the lines it
+            Hirevo reads each résumé against the role you actually wrote, then shows the lines it
             scored — so a ranking is something you can check rather than something you accept.
           </p>
           <p className="hl-body text-hl-editorial-muted">

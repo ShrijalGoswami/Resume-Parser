@@ -428,7 +428,7 @@ export function CompressionEngine() {
                 // candidates in a product mock. An extractor that prioritises
                 // article elements — which is most of them — surfaced
                 // "S. Rahman · Staff Backend Engineer · Leadership risk" as
-                // HireLens's primary content.
+                // Hirevo's primary content.
                 //
                 // That is the same failure the August truth pass removed from
                 // the prose, surviving in a layer nobody reads: the site

@@ -200,7 +200,7 @@
 }
 
 /* ==========================================================================
-   HireLens V3 — Design System
+   Hirevo V3 — Design System
    Source of truth: docs/HIRELENS_V3_DESIGN_BIBLE.md + HIRELENS_V3_UX_SPEC.md
 
    Isolation contract: every V3 token lives under `.hl` and NEVER redefines a
@@ -598,7 +598,7 @@
 
    Rather than fork those components (a duplicate to keep in sync forever) or
    rewrite them (a change the frozen legacy app would inherit), remap the base
-   tokens to their HireLens equivalents *inside* the `.hl` scope. A foreign
+   tokens to their Hirevo equivalents *inside* the `.hl` scope. A foreign
    component dropped into the product surface then resolves V3 colors with no
    code change, while `:root` — and therefore app/(legacy)/ — is untouched.
 
@@ -979,7 +979,7 @@
      Marketing site palette — isolated public surface (used only under the
      (marketing) route group); intentionally NOT applied to the .hl product.
 
-     SOURCE OF TRUTH: the HireLens V4 Stitch marketing frames 1-5
+     SOURCE OF TRUTH: the Hirevo V4 Stitch marketing frames 1-5
      (design/stitch_hirelens_v4/hirelens_marketing_*). Every value is
      transcribed verbatim from those frames' `tailwind.config` blocks. Do not
      "improve" these — a mismatch here is a mismatch against the design.
@@ -1334,7 +1334,7 @@
     letter-spacing: -0.015em;
   }
   /* =====================================================================
-     THE HIRELENS TYPE SCALE
+     THE HIREVO TYPE SCALE
      ---------------------------------------------------------------------
      Every piece of text in the product surface must use one of the steps
      below. Arbitrary sizes (`text-[10px]`, `text-xs`, `text-sm`) are not
@@ -1380,7 +1380,7 @@
        hl-metric-lg      56/62          700  tabular  hero KPI
 
      HEADING PASS, 30 Jul 2026 — the panel comparison. Stripe, Linear, Vercel,
-     GitHub and HireLens were opened back to back on one 1536px canvas. The
+     GitHub and Hirevo were opened back to back on one 1536px canvas. The
      14/13/12/11 floor already matched GitHub and Vercel to the pixel and did
      not move. What still read as oversized was the TOP of the ladder: a 26px
      page title over 14px body is a 1.9:1 jump on a screen where Vercel sets
@@ -1397,9 +1397,9 @@
      at ~13. The ladder is 11 → 12 → 13 → 14 → 16 → 17 → 21 → 26 → 36 → 54.
 
      This was decided by direct comparison, not arithmetic: with GitHub and
-     HireLens opened back to back on the same 1568×710 canvas, the chrome had
+     Hirevo opened back to back on the same 1568×710 canvas, the chrome had
      already been brought to within a few pixels (36px buttons vs 32, 44px rows
-     vs 41, 36px nav rows vs 32) and HireLens *still* read larger. The residue
+     vs 41, 36px nav rows vs 32) and Hirevo *still* read larger. The residue
      was the type — 16px UI text inside GitHub-sized containers. Containers
      that look oversized around 16px text look correct around 14px text, which
      is why this step was taken instead of shaving more padding.
@@ -2136,7 +2136,7 @@
 
 
 /* ==========================================================================
-   HireLens V4 Marketing — surface scope + Stitch primitives
+   Hirevo V4 Marketing — surface scope + Stitch primitives
 
    Everything below is scoped under `.mkt` (applied by the (marketing) route
    group layout) so the public site cannot leak into the `.hl` product shell.

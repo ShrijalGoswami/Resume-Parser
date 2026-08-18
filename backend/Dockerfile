@@ -1,4 +1,4 @@
-# HireLens API — container image.
+# Hirevo API — container image.
 #
 # Render deploys this repo from source via `render.yaml`, so this image is the
 # portable path: any container host (Fly, Cloud Run, ECS, a VM) and the local

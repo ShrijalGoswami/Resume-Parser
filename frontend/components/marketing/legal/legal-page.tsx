@@ -54,7 +54,7 @@ export function LegalPage({
             >
               <p className="mb-2 mkt-label text-mkt-fg">Draft — not yet in force</p>
               <p className="mkt-body-sm text-mkt-fg-secondary">
-                This document is published for review and does not yet bind HireLens or its
+                This document is published for review and does not yet bind Hirevo or its
                 customers. It is missing details that only the registered company can supply
                 {outstanding.length > 0 ? `: ${outstanding.join(', ')}` : ''}. Nothing here
                 should be relied on until this notice is gone.

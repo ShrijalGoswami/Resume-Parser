@@ -140,7 +140,7 @@ export function ResetForm() {
             router.refresh()
           }}
         >
-          Continue to HireLens
+          Continue to Hirevo
           <ArrowRight />
         </Button>
       </div>

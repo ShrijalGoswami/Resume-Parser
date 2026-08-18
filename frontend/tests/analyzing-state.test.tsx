@@ -70,7 +70,7 @@ describe('the processing chamber', () => {
     expect(cards.length).toBeLessThanOrEqual(5)
   })
 
-  it('drives every motion from the shared HireLens keyframes', () => {
+  it('drives every motion from the shared Hirevo keyframes', () => {
     // Reusing the primitives in globals.css is what makes the global
     // reduced-motion rule cover this without a second implementation.
     const { container } = render(<AnalyzingState fileCount={4} />)

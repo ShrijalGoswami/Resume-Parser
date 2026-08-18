@@ -128,7 +128,7 @@ export function AcceptInviteForm() {
             router.refresh()
           }}
         >
-          Continue to HireLens
+          Continue to Hirevo
           <ArrowRight />
         </Button>
       </div>
@@ -141,8 +141,8 @@ export function AcceptInviteForm() {
       <h1 className="hl-display-md hl-serif">You’re invited.</h1>
       <p className="hl-body text-hl-fg-secondary">
         {accountEmail
-          ? `Set your name and a password to join your team on HireLens as ${accountEmail}.`
-          : 'Set your name and a password to join your team on HireLens.'}
+          ? `Set your name and a password to join your team on Hirevo as ${accountEmail}.`
+          : 'Set your name and a password to join your team on Hirevo.'}
       </p>
       <form onSubmit={onSubmit} noValidate className="flex flex-col gap-5">
         {/* The invited address, so a password manager has an account to attach
@@ -216,7 +216,7 @@ export function AcceptInviteForm() {
           loading={loading}
           disabled={!canSubmit}
         >
-          Join HireLens
+          Join Hirevo
         </Button>
       </form>
       <p className="hl-body text-hl-fg-tertiary">

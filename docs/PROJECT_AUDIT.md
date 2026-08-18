@@ -1,4 +1,4 @@
-# Project Audit — HireLens
+# Project Audit — Hirevo
 
 > **Type:** inspection & planning (no features implemented). **Date:** 2026-07-18.
 > **Scope:** full repository, configuration, database (from migrations), auth,
@@ -34,7 +34,7 @@ are annotated inline; the pre-activation narrative is retained for history.
 
 ## Executive summary
 
-HireLens is two products in one repo: a **shipped, stateless AI engine** (v1.2 —
+Hirevo is two products in one repo: a **shipped, stateless AI engine** (v1.2 —
 ATS analysis, JD match, batch ranking, Copilot, PDF export) and a **code-complete
 but not-yet-provisioned persistence platform** (V4 — Supabase auth, campaigns,
 storage, RLS). The code is clean, well-layered, and documented. The gap to

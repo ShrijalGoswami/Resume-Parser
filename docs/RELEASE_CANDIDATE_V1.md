@@ -1,4 +1,4 @@
-# HireLens V1 — Release Candidate
+# Hirevo V1 — Release Candidate
 
 **Date:** 8 August 2026 · **Branch:** `manus-ui-v1` · **Recommended tag:** `v1.0.0-rc.1`
 **Verification:** live Groq, live NVIDIA NIM, live Supabase, Razorpay test keys. No mocks.

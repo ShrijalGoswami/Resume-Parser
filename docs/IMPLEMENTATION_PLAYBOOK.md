@@ -1,4 +1,4 @@
-# HireLens V4 — Implementation Playbook
+# Hirevo V4 — Implementation Playbook
 
 > **Status:** Canonical engineering reference. The design is **frozen**.
 > **Companions:** `HIRELENS_V3_DESIGN_BIBLE.md` (visual language), `HIRELENS_V3_UX_SPEC.md` (structural contract), the Unified Design System (Stitch asset `assets/10019264991671263335`), and the frozen Stitch reference screens.
@@ -9,7 +9,7 @@
 ## 1. Purpose
 
 ### Scope
-This handbook governs the frontend implementation of HireLens V4: the marketing site, authentication, onboarding, the app shell, and the six product workflows (Decision Inbox, Triage, Deep Review, Decision Intelligence, Decision Ledger, Learning), across light and dark themes.
+This handbook governs the frontend implementation of Hirevo V4: the marketing site, authentication, onboarding, the app shell, and the six product workflows (Decision Inbox, Triage, Deep Review, Decision Intelligence, Decision Ledger, Learning), across light and dark themes.
 
 ### What is frozen (do not change)
 - **The Design Constitution** — the six levers: Rack Focus, Prism-is-AI, one-serif-moment, Ink↔Glass, mono-on-readouts, motion-reinforces-judgment.
@@ -87,7 +87,7 @@ frontend/
 ```
 
 **Rules:**
-- **Component organization:** `ui/` = design-system primitives (no domain knowledge). `domain/` = HireLens concepts (scores, AI answers, approvals). `states/` = empty/loading/error/offline. `shell/` = persistent chrome. `<surface>/` = page composition that assembles the above. Never leak domain logic into `ui/`.
+- **Component organization:** `ui/` = design-system primitives (no domain knowledge). `domain/` = Hirevo concepts (scores, AI answers, approvals). `states/` = empty/loading/error/offline. `shell/` = persistent chrome. `<surface>/` = page composition that assembles the above. Never leak domain logic into `ui/`.
 - **Routes:** all V4 under `app/(hirelens)/`. The `(legacy)` group is **frozen v1.0** — off-limits.
 - **Shared UI:** import from `ui/` and `domain/` via their `index.ts` barrels.
 - **Hooks:** cross-cutting hooks in `lib/`; data hooks in `lib/api/` (React Query). Component-local hooks stay in the component file.
@@ -333,4 +333,4 @@ If any item fails, the component is unfinished — regardless of how it looks.
 
 ---
 
-*This handbook is the canonical implementation reference for HireLens V4. It translates the frozen Design Constitution into engineering rules; it does not extend the design. When in doubt: preserve, don't invent.*
+*This handbook is the canonical implementation reference for Hirevo V4. It translates the frozen Design Constitution into engineering rules; it does not extend the design. When in doubt: preserve, don't invent.*

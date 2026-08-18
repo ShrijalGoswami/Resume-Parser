@@ -1,6 +1,6 @@
 # Deployment
 
-> How to get HireLens into production, and how to get it back out. Day-2 running is
+> How to get Hirevo into production, and how to get it back out. Day-2 running is
 > [OPERATIONS.md](./OPERATIONS.md); what to watch is
 > [MONITORING.md](./MONITORING.md); backup and restore is
 > [DISASTER_RECOVERY.md](./DISASTER_RECOVERY.md); current release status is

@@ -11,8 +11,8 @@ import './globals.css'
  * Owns only the document skeleton (`<html>`/`<body>`), global stylesheet, and
  * analytics. Each application shell supplies its own providers, fonts, and
  * chrome from its route-group layout:
- *   - app/(legacy)/layout.tsx   — HireLens v1.0 (frozen)
- *   - app/(hirelens)/layout.tsx — HireLens V3 (canonical, in progress)
+ *   - app/(legacy)/layout.tsx   — Hirevo v1.0 (frozen)
+ *   - app/(hirelens)/layout.tsx — Hirevo V3 (canonical, in progress)
  *
  * `suppressHydrationWarning` allows the V3 theme provider to set the color
  * scheme on `<html>` before hydration without a mismatch warning.

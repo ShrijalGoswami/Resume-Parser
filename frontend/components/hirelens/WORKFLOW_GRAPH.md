@@ -1,7 +1,7 @@
 # V5 Workflow Graph — the canonical interaction contract
 
 > **Status: canonical.** This is the authoritative map of every cross-surface
-> interaction in HireLens V5. It is derived from source (query keys, mutations,
+> interaction in Hirevo V5. It is derived from source (query keys, mutations,
 > and their `invalidateQueries` sets), not from intent — where the code and the
 > ideal diverge, the divergence is documented as a **SEAM**, not hidden.
 >

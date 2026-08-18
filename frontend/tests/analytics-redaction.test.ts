@@ -84,9 +84,9 @@ describe('redactPathname', () => {
 describe('redactAnalyticsUrl', () => {
   it('strips identifiers from a full URL and keeps the origin', () => {
     const out = redactAnalyticsUrl(
-      `https://hirelens.app/roles/${CAMPAIGN}/candidates/${CANDIDATE}`,
+      `https://hirevo.in/roles/${CAMPAIGN}/candidates/${CANDIDATE}`,
     )
-    expect(out).toBe('https://hirelens.app/roles/[roleId]/candidates/[candidateId]')
+    expect(out).toBe('https://hirevo.in/roles/[roleId]/candidates/[candidateId]')
     expect(out).not.toContain(CAMPAIGN)
     expect(out).not.toContain(CANDIDATE)
   })
@@ -95,21 +95,21 @@ describe('redactAnalyticsUrl', () => {
     // Candidate search puts its terms in the URL. A recruiter searching a
     // person by name is more identifying than the UUID this module exists to
     // remove, so the query does not survive on the product surface.
-    const out = redactAnalyticsUrl('https://hirelens.app/candidates?q=Jane%20Doe&stage=offer')
-    expect(out).toBe('https://hirelens.app/candidates')
+    const out = redactAnalyticsUrl('https://hirevo.in/candidates?q=Jane%20Doe&stage=offer')
+    expect(out).toBe('https://hirevo.in/candidates')
     expect(out.toLowerCase()).not.toContain('jane')
   })
 
   it('drops the hash on private routes', () => {
-    expect(redactAnalyticsUrl(`https://hirelens.app/jobs/${CAMPAIGN}#notes`)).toBe(
-      'https://hirelens.app/jobs/[jobId]',
+    expect(redactAnalyticsUrl(`https://hirevo.in/jobs/${CAMPAIGN}#notes`)).toBe(
+      'https://hirevo.in/jobs/[jobId]',
     )
   })
 
   it('keeps the query string on public marketing routes', () => {
     // utm_* is the one place a query string is the measurement rather than a
     // leak, and nothing behind these paths is organization data.
-    const out = redactAnalyticsUrl('https://hirelens.app/pricing?utm_source=launch')
+    const out = redactAnalyticsUrl('https://hirevo.in/pricing?utm_source=launch')
     expect(out).toContain('utm_source=launch')
     expect(out).toContain('/pricing')
   })
@@ -124,7 +124,7 @@ describe('redactAnalyticsUrl', () => {
   it('never emits anything UUID-shaped for any protected route', () => {
     const uuidLike = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
     for (const base of V4_PROTECTED) {
-      const out = redactAnalyticsUrl(`https://hirelens.app${base}/${CANDIDATE}`)
+      const out = redactAnalyticsUrl(`https://hirevo.in${base}/${CANDIDATE}`)
       expect(out).not.toMatch(uuidLike)
     }
   })

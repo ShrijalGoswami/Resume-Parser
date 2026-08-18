@@ -46,7 +46,7 @@ export const PRICING_FAQS: FaqEntry[] = [
   {
     question: 'What happens when I hit the limit?',
     answer:
-      'Analysis stops and we tell you before you upload, not after. You keep everything already in HireLens — candidates, decisions, notes and the ledger stay readable and exportable. Nothing is deleted and nothing is held hostage.',
+      'Analysis stops and we tell you before you upload, not after. You keep everything already in Hirevo — candidates, decisions, notes and the ledger stay readable and exportable. Nothing is deleted and nothing is held hostage.',
   },
   {
     question: 'Can I change plans later?',
@@ -68,7 +68,7 @@ export const PRICING_FAQS: FaqEntry[] = [
     answer: `Anyone with a seat in your organization, whatever their role — including people who only read. Seats are how team size is priced; roles decide what each person can do, and viewers and interviewers cost the same as recruiters.`,
   },
   {
-    question: 'We already use HireLens. Does anything change?',
+    question: 'We already use Hirevo. Does anything change?',
     answer:
       'No. Every organization created before plans launched keeps everything it had, with no limits, for as long as the account exists. Nothing is being taken away from anyone who already had it — you will see no locks and no meters.',
   },

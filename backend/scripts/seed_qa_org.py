@@ -169,7 +169,7 @@ CAMPAIGNS = [
         "age_days": 6,
         "skills": (["Figma", "Design tokens", "Accessibility", "Prototyping", "Storybook"], ["Motion design"]),
         "job_description": (
-            "Own the HireLens design system end to end: tokens, component library, "
+            "Own the Hirevo design system end to end: tokens, component library, "
             "documentation and adoption. You will partner with engineering to keep "
             "the system honest across light and dark themes."
         ),

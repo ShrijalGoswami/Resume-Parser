@@ -68,7 +68,7 @@ const PATTERNS: ReadonlyArray<[RegExp, string]> = [
   ],
   [
     /network|fetch failed|failed to fetch/i,
-    'We couldn’t reach HireLens. Check your connection and try again.',
+    'We couldn’t reach Hirevo. Check your connection and try again.',
   ],
 ]
 

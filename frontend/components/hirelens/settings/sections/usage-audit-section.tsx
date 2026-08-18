@@ -104,7 +104,7 @@ function UsagePanel() {
         surface
         variant="zero-results"
         title="No usage recorded yet"
-        description="Counters appear as your team uses HireLens."
+        description="Counters appear as your team uses Hirevo."
       />
     )
   }

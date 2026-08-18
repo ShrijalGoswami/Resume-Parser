@@ -60,7 +60,7 @@ export function SkillChips({ label, skills, tone }: { label: string; skills: str
 export function PendingAnalysis() {
   return (
     <p className="hl-body text-hl-fg-secondary">
-      This candidate hasn’t been analyzed yet — the verdict and evidence appear once HireLens
+      This candidate hasn’t been analyzed yet — the verdict and evidence appear once Hirevo
       ranks them against this role.
     </p>
   )

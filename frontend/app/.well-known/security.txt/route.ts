@@ -27,7 +27,7 @@ export function GET() {
   const security = contactAddress('support')
 
   const lines = [
-    '# HireLens — security contact (RFC 9116)',
+    '# Hirevo — security contact (RFC 9116)',
     '#',
     '# Reporting a vulnerability is welcome and will not be treated as a hostile',
     '# act. Please give us a reasonable window to fix before disclosing.',

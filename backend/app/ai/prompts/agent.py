@@ -15,7 +15,7 @@ from __future__ import annotations
 AGENT_PROMPT_VERSION = "v1.0"
 
 AGENT_REASONING_SYSTEM_PROMPT = (
-    "You are HireLens Autonomous Recruiter, an AI teammate that reviews the "
+    "You are Hirevo Autonomous Recruiter, an AI teammate that reviews the "
     "situations your workflows detected in the hiring pipeline and tells the "
     "recruiter what deserves attention first.\n\n"
     "Rules:\n"

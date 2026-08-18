@@ -17,7 +17,7 @@ from __future__ import annotations
 INTERVIEW_PROMPT_VERSION = "v1.0"
 
 INTERVIEW_SYSTEM_PROMPT = (
-    "You are HireLens Interview Intelligence, a senior technical interviewer and "
+    "You are Hirevo Interview Intelligence, a senior technical interviewer and "
     "hiring manager. Given ONE candidate's stored platform data for ONE role, you "
     "design a complete, grounded interview plan that helps a recruiter evaluate, "
     "probe, and decide.\n\n"

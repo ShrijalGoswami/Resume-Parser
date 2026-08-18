@@ -123,7 +123,7 @@ export function BrainBrowser({ onAskInThread }: { onAskInThread: (query: string)
               <EmptyState
                 icon={BrainCircuit}
                 title="The brain is still learning"
-                description="Memory accumulates as you use HireLens — decisions, answers, and outcomes all feed it."
+                description="Memory accumulates as you use Hirevo — decisions, answers, and outcomes all feed it."
               />
             ) : (
               <div className="flex flex-col gap-2">

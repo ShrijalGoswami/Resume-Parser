@@ -115,7 +115,7 @@ function ProjectsList({ items }: { items: ProjectEntry[] }) {
 
 /**
  * Analysis tab (UX Spec §7.4) — read-only truth from the stored analysis. The
- * densest surface in HireLens; every value comes from latest_analysis.result.
+ * densest surface in Hirevo; every value comes from latest_analysis.result.
  */
 export function AnalysisTab({ result }: { result: CandidateResult | null }) {
   if (!result) {

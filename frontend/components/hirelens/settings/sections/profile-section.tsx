@@ -14,7 +14,7 @@ export function ProfileSection() {
   const profile = useProfile()
 
   return (
-    <SettingsSection title="Profile" description="How you appear across HireLens.">
+    <SettingsSection title="Profile" description="How you appear across Hirevo.">
       {profile.isLoading ? (
         <div className="flex flex-col gap-4">
           {[0, 1, 2, 3].map((index) => (

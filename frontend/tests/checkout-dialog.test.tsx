@@ -7,7 +7,7 @@ import { CheckoutDialog } from '../components/hirelens/billing/checkout-dialog'
 import type { CheckoutPhase } from '../components/hirelens/billing/checkout-machine'
 
 /**
- * The HireLens side of checkout.
+ * The Hirevo side of checkout.
  *
  * The tests worth having here are not "does it render". They are about what
  * this surface is ALLOWED TO CLAIM at each phase, because the failure mode of a
@@ -61,7 +61,7 @@ describe('checkout confirmation surface', () => {
     for (const phase of premature) {
       cleanup()
       renderDialog(phase)
-      expect(screen.queryByText(/You’re on HireLens/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/You’re on Hirevo/)).not.toBeInTheDocument()
       expect(screen.queryByText(/subscription is active/i)).not.toBeInTheDocument()
       expect(screen.queryByText(/^Active$/)).not.toBeInTheDocument()
     }
@@ -86,7 +86,7 @@ describe('checkout confirmation surface', () => {
 
   it('declares the plan active only in the active phase, with the figures', () => {
     renderDialog('active', { renewsAt: '2026-09-11T00:00:00Z' })
-    expect(screen.getByText('You’re on HireLens Pro.')).toBeInTheDocument()
+    expect(screen.getByText('You’re on Hirevo Pro.')).toBeInTheDocument()
     expect(screen.getByText('₹2,499/month')).toBeInTheDocument()
     expect(screen.getByText('Active')).toBeInTheDocument()
     expect(screen.getByText('11 September 2026')).toBeInTheDocument()
@@ -209,7 +209,7 @@ describe('checkout confirmation surface', () => {
     })
 
     it('never claims the new plan is active once scheduled', () => {
-      // THE TEST THIS BLOCK EXISTS FOR. "You're on HireLens Pro" would be false
+      // THE TEST THIS BLOCK EXISTS FOR. "You're on Hirevo Pro" would be false
       // for up to a month.
       renderDialog('scheduled', {
         plan: 'pro',
@@ -217,7 +217,7 @@ describe('checkout confirmation surface', () => {
         renewsAt: '2026-09-11T00:00:00Z',
       })
       expect(screen.getByText('Pro is scheduled.')).toBeInTheDocument()
-      expect(screen.queryByText(/You’re on HireLens Pro/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/You’re on Hirevo Pro/)).not.toBeInTheDocument()
       expect(screen.queryByText(/^Active$/)).not.toBeInTheDocument()
       expect(screen.getByText(/You’ll move to Pro on 11 September 2026/)).toBeInTheDocument()
       expect(screen.getByText('Nothing')).toBeInTheDocument()

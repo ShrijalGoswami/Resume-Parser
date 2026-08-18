@@ -76,16 +76,16 @@ import { useCurrencyPreference } from './pricing/use-currency-preference'
  *  across the page), attributed to no real customer. */
 const STORY_LEDGER = [
   { at: '14:02', actor: 'K. Osei', event: 'Approved A. Okonkwo · Role 884-A', tone: 'neutral' },
-  { at: '14:02', actor: 'HireLens', event: 'Memo, evidence and alternates sealed', tone: 'neutral' },
+  { at: '14:02', actor: 'Hirevo', event: 'Memo, evidence and alternates sealed', tone: 'neutral' },
   { at: 'Day 12', actor: 'K. Osei', event: 'Decision reopened — new reference signal', tone: 'reopened' },
-  { at: 'Day 12', actor: 'HireLens', event: 'Evidence re-run · alternate re-compared', tone: 'neutral' },
+  { at: 'Day 12', actor: 'Hirevo', event: 'Evidence re-run · alternate re-compared', tone: 'neutral' },
   { at: 'Day 13', actor: 'K. Osei', event: 'Re-decided: A. Okonkwo confirmed', tone: 'good' },
 ]
 
 /** The last beat of the story: the decision, kept. */
 const LEDGER_ENTRIES = [
   { time: '14:02', actor: 'K. Osei', action: 'Approved A. Okonkwo · Role 884-A' },
-  { time: '14:02', actor: 'HireLens', action: 'Memo, evidence, and alternates sealed' },
+  { time: '14:02', actor: 'Hirevo', action: 'Memo, evidence, and alternates sealed' },
   { time: '14:03', actor: 'Ledger', action: 'Entry written · reversible 30 days' },
 ]
 
@@ -116,9 +116,9 @@ const LEDGER_ENTRIES = [
  */
 const FAQS = [
   {
-    question: 'Is HireLens an ATS?',
+    question: 'Is Hirevo an ATS?',
     answer:
-      'No, and it does not replace one. HireLens is a decision layer: you bring résumés for a role, it reads all of them, and it gives you evidence, risk and what each choice would cost you. Today you upload résumés directly — there are no ATS integrations yet, so it runs alongside whatever you already use rather than plugging into it. Integrations are on the roadmap and are not something you have today.',
+      'No, and it does not replace one. Hirevo is a decision layer: you bring résumés for a role, it reads all of them, and it gives you evidence, risk and what each choice would cost you. Today you upload résumés directly — there are no ATS integrations yet, so it runs alongside whatever you already use rather than plugging into it. Integrations are on the roadmap and are not something you have today.',
   },
   {
     question: 'Does it replace my recruiters?',
@@ -168,7 +168,7 @@ export function Frame05Conclusion() {
             <div>
               <p className="mb-4 mkt-body-lg text-mkt-fg-secondary">
                 Most engineering recruitment is a volume game: speed over alignment, and the
-                outliers lost somewhere in the middle of the stack. HireLens does not just
+                outliers lost somewhere in the middle of the stack. Hirevo does not just
                 filter résumés — it surfaces the nuance you would have missed, attaches the
                 evidence for every claim it makes, and prices what each choice costs you. The
                 shift is from reacting to applications to designing a team.
@@ -469,7 +469,7 @@ export function Frame05Conclusion() {
                 href="/auth/signup"
                 className="w-full rounded-mkt-lg bg-mkt-accent px-8 py-4 text-center mkt-body font-medium text-white shadow-[0_0_0_2px_rgba(91,91,214,0)] transition-all hover:shadow-[0_0_0_2px_rgba(91,91,214,0.5)] sm:w-auto"
               >
-                Start with HireLens
+                Start with Hirevo
               </Link>
               <a
                 href="#customers"

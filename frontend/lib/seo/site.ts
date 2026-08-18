@@ -26,18 +26,18 @@
  * claiming to be production — two hosts serving identical HTML with the same
  * canonical is how a preview URL ends up outranking the real one.
  *
- * `hirelens.app` is the default because it is the domain the product already
+ * `hirevo.in` is the default because it is the domain the product already
  * publishes addresses at (`support@`, `sales@` — see `lib/legal.ts`). It is an
  * assumption in exactly one place, which is the point.
  */
 export const SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://hirelens.app'
+  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://hirevo.in'
 ).replace(/\/$/, '')
 
-export const SITE_NAME = 'HireLens'
+export const SITE_NAME = 'Hirevo'
 export const SITE_LOCALE = 'en_US'
 
-/** `https://hirelens.app/pricing` from `/pricing`. */
+/** `https://hirevo.in/pricing` from `/pricing`. */
 export function absoluteUrl(path = '/'): string {
   return `${SITE_URL}${path.startsWith('/') ? path : `/${path}`}`
 }
@@ -64,7 +64,7 @@ export const PUBLIC_ROUTES: PublicRoute[] = [
     path: '/',
     changeFrequency: 'monthly',
     priority: 1,
-    summary: 'What HireLens does, how a role runs through it, and how it treats evidence.',
+    summary: 'What Hirevo does, how a role runs through it, and how it treats evidence.',
   },
   {
     path: '/pricing',
@@ -106,7 +106,7 @@ export const PUBLIC_ROUTES: PublicRoute[] = [
  * NOT a security boundary — `robots.txt` is a request, and the product routes
  * below are already behind authentication. This exists so an index is not
  * filled with sign-in forms and API responses that would tell a reader nothing
- * about HireLens.
+ * about Hirevo.
  */
 export const DISALLOWED_PATHS = [
   '/api/',

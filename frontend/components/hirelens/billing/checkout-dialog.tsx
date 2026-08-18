@@ -23,7 +23,7 @@ import { DEFAULT_CURRENCY, formatPrice, priceSuffix } from '@/lib/pricing'
 import type { CheckoutPhase } from './checkout-machine'
 
 /**
- * The HireLens side of checkout — everything except the gateway's own modal.
+ * The Hirevo side of checkout — everything except the gateway's own modal.
  *
  * ONE SURFACE, EVERY PHASE. A customer who clicks "Upgrade to Pro" and a
  * customer watching us confirm their subscription are the same person thirty
@@ -203,7 +203,7 @@ export function CheckoutDialog({
                   check again on their statement. */}
               <div className="flex items-baseline justify-between gap-3 rounded-hl-lg border border-hl-border bg-hl-subtle p-4">
                 <div className="flex flex-col gap-0.5">
-                  <span className="hl-caption text-hl-fg-tertiary">HireLens {label}</span>
+                  <span className="hl-caption text-hl-fg-tertiary">Hirevo {label}</span>
                   <span className="hl-small text-hl-fg-secondary">Billed monthly</span>
                 </div>
                 <div className="flex items-baseline gap-0.5">
@@ -235,7 +235,7 @@ export function CheckoutDialog({
 
               <p className="hl-caption inline-flex items-start gap-2 text-hl-fg-tertiary">
                 <ShieldCheck className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-                Payment is handled by Razorpay. Card details never reach HireLens,
+                Payment is handled by Razorpay. Card details never reach Hirevo,
                 and you can cancel any time.
               </p>
             </div>
@@ -339,7 +339,7 @@ export function CheckoutDialog({
                 style={{ backgroundImage: 'var(--hl-gradient-prism)' }}
                 aria-hidden
               />
-              <DialogTitle>You’re on HireLens {label}.</DialogTitle>
+              <DialogTitle>You’re on Hirevo {label}.</DialogTitle>
               <DialogDescription>
                 Your subscription is active and your workspace is ready.
               </DialogDescription>
@@ -348,7 +348,7 @@ export function CheckoutDialog({
             <dl className="flex flex-col gap-2 rounded-hl-lg border border-hl-border bg-hl-subtle p-4">
               <div className="flex items-center justify-between gap-3">
                 <dt className="hl-caption text-hl-fg-tertiary">Plan</dt>
-                <dd className="hl-small">HireLens {label}</dd>
+                <dd className="hl-small">Hirevo {label}</dd>
               </div>
               <div className="flex items-center justify-between gap-3">
                 <dt className="hl-caption text-hl-fg-tertiary">Billing</dt>
@@ -373,7 +373,7 @@ export function CheckoutDialog({
 
             <DialogFooter>
               <Button variant="primary" onClick={onDone}>
-                Continue to HireLens
+                Continue to Hirevo
               </Button>
             </DialogFooter>
           </>
@@ -394,7 +394,7 @@ export function CheckoutDialog({
             <div className="flex flex-col gap-4">
               <div className="flex items-baseline justify-between gap-3 rounded-hl-lg border border-hl-border bg-hl-subtle p-4">
                 <div className="flex flex-col gap-0.5">
-                  <span className="hl-caption text-hl-fg-tertiary">HireLens {label}</span>
+                  <span className="hl-caption text-hl-fg-tertiary">Hirevo {label}</span>
                   <span className="hl-small text-hl-fg-secondary">Billed monthly</span>
                 </div>
                 <div className="flex items-baseline gap-0.5">
@@ -498,7 +498,7 @@ export function CheckoutDialog({
               <div className="flex items-center justify-between gap-3">
                 <dt className="hl-caption text-hl-fg-tertiary">From {renewal ?? 'renewal'}</dt>
                 <dd className="hl-small">
-                  HireLens {label} · {price}
+                  Hirevo {label} · {price}
                   {suffix}
                 </dd>
               </div>
@@ -510,7 +510,7 @@ export function CheckoutDialog({
 
             <DialogFooter>
               <Button variant="primary" onClick={onDone}>
-                Continue to HireLens
+                Continue to Hirevo
               </Button>
             </DialogFooter>
           </>

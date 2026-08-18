@@ -2,7 +2,7 @@
  * Development-only session reset.
  *
  * In dev we want every fresh `next dev` boot to start signed out: the Supabase
- * auth cookie otherwise survives a server restart, so "Start with HireLens"
+ * auth cookie otherwise survives a server restart, so "Start with Hirevo"
  * bounces straight into /home and the real sign-in path never gets exercised.
  *
  * Mechanism: the server mints one random boot id per process and mirrors it into

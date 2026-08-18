@@ -178,7 +178,7 @@ export function PipelineLens({
           title={canManage ? 'Add candidates to start' : 'No candidates yet'}
           description={
             canManage
-              ? 'Upload résumés and HireLens ranks them against this role.'
+              ? 'Upload résumés and Hirevo ranks them against this role.'
               : 'Candidates uploaded to this role will appear here.'
           }
           action={

@@ -1,4 +1,4 @@
-# ✦ HireLens ✦
+# ✦ Hirevo ✦
 **AI-Powered Resume Intelligence & ATS Compatibility Engine**
 
 <p align="center">
@@ -23,7 +23,7 @@
 ## 📖 Table of Contents
 1. [Executive Overview](#-executive-overview)
 2. [What's New in v1.2](#-whats-new-in-v12)
-3. [Product Flow: How HireLens Works](#-product-flow-how-hirelens-works)
+3. [Product Flow: How Hirevo Works](#-product-flow-how-hirevo-works)
 4. [System Architecture](#-system-architecture)
 5. [Technical Highlights](#-technical-highlights)
 6. [ATS Scoring Methodology](#-ats-scoring-methodology)
@@ -44,7 +44,7 @@ Recruiting teams at high-growth companies receive thousands of resumes per job p
 * **LLM Hallucinations & Latency:** Relying entirely on LLMs to parse and score resumes is slow, expensive, non-deterministic, and prone to hallucinating scores, making candidate comparison unreliable.
 
 ### The Solution: A Hybrid Approach
-HireLens introduces a **hybrid parsing-scoring-explanation architecture**:
+Hirevo introduces a **hybrid parsing-scoring-explanation architecture**:
 1. **High-Fidelity Document Parsers** handle raw content extraction from PDF/DOCX formats cleanly.
 2. **Deterministic Heuristics Engine** extracts details and scores candidates mathematically based on a fixed scoring rubric (eliminating LLM scoring hallucination and guaranteeing 100% consistency across runs).
 3. **Structured Generative LLM Layer** (powered by Groq Llama-3) is only used where humans excel: generating contextual summaries, analyzing strengths/gaps, evaluating interview readiness, and suggesting career recommendations.
@@ -53,7 +53,7 @@ HireLens introduces a **hybrid parsing-scoring-explanation architecture**:
 
 ## 🚀 What's New in v1.2
 
-HireLens has evolved from a simple Python prototype into a premium SaaS product ready for enterprise recruiting teams.
+Hirevo has evolved from a simple Python prototype into a premium SaaS product ready for enterprise recruiting teams.
 
 * **Job Description Match Analysis:** Upload a Job Description alongside a resume. The engine cross-references required skills against the candidate's parsed experience to highlight missing skills and calculate a rigorous Job Match Score.
 * **Recruiter-Grade Results Dashboard:** A complete overhaul of the frontend using Next.js 16, React 19, and Tailwind CSS. The new dashboard offers beautiful data visualizations, metric score rings, and structured feedback cards.
@@ -63,7 +63,7 @@ HireLens has evolved from a simple Python prototype into a premium SaaS product 
 
 ---
 
-## 🔄 Product Flow: How HireLens Works
+## 🔄 Product Flow: How Hirevo Works
 
 ```mermaid
 graph TD
@@ -85,7 +85,7 @@ graph TD
 
 ## 🏗️ System Architecture
 
-HireLens separates responsibilities between a modern frontend ecosystem and an ultra-fast Python backend.
+Hirevo separates responsibilities between a modern frontend ecosystem and an ultra-fast Python backend.
 
 ```mermaid
 graph TD
@@ -184,7 +184,7 @@ In addition to the ATS score, a **Confidence Score (0-100)** is calculated. It e
 ## 📂 Project Folder Structure
 
 ```text
-HireLens/
+Hirevo/
 ├── backend/                       # FastAPI Python Backend
 │   ├── app/
 │   │   ├── core/                  # Config, auth, DI, observability, startup

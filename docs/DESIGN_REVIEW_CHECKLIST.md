@@ -1,4 +1,4 @@
-# HireLens — Design Review Checklist
+# Hirevo — Design Review Checklist
 
 **Version 1.0 · Status: Frozen · Change policy: Amendments only**
 Owner: Product Design & Design Operations
@@ -227,7 +227,7 @@ The accumulation of features that are individually justified and collectively in
 
 ### 3.7 Does this keep the human as the decider?
 
-**Why:** Bible Ch. 2 differentiator 4 and Ch. 14. The moment HireLens decides rather than informs, we have taken on liability we cannot carry, made a claim we cannot support, and become the thing the market is right to distrust.
+**Why:** Bible Ch. 2 differentiator 4 and Ch. 14. The moment Hirevo decides rather than informs, we have taken on liability we cannot carry, made a claim we cannot support, and become the thing the market is right to distrust.
 
 **Test:** can a recruiter reach the opposite conclusion from the system's, easily, without friction, and without the product treating them as having made an error? If disagreeing is harder than agreeing, we have built a decision-maker with a consent flow.
 
@@ -468,7 +468,7 @@ The second is more common in teams that have read a design book, and it is more 
 
 **Why this exists:** generative tools converge on the most-represented pattern in their training data — three-column feature grids, icon-heading-paragraph cards, hero-with-gradient. These are statistically likely and, by Bible 5.6, exactly what we've chosen not to be.
 
-**Test:** could this layout be dropped onto any B2B SaaS site with only a copy swap? If yes, it expresses nothing about HireLens and should be rejected regardless of execution quality.
+**Test:** could this layout be dropped onto any B2B SaaS site with only a copy swap? If yes, it expresses nothing about Hirevo and should be rejected regardless of execution quality.
 
 ## Stage 4 exit criteria
 
@@ -695,7 +695,7 @@ Calibration has a specific meaning and we should hold ourselves to it: **of the 
 
 ### 8.16 Does the surface build *calibrated* trust rather than maximum trust?
 
-**Why:** the goal is not that users trust HireLens as much as possible. It is that users trust it **exactly as much as it merits, in each specific instance** — and this reframing changes design decisions.
+**Why:** the goal is not that users trust Hirevo as much as possible. It is that users trust it **exactly as much as it merits, in each specific instance** — and this reframing changes design decisions.
 
 Two failure directions, and the industry only guards against one:
 
@@ -798,7 +798,7 @@ Regression to the category mean. Marketing surfaces face constant pressure — f
 > **Reject:** "Streamline your hiring process with AI-powered insights."
 > **Accept:** "You have four finalists, two conflicting interview reports, and a hiring manager who wants an answer today."
 
-**Reviewer test:** replace "HireLens" with a competitor's name. If the sentence is still true, it says nothing about us.
+**Reviewer test:** replace "Hirevo" with a competitor's name. If the sentence is still true, it says nothing about us.
 
 ### 10.4 Does it show before it claims?
 
@@ -1629,7 +1629,7 @@ That second clause is the load-bearing one. A designer who authored the flow can
 ### Design Owner
 
 **Owns:** Stage 4 (§6), and §14 as a whole — the catalog is the Design Owner's instrument.
-**Answers:** hierarchy, spacing, type, surface language, density, and whether the artifact expresses HireLens or the category average.
+**Answers:** hierarchy, spacing, type, surface language, density, and whether the artifact expresses Hirevo or the category average.
 **Veto:** yes, on Bible violations. **Not on preference** — this is the distinction that determines whether the role is respected or resented. A Design Owner blocking on §6.3 with the gap measurements cited is exercising the role. A Design Owner blocking because the layout isn't what they'd have made is exceeding it, and the Approver should say so.
 **Also owns:** the design system and the lexicon. Requests to add a token, component, or noun route here.
 
@@ -1947,7 +1947,7 @@ Before rejecting, ask: **did the brief state the decision being improved, the co
 
 ### Self-review instruction for agents
 
-Any agent producing design work for HireLens should verify, before presenting output:
+Any agent producing design work for Hirevo should verify, before presenting output:
 
 1. **Stage 1 (§3):** the decision this improves is named. If it can't be, say so instead of proceeding.
 2. **Generic check (§6.13):** would this be interchangeable with any B2B SaaS product? If yes, discard and try again from the principles, not from the pattern.
@@ -1998,5 +1998,5 @@ A principle consistently violated in practice means one of two things, and the r
 
 ---
 
-*HireLens Design Review Checklist v1.0 — Frozen.*
+*Hirevo Design Review Checklist v1.0 — Frozen.*
 *Amendments only. Every amendment carries written reasoning and a date.*

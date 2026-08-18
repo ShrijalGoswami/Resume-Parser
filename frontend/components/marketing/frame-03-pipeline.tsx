@@ -97,7 +97,7 @@ const FEED_TONE = {
 } as const
 
 /** Stage 02 — the competencies the role was calibrated on, each with the
- *  verification state HireLens could actually support from evidence. */
+ *  verification state Hirevo could actually support from evidence. */
 const COMPETENCIES = [
   { name: 'System architecture', score: 88, state: 'Validated', tone: 'high', spans: 6 },
   { name: 'Distributed systems', score: 91, state: 'Validated', tone: 'high', spans: 5 },
@@ -296,7 +296,7 @@ export function Frame03Pipeline() {
               <div className="flex items-center gap-2">
                 <span className="mkt-live-dot h-1.5 w-1.5 rounded-full bg-mkt-focus-high" />
                 <span className="mkt-data text-mkt-fg-secondary">
-                  HireLens Triage · Senior Backend Engineer
+                  Hirevo Triage · Senior Backend Engineer
                 </span>
               </div>
               <span className="mkt-data text-mkt-fg-tertiary">
@@ -711,7 +711,7 @@ export function Frame03Pipeline() {
                   </p>
                 </div>
                 <span className="rounded-[0.25rem] bg-mkt-accent-bg px-2 py-1 mkt-label-sm text-mkt-accent-text">
-                  HireLens
+                  Hirevo
                 </span>
               </div>
 

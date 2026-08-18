@@ -1,6 +1,6 @@
-# HireLens — Truthful AI Philosophy
+# Hirevo — Truthful AI Philosophy
 
-The governing principle of HireLens V4: **truth before appearance.** Every AI-derived
+The governing principle of Hirevo V4: **truth before appearance.** Every AI-derived
 surface represents what the platform can actually do — no more. This document is the
 contract the V4 migration was held to, and the standard for all future AI work.
 

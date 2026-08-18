@@ -325,7 +325,7 @@ describe('upgrade CTA flow', () => {
         <PlanCta plan="free" />
       </Providers>,
     )
-    expect(screen.getByRole('link', { name: 'Go to HireLens' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Go to Hirevo' })).toBeInTheDocument()
   })
 })
 
@@ -570,7 +570,7 @@ describe('FAQ', () => {
     // Existing customers reading a new pricing page need this answered before
     // they have to ask.
     render(<PricingFaq />)
-    expect(screen.getByRole('button', { name: /already use HireLens/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /already use Hirevo/ })).toBeInTheDocument()
   })
 })
 

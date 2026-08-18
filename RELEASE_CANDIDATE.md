@@ -1,4 +1,4 @@
-# HireLens — Release Candidate
+# Hirevo — Release Candidate
 
 **Date:** 2026-07-26 · **Recommendation:** **READY FOR PILOT**
 

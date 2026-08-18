@@ -102,7 +102,7 @@ EXEMPT = {
     "export_excel": "no Excel export endpoint exists yet — the entitlement is "
                     "declared so the plan matrix is complete",
     "api_access": "Phase 4 — scoped org API keys exist but the public API does not",
-    "sso": "Supabase-level auth configuration, not a HireLens endpoint",
+    "sso": "Supabase-level auth configuration, not a Hirevo endpoint",
     "audit_logs": "read surface exists for every org today; gating it would hide "
                   "an organization's own history behind a plan",
     "dedicated_support": "commercial commitment, not a software capability",

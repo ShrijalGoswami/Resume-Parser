@@ -90,7 +90,7 @@ export function exportInterviewPdf(pack: InterviewPack) {
     @media print { body { margin: 12mm; } h2 { break-after: avoid; } .q, tr { break-inside: avoid; } }
   </style></head><body>
     <h1>Interview Pack — ${esc(pack.candidate_name)}</h1>
-    <p class="sub">HireLens Interview Intelligence${pack.degraded ? ' · deterministic fallback' : ''}</p>
+    <p class="sub">Hirevo Interview Intelligence${pack.degraded ? ' · deterministic fallback' : ''}</p>
 
     <h2>Executive Summary</h2>
     ${es.who ? `<p>${esc(es.who)}</p>` : ''}

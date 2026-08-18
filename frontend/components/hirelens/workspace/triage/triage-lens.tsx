@@ -208,7 +208,7 @@ export function TriageLens({ roleId }: TriageLensProps) {
           variant="first-run"
           icon={Users}
           title="Nothing to triage yet"
-          description="Add candidates and HireLens will sort the clear calls and surface the ones that need you."
+          description="Add candidates and Hirevo will sort the clear calls and surface the ones that need you."
         />
       </Card>
     )

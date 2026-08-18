@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils'
 
 /**
- * The HireLens logo — the single source of truth for the brand mark.
+ * The Hirevo logo — the single source of truth for the brand mark.
  *
  * THE MARK is a vector recreation of `public/newlogo.png`, which is the design
  * of record. Its geometry was measured off that file rather than redrawn by
@@ -28,7 +28,7 @@ import { cn } from '@/lib/utils'
  * type with no arithmetic at the call site.
  *
  * COLOUR comes from the design system, never from the reference PNG — the
- * reference's blue/violet gradient belongs to no HireLens token. `brand` uses
+ * reference's blue/violet gradient belongs to no Hirevo token. `brand` uses
  * the terracotta→copper pair; `mono` collapses to `currentColor` so the mark
  * inherits whatever ink surrounds it, which is the correct tone on the
  * marketing site (whose palette is deliberately monochromatic) and in any
@@ -168,7 +168,7 @@ export function Logo({
   return (
     <span className={cn('inline-flex items-center gap-[0.34em]', className)}>
       <LogoMark tone={tone} title={title} />
-      <span className={wordmarkClassName}>HireLens</span>
+      <span className={wordmarkClassName}>Hirevo</span>
     </span>
   )
 }

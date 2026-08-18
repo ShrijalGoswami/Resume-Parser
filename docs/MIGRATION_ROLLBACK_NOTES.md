@@ -70,7 +70,7 @@ held no values.
 
 **After billing goes live:** dropping these columns discards the link between an
 organization and its gateway subscription. That link cannot be reconstructed from
-Razorpay alone — Razorpay knows its own customer id, not which HireLens
+Razorpay alone — Razorpay knows its own customer id, not which Hirevo
 organization it belongs to. Losing it means every paying customer's plan has to
 be re-established by hand.
 

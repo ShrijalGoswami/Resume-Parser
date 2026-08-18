@@ -133,7 +133,7 @@ export function Frame01Hero() {
                   <br className="hidden md:block" /> who’s strongest.
                 </span>
                 <span className="mkt-fade-in-up mkt-delay-100 mt-2 block text-mkt-dark-fg md:mt-3">
-                  HireLens tells you
+                  Hirevo tells you
                   <br className="hidden md:block" /> who you’d regret.
                 </span>
               </h1>
@@ -141,7 +141,7 @@ export function Frame01Hero() {
               {/* 60ch, not 2xl. A hero paragraph that runs the full column is
                   read as a block of text rather than as a sentence. */}
               <p className="mkt-fade-in-up mkt-delay-200 max-w-[60ch] text-[17px] leading-[28px] text-mkt-dark-fg-variant md:text-[18px] md:leading-[30px]">
-                HireLens reads every résumé in full and names what a ranking
+                Hirevo reads every résumé in full and names what a ranking
                 hides.{' '}
                 <span className="text-mkt-dark-fg">
                   Every claim opens to the line it came from.
@@ -170,7 +170,7 @@ export function Frame01Hero() {
               {/* WHAT THIS LINE MAY SAY.
                   It read "Trusted by teams hiring at scale · Vertex · Nexus ·
                   Omni". None of those three companies exists as a customer —
-                  HireLens has no reference customers at all yet — so the line
+                  Hirevo has no reference customers at all yet — so the line
                   was an invented endorsement in the most prominent position on
                   the site.
 
@@ -200,7 +200,7 @@ export function Frame01Hero() {
             </div>
 
             {/* The product, still. The film behind this section is atmosphere,
-                not evidence — it contains no HireLens UI — so the claim that
+                not evidence — it contains no Hirevo UI — so the claim that
                 the product works is still carried by this card: real scores,
                 a risk derived from the résumé's own dates, and the two lines
                 it was read from. When a screen recording of the product

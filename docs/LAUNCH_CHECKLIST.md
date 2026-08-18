@@ -1,4 +1,4 @@
-# HireLens V4 — Public Launch Checklist
+# Hirevo V4 — Public Launch Checklist
 
 Everything required before the V4 experience is served publicly. Grouped by
 blocking severity (see `PRODUCTION_GAPS.md`).
@@ -51,7 +51,7 @@ a credential, a domain or a legal fact that only the owner has.
 - [x] **Application-wide `app/not-found.tsx`** — added 12 Aug 2026. The
       route-group 404 does not catch URLs that match no route.
 - [ ] **[human]** Set `NEXT_PUBLIC_SITE_URL` if the production domain is not
-      `hirelens.app`. Every canonical, OG URL and sitemap entry derives from it.
+      `hirevo.in`. Every canonical, OG URL and sitemap entry derives from it.
 
 ## 5. Legal & trust (P1)
 - [x] Privacy, Terms, Refunds and Contact all published and linked.

@@ -11,17 +11,17 @@ import {
 } from '@/lib/legal'
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy — HireLens',
+  title: 'Privacy Policy — Hirevo',
   description:
-    'What personal data HireLens holds, why, where it lives, who else processes it, and how long we keep it — including the résumés of candidates who never signed up.',
+    'What personal data Hirevo holds, why, where it lives, who else processes it, and how long we keep it — including the résumés of candidates who never signed up.',
   alternates: { canonical: '/privacy' },
-  openGraph: { title: 'Privacy Policy — HireLens', url: '/privacy', type: 'article' },
+  openGraph: { title: 'Privacy Policy — Hirevo', url: '/privacy', type: 'article' },
 }
 
 /**
  * Privacy Policy.
  *
- * The hard part of this document is that HireLens processes personal data about
+ * The hard part of this document is that Hirevo processes personal data about
  * people who never visited the site: candidates whose résumés a recruiter
  * uploaded. They have rights, they have no account, and most privacy policies
  * quietly address only the account holder. This one addresses both, and says
@@ -43,13 +43,13 @@ export default function PrivacyPage() {
   return (
     <LegalPage
       title="Privacy Policy"
-      summary="What we hold, why we hold it, where it lives and how long it stays — for the people who use HireLens and for the candidates whose résumés pass through it."
+      summary="What we hold, why we hold it, where it lives and how long it stays — for the people who use Hirevo and for the candidates whose résumés pass through it."
       updated={POLICY_UPDATED.privacy}
       path="/privacy"
     >
       <Clause title="1. Who is responsible for what">
         <P>
-          <Fact value={ENTITY.name} label="registered entity" /> operates HireLens.
+          <Fact value={ENTITY.name} label="registered entity" /> operates Hirevo.
         </P>
         <P>
           For <strong className="text-mkt-fg">account data</strong> — the people who sign in — we
@@ -211,7 +211,7 @@ export default function PrivacyPage() {
 
       <Clause title="9. Automated processing">
         <P>
-          HireLens scores and ranks candidates, and that is automated. It does not make hiring
+          Hirevo scores and ranks candidates, and that is automated. It does not make hiring
           decisions. Our terms require a human to review any decision with a legal or similarly
           significant effect, and the product records who made each decision and on what evidence.
         </P>

@@ -41,7 +41,7 @@ async def lifespan(app: FastAPI):
     init_transport()
     yield
     close_transport()
-    logger.info("HireLens API shutting down.")
+    logger.info("Hirevo API shutting down.")
 
 
 # ── API documentation surface (A1) ───────────────────────────────────────────

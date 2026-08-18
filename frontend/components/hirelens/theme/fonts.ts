@@ -1,7 +1,7 @@
 import { Inter, JetBrains_Mono, Newsreader } from 'next/font/google'
 
 /**
- * HireLens product type system (Design Bible §3.8).
+ * Hirevo product type system (Design Bible §3.8).
  *
  * Two voices, exposed as CSS variables and consumed by the `.hl` scope in
  * globals.css:

@@ -26,7 +26,7 @@ import { EditorialBackdrop } from './fx/editorial-backdrops'
  * of decisions with evidence, and zero regretted hires over two quarters.
  *
  * Not one of those companies is a customer. Not one of those numbers was
- * measured. HireLens has three recruiters across two real organizations and has
+ * measured. Hirevo has three recruiters across two real organizations and has
  * never processed a payment, so the entire band was an invented endorsement —
  * a deceptive-endorsement exposure under the FTC guides and, for the market
  * these prices are set in, under the CCPA 2019 misleading-advertisement
@@ -243,7 +243,7 @@ function FocusThread() {
 
 const MANIFESTO = [
   'The modern talent pipeline is choked with noise. Résumés are optimized for parsers, not for truth. Searching for signal in a sea of keywords guarantees you will miss the outliers.',
-  'We designed HireLens as an instrument of clarity, not a warehouse for data. It does not measure how many candidates you have. It measures how closely they align with the actual work.',
+  'We designed Hirevo as an instrument of clarity, not a warehouse for data. It does not measure how many candidates you have. It measures how closely they align with the actual work.',
   'By applying deep semantic understanding to unstructured career trajectories, we elevate the few who matter. The result is a calmer, more decisive hiring process.',
 ]
 
@@ -273,7 +273,7 @@ export function Frame02Philosophy() {
               We would rather show you the instrument than tell you about it.
             </p>
             <p className="max-w-md mkt-body text-mkt-fg-secondary">
-              HireLens is early, and we are not going to dress that up with logos we have not
+              Hirevo is early, and we are not going to dress that up with logos we have not
               earned. What follows is what the analysis does on every run — check it yourself on
               two résumés, free, without a card.
             </p>
@@ -438,12 +438,12 @@ export function Frame02Philosophy() {
             </p>
             <h3 className="mb-6 text-balance font-mkt-display text-[2rem] leading-[1.2] font-light tracking-[-0.02em] text-mkt-fg">
               An ATS remembers candidates.{' '}
-              <span className="text-mkt-accent">HireLens</span> helps you
+              <span className="text-mkt-accent">Hirevo</span> helps you
               choose one.
             </h3>
             <p className="max-w-sm mkt-body-sm text-mkt-fg-secondary">
               Five questions, asked of both. An ATS answers them as a system of
-              record. HireLens answers them as an instrument you decide with.
+              record. Hirevo answers them as an instrument you decide with.
             </p>
             <p className="mt-10 flex items-center gap-3 mkt-data text-mkt-fg-tertiary">
               <span className="h-px w-8 bg-mkt-prism-cyan" aria-hidden="true" />
@@ -461,7 +461,7 @@ export function Frame02Philosophy() {
               </span>
               <span className="flex items-center gap-2 mkt-label text-mkt-accent-text">
                 <span className="h-3 w-[2px] bg-mkt-accent" aria-hidden="true" />
-                HireLens
+                Hirevo
               </span>
             </div>
 
@@ -485,7 +485,7 @@ export function Frame02Philosophy() {
                   </span>
                   {row.old}
                 </span>
-                {/* The HireLens column carries the warmth: a copper rule and
+                {/* The Hirevo column carries the warmth: a copper rule and
                     a faint tint that runs the full height of every row. */}
                 <span className="-mr-5 flex items-start gap-2 border-l-2 border-mkt-accent/30 bg-mkt-accent-bg/50 py-3 pr-5 pl-4 mkt-body-sm text-mkt-fg transition-colors duration-300 group-hover:border-mkt-accent/60 md:-mr-7 md:py-5 md:pr-7">
                   <span

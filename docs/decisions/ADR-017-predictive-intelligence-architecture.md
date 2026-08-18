@@ -4,7 +4,7 @@
 
 ## Context
 
-HireLens *describes* the hiring organization (analytics, executive reports) and
+Hirevo *describes* the hiring organization (analytics, executive reports) and
 *remembers* it (organizational knowledge). The next step is to **model** it and
 forecast the future: "if we open 15 AI Engineer roles next quarter, what happens?",
 "probability this campaign finishes before deadline?", "how many recruiters will we

@@ -1,9 +1,9 @@
-# Release Notes — HireLens v1.0
+# Release Notes — Hirevo v1.0
 
 **Status:** Production-ready (Release Candidate audit approved — zero blockers).
 **Theme:** the AI recruiting platform, fully stabilized, hardened, and frozen.
 
-HireLens turns raw résumés into grounded, explainable hiring intelligence:
+Hirevo turns raw résumés into grounded, explainable hiring intelligence:
 deterministic scoring for the numbers, a single AI orchestration layer for the
 reasoning, and a persistent recruiter workspace on top of a multi-tenant Supabase
 foundation.

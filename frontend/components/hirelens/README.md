@@ -1,6 +1,6 @@
-# HireLens V3 — Frontend Architecture
+# Hirevo V3 — Frontend Architecture
 
-Canonical, self-contained implementation of HireLens V3. Built in parallel with
+Canonical, self-contained implementation of Hirevo V3. Built in parallel with
 the frozen v1.0 app (`app/(legacy)/`, `components/{ui,recruiter,hero,…}`), which
 is left untouched until V3 reaches parity and the legacy app is retired.
 

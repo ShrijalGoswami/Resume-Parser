@@ -1,6 +1,6 @@
 # Rollback Runbook — v1.0
 
-How to safely revert HireLens if a deployment goes wrong. HireLens has three
+How to safely revert Hirevo if a deployment goes wrong. Hirevo has three
 independently-deployable planes — **frontend** (Vercel), **backend** (Render/
 Railway), and **database** (Supabase) — that can be rolled back separately.
 

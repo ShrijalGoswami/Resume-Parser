@@ -6,12 +6,12 @@ import { POLICY_UPDATED, contactAddress } from '@/lib/legal'
 import { LIMITS, PLAN_LABELS } from '@/components/hirelens/lib/entitlements/catalog'
 
 export const metadata: Metadata = {
-  title: 'Refund & Cancellation Policy — HireLens',
+  title: 'Refund & Cancellation Policy — Hirevo',
   description:
-    'How to cancel a HireLens subscription, what happens to your data afterwards, and when we refund.',
+    'How to cancel a Hirevo subscription, what happens to your data afterwards, and when we refund.',
   alternates: { canonical: '/refunds' },
   openGraph: {
-    title: 'Refund & Cancellation Policy — HireLens',
+    title: 'Refund & Cancellation Policy — Hirevo',
     url: '/refunds',
     type: 'article',
   },
@@ -57,7 +57,7 @@ export default function RefundsPage() {
         <P>
           Every organization starts on {PLAN_LABELS.free}, which includes{' '}
           {LIMITS.free.resumes} full résumé analyses with no card required. That is the real
-          analysis, not a reduced one — the intent is that you know whether HireLens works for you
+          analysis, not a reduced one — the intent is that you know whether Hirevo works for you
           before any money changes hands.
         </P>
       </Clause>

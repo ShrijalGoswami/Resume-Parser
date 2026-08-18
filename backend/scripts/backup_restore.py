@@ -1,5 +1,5 @@
 """
-Logical backup / restore for HireLens tenant data.
+Logical backup / restore for Hirevo tenant data.
 
 This is the *row-level recovery* tool. It is not a substitute for a physical
 cluster backup (see `docs/DISASTER_RECOVERY.md` — Supabase PITR / `pg_dump` is the

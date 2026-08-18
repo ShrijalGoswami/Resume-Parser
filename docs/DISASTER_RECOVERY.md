@@ -1,4 +1,4 @@
-# HireLens — Backup & Disaster Recovery
+# Hirevo — Backup & Disaster Recovery
 
 Audience: whoever is on call. Assume they have not read the codebase.
 

@@ -11,7 +11,7 @@ import { V4_PROTECTED } from '@/lib/auth-routing'
  * builds carries the raw `url` — not the Next.js route pattern. So opening one
  * candidate sent, verbatim:
  *
- *     https://hirelens.app/roles/8f14e45f-…/candidates/c9b1a2d3-…
+ *     https://hirevo.in/roles/8f14e45f-…/candidates/c9b1a2d3-…
  *
  * Those are the real primary keys of a real campaign and a real candidate. They
  * are not names and not résumé text, but they are private organization data

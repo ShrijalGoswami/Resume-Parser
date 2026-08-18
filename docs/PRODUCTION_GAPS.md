@@ -1,4 +1,4 @@
-# HireLens V4 — Production Gaps
+# Hirevo V4 — Production Gaps
 
 All remaining work, prioritized. **P0** = must fix before public launch · **P1** =
 soon after launch · **P2** = future roadmap (mostly backend-dependent).

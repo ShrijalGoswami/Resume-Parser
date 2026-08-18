@@ -4,7 +4,7 @@ import { ThemeProvider as NextThemesProvider } from 'next-themes'
 import type { ComponentProps } from 'react'
 
 /**
- * HireLens V3 theme provider.
+ * Hirevo V3 theme provider.
  *
  * Wraps next-themes with the V3 contract:
  *   - writes `data-hl-theme="light|dark"` on <html> (NOT the `.dark` class),

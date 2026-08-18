@@ -4,7 +4,7 @@
 
 ## Context
 
-HireLens was a stateless AI app (no database, auth, or storage). V4 required
+Hirevo was a stateless AI app (no database, auth, or storage). V4 required
 turning it into a persistent SaaS: recruiters must sign in, own data, create
 campaigns, and return later. We needed **Postgres + authentication + file
 storage + row-level multi-tenancy**, delivered fast by a small team, without

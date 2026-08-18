@@ -1,4 +1,4 @@
-# HireLens — Marketing Design Bible
+# Hirevo — Marketing Design Bible
 
 **Version 1.0 · Permanent · Internal**
 Owner: Design Leadership
@@ -26,7 +26,7 @@ Three rules govern the use of this document:
 
 ## The belief
 
-**HireLens exists because hiring decisions are made with more anxiety than evidence.**
+**Hirevo exists because hiring decisions are made with more anxiety than evidence.**
 
 Not with too little data. With too much of the wrong kind, arriving too late, in a form no one can act on.
 
@@ -46,7 +46,7 @@ That is a *confidence* problem, and confidence is not a feeling — it is a meas
 
 ## The consequence
 
-HireLens does not sell automation. It sells **the ability to see**.
+Hirevo does not sell automation. It sells **the ability to see**.
 
 Every surface we design, market, or ship answers a single question: *does this help someone decide with more confidence than they had a minute ago?* If the answer is no, it does not belong in the product, and it does not belong on the website.
 
@@ -60,7 +60,7 @@ It has a second implication: we do not market AI. AI is our supply chain, not ou
 
 ## Category
 
-**HireLens is a Decision Intelligence platform for hiring.**
+**Hirevo is a Decision Intelligence platform for hiring.**
 
 We are choosing a category that does not yet have a leader, over categories that already do. This is deliberate and it is the single most consequential strategic choice in this document.
 
@@ -74,7 +74,7 @@ Consider the alternatives:
 
 Decision Intelligence is harder. It requires us to teach the market a frame before we can sell into it. But it has three properties the others lack: it is **true** to what we actually built, it **survives** the commoditization of AI (when models are free, deciding well is still hard), and it **grows** — decision intelligence extends naturally into interviewing, calibration, offers, and post-hire outcome loops without repositioning.
 
-**The category test.** Anyone reading our homepage for ten seconds should be able to complete this sentence correctly: *"HireLens is the thing you use to ______."* The right answer is **"decide who to hire, and know why."** Not "screen resumes." Not "use AI in recruiting." If our own copy makes the wrong answer available, the copy is wrong.
+**The category test.** Anyone reading our homepage for ten seconds should be able to complete this sentence correctly: *"Hirevo is the thing you use to ______."* The right answer is **"decide who to hire, and know why."** Not "screen resumes." Not "use AI in recruiting." If our own copy makes the wrong answer available, the copy is wrong.
 
 ## Mission
 
@@ -86,7 +86,7 @@ Note the three audiences, in that order. Most hiring tools optimize for the thir
 
 The primary statement, from which all marketing copy descends:
 
-> **HireLens turns scattered hiring evidence into a decision you can defend.**
+> **Hirevo turns scattered hiring evidence into a decision you can defend.**
 
 Its structure matters. *Scattered evidence* names the felt pain without insulting the customer. *Turns into* claims a transformation, not an acceleration. *A decision* names the output as the thing of value — not a score, a summary, or a shortlist. *You can defend* is the emotional payload: it addresses the private fear, which is not "I will be slow," it is "I will be wrong in front of people who matter."
 
@@ -101,12 +101,12 @@ Three permitted supporting formulations, for different page contexts:
 These are the four claims we are permitted to make as points of difference. Each is stated with its proof obligation, because a differentiator you cannot demonstrate is a slogan.
 
 **1. Evidence, not verdicts.**
-Every conclusion HireLens presents is traceable to the source that produced it. A score is never a number alone; it is a number with a path back to the sentence, the answer, the timeline event that produced it.
+Every conclusion Hirevo presents is traceable to the source that produced it. A score is never a number alone; it is a number with a path back to the sentence, the answer, the timeline event that produced it.
 *Why it differentiates:* the market's AI tools produce confident outputs with opaque provenance. This is precisely what makes serious recruiters distrust them and legal teams block them. Traceability is not a feature we added; it is the architecture.
 *Proof obligation:* our marketing must show a trace, in the interface, on the page. Claiming traceability without showing it is worse than not claiming it.
 
 **2. Calibrated confidence.**
-HireLens tells you how sure it is, and it is willing to be unsure. A candidate with a thin resume and no interview data produces a low-confidence read, and says so.
+Hirevo tells you how sure it is, and it is willing to be unsure. A candidate with a thin resume and no interview data produces a low-confidence read, and says so.
 *Why it differentiates:* every competitor is incentivized to project certainty, because certainty demos better. Admitting uncertainty is the strongest possible trust signal precisely because it is expensive to make. It is also the thing experienced recruiters test for in the first five minutes.
 *Proof obligation:* we must be willing to show a low-confidence state in marketing material. A homepage that only shows the happy path is making the competitor's claim.
 
@@ -116,7 +116,7 @@ The reasoning behind a decision persists after the decision. Six months later, t
 *Proof obligation:* show the artifact — the decision record — as a real object, not a concept.
 
 **4. It holds a standard you set.**
-The bar is yours. HireLens applies it consistently; it does not import an opinion about who is good.
+The bar is yours. Hirevo applies it consistently; it does not import an opinion about who is good.
 *Why it differentiates:* the deepest objection to AI in hiring is not accuracy, it is authorship — *whose judgment is this?* Answering that clearly disarms the objection that kills deals in security and legal review.
 *Proof obligation:* never use language that implies the system knows who the best candidate is in the abstract.
 
@@ -134,7 +134,7 @@ Written down so no one has to relitigate it:
 
 # Chapter 3 — Brand Personality
 
-## If HireLens were a person
+## If Hirevo were a person
 
 She is the most experienced person in the room, and the least interested in demonstrating it.
 
@@ -667,7 +667,7 @@ Someone who knows more than the reader, respects them completely, and has no int
 
 **Concrete over abstract, always.** "Reduce time-to-hire" is a category. "Know by Thursday whether the fourth candidate is worth a final round" is a Tuesday. Abstraction is what we write when we haven't decided what we mean.
 
-**Active voice, named actors.** Passive voice hides responsibility, and in a domain where responsibility is the entire subject, that's a tonal contradiction. "The candidate was ranked" is evasive. "HireLens ranked her third, on these three signals" is our brand.
+**Active voice, named actors.** Passive voice hides responsibility, and in a domain where responsibility is the entire subject, that's a tonal contradiction. "The candidate was ranked" is evasive. "Hirevo ranked her third, on these three signals" is our brand.
 
 **Say the number or don't make the claim.** Unquantified improvement claims are noise. If we can't source it, we cut it — and the discipline of cutting unsourced claims is itself a differentiator readers will notice.
 
@@ -796,7 +796,7 @@ Anyone can claim accuracy. Only a company confident in its product will show a c
 
 **2. Calibration.** The system reports its own certainty and is willing to report low certainty. A system that is always confident is either lying or not measuring, and sophisticated buyers know this.
 
-**3. Boundaries.** Explicit statements of what HireLens does not do. It does not decide. It does not predict a person's future performance. It does not evaluate protected characteristics. It does not have an opinion about who is good in the abstract. Each of these preempts a specific objection that would otherwise be raised in a room we're not in.
+**3. Boundaries.** Explicit statements of what Hirevo does not do. It does not decide. It does not predict a person's future performance. It does not evaluate protected characteristics. It does not have an opinion about who is good in the abstract. Each of these preempts a specific objection that would otherwise be raised in a room we're not in.
 
 **4. Stewardship.** Data handling, retention, access, and model behavior stated in plain language that a non-technical recruiting leader can understand and repeat to their security team. **The test of good trust content is whether the reader can defend our product to someone else without us present** — because that is exactly what will happen.
 
@@ -848,7 +848,7 @@ This document is written to outlast its authors, the current product, the curren
 
 Named in advance, so the answers aren't improvised under deadline pressure:
 
-**Product surface growth.** As HireLens extends into interviewing, calibration, offers, and post-hire loops, the temptation will be to give each area its own visual identity. Resist it. **New capabilities extend the existing language; they do not get their own.** Sub-brands are how design systems die — each one is locally reasonable and collectively fatal.
+**Product surface growth.** As Hirevo extends into interviewing, calibration, offers, and post-hire loops, the temptation will be to give each area its own visual identity. Resist it. **New capabilities extend the existing language; they do not get their own.** Sub-brands are how design systems die — each one is locally reasonable and collectively fatal.
 
 **Enterprise pressure.** Large buyers will ask for things that dilute the language: denser dashboards, more configuration, more chrome. Some of these are correct and should be absorbed. The line is: **we adopt enterprise capability, we do not adopt enterprise aesthetics.** Being taken seriously by large companies is not achieved by looking like the software they already regret buying.
 
@@ -895,5 +895,5 @@ For the wall, the onboarding doc, and the moment before a review:
 
 ---
 
-*HireLens Marketing Design Bible v1.0*
+*Hirevo Marketing Design Bible v1.0*
 *Amendments require written reasoning and a date.*

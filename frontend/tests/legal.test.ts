@@ -59,8 +59,8 @@ describe('legal configuration', () => {
     // These shipped in the upgrade dialog and the Enterprise CTA before this
     // module existed. Resetting them to the sentinel would have removed a
     // working contact route in the name of caution.
-    expect(contactAddress('support')).toBe('support@hirelens.app')
-    expect(contactAddress('sales')).toBe('sales@hirelens.app')
+    expect(contactAddress('support')).toBe('support@hirevo.in')
+    expect(contactAddress('sales')).toBe('sales@hirevo.in')
     expect(contactAddress('privacy')).not.toBeNull()
   })
 

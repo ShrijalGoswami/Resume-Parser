@@ -1,6 +1,6 @@
-# HireLens V4 — Release Notes
+# Hirevo V4 — Release Notes
 
-HireLens V4 is a ground-up rebuild of the product experience around a single idea:
+Hirevo V4 is a ground-up rebuild of the product experience around a single idea:
 **bring the few candidates who matter into focus, and help a human make — and defend —
 the decision.** It coexists with the frozen V1 app until cutover.
 

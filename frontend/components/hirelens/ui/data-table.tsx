@@ -8,7 +8,7 @@ import { Input } from './input'
 import { Skeleton } from './skeleton'
 
 /**
- * DataTable — the shared, data-dense table for the HireLens product surface.
+ * DataTable — the shared, data-dense table for the Hirevo product surface.
  *
  * Consolidates the sort / search / paginate / select behaviour that was being
  * re-implemented per screen (Ledger, audit log, admin console). Every surface

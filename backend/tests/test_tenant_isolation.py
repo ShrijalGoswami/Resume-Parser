@@ -1,6 +1,6 @@
 """
 Runtime Tenant-Isolation Suite — the canonical runtime authorization validation
-for HireLens (A1 Execution).
+for Hirevo (A1 Execution).
 
 Behavioral proof only: it exercises the two live enforcement layers (the backend
 API and the Supabase user-token client under RLS) with two real tenants and

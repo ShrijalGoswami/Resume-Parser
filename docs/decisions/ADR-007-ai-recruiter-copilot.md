@@ -9,7 +9,7 @@ an `AIOrchestrator`, versioned prompt registry, context builders, provider
 abstraction, typed schemas, and observability — with `Capability.RECRUITER_COPILOT`
 reserved but unwired, and the legacy `answer_question` still on a direct-Groq path.
 
-We now want the Copilot to be the primary way recruiters interact with HireLens:
+We now want the Copilot to be the primary way recruiters interact with Hirevo:
 an assistant that feels like an experienced technical recruiter with complete
 knowledge of every campaign, candidate, resume, job description, note, and prior
 conversation — **not** a generic chatbot. It must ground answers in our own data

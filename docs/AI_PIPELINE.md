@@ -1,6 +1,6 @@
 # AI Pipeline
 
-> How a resume becomes ranked, explained intelligence. HireLens uses a **hybrid**
+> How a resume becomes ranked, explained intelligence. Hirevo uses a **hybrid**
 > architecture: deterministic Python does all the math (scores, ranking, similarity);
 > the LLM does only what humans are good at (summaries, reasoning, recommendations).
 > Cross-refs: [ARCHITECTURE.md](./ARCHITECTURE.md), [DATABASE.md](./DATABASE.md),

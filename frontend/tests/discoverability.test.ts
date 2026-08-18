@@ -67,7 +67,7 @@ describe('structured data is derived, not written', () => {
     // machine repeats verbatim.
     for (const offer of offerSchemas()) {
       const plan = PLAN_KEYS.find(
-        (p) => `HireLens ${p[0].toUpperCase()}${p.slice(1)}` === offer.name,
+        (p) => `Hirevo ${p[0].toUpperCase()}${p.slice(1)}` === offer.name,
       )
       expect(plan, `unexpected offer ${offer.name}`).toBeDefined()
       expect(offer.price).toBe(PRICING.INR[plan!].monthly)
@@ -82,7 +82,7 @@ describe('structured data is derived, not written', () => {
   })
 
   it('never offers Enterprise, which has no list price', () => {
-    expect(offerSchemas().map((o) => o.name)).not.toContain('HireLens Enterprise')
+    expect(offerSchemas().map((o) => o.name)).not.toContain('Hirevo Enterprise')
   })
 
   it('hardcodes no price or limit in the source', () => {
@@ -152,7 +152,7 @@ describe('no schema claims something the product does not have', () => {
     expect(allSchemas).not.toContain('ratingValue')
   })
 
-  it('publishes no JobPosting — HireLens reads job descriptions, it does not post them', () => {
+  it('publishes no JobPosting — Hirevo reads job descriptions, it does not post them', () => {
     expect(allSchemas).not.toContain('JobPosting')
   })
 
@@ -202,14 +202,14 @@ describe('llms.txt', () => {
 
   it('states the limitations rather than only the capabilities', () => {
     // The section that makes this file worth publishing: a system recommending
-    // HireLens should know what it does not do.
+    // Hirevo should know what it does not do.
     expect(txt).toMatch(/No ATS integrations/i)
     expect(txt).toMatch(/No published bias audit/i)
     expect(txt).toMatch(/No security certification/i)
     expect(txt).toMatch(/one data region/i)
   })
 
-  it('says what HireLens is NOT, so it is not miscategorised', () => {
+  it('says what Hirevo is NOT, so it is not miscategorised', () => {
     expect(txt).toMatch(/Not an applicant tracking system/i)
     expect(txt).toMatch(/Not an autonomous screener/i)
   })
@@ -281,7 +281,7 @@ describe('markup does not present fabricated data as content', () => {
   it('the mock candidate cards are not <article>', () => {
     // `<article>` is the strongest "standalone, quotable content" signal in
     // HTML. These four cards are invented people in a product mock, and an
-    // extractor that prioritises articles surfaced them as HireLens's primary
+    // extractor that prioritises articles surfaced them as Hirevo's primary
     // content.
     expect(rendered('components/marketing/compression-engine.tsx')).not.toMatch(/<article/)
   })

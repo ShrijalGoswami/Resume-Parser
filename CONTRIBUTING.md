@@ -1,4 +1,4 @@
-# Contributing to HireLens
+# Contributing to Hirevo
 
 **The V4 architecture is frozen.** The Release Candidate is the baseline for all
 future development. This document is what that means in practice.

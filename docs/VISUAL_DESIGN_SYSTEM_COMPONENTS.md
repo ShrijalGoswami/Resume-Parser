@@ -1,4 +1,4 @@
-# HireLens Visual Design System
+# Hirevo Visual Design System
 
 ## Book II — Components & Design Tokens
 
@@ -1795,5 +1795,5 @@ Four filed in `DESIGN_DECISION_LOG.md`, status **Proposed** pending approval of 
 
 ---
 
-*HireLens Visual Design System · Book II — Components & Design Tokens · v1.0*
+*Hirevo Visual Design System · Book II — Components & Design Tokens · v1.0*
 *Subordinate to governance and to Book I. Book III (Motion) follows.*

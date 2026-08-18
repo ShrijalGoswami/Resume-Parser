@@ -107,7 +107,7 @@ export function Frame04Regret() {
             <h2 className="mb-8 font-mkt-display text-4xl leading-tight font-light tracking-tight text-white md:text-5xl md:leading-none">
               Every tool tells you who’s strongest.
               <br />
-              Only HireLens tells you what you’d regret.
+              Only Hirevo tells you what you’d regret.
             </h2>
             <p className="font-mkt-display text-xl italic text-mkt-fg-tertiary">
               The question no other tool asks.
@@ -337,7 +337,7 @@ export function Frame04Regret() {
                   You decide, always
                 </h3>
                 <p className="text-mkt-fg-secondary">
-                  HireLens recommends; you approve; everything’s
+                  Hirevo recommends; you approve; everything’s
                   reversible and logged.
                 </p>
               </div>

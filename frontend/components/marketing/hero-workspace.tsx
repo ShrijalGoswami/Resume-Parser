@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 /**
- * The hero's product surface: HireLens triaging a role, above the fold.
+ * The hero's product surface: Hirevo triaging a role, above the fold.
  *
  * THIS IS NOT A MARKETING ILLUSTRATION OF THE PRODUCT. Every label, threshold,
  * shortcut and rule below is lifted from the shipping application, so that the
@@ -21,12 +21,12 @@ import { useEffect, useRef, useState } from 'react'
  *                      Reasoning (collapsed), Actions
  *
  * WHY THE FOCUS SCALE IS THE BRAND. Every other hiring tool reports a
- * percentage: "98% match". HireLens grades legibility instead — In focus,
+ * percentage: "98% match". Hirevo grades legibility instead — In focus,
  * Sharp, Legible, Soft, Out of focus — because the product's claim is about how
  * clearly it can see a candidate, not how much it likes them. It is the one
  * piece of this interface that could not belong to any other product, which
  * makes it the thing to put in the hero. Crop the logo and the word "Legible"
- * next to a person's name still says HireLens.
+ * next to a person's name still says Hirevo.
  *
  * ON THE NUMBERS. The active candidate carries the real scores this backend
  * returned for that résumé (fit 68, ATS 71). The rest of the queue is

@@ -44,10 +44,10 @@ PLAN_SPECS = {
         "period": "monthly",
         "interval": 1,
         "item": {
-            "name": f"HireLens {plan.capitalize()}",
+            "name": f"Hirevo {plan.capitalize()}",
             "amount": money.minor_units,
             "currency": money.currency,
-            "description": f"HireLens {plan.capitalize()} — monthly subscription (GST inclusive)",
+            "description": f"Hirevo {plan.capitalize()} — monthly subscription (GST inclusive)",
         },
         "notes": {"hirelens_plan": plan},
     }
@@ -76,7 +76,7 @@ def _find_existing(client, spec: dict) -> Optional[dict]:
 
     Matched on the ITEM rather than on the name, because the name is cosmetic
     and the amount is the thing a customer's card feels. A plan named
-    "HireLens Plus" that charges ₹1,999 is not the plan we want, and a plan
+    "Hirevo Plus" that charges ₹1,999 is not the plan we want, and a plan
     named "plus-v2" that charges ₹999 is.
     """
     try:

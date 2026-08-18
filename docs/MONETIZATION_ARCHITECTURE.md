@@ -1,4 +1,4 @@
-# HireLens — Subscription & Feature-Gating Architecture
+# Hirevo — Subscription & Feature-Gating Architecture
 
 **Status:** Design proposal · no code written · awaiting approval
 **Date:** 31 Jul 2026
@@ -6,7 +6,7 @@
 
 > ## ⚠️ BYO AI IS CANCELLED — do not implement §7 or the `/org/ai-credentials` endpoints
 >
-> **Product decision, 6 Aug 2026: HireLens is Groq-only for V1** (HANDOFF §11.0).
+> **Product decision, 6 Aug 2026: Hirevo is Groq-only for V1** (HANDOFF §11.0).
 > The `byo_ai` entitlement has been **removed** from the catalog, from both
 > mirrors, from `/pricing`, and from the entitlement helpers. It was never
 > implemented.
@@ -25,7 +25,7 @@
 
 ## 0. Executive summary
 
-HireLens already has most of the machinery this needs, and that changes the shape of the work.
+Hirevo already has most of the machinery this needs, and that changes the shape of the work.
 `app/enterprise/` ships a plan registry, a per-org feature-flag resolver, a policy-based RBAC
 engine, and an `OrgContext` that every request already resolves. `/org/context` already returns
 `plan`, `permissions` and `features` to the frontend, and the frontend already mirrors it in
@@ -131,7 +131,7 @@ Three properties matter for BYO AI:
 
 `organizations`(plan, settings) · `subscriptions`(organization_id **unique**, plan, status, limits jsonb,
 current_period_start/end) · `organization_members`(role, status) · `org_feature_flags`(flag, enabled)
-· `org_usage_counters`(organization_id, period, metric, value — unique together) · `api_keys` (HireLens-issued,
+· `org_usage_counters`(organization_id, period, metric, value — unique together) · `api_keys` (Hirevo-issued,
 *not* provider keys) · `audit_logs` (immutable) · `candidate_uploads`(campaign_id, candidate_id,
 **recruiter_id**, file_hash — unique(campaign_id, file_hash)) · `workspaces` · `campaigns` · `candidates`.
 
@@ -540,11 +540,11 @@ contextvar-in-threadpool bug from this exact family.
 ### 7.3 Policy decisions
 
 - **No silent fallback from a tenant key to the managed key.** If a customer's key fails, falling
-  back means HireLens pays for enterprise traffic and hides the misconfiguration. Default:
+  back means Hirevo pays for enterprise traffic and hides the misconfiguration. Default:
   fail with a clear "your OpenAI key was rejected" error. Make it an org setting
   (`byo_fallback_to_managed`, default `false`) if a customer asks.
 - **Usage attribution.** Record `credential_source` on every usage row so customer-funded tokens
-  are excluded from HireLens COGS while still showing in the customer's own usage view.
+  are excluded from Hirevo COGS while still showing in the customer's own usage view.
 - **Secrets.** Reuse `app/integrations/crypto.py`. Never log, never return, never audit-log the
   secret — audit the *act* (`ai_credential.updated`, provider + prefix only). Verify on save with a
   cheap probe so an invalid key is caught in Settings, not mid-analysis.

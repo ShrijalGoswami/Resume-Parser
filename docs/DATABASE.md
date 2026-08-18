@@ -1,6 +1,6 @@
 # Database
 
-> Postgres schema, migrations, relationships, RLS, and storage for HireLens.
+> Postgres schema, migrations, relationships, RLS, and storage for Hirevo.
 > The persistence layer was introduced in **V4 Sprint 1** on top of the
 > previously stateless AI backend. See [ARCHITECTURE.md](./ARCHITECTURE.md) and
 > [SECURITY.md](./SECURITY.md).

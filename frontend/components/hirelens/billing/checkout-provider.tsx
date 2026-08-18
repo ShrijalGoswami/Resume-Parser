@@ -276,8 +276,8 @@ export function BillingCheckoutProvider({ children }: { children: React.ReactNod
       const checkout = await openRazorpay({
         key: handoff.public_key,
         subscription_id: handoff.subscription_id,
-        name: 'HireLens',
-        description: `HireLens ${plan === 'pro' ? 'Pro' : 'Plus'} — monthly subscription`,
+        name: 'Hirevo',
+        description: `Hirevo ${plan === 'pro' ? 'Pro' : 'Plus'} — monthly subscription`,
         theme: { color: '#6D5EF8' },
         handler: (response) => {
           if (runId.current !== id) return

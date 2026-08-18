@@ -8,11 +8,11 @@ import { ContactStructuredData } from '@/components/seo/structured-data-blocks'
 import { CONTACTS, ENTITY, GRIEVANCE_OFFICER, isConfirmed } from '@/lib/legal'
 
 export const metadata: Metadata = {
-  title: 'Contact — HireLens',
+  title: 'Contact — Hirevo',
   description:
-    'How to reach HireLens: support, upgrades, enterprise enquiries and privacy requests.',
+    'How to reach Hirevo: support, upgrades, enterprise enquiries and privacy requests.',
   alternates: { canonical: '/contact' },
-  openGraph: { title: 'Contact — HireLens', url: '/contact', type: 'website' },
+  openGraph: { title: 'Contact — Hirevo', url: '/contact', type: 'website' },
 }
 
 /**

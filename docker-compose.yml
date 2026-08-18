@@ -1,4 +1,4 @@
-# Local/self-hosted HireLens stack.
+# Local/self-hosted Hirevo stack.
 #
 # Postgres, Auth and Storage stay on Supabase — they are not containerised here.
 # Running a local Supabase would mean a different auth issuer, different JWKS and

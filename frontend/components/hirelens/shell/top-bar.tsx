@@ -64,7 +64,7 @@ export function TopBar({ breadcrumbs, title, unreadCount }: TopBarProps) {
       <button
         type="button"
         onClick={() => setCommandOpen(true)}
-        aria-label="Search or ask HireLens"
+        aria-label="Search or ask Hirevo"
         aria-keyshortcuts="Meta+K Control+K"
         // Search is the shell's most-used affordance — it gets a real control
         // height, a full-size icon, and a placeholder at body size rather than
@@ -93,15 +93,15 @@ export function TopBar({ breadcrumbs, title, unreadCount }: TopBarProps) {
           the left is 17px at that width (the breadcrumb trail is already
           hidden), so even consuming all of it leaves 137px, still short.
 
-          So the one redundant word goes instead. "HireLens" tells a reader
-          inside HireLens nothing; "Search or ask" is the whole proposition —
+          So the one redundant word goes instead. "Hirevo" tells a reader
+          inside Hirevo nothing; "Search or ask" is the whole proposition —
           that this control does both — and that survives intact. The button's
           `aria-label` above is unchanged at every width, so the accessible
-          name stays "Search or ask HireLens" whatever is painted here.
+          name stays "Search or ask Hirevo" whatever is painted here.
         */}
         <span className="hl-body flex-1 truncate text-hl-fg-tertiary">
           <span className="sm:hidden">Search or ask&hellip;</span>
-          <span className="hidden sm:inline">Search or ask HireLens&hellip;</span>
+          <span className="hidden sm:inline">Search or ask Hirevo&hellip;</span>
         </span>
         <Kbd className="hidden shrink-0 sm:inline-flex">⌘K</Kbd>
       </button>

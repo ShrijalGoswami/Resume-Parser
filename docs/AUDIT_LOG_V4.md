@@ -1,4 +1,4 @@
-# HireLens V4 — Backend Stabilization & End-to-End Product Audit
+# Hirevo V4 — Backend Stabilization & End-to-End Product Audit
 
 Running log. Every entry records: feature · route · API · root cause · files
 modified · verification performed.

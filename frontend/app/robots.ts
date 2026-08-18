@@ -6,7 +6,7 @@ import { DISALLOWED_PATHS, SITE_URL, absoluteUrl } from '@/lib/seo/site'
  * `/robots.txt`, generated.
  *
  * ALL CRAWLERS ARE ALLOWED, including the AI ones. That is a deliberate
- * position rather than an absence of one: HireLens wants to be understood by
+ * position rather than an absence of one: Hirevo wants to be understood by
  * the systems people now ask "what should I use to screen résumés?", and a
  * blanket `Disallow` for GPTBot or ClaudeBot buys nothing here — there is no
  * proprietary corpus on the public site, only a description of a product we

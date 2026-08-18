@@ -1,4 +1,4 @@
-# HireLens Visual Design System
+# Hirevo Visual Design System
 
 ## Book I — Foundations
 
@@ -511,7 +511,7 @@ Three steps each — background, border, foreground — which is sufficient for 
 
 ### Tier 3 — Confidence
 
-**This is the tier that distinguishes HireLens, and it is defined by what it may not do.**
+**This is the tier that distinguishes Hirevo, and it is defined by what it may not do.**
 
 Confidence is an axis of *certainty*. Every available visual vocabulary for it — red-amber-green, progress bars, star ratings, percentage badges — reads as an axis of *quality*. A candidate shown with a red confidence indicator is read as a bad candidate, not as a candidate we know little about. **The user's misreading is not their error; it is our design defect** (Checklist §8.11).
 
@@ -1111,7 +1111,7 @@ The nevers. Each is a rule someone will want to break, with the reason it exists
 
 **The single largest risk to this system over five years is sub-branding.**
 
-As HireLens extends into interviewing, calibration, offers, and post-hire loops, each area will want its own identity. Every request will be locally reasonable and well-argued: *this area is different, it has different users, it deserves its own feel.*
+As Hirevo extends into interviewing, calibration, offers, and post-hire loops, each area will want its own identity. Every request will be locally reasonable and well-argued: *this area is different, it has different users, it deserves its own feel.*
 
 **New capabilities extend this language. They do not get their own** (Bible Ch. 15). Sub-brands are how design systems die — each one is defensible and collectively they are fatal. The system's whole value is that learning one surface teaches you the next.
 
@@ -1212,5 +1212,5 @@ Four architectural decisions filed in `DESIGN_DECISION_LOG.md`, status **Propose
 
 ---
 
-*HireLens Visual Design System · Book I — Foundations · v1.0*
+*Hirevo Visual Design System · Book I — Foundations · v1.0*
 *Subordinate to governance. Book II (Components & Tokens) follows.*

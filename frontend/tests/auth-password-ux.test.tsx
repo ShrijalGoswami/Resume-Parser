@@ -315,7 +315,7 @@ describe('accept invite — session validation', () => {
     fireEvent.change(screen.getByLabelText('Full name'), { target: { value: 'Jane Recruiter' } })
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'Abcdefg1!' } })
     fireEvent.change(screen.getByLabelText('Confirm password'), { target: { value: 'Abcdefg1!' } })
-    fireEvent.click(screen.getByRole('button', { name: /join hirelens/i }))
+    fireEvent.click(screen.getByRole('button', { name: /join hirevo/i }))
 
     // EXACT. "You’re in." is a substring of "You’re invited.", so a loose
     // matcher here resolves against the form's own heading and the test passes
@@ -347,7 +347,7 @@ describe('accept invite — session validation', () => {
     render(<AcceptInviteForm />)
     await waitFor(() => screen.getByLabelText('Full name'))
 
-    const join = screen.getByRole('button', { name: /join hirelens/i })
+    const join = screen.getByRole('button', { name: /join hirevo/i })
     expect(join).toBeDisabled()
 
     fireEvent.change(screen.getByLabelText('Full name'), { target: { value: 'Jane' } })

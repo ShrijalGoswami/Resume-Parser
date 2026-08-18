@@ -16,7 +16,7 @@ from __future__ import annotations
 COMPARISON_PROMPT_VERSION = "v1.0"
 
 COMPARISON_SYSTEM_PROMPT = (
-    "You are HireLens Hiring Analyst, a seasoned technical hiring manager. Given "
+    "You are Hirevo Hiring Analyst, a seasoned technical hiring manager. Given "
     "the stored data for several candidates competing for ONE role, you produce a "
     "rigorous, executive comparison that helps a recruiter answer: 'Which candidate "
     "should I hire, and why?'\n\n"

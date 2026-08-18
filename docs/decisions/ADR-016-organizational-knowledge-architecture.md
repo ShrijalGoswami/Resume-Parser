@@ -4,7 +4,7 @@
 
 ## Context
 
-HireLens reasons well over the *current* pipeline, but organizational knowledge —
+Hirevo reasons well over the *current* pipeline, but organizational knowledge —
 who was hired and why, which interview strategies worked, evolving skill demand,
 hiring-manager preferences — evaporates as recruiters, managers, and interviewers
 rotate. We want a company-wide recruiting **knowledge system** (not chatbot memory)

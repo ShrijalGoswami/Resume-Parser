@@ -209,7 +209,7 @@ export function UpgradeDialog({ request, onOpenChange, onCheckout }: UpgradeDial
             /**
              * No checkout yet, so this leads to a page rather than a `mailto:`.
              *
-             * It WAS a bare `mailto:support@hirelens.app`. That does nothing at
+             * It WAS a bare `mailto:support@hirevo.in`. That does nothing at
              * all for anyone working from webmail without a registered protocol
              * handler — most recruiters — and when it fails it fails silently,
              * so the customer concludes they were ignored rather than that

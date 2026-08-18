@@ -4,7 +4,7 @@ import type { CandidateModel } from '../model'
 /**
  * The résumé record — the parsed document, beside the claims about it.
  *
- * WHAT THIS IS NOT: a citation. HireLens does not currently produce
+ * WHAT THIS IS NOT: a citation. Hirevo does not currently produce
  * span-level references — no claim in the analysis carries a pointer to the
  * line of the résumé it came from. Rendering this record next to the read and
  * calling it "sources" would be a lie the reader could not detect, which is
@@ -38,7 +38,7 @@ export function CandidateResumeRecord({ model }: { model: CandidateModel }) {
             itself (V2 §16), and it states the limitation in plain words. */}
         <p className="border-l-2 border-[var(--hl-accent-secondary)] pl-3 hl-caption text-hl-fg-secondary">
           What the parser read, so each claim can be checked against it.
-          HireLens does not yet cite the exact line a claim came from.
+          Hirevo does not yet cite the exact line a claim came from.
         </p>
       </div>
 

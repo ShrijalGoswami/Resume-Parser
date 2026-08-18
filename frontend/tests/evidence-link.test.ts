@@ -25,7 +25,7 @@ const resume = (over: Partial<ResumeData> = {}): ResumeData => ({
     },
   ],
   projects: [
-    { title: 'HireLens', description: ['Containerized the ranking service and deployed it on Render'] },
+    { title: 'Hirevo', description: ['Containerized the ranking service and deployed it on Render'] },
   ],
   certifications: ['DataForge Hackathon Finalist'],
   ...over,

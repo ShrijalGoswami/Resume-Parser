@@ -1,4 +1,4 @@
-# HireLens Monetization — Release Candidate Checklist
+# Hirevo Monetization — Release Candidate Checklist
 
 **Created:** 1 Aug 2026 · **Updated:** 4 Aug 2026 (§2 counts, §6.7 CTA routes,
 new §6A Legal pages and §6B Product polish)
@@ -11,7 +11,7 @@ and upgrade dialog are all post-hydration behaviour; four brand-new policy
 routes; a mobile disclosure menu; and a drag-and-drop target. None of those can
 be evidenced by a passing test.
 
-This is the **single document** to follow before calling HireLens monetization
+This is the **single document** to follow before calling Hirevo monetization
 production-ready. It exists so validation happens once, completely, in one
 sitting — rather than as scattered manual testing whose coverage nobody can
 reconstruct afterwards.
@@ -328,7 +328,7 @@ quoting a number nobody agreed to.
 - [ ] Dialog traps focus, closes on `Esc`, and returns focus to the CTA
 - [ ] Dialog renders with product styling on a marketing page — it carries its
       own `.hl` scope, so confirm no unstyled or half-styled panel
-- [ ] **Signed in:** Free → "Go to HireLens", not an offer to upgrade downward
+- [ ] **Signed in:** Free → "Go to Hirevo", not an offer to upgrade downward
 - [ ] No CTA is a dead button. There is no checkout yet; the honest route is
       "Contact us to upgrade" → `/contact`, and the dialog states that a person
       applies the change, usually the same working day
@@ -400,10 +400,10 @@ code one.
 
 ### 6A.3 Mail actually arrives — the one nobody will think to check
 
-- [ ] `hirelens.app` has **MX records**
-- [ ] Send a real message to `support@hirelens.app` and confirm **a human
+- [ ] `hirevo.in` has **MX records**
+- [ ] Send a real message to `support@hirevo.in` and confirm **a human
       receives it**
-- [ ] Same for `sales@hirelens.app`
+- [ ] Same for `sales@hirevo.in`
 
 > If these fail, `/contact` is a dead end, and the entire upgrade funnel —
 > every lock, every quota wall, every 402, the pricing page and the Enterprise
@@ -685,7 +685,7 @@ Phase 2 touched shared surfaces. Confirm nothing that used to work stopped.
       "Team $499 / Business $999"; the Enterprise notes said audit logs were on
       every plan)
 - [ ] `lib/legal.ts` filled and `LEGAL_ENTITY_CONFIRMED` true (§6A.1)
-- [ ] `hirelens.app` mail confirmed reaching a human (§6A.3)
+- [ ] `hirevo.in` mail confirmed reaching a human (§6A.3)
 - [ ] Commit history structured and reviewed — the work is still uncommitted by
       deliberate decision
 

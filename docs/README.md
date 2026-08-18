@@ -1,9 +1,9 @@
-# HireLens Documentation
+# Hirevo Documentation
 
-> The single source of truth for HireLens — an AI-powered hiring intelligence
+> The single source of truth for Hirevo — an AI-powered hiring intelligence
 > platform. Start here, then follow the links.
 
-HireLens turns raw resumes into ranked, explained, **persistent** hiring
+Hirevo turns raw resumes into ranked, explained, **persistent** hiring
 intelligence using a hybrid engine: deterministic Python for all scoring and
 an LLM (Groq Llama-3.3) for human-grade reasoning. As of **V4** it is a
 stateful SaaS platform with recruiter accounts, hiring campaigns, and storage.

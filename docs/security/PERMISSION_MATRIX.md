@@ -1,4 +1,4 @@
-# HireLens Permission Matrix
+# Hirevo Permission Matrix
 
 **Source of truth:** `backend/app/enterprise/rbac.py` — `ROLE_PERMISSIONS`.
 This document is generated from it; if they disagree, the code is right.

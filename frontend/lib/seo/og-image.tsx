@@ -94,7 +94,7 @@ export default async function OpengraphImage() {
         </div>
 
         {/* The brand hairline. It carried the old violet/cyan prism, which is
-            not a HireLens colour any more — it read as a second, unrelated
+            not a Hirevo colour any more — it read as a second, unrelated
             palette sitting under a terracotta mark. It now draws the SAME
             gradient as the logo above it rather than a parallel literal, so the
             card cannot drift out of step with the mark again. */}

@@ -43,7 +43,7 @@ export default function GlobalError({
       >
         <main style={{ maxWidth: '28rem', textAlign: 'center' }}>
           <h1 style={{ fontSize: '1.375rem', fontWeight: 600, margin: '0 0 0.5rem' }}>
-            HireLens couldn’t start
+            Hirevo couldn’t start
           </h1>
           <p style={{ margin: '0 0 1.25rem', lineHeight: 1.5, color: '#4A5578' }}>
             Something failed before the app could load. Reloading usually clears it.
