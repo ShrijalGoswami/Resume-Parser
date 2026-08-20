@@ -68,7 +68,9 @@ _REGISTRY: dict[Capability, PromptTemplate] = {
     ),
     Capability.BATCH_CANDIDATE: PromptTemplate(
         id="batch_candidate",
-        version="v1.0",
+        # v1.1: stopped requesting interview_questions — generated on demand by
+        # Interview Intelligence instead of billed on every analyzed resume.
+        version="v1.1",
         system=BATCH_SYSTEM_PROMPT,
         render=lambda **v: build_batch_prompt(v["job_description"], v["resume_json"]),
         # Was the ONLY protected capability, fenced by hand inside its builder.

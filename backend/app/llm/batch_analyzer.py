@@ -8,8 +8,9 @@ instrumentation, QA response cache, and centralized logging. No direct provider
 calls remain here.
 
 Returns everything the recruiter workflow needs in one call: summary, matching /
-missing skills, project relevance, strengths, weaknesses, recommendation, and
-tailored interview questions.
+missing skills, project relevance, strengths, weaknesses, and recommendation.
+Interview questions are NOT generated here (prompt v1.1) — the dedicated
+Interview Intelligence engine produces them on demand from the stored analysis.
 """
 
 import logging
@@ -38,6 +39,8 @@ class GroqBatchAnalysis(BaseModel):
     experience_relevance: str = Field(default="")
     hiring_recommendation: str = Field(default="Consider for Further Review")
     recommendation_explanation: str = Field(default="")
+    # No longer requested by the prompt (v1.1). Kept so analyses produced before
+    # the change — and QA-cache replays of them — still validate.
     interview_questions: list[str] = Field(default_factory=list)
 
 

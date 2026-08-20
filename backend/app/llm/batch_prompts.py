@@ -1,4 +1,12 @@
-"""Prompts for the recruiter batch candidate analysis (single Groq call per resume)."""
+"""Prompts for the recruiter batch candidate analysis (single Groq call per resume).
+
+v1.1: interview questions are no longer requested here. They were 4-6 generated
+lines billed on EVERY analyzed resume, duplicating the dedicated Interview
+Intelligence engine (`services/interview_service.py`), which grounds its packs
+in the stored analysis on demand. `interview_questions` stays on the response
+schema and on `CandidateResult` (defaulting to []) so stored analyses and the
+QA response cache keep parsing.
+"""
 
 BATCH_SYSTEM_PROMPT = (
     "You are an expert technical recruiter and hiring manager. You evaluate a "
@@ -42,8 +50,7 @@ Return ONLY a JSON object with EXACTLY these keys:
   "weaknesses": ["2-4 concrete gaps or risks for this role"],
   "experience_relevance": "one sentence on how the candidate's experience aligns with the role",
   "hiring_recommendation": "exactly one of: Strongly Recommend Interview, Recommend Interview, Consider for Further Review, Not Recommended",
-  "recommendation_explanation": "one sentence justifying the recommendation",
-  "interview_questions": ["4-6 tailored technical/behavioral interview questions probing gaps and depth"]
+  "recommendation_explanation": "one sentence justifying the recommendation"
 }}
 
 Rules:
