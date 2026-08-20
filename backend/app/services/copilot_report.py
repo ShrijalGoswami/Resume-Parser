@@ -13,6 +13,7 @@ Returns None otherwise, so the caller falls back to the normal grounded answer.
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any, Optional
 
 from app.schemas.copilot import CopilotPageContext, CopilotSource, CopilotStructuredResponse
@@ -21,17 +22,42 @@ from app.services.report_service import run_executive_report
 
 logger = logging.getLogger(__name__)
 
-_TRIGGERS = (
-    "report", "executive summary", "pipeline health", "how healthy", "how is hiring",
-    "hiring health", "what changed", "which recruiter", "underperform", "hiring risk",
-    "biggest risk", "skill shortage", "skill gap", "recommendations", "overall pipeline",
-    "recruiter productivity", "which campaign",
+# Intent detection is two-tier. The report engine is the most expensive path the
+# copilot can take (4096-token LLM call over org-wide analytics), and the old
+# flat trigger list sent ordinary conversational questions there on incidental
+# words — "which campaign is Priya in?", "any recommendations on her notice
+# period?", "he reported to the CTO" all escalated. The capability is unchanged;
+# only the gate is stricter.
+
+# Unambiguous executive-scope asks: these route to the report engine on their own.
+_STRONG_TRIGGERS = (
+    "executive summary", "executive report", "hiring report", "pipeline report",
+    "pipeline health", "hiring health", "how healthy", "how is hiring",
+    "overall pipeline", "recruiter productivity", "biggest hiring risk",
+)
+
+# Words that also occur in ordinary conversation. They still reach the report
+# engine, but only alongside an explicit request verb ("generate a skill gap
+# report"), never on their own. `\breports?\b` is word-bounded so "reported" /
+# "reporting" no longer match.
+_WEAK_TOPIC_RE = re.compile(
+    r"\breports?\b|recommendations|skill gap|skill shortage|hiring risk|"
+    r"what changed|underperform|which recruiter|which campaign|biggest risk"
+)
+_REQUEST_RE = re.compile(
+    r"\b(generate|create|build|run|produce|prepare|write|show me|give me|i need|i want)\b"
 )
 
 
 def _is_report(question: str) -> bool:
-    q = f" {question.lower()} "
-    return any(t in q for t in _TRIGGERS)
+    q = question.lower()
+    if any(t in q for t in _STRONG_TRIGGERS):
+        return True
+    # Keep the docstring's canonical example working without a request verb:
+    # "which campaign is underperforming?" is executive by construction.
+    if "underperform" in q and "campaign" in q:
+        return True
+    return bool(_WEAK_TOPIC_RE.search(q) and _REQUEST_RE.search(q))
 
 
 def _focus(message: str) -> tuple[str, Optional[list[str]]]:
