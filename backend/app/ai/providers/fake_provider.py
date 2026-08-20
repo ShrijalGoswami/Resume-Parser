@@ -287,6 +287,9 @@ class FakeProvider(LLMProvider):
     # flag rather than behaving differently: what is being proven offline is
     # that the REQUEST was shaped correctly, not that a vendor honoured it.
     can_json = True
+    # Declared so the orchestrator exercises the reasoning-effort path through
+    # the fake exactly as it does through Groq; the flag is recorded, not obeyed.
+    can_reasoning_effort = True
     can_stream = False
     can_reason = True
     can_tools = False
@@ -306,13 +309,14 @@ class FakeProvider(LLMProvider):
             )
 
     def complete(self, *, system, user, model, temperature, max_tokens, timeout_seconds,
-                 json_mode: bool = False) -> ProviderResponse:
+                 json_mode: bool = False, reasoning_effort: str | None = None) -> ProviderResponse:
         fp = fingerprint(system, user)
         behaviour = fake_script.next_behaviour(fp)
         fake_script._record_call(
             fingerprint=fp, model=model, kind=behaviour.kind,
             temperature=temperature, max_tokens=max_tokens, timeout_seconds=timeout_seconds,
             json_mode=json_mode,
+            reasoning_effort=reasoning_effort,
             # The FACT under test, not the prompt itself: recording the raw user
             # text would carry candidate-derived content around in memory for no
             # gain, and what a C6 test needs to know is whether the orchestrator

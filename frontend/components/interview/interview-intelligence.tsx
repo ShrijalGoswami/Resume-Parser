@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useEffect } from 'react';
 import {
   FileDown, RefreshCw, ClipboardList, Target, ThumbsDown,
@@ -68,11 +68,18 @@ export function InterviewIntelligence({
   const [loading, setLoading] = useState(false);
   const [busyLabel, setBusyLabel] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // The last request made, so Regenerate repeats it verbatim. After a scoped
+  // quick action ("Only behavioral"), regenerating re-runs just that scope —
+  // a full-pack regeneration costs ~7K tokens where the scoped one costs ~2-4K.
+  const lastRun = useRef<{ req: InterviewGenerateRequest; label: string; merge: boolean }>({
+    req: { focus: 'blueprint' }, label: 'Full pack', merge: false,
+  });
 
   const run = useCallback(async (req: InterviewGenerateRequest, label: string, merge = false) => {
     setLoading(true);
     setBusyLabel(label);
     setError(null);
+    lastRun.current = { req, label, merge };
     try {
       const res = await generateInterview(campaignId, candidateId, req);
       setPack((prev) => (merge ? mergePack(prev, res) : res));
@@ -135,7 +142,8 @@ export function InterviewIntelligence({
           </Button>
         ))}
         <div className="ml-auto flex gap-2">
-          <Button variant="outline" size="sm" disabled={loading} onClick={() => run({ focus: 'blueprint' }, 'Full pack')}>
+          <Button variant="outline" size="sm" disabled={loading}
+            onClick={() => run(lastRun.current.req, lastRun.current.label, lastRun.current.merge)}>
             <RefreshCw className="mr-1.5 size-3.5" /> Regenerate
           </Button>
           <Button size="sm" onClick={() => exportInterviewPdf(pack)}>

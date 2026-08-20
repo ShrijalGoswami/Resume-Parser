@@ -62,6 +62,13 @@ class PromptTemplate:
     #: forgetting it yields protection with a slightly-off description, never
     #: no protection. Only the wording varies; the boundary is identical.
     untrusted_sources: dict[str, UntrustedSource] = field(default_factory=dict)
+    #: Untrusted variables whose fence nonce is DERIVED (HMAC of a per-process
+    #: key over the content) instead of fresh per call, so identical content
+    #: renders to identical bytes and the provider's prefix cache can work.
+    #: Opt-in per capability; the boundary is equally unforgeable either way —
+    #: see `fence(stable=True)`. Default empty: every other capability keeps
+    #: the per-call random nonce it always had.
+    cache_stable: frozenset[str] = field(default_factory=frozenset)
     description: str = ""
 
     def __post_init__(self) -> None:
@@ -114,5 +121,6 @@ class PromptTemplate:
             prepared[name] = fence(
                 clamp_prompt_variable(value, name=f"{self.id}.{name}"),
                 source=self.untrusted_sources.get(name, CANDIDATE_DOCUMENT),
+                stable=name in self.cache_stable,
             )
         return self.render(**prepared)

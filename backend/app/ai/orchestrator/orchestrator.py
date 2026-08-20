@@ -60,6 +60,7 @@ class AIOrchestrator:
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
         timeout_seconds: Optional[int] = None,
+        reasoning_effort: Optional[str] = None,
     ) -> AIResult[T]:
         cfg = get_ai_config()
         temp = cfg.temperature if temperature is None else temperature
@@ -156,7 +157,7 @@ class AIOrchestrator:
             try:
                 data, execution = self._attempt(
                     capability, selection, system, user, schema, cfg, temp, max_tok,
-                    timeout_override, budget,
+                    timeout_override, budget, reasoning_effort=reasoning_effort,
                 )
                 self._log(execution)
                 health_manager.record_success(selection.provider)
@@ -199,7 +200,7 @@ class AIOrchestrator:
 
     # -- one provider attempt (owns the full retry ladder) -----------------
     def _attempt(self, capability, selection, system, user, schema, cfg, temp, max_tok,
-                 timeout_override, budget):
+                 timeout_override, budget, reasoning_effort=None):
         prov = get_provider(selection.provider)  # may raise AIConfigError → fallback
         # Per-provider config (M2): timeout / retry policy / default-model override,
         # each falling back to the global AI_* defaults. Behaviour is unchanged when
@@ -245,6 +246,11 @@ class AIOrchestrator:
         # Passed as **kwargs so a provider that does NOT declare `can_json` never
         # receives a parameter its `complete()` was not written to accept.
         json_kwargs = {"json_mode": True} if json_mode else {}
+        # Reasoning-effort control — same declared-never-inferred contract: only
+        # a caller that asked for it AND a provider whose `complete()` accepts
+        # the parameter (`can_reasoning_effort`) ever see it.
+        if reasoning_effort and prov.supports_reasoning_effort():
+            json_kwargs["reasoning_effort"] = reasoning_effort
 
         # `provider_calls` used to be its own counter. It is now a reading of the
         # ONE budget, taken from a mark, so the request total and the per-attempt
