@@ -82,6 +82,11 @@ class LLMProvider(ABC):
     #: parameter, so the safe default is "not declared": a provider that has not
     #: implemented `json_mode` in `complete()` must never be handed it.
     can_json: bool = False
+    #: Declares the `reasoning_effort` REQUEST PARAMETER — that this provider's
+    #: API accepts an effort level for reasoning models and the vendor honours
+    #: it. Same contract as `can_json`: default False so a provider whose
+    #: `complete()` was not written to accept the parameter is never handed it.
+    can_reasoning_effort: bool = False
     can_stream: bool = False       # token streaming
     can_reason: bool = True        # general reasoning/chat
     can_vision: bool = False       # image inputs
@@ -188,6 +193,11 @@ class LLMProvider(ABC):
 
     def supports_reasoning(self) -> bool:
         return self.can_reason
+
+    def supports_reasoning_effort(self) -> bool:
+        """True when this provider implements the `reasoning_effort` request
+        parameter — read by the orchestrator before it passes one through."""
+        return self.can_reasoning_effort
 
     def supports_vision(self) -> bool:
         return self.can_vision

@@ -37,6 +37,9 @@ class GroqProvider(LLMProvider):
     # Groq's chat-completions API is OpenAI-compatible and accepts
     # `response_format={"type": "json_object"}`. Load-bearing since C6.
     can_json = True
+    # Groq's OpenAI-compatible API accepts `reasoning_effort` for reasoning
+    # models (verified against groq SDK 1.4.0: `Completions.create` declares it).
+    can_reasoning_effort = True
     can_stream = True
     can_reason = True
     can_tools = True
@@ -70,7 +73,7 @@ class GroqProvider(LLMProvider):
         return GroqProvider._client
 
     def complete(self, *, system, user, model, temperature, max_tokens, timeout_seconds,
-                 json_mode: bool = False) -> ProviderResponse:
+                 json_mode: bool = False, reasoning_effort: str | None = None) -> ProviderResponse:
         client = self._get_client()
         # Native JSON mode (C6). Sent only when the orchestrator has confirmed
         # both this provider and the resolved MODEL declare support, so an
@@ -81,6 +84,11 @@ class GroqProvider(LLMProvider):
         # C6 needed no prompt changes — see `tests/test_native_json.py`, which
         # asserts that and will fail if a future prompt drops it.
         extra = {"response_format": {"type": "json_object"}} if json_mode else {}
+        # Reasoning-effort control. Passed only when the orchestrator confirmed
+        # `can_reasoning_effort` (same contract as json_mode above); omitted
+        # entirely otherwise so non-reasoning models never see the parameter.
+        if reasoning_effort:
+            extra["reasoning_effort"] = reasoning_effort
         try:
             resp = client.chat.completions.create(
                 model=model,

@@ -24,6 +24,12 @@ logger = logging.getLogger("app.ai")
 
 _MAX_TOKENS = 4096
 _TIMEOUT_SECONDS = 60
+# Interview packs are structured extraction over grounded context, not open-ended
+# reasoning: measured blueprint completions were ~3.8K tokens of which roughly
+# half was invisible reasoning (gpt-oss bills reasoning as completion). "low"
+# keeps the schema-filling quality while cutting that overhead. Interview-only —
+# no other capability passes the parameter.
+_REASONING_EFFORT = "low"
 
 
 def generate_interview_pack(
@@ -53,6 +59,7 @@ def generate_interview_pack(
             schema=InterviewLLMOutput,
             max_tokens=_MAX_TOKENS,
             timeout_seconds=_TIMEOUT_SECONDS,
+            reasoning_effort=_REASONING_EFFORT,
         )
     except AIError as exc:
         logger.warning("Interview orchestration failed (%s): %s", type(exc).__name__, exc)

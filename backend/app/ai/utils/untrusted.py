@@ -31,6 +31,8 @@ Three layers, because no single one is sufficient:
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import re
 import secrets
 import unicodedata
@@ -229,13 +231,35 @@ JOB_DESCRIPTION = UntrustedSource(
 )
 
 
-def fence(text: str, *, source: UntrustedSource = CANDIDATE_DOCUMENT) -> str:
+# Keys the STABLE fence nonce below. Per-process and random, never logged and
+# never emitted — an attacker cannot learn it, so an HMAC over their own content
+# is exactly as unpredictable to them as `secrets.token_hex` is. Rotates on
+# every process start, which also naturally bounds how long a stable nonce lives.
+_STABLE_FENCE_KEY = secrets.token_bytes(32)
+
+
+def fence(text: str, *, source: UntrustedSource = CANDIDATE_DOCUMENT, stable: bool = False) -> str:
     """Wrap untrusted text in an unguessable delimiter and say what it is.
 
     The nonce is generated per call, so nothing inside the document can terminate
     the block early or open a new one.
+
+    `stable=True` derives the nonce as HMAC(process key, source|text) instead of
+    fresh randomness: the SAME text fences to the SAME bytes within this process,
+    which is what lets a capability that resends identical context (Interview
+    Intelligence quick actions) hit the provider's prefix cache. The security
+    property is unchanged — unpredictability to the DOCUMENT'S AUTHOR is what
+    makes a fence unforgeable, and the author can compute the HMAC no more than
+    they can guess the random nonce, because the key never leaves the process.
+    Different text still yields a different nonce, so a document cannot reuse a
+    delimiter it saw elsewhere.
     """
-    nonce = secrets.token_hex(8)
+    if stable:
+        nonce = hmac.new(
+            _STABLE_FENCE_KEY, f"{source.label}|{text}".encode("utf-8", "ignore"), hashlib.sha256
+        ).hexdigest()[:16]
+    else:
+        nonce = secrets.token_hex(8)
     open_tag = f"<<<{source.label}:{nonce}>>>"
     close_tag = f"<<<END_{source.label}:{nonce}>>>"
     return (

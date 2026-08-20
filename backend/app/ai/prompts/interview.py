@@ -14,7 +14,10 @@ contract mirrors `InterviewLLMOutput`; "sources used" is attached server-side.
 
 from __future__ import annotations
 
-INTERVIEW_PROMPT_VERSION = "v1.0"
+# v1.1: a `sections` request now REPLACES the focus task with a strict
+# partial-regeneration directive (see build_interview_prompt) instead of
+# stacking two conflicting instructions.
+INTERVIEW_PROMPT_VERSION = "v1.1"
 
 INTERVIEW_SYSTEM_PROMPT = (
     "You are Hirevo Interview Intelligence, a senior technical interviewer and "
@@ -113,9 +116,18 @@ def build_interview_prompt(
     directive = task_instruction(focus)
     extra = f"\nRecruiter instruction: {instruction.strip()}" if instruction.strip() else ""
     if sections:
-        extra += (
-            "\nReturn ONLY these sections (leave all others as their empty default): "
-            + ", ".join(sections)
+        # A scoped request (quick action) is a partial regeneration: the caller
+        # merges the answer over an existing pack, so anything outside the
+        # requested sections is paid-for output that gets thrown away. The
+        # scoped directive REPLACES the focus task — the old combination
+        # ("keep other sections concise" + "return only these sections") gave
+        # the model two conflicting instructions and it filled everything.
+        directive = (
+            "Task: Interactive refinement of an existing interview pack. "
+            "Populate ONLY these sections: " + ", ".join(sections) + ". "
+            "Every other key in the schema MUST be its empty default value "
+            "(empty array, empty object fields, empty string). Do not restate, "
+            "summarise, or improve any section that was not requested."
         )
     return (
         "=== CANDIDATE CONTEXT (the ONLY source of truth) ===\n"

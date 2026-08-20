@@ -150,6 +150,36 @@ class TestNoVendorAttribution:
         )
 
 
+@pytest.mark.parametrize("label,render", EXPORTERS, ids=[e[0] for e in EXPORTERS])
+class TestExportIdentity:
+    """Every page carries the shared Hirevo export identity: the diagonal
+    watermark painted behind the content and the per-page footer, both drawn by
+    `_paint_page_brand` via onFirstPage/onLaterPages. Asserted per page, not per
+    document — a multi-page report with a branded first page only is exactly the
+    failure the shared hook exists to prevent."""
+
+    def test_every_page_carries_watermark_and_footer(self, label, render):
+        doc = fitz.open(stream=render(), filetype="pdf")
+        try:
+            assert doc.page_count >= 1
+            for number, page in enumerate(doc, start=1):
+                text = page.get_text()
+                assert report_generator.WATERMARK_TEXT in text, (
+                    f"{label}: page {number} is missing the '{report_generator.WATERMARK_TEXT}' watermark."
+                )
+                expected = report_generator.PAGE_FOOTER_TEXT.format(page=number)
+                assert expected in text, (
+                    f"{label}: page {number} is missing the footer {expected!r}."
+                )
+        finally:
+            doc.close()
+
+    def test_watermark_and_footer_name_no_vendor(self, label, render):
+        # The identity strings themselves must obey the GAB-D1 rule.
+        blob = f"{report_generator.WATERMARK_TEXT}\n{report_generator.PAGE_FOOTER_TEXT}"
+        assert _VENDOR.search(blob) is None
+
+
 class TestEveryExporterIsCovered:
     """The guard is only worth what it covers.
 

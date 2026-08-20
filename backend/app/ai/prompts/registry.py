@@ -115,6 +115,11 @@ _REGISTRY: dict[Capability, PromptTemplate] = {
             v.get("focus", "blueprint"), v.get("instruction", ""), v.get("sections"),
         ),
         untrusted=frozenset({"context", "candidate_line"}),
+        # Quick actions resend the identical candidate context within seconds;
+        # stable fences make system+context+candidate a byte-identical prefix
+        # across those calls so Groq's prefix cache applies (~2.9K of ~3.3K
+        # input). Interview-only; every other capability keeps per-call nonces.
+        cache_stable=frozenset({"context", "candidate_line"}),
         description="Grounded interview workbench (strategy, questions, verification, scorecard).",
     ),
     Capability.EXECUTIVE_REPORT: PromptTemplate(
