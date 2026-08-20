@@ -15,26 +15,29 @@ import { PERMS, type PermissionKey } from '../settings/permissions'
 /**
  * Primary navigation — Phase 9.1, amended by Phase 9.3.
  *
- * Six destinations, ungrouped, in the order the recruiter's day runs:
- *   Today · Jobs · Candidates · Reports · Decisions · Copilot
+ * Seven destinations, ungrouped, in the order the recruiter's day runs:
+ *   Today · Jobs · Candidates · Interviews · Reports · Decisions · Copilot
  *
- * The two labelled groups (WORKSPACE / INTELLIGENCE) are gone. At six items a
+ * The two labelled groups (WORKSPACE / INTELLIGENCE) are gone. At seven items a
  * group label costs more than it clarifies: it asks the reader to hold a
- * taxonomy in mind to find six things, and the taxonomy was the product's own
+ * taxonomy in mind to find seven things, and the taxonomy was the product's own
  * ("Intelligence"), not the recruiter's.
  *
  * WHAT LEFT THE RAIL, AND WHY IT IS STILL REACHABLE
  *
- * Interviews and AI Audit moved to `secondaryNav` below. They are still real
- * destinations and the command palette still lists them — removing a row from
- * the rail is a statement about priority, not about access. Learning was
+ * Interviews and AI Audit moved to `secondaryNav` below in 9.1. They are still
+ * real destinations and the command palette still lists them — removing a row
+ * from the rail is a statement about priority, not about access. Learning was
  * deleted outright: it had no backend, so it was a dead end rather than a
  * low-priority destination.
  *
  * Ask went with them in 9.1 and CAME BACK in 9.3 as Copilot — the contextual
  * entry points that were supposed to replace it never shipped, so the rail is
- * once again where a recruiter finds it. Settings stays below, outside this
- * list, so Copilot sits last among the destinations and above Settings.
+ * once again where a recruiter finds it. Interviews came back the same way:
+ * 9.1 demoted it on the promise of a generator on the candidate record, that
+ * entry point never shipped, and until it does the rail is where a recruiter
+ * finds the feature. Settings stays below, outside this list, so Copilot sits
+ * last among the destinations and above Settings.
  */
 export interface NavItem {
   label: string
@@ -112,6 +115,23 @@ export const navGroups: NavGroup[] = [
         shortcut: 'G C',
       },
       {
+        // Restored from `secondaryNav`: the candidate-record entry point that
+        // was meant to replace this row never shipped, so the rail is once
+        // again where a recruiter finds the interview-pack generator. Sits
+        // after Candidates — you interview the people you just shortlisted.
+        //
+        // No `perm` and no `entitlement`, matching the demoted entry: the
+        // screen itself is open to every role; only the generator inside it is
+        // plan-gated (`interview_intelligence`), and the screen carries that
+        // lock itself. NO `shortcut` — the pre-9.1 row had `G V`, but
+        // `shell-context.tsx` derives the live chord map from the rail, so
+        // restoring it would register a new keybinding, not just a row.
+        label: 'Interviews',
+        href: '/interviews',
+        icon: ClipboardList,
+        isActive: (p) => p.startsWith('/interviews'),
+      },
+      {
         label: 'Reports',
         href: '/reports',
         icon: BarChart3,
@@ -169,21 +189,15 @@ export const navGroups: NavGroup[] = [
  * The command palette lists these alongside the rail items, so none of them
  * became undiscoverable when the rail shrank. Each is here for its own reason:
  *
- *   Interviews  a per-candidate action wearing a destination's clothes. The
- *               endpoint is already candidate-scoped, so the generator moves
- *               onto the candidate record in a later phase and this entry
- *               disappears rather than being relocated again.
  *   AI Audit    the immutable record of AI recommendations that reached a call.
  *               Real, rarely visited, and no longer permitted to occupy the
  *               word "Decisions".
+ *
+ * Interviews left this list the way Copilot left it: 9.1 parked it here as "a
+ * per-candidate action wearing a destination's clothes", betting on a generator
+ * on the candidate record that never shipped. It is back on the rail above.
  */
 export const secondaryNav: NavItem[] = [
-  {
-    label: 'Interviews',
-    href: '/interviews',
-    icon: ClipboardList,
-    isActive: (p) => p.startsWith('/interviews'),
-  },
   {
     label: 'AI Audit',
     href: '/ai-audit',
