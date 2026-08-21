@@ -7,16 +7,16 @@
       "label": "Free",
       "rank": 0,
       "limits": {
-        "resumes": 100,
+        "resumes": 2,
         "members": 1,
         "campaigns": 2,
         "organizations": 1,
         "interview_packs": 0,
         "copilot_questions": 0
       },
-      "resume_window": "month",
+      "resume_window": "lifetime",
       "metric_windows": {
-        "resumes": "month",
+        "resumes": "lifetime",
         "interview_packs": "month",
         "copilot_questions": "month"
       },

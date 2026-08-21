@@ -56,11 +56,11 @@ def test_founding_org_has_no_resume_wall():
     assert s.can_upload_resume(50).allowed
 
 
-def test_new_free_org_stops_at_one_hundred_resumes_a_month():
-    s = v1(usage=UsageSnapshot(resumes_period=100))
+def test_new_free_org_stops_at_two_resumes():
+    s = v1(usage=UsageSnapshot(resumes_lifetime=2))
     d = s.can_upload_resume(1)
     assert not d.allowed
-    assert d.limit == 100 and d.used == 100
+    assert d.limit == 2 and d.used == 2
     assert d.required_plan == "plus"
 
 

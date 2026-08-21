@@ -222,7 +222,7 @@ export function availableBillingPeriods(): BillingPeriod[] {
  * product, where a sales voice would be wrong.
  */
 export const PLAN_POSITIONING: Record<PlanKey, string> = {
-  free: 'Analyse up to a hundred résumés a month before you commit anything.',
+  free: 'Try the full analysis on a couple of résumés before you commit anything.',
   trial: 'Ten résumés and one role, analysed in full, for a one-time ₹99.',
   trial_interview: 'The trial plus one full interview pack and one Copilot question, one-time.',
   plus: 'For the recruiter running their own roles end to end.',
