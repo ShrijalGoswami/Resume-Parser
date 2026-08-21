@@ -104,44 +104,73 @@ def test_unknown_feature_denies_without_offering_an_upgrade():
 
 # ── Quotas ──────────────────────────────────────────────────────────────────
 def test_free_resume_quota_boundary():
-    s0 = svc("free", usage=UsageSnapshot(resumes_lifetime=0))
-    s1 = svc("free", usage=UsageSnapshot(resumes_lifetime=1))
-    s2 = svc("free", usage=UsageSnapshot(resumes_lifetime=2))
-    assert s0.can_upload_resume(1).allowed
-    assert s0.can_upload_resume(2).allowed          # exactly at the limit is allowed
-    assert not s0.can_upload_resume(3).allowed
-    assert s1.can_upload_resume(1).allowed
-    assert not s1.can_upload_resume(2).allowed
-    assert not s2.can_upload_resume(1).allowed      # the wall
+    """Free is 100 résumés per calendar month: the 100th succeeds, the 101st
+    is refused."""
+    s99 = svc("free", usage=UsageSnapshot(resumes_period=99))
+    s100 = svc("free", usage=UsageSnapshot(resumes_period=100))
+    assert s99.can_upload_resume(1).allowed          # the 100th résumé
+    assert not s99.can_upload_resume(2).allowed
+    assert not s100.can_upload_resume(1).allowed     # the 101st — the wall
+
+
+def test_plus_resume_quota_boundary():
+    """Plus is 200/month: the 200th succeeds, the 201st is refused."""
+    s199 = svc("plus", usage=UsageSnapshot(resumes_period=199))
+    s200 = svc("plus", usage=UsageSnapshot(resumes_period=200))
+    assert s199.can_upload_resume(1).allowed
+    assert not s200.can_upload_resume(1).allowed
+
+
+def test_pro_resume_quota_boundary():
+    """Pro is 700/month — no longer unlimited: the 700th succeeds, the 701st
+    is refused."""
+    s699 = svc("pro", usage=UsageSnapshot(resumes_period=699))
+    s700 = svc("pro", usage=UsageSnapshot(resumes_period=700))
+    assert s699.can_upload_resume(1).allowed
+    assert not s700.can_upload_resume(1).allowed
+
+
+def test_trial_resume_quota_is_ten_lifetime():
+    """Both paid trials carry 10 résumés TOTAL — the lifetime window, so a
+    month rolling over restores nothing."""
+    for plan in ("trial", "trial_interview"):
+        s9 = svc(plan, usage=UsageSnapshot(resumes_lifetime=9, resumes_period=0))
+        s10 = svc(plan, usage=UsageSnapshot(resumes_lifetime=10, resumes_period=0))
+        assert s9.can_upload_resume(1).allowed
+        assert not s10.can_upload_resume(1).allowed
+        # One campaign, total.
+        assert svc(plan, usage=UsageSnapshot(campaigns=0)).can_create_campaign().allowed
+        assert not svc(plan, usage=UsageSnapshot(campaigns=1)).can_create_campaign().allowed
 
 
 def test_exhausted_free_quota_decision_contents():
-    d = svc("free", usage=UsageSnapshot(resumes_lifetime=2)).can_upload_resume(1)
+    d = svc("free", usage=UsageSnapshot(resumes_period=100)).can_upload_resume(1)
     assert not d.allowed
     assert d.reason == REASON_LIMIT
-    assert d.limit == 2 and d.used == 2 and d.remaining == 0
+    assert d.limit == 100 and d.used == 100 and d.remaining == 0
     assert d.required_plan == "plus"
     assert d.metric == METRIC_RESUMES
 
 
 def test_batch_denial_describes_the_batch():
-    """"You've used 0 of 2" is confusing when 3 were requested and refused."""
-    d = svc("free", usage=UsageSnapshot(resumes_lifetime=0)).can_upload_resume(3)
+    """"You've used 0 of 100" is confusing when 101 were requested and refused."""
+    d = svc("free", usage=UsageSnapshot(resumes_period=0)).can_upload_resume(101)
     assert not d.allowed
-    assert "3" in d.message
-    assert d.extra.get("requested") == 3
+    assert "101" in d.message
+    assert d.extra.get("requested") == 101
 
 
-def test_free_counts_lifetime_and_plus_counts_the_month():
+def test_trials_count_lifetime_and_paid_counts_the_month():
     usage = UsageSnapshot(resumes_lifetime=40, resumes_period=3)
-    assert svc("free", usage=usage).can_upload_resume(1).used == 40
+    assert svc("trial", usage=usage).can_upload_resume(1).used == 40
+    assert svc("free", usage=usage).can_upload_resume(1).used == 3
     assert svc("plus", usage=usage).can_upload_resume(1).used == 3
     # …and the monthly window is what decides for a paid plan.
     assert svc("plus", usage=usage).can_upload_resume(1).allowed
 
 
-def test_pro_resumes_are_unlimited():
-    d = svc("pro", usage=UsageSnapshot(resumes_period=100_000)).can_upload_resume(500)
+def test_enterprise_resumes_are_unlimited():
+    d = svc("enterprise", usage=UsageSnapshot(resumes_period=100_000)).can_upload_resume(500)
     assert d.allowed
 
 
@@ -278,12 +307,90 @@ def test_entitlements_map_lists_every_feature_including_locked_ones():
 
 
 def test_limits_map_reports_usage_and_window():
-    limits = svc("free", usage=UsageSnapshot(resumes_lifetime=1, period="2026-07")).limits()
+    limits = svc("free", usage=UsageSnapshot(resumes_period=1, period="2026-07")).limits()
     assert limits[METRIC_RESUMES]["used"] == 1
-    assert limits[METRIC_RESUMES]["limit"] == 2
-    assert limits[METRIC_RESUMES]["remaining"] == 1
-    assert limits[METRIC_RESUMES]["window"] == "lifetime"
+    assert limits[METRIC_RESUMES]["limit"] == 100
+    assert limits[METRIC_RESUMES]["remaining"] == 99
+    assert limits[METRIC_RESUMES]["window"] == "month"
     assert limits[METRIC_MEMBERS]["limit"] == 1
+    # Zero-allowance credits are NOT serialized — a plan without the capability
+    # gets a feature lock, not a "0 of 0" meter.
+    assert "interview_packs" not in limits
+    assert "copilot_questions" not in limits
+
+
+def test_limits_map_serializes_metered_credits_where_nonzero():
+    limits = svc("pro", usage=UsageSnapshot(copilot_questions_period=5, period="2026-07")).limits()
+    assert limits["copilot_questions"]["limit"] == 300
+    assert limits["copilot_questions"]["used"] == 5
+    assert limits["copilot_questions"]["window"] == "month"
+    assert limits["interview_packs"]["limit"] == -1
+    t = svc("trial_interview", usage=UsageSnapshot(interview_packs_lifetime=1)).limits()
+    assert t["interview_packs"]["limit"] == 1
+    assert t["interview_packs"]["used"] == 1
+    assert t["interview_packs"]["window"] == "lifetime"
+
+
+# ── Interview / Copilot volume quotas and the campaign candidate cap ─────────
+def test_interview_trial_gets_exactly_one_pack():
+    fresh = svc("trial_interview", usage=UsageSnapshot())
+    spent = svc("trial_interview", usage=UsageSnapshot(interview_packs_lifetime=1))
+    assert fresh.can_generate_interview_pack().allowed
+    d = spent.can_generate_interview_pack()
+    assert not d.allowed and d.reason == REASON_LIMIT and d.metric == "interview_packs"
+
+
+def test_interview_trial_gets_exactly_one_copilot_question():
+    fresh = svc("trial_interview", usage=UsageSnapshot())
+    spent = svc("trial_interview", usage=UsageSnapshot(copilot_questions_lifetime=1))
+    assert fresh.can_ask_copilot().allowed
+    assert not spent.can_ask_copilot().allowed
+
+
+def test_99_trial_has_no_interview_and_no_copilot():
+    s = svc("trial", usage=UsageSnapshot())
+    d_i = s.can_generate_interview_pack()
+    d_c = s.can_ask_copilot()
+    # Denied at the FEATURE gate, not the quota — the ₹99 trial does not carry
+    # the capability at all.
+    assert not d_i.allowed and d_i.feature == "interview_intelligence"
+    assert not d_c.allowed and d_c.feature == "ai_copilot"
+    # But full analysis is included (the trial exists to show the analysis).
+    assert s.can_analyze_full().allowed
+
+
+def test_pro_copilot_is_capped_at_300_per_month():
+    s299 = svc("pro", usage=UsageSnapshot(copilot_questions_period=299))
+    s300 = svc("pro", usage=UsageSnapshot(copilot_questions_period=300))
+    assert s299.can_ask_copilot().allowed
+    d = s300.can_ask_copilot()
+    assert not d.allowed and d.reason == REASON_LIMIT
+    # Interview packs on Pro stay unlimited.
+    assert svc("pro", usage=UsageSnapshot(interview_packs_period=10_000)) \
+        .can_generate_interview_pack().allowed
+
+
+def test_campaign_candidate_caps():
+    plus, pro = svc("plus"), svc("pro")
+    # Plus: candidate 100 fits, 101 does not.
+    assert plus.can_add_campaign_candidates(99, 1).allowed
+    assert not plus.can_add_campaign_candidates(100, 1).allowed
+    # Pro: candidate 200 fits, 201 does not — and the refusal names Pro's cap.
+    assert pro.can_add_campaign_candidates(199, 1).allowed
+    d = pro.can_add_campaign_candidates(200, 1)
+    assert not d.allowed and d.limit == 200 and d.metric == "campaign_candidates"
+    # No cap on Free/Custom; founding orgs have no limits at all.
+    assert svc("free").can_add_campaign_candidates(10_000, 50).allowed
+    assert svc("enterprise").can_add_campaign_candidates(10_000, 50).allowed
+    founding = svc("plus", ruleset="founding")
+    assert founding.can_add_campaign_candidates(10_000, 50).allowed
+
+
+def test_campaign_candidate_batch_denial_names_the_batch():
+    d = svc("plus").can_add_campaign_candidates(95, 10)
+    assert not d.allowed
+    assert "10" in d.message and d.extra.get("requested") == 10
+    assert d.required_plan == "pro"
 
 
 def _run_all() -> int:

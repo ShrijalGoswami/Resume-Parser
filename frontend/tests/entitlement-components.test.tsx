@@ -161,8 +161,8 @@ describe('PlanGate — four states', () => {
     // does, so the server says "pro". Pro would not unlock webhooks.
     ready({ entitlements: locked('webhooks', 'pro', 'Webhooks') })
     render(<PlanGate feature="webhooks">{child}</PlanGate>)
-    expect(screen.getByText('Webhooks is available on the Enterprise plan.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Upgrade to Enterprise' })).toBeInTheDocument()
+    expect(screen.getByText('Webhooks is available on the Custom plan.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Upgrade to Custom' })).toBeInTheDocument()
   })
 })
 
@@ -342,7 +342,7 @@ describe('PlanBadge', () => {
 describe('UpgradeButton', () => {
   it('derives its label from the tier', () => {
     render(<UpgradeButton requiredPlan="enterprise" />)
-    expect(screen.getByRole('button', { name: 'Upgrade to Enterprise' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Upgrade to Custom' })).toBeInTheDocument()
   })
 
   it('is inert rather than broken with no provider mounted', () => {

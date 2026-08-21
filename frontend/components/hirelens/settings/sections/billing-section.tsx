@@ -8,11 +8,13 @@ import { Card } from '../../ui/card'
 import { PlanBadge, QuotaMeter, useUpgradeAction } from '../../entitlements'
 import { METRIC_KEYS, planLabel, usePlan } from '../../lib/entitlements'
 import {
+  BASE_METRIC_KEYS,
   PLAN_KEYS,
   PLAN_LABELS,
   normalizePlan,
   planRank,
   upgradeCta,
+  type MetricKey,
   type PlanKey,
 } from '../../lib/entitlements/catalog'
 import { DEFAULT_CURRENCY, formatPrice, isQuoted, priceSuffix } from '@/lib/pricing'
@@ -135,7 +137,16 @@ export function BillingSection() {
                 limit the product does not enforce is not information — it is a
                 rule the customer will believe and we will not apply. */}
             <div className="grid gap-2 sm:grid-cols-2">
-              {METRIC_KEYS.map((metric) => (
+              {METRIC_KEYS.filter(
+                (metric: MetricKey) =>
+                  // The interview/copilot meters exist only where the server
+                  // serialized an allowance (non-zero plans). Rendering them
+                  // from the catalog alone would show "Unlimited" to a plan
+                  // whose allowance is zero — the server's absence means "no
+                  // meter", not "no limit".
+                  (BASE_METRIC_KEYS as readonly MetricKey[]).includes(metric) ||
+                  Boolean(ctx.data?.limits_usage?.[metric]),
+              ).map((metric) => (
                 <QuotaMeter key={metric} metric={metric} variant="always" showUpgrade={false} />
               ))}
             </div>

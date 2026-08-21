@@ -8,6 +8,7 @@ import { ApiProvider } from '@/components/hirelens/lib/api/query-client'
 import { BillingCheckoutProvider } from '@/components/hirelens/billing'
 import { FEATURED_PLAN, checkoutUnavailableReason } from '@/lib/pricing'
 import { PlanCards } from './plan-cards'
+import { TrialOffers } from './trial-offers'
 import { ComparisonTable } from './comparison-table'
 import { EnterpriseSection } from './enterprise-section'
 import { PricingFaq } from './pricing-faq'
@@ -71,6 +72,11 @@ export function PricingScreen() {
               true, not to add a title nobody asked for. */}
           <h2 className="sr-only">Plans and prices</h2>
           <PlanCards currency={currency} />
+
+          {/* One-time paid trials — a strip, not more cards: they are not
+              rungs of the upgrade ladder the four cards form. Renders nothing
+              for a market without checkout. */}
+          <TrialOffers currency={currency} />
 
           {/* GST-INCLUSIVE, NOT EXCLUSIVE. This read "Prices exclude applicable
               taxes", which contradicts how the system actually bills: the

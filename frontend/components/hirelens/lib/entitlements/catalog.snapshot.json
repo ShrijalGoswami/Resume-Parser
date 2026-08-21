@@ -7,12 +7,20 @@
       "label": "Free",
       "rank": 0,
       "limits": {
-        "resumes": 2,
+        "resumes": 100,
         "members": 1,
         "campaigns": 2,
-        "organizations": 1
+        "organizations": 1,
+        "interview_packs": 0,
+        "copilot_questions": 0
       },
-      "resume_window": "lifetime",
+      "resume_window": "month",
+      "metric_windows": {
+        "resumes": "month",
+        "interview_packs": "month",
+        "copilot_questions": "month"
+      },
+      "campaign_candidates": -1,
       "features": [
         "ats_score",
         "basic_ai_summary",
@@ -20,16 +28,78 @@
       ]
     },
     {
-      "key": "plus",
-      "label": "Plus",
+      "key": "trial",
+      "label": "Trial",
       "rank": 1,
       "limits": {
-        "resumes": 25,
+        "resumes": 10,
+        "members": 1,
+        "campaigns": 1,
+        "organizations": 1,
+        "interview_packs": 0,
+        "copilot_questions": 0
+      },
+      "resume_window": "lifetime",
+      "metric_windows": {
+        "resumes": "lifetime",
+        "interview_packs": "lifetime",
+        "copilot_questions": "lifetime"
+      },
+      "campaign_candidates": -1,
+      "features": [
+        "ats_score",
+        "basic_ai_summary",
+        "full_resume_analysis",
+        "resume_parser"
+      ]
+    },
+    {
+      "key": "trial_interview",
+      "label": "Interview Trial",
+      "rank": 2,
+      "limits": {
+        "resumes": 10,
+        "members": 1,
+        "campaigns": 1,
+        "organizations": 1,
+        "interview_packs": 1,
+        "copilot_questions": 1
+      },
+      "resume_window": "lifetime",
+      "metric_windows": {
+        "resumes": "lifetime",
+        "interview_packs": "lifetime",
+        "copilot_questions": "lifetime"
+      },
+      "campaign_candidates": -1,
+      "features": [
+        "ai_copilot",
+        "ats_score",
+        "basic_ai_summary",
+        "full_resume_analysis",
+        "interview_intelligence",
+        "resume_parser"
+      ]
+    },
+    {
+      "key": "plus",
+      "label": "Plus",
+      "rank": 3,
+      "limits": {
+        "resumes": 200,
         "members": 3,
         "campaigns": -1,
-        "organizations": 1
+        "organizations": 1,
+        "interview_packs": 0,
+        "copilot_questions": 0
       },
       "resume_window": "month",
+      "metric_windows": {
+        "resumes": "month",
+        "interview_packs": "month",
+        "copilot_questions": "month"
+      },
+      "campaign_candidates": 100,
       "features": [
         "ats_score",
         "basic_ai_summary",
@@ -42,14 +112,22 @@
     {
       "key": "pro",
       "label": "Pro",
-      "rank": 2,
+      "rank": 4,
       "limits": {
-        "resumes": -1,
+        "resumes": 700,
         "members": 25,
         "campaigns": -1,
-        "organizations": 1
+        "organizations": 1,
+        "interview_packs": -1,
+        "copilot_questions": 300
       },
       "resume_window": "month",
+      "metric_windows": {
+        "resumes": "month",
+        "interview_packs": "month",
+        "copilot_questions": "month"
+      },
+      "campaign_candidates": 200,
       "features": [
         "advanced_analytics",
         "ai_copilot",
@@ -70,15 +148,23 @@
     },
     {
       "key": "enterprise",
-      "label": "Enterprise",
-      "rank": 3,
+      "label": "Custom",
+      "rank": 5,
       "limits": {
         "resumes": -1,
         "members": -1,
         "campaigns": -1,
-        "organizations": 1
+        "organizations": 1,
+        "interview_packs": -1,
+        "copilot_questions": -1
       },
       "resume_window": "month",
+      "metric_windows": {
+        "resumes": "month",
+        "interview_packs": "month",
+        "copilot_questions": "month"
+      },
+      "campaign_candidates": -1,
       "features": [
         "advanced_analytics",
         "ai_copilot",
@@ -103,6 +189,16 @@
         "webhooks"
       ]
     }
+  ],
+  "core_plans": [
+    "free",
+    "plus",
+    "pro",
+    "enterprise"
+  ],
+  "trial_plans": [
+    "trial",
+    "trial_interview"
   ],
   "features": [
     {
@@ -236,6 +332,9 @@
     "resumes": "résumés",
     "members": "team members",
     "campaigns": "roles",
-    "organizations": "organizations"
+    "organizations": "organizations",
+    "interview_packs": "interview packs",
+    "copilot_questions": "copilot questions",
+    "campaign_candidates": "candidates in this role"
   }
 }

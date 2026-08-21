@@ -37,7 +37,7 @@ async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 /** The plans that can be bought self-serve. Mirrors the backend's
  *  `SELLABLE_PLANS`; Free is not a purchase and Enterprise is quoted. */
-export type SellablePlan = 'plus' | 'pro';
+export type SellablePlan = 'trial' | 'trial_interview' | 'plus' | 'pro';
 
 /** What the browser needs to open Razorpay Checkout.
  *

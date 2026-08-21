@@ -341,3 +341,27 @@ def test_checkout_still_refuses_an_already_subscribed_organization():
         service.start_checkout(organization_id=ORG, plan="pro", email="o@example.com")
 
     assert not any(c[0] == "subscription.create" for c in provider.calls)
+
+
+# ── one-time trials are never a plan-change party ───────────────────────────
+
+
+def test_a_trial_is_never_a_plan_change_target():
+    """Bought once through checkout; also keeps `scheduled_plan` inside the
+    vocabulary `subscriptions_scheduled_plan_chk` pins."""
+    service, provider = service_for(plus_subscription())
+    for target in ("trial", "trial_interview"):
+        with pytest.raises(CheckoutRefused, match="one-time purchase"):
+            service.change_plan(organization_id=ORG, plan=target)
+    assert not any(c[0] == "subscription.edit" for c in provider.calls)
+
+
+def test_a_trial_holder_is_sent_to_checkout_not_plan_change():
+    """The trial's single cycle has completed at the gateway — there is nothing
+    live to PATCH."""
+    service, provider = service_for(
+        plus_subscription(plan="trial_interview")
+    )
+    with pytest.raises(CheckoutRefused, match="start a new checkout"):
+        service.change_plan(organization_id=ORG, plan="pro")
+    assert not any(c[0] == "subscription.edit" for c in provider.calls)

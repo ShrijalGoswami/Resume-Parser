@@ -36,6 +36,7 @@ from app.enterprise.deps import (
     RequireCandidateView,
     require_entitlement,
 )
+from app.enterprise.usage import record_interview_packs
 from app.services.storage_service import object_key
 from app.services.upload_utils import validate_resume_upload, _verify_magic_bytes
 from app.schemas.batch import BatchAnalysisResponse
@@ -273,6 +274,12 @@ async def persist_batch(
     successful = sum(1 for c in batch.candidates if getattr(c, "status", None) == "success")
     ctx.plan_service().can_upload_resume(max(successful, 1)).raise_for_denied()
 
+    # Per-campaign candidate cap (Plus 100 / Pro 200), checked against a live
+    # count of THIS campaign's candidates at the moment they are added — the
+    # org-wide résumé quota above cannot see how one role is filling up.
+    existing = len(candidates.list_for_campaign(campaign_id))
+    ctx.plan_service().can_add_campaign_candidates(existing, max(successful, 1)).raise_for_denied()
+
     service = PersistenceService(campaigns, candidates, activity,
                                  organization_id=ctx.organization_id,
                                  embedding_repo=embeddings)
@@ -412,6 +419,7 @@ async def generate_interview(
     campaign_id: str,
     candidate_id: str,
     payload: InterviewGenerateRequest,
+    ctx: OrgContextDep,
     candidate_repo: CandidateRepoDep,
     campaign_repo: CampaignRepoDep,
     note_repo: NoteRepoDep,
@@ -424,6 +432,10 @@ async def generate_interview(
     scoping). `focus`/`instruction`/`sections` drive interactive mode so follow-ups
     regenerate only what was asked. The LLM round-trip runs off the event loop.
     """
+    # Volume quota on top of the feature gate above. Every generation call —
+    # full pack or scoped regeneration — is one credit; the credit is consumed
+    # only after the generation actually succeeded.
+    ctx.plan_service().can_generate_interview_pack().raise_for_denied()
     pack = await run_in_threadpool(
         run_interview,
         candidate_id,
@@ -435,6 +447,7 @@ async def generate_interview(
         campaign_repo=campaign_repo,
         note_repo=note_repo,
     )
+    record_interview_packs(ctx.organization_id)
     activity.record(
         "interview_pack_generated",
         summary=f"Generated interview pack ({payload.focus})",

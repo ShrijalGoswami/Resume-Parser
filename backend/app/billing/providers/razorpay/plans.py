@@ -47,6 +47,8 @@ SUBSCRIPTION_CYCLES = 120
 
 #: Environment variable per plan, per currency. V1 sells in INR only.
 PLAN_ENV_VARS: dict[str, str] = {
+    "trial": "RAZORPAY_PLAN_TRIAL_INR",
+    "trial_interview": "RAZORPAY_PLAN_TRIAL_INTERVIEW_INR",
     "plus": "RAZORPAY_PLAN_PLUS_INR",
     "pro": "RAZORPAY_PLAN_PRO_INR",
 }
@@ -56,9 +58,25 @@ PLAN_ENV_VARS: dict[str, str] = {
 #: this is the copy the boot check compares the gateway against.
 #: GST-INCLUSIVE: the advertised price IS the amount charged.
 PUBLISHED_PRICE: dict[str, Money] = {
+    "trial": Money(9_900, "INR"),             # ₹99, one-time
+    "trial_interview": Money(14_900, "INR"),  # ₹149, one-time
     "plus": Money(99_900, "INR"),    # ₹999
     "pro": Money(249_900, "INR"),    # ₹2,499
 }
+
+#: Billing cycles per plan. The paid trials are ONE-TIME purchases expressed in
+#: the only vocabulary Razorpay Subscriptions has: a single-cycle subscription.
+#: One cycle charges once and then reports `subscription.completed`, which maps
+#: to `active` — the customer keeps the trial's (lifetime-windowed) credits and
+#: is never charged again. Everything else runs the standard 120 cycles.
+PLAN_CYCLES: dict[str, int] = {
+    "trial": 1,
+    "trial_interview": 1,
+}
+
+
+def cycles_for(plan: str) -> int:
+    return PLAN_CYCLES.get(plan, SUBSCRIPTION_CYCLES)
 
 
 @dataclass(frozen=True)

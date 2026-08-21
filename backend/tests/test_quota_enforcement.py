@@ -130,10 +130,14 @@ def test_usage_writes_go_through_the_atomic_rpc() -> list[str]:
     """The read-modify-write that made the quota bypassable must not come back."""
     from app.enterprise import repositories, usage
     failures = []
-    if "increment_usage" not in inspect.getsource(usage.record_resumes):
-        failures.append("record_resumes does not use the atomic increment_usage RPC")
+    # `record_resumes` (and its interview/copilot siblings) delegate to
+    # `_record_metric`, which is where the atomic RPC must be.
+    if "increment_usage" not in inspect.getsource(usage._record_metric):
+        failures.append("_record_metric does not use the atomic increment_usage RPC")
+    elif "_record_metric" not in inspect.getsource(usage.record_resumes):
+        failures.append("record_resumes does not delegate to _record_metric")
     else:
-        print("  ok  record_resumes uses increment_usage()")
+        print("  ok  record_resumes uses increment_usage() via _record_metric")
 
     inc_src = inspect.getsource(repositories.UsageRepository.increment)
     if "increment_usage" not in inc_src:

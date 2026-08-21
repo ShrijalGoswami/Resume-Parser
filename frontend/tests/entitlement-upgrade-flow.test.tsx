@@ -86,19 +86,22 @@ beforeEach(() => {
 
 describe('value copy is derived from the catalog', () => {
   it('states what the customer receives, not just what they lack', () => {
-    expect(upgradeValueLine('resumes', 'pro')).toBe('Upgrade to Pro for unlimited résumés.')
-    expect(upgradeValueLine('resumes', 'plus')).toBe('Upgrade to Plus for 25 résumés a month.')
+    expect(upgradeValueLine('resumes', 'pro')).toBe('Upgrade to Pro for 700 résumés a month.')
+    expect(upgradeValueLine('resumes', 'plus')).toBe('Upgrade to Plus for 200 résumés a month.')
     expect(upgradeValueLine('members', 'plus')).toBe('Upgrade to Plus for 3 team members.')
   })
 
   it('does not describe a seat count as a monthly allowance', () => {
     // "3 team members a month" describes a subscription nobody sells.
     expect(planAllowanceOf('members', 'plus')).toBe('3 team members')
-    expect(planAllowanceOf('resumes', 'plus')).toBe('25 résumés a month')
+    expect(planAllowanceOf('resumes', 'plus')).toBe('200 résumés a month')
   })
 
-  it('never promises Free credits will renew — they are lifetime', () => {
-    expect(planAllowanceOf('resumes', 'free')).toBe('2 résumés')
+  it('never promises a trial’s credits will renew — they are lifetime', () => {
+    expect(planAllowanceOf('resumes', 'trial')).toBe('10 résumés')
+    expect(planAllowanceOf('resumes', 'trial_interview')).toBe('10 résumés')
+    // Free renews monthly now, and says so.
+    expect(planAllowanceOf('resumes', 'free')).toBe('100 résumés a month')
   })
 
   it('offers nothing when there is no higher tier', () => {
@@ -114,7 +117,7 @@ describe('small allowances still get a warning', () => {
     ready('free', usage(1, 2))
     render(<QuotaMeter metric="resumes" />)
     expect(screen.getByText('1 of 2 résumés used')).toBeInTheDocument()
-    expect(screen.getByText('Upgrade to Plus for 25 résumés a month.')).toBeInTheDocument()
+    expect(screen.getByText('Upgrade to Plus for 200 résumés a month.')).toBeInTheDocument()
   })
 
   it('stays silent when there is genuinely room', () => {
@@ -153,8 +156,8 @@ describe('the upgrade dialog answers all three questions', () => {
     // A quota asks for MORE — "résumés is on Plus" is not a sentence.
     expect(screen.getByText('More résumés are on Plus')).toBeInTheDocument()
     expect(screen.getByText("You’ve reached your résumés limit.")).toBeInTheDocument()
-    expect(screen.getByText('Upgrade to Plus for 25 résumés a month.')).toBeInTheDocument()
-    expect(screen.getByText('Plus gives you 25 résumés a month.')).toBeInTheDocument()
+    expect(screen.getByText('Upgrade to Plus for 200 résumés a month.')).toBeInTheDocument()
+    expect(screen.getByText('Plus gives you 200 résumés a month.')).toBeInTheDocument()
   })
 
   it('names no tier when the denial carried none', () => {
@@ -240,7 +243,7 @@ describe('402 routing', () => {
       </UpgradeDialogProvider>,
     )
     fireEvent.click(screen.getByRole('button', { name: 'fire' }))
-    expect(screen.getByText('Webhooks is on Enterprise')).toBeInTheDocument()
+    expect(screen.getByText('Webhooks is on Custom')).toBeInTheDocument()
   })
 
   it('leaves a 500 alone — an outage is not an upgrade prompt', () => {
@@ -310,7 +313,7 @@ describe('every upgrade surface answers the three questions', () => {
     render(<QuotaLock metric="resumes" used={2} limit={2} window="lifetime" requiredPlan="plus" />)
     expect(screen.getByText("You’ve used all 2 of your résumés.")).toBeInTheDocument() // what
     expect(screen.getByText('2 of 2 résumés used')).toBeInTheDocument() // why / how much
-    expect(screen.getByText('Upgrade to Plus for 25 résumés a month.')).toBeInTheDocument() // what changes
+    expect(screen.getByText('Upgrade to Plus for 200 résumés a month.')).toBeInTheDocument() // what changes
   })
 
   it('QuotaMeter, once it is warning', () => {
@@ -318,6 +321,6 @@ describe('every upgrade surface answers the three questions', () => {
     render(<QuotaMeter metric="resumes" />)
     expect(screen.getByText('2 of 2 résumés used')).toBeInTheDocument()
     expect(screen.getByText('No credits left')).toBeInTheDocument()
-    expect(screen.getByText('Upgrade to Plus for 25 résumés a month.')).toBeInTheDocument()
+    expect(screen.getByText('Upgrade to Plus for 200 résumés a month.')).toBeInTheDocument()
   })
 })

@@ -42,10 +42,13 @@ from fastapi import HTTPException, status
 
 from app.core.config import settings
 from app.enterprise.catalog import (
-    FEATURES, METRIC_CAMPAIGNS, METRIC_MEMBERS, METRIC_RESUMES, METRIC_LABELS,
-    PLAN_LABELS, Plan, RULESET_FOUNDING, UNLIMITED, feature_min_plan, get_feature,
-    is_at_least, is_unlimited, limit_for, minimum_plan_for_limit, normalize_plan,
-    normalize_ruleset, resume_window,
+    FEATURES, METRIC_CAMPAIGNS, METRIC_CAMPAIGN_CANDIDATES,
+    METRIC_COPILOT_QUESTIONS, METRIC_INTERVIEW_PACKS, METRIC_MEMBERS,
+    METRIC_RESUMES, METRIC_LABELS, PLAN_FEATURE_EXTRAS, PLAN_LABELS, Plan,
+    RULESET_FOUNDING, UNLIMITED, campaign_candidate_limit, feature_min_plan,
+    get_feature, is_at_least, is_unlimited, limit_for, metric_window,
+    minimum_plan_for_campaign_candidates, minimum_plan_for_limit,
+    normalize_plan, normalize_ruleset, resume_window,
 )
 from app.enterprise.usage import UsageSnapshot
 
@@ -242,6 +245,11 @@ class PlanService:
         if self.is_founding:
             from app.enterprise.catalog import FOUNDING_FEATURES
             return key in FOUNDING_FEATURES
+        # A plan's extras (the paid trials' metered slice of higher-tier
+        # capabilities) count as base inclusion; their VOLUME is bounded by the
+        # metered limits, not here.
+        if key in PLAN_FEATURE_EXTRAS.get(plan, ()):
+            return True
         spec = FEATURES.get(key)
         return bool(spec and is_at_least(plan, spec.min_plan))
 
@@ -315,6 +323,63 @@ class PlanService:
     def can_use_interview_ai(self) -> Decision:
         return self.feature("interview_intelligence")
 
+    def can_generate_interview_pack(self, count: int = 1) -> Decision:
+        """Feature gate AND volume quota, in that order.
+
+        Every generation call — full pack or scoped regeneration — is one
+        credit: each is a full orchestrator round-trip and costs the same order
+        of tokens. The Interview Trial's single credit is spent by whichever
+        generation happens first.
+        """
+        gate = self.feature("interview_intelligence")
+        if not gate.allowed:
+            return gate
+        return self.quota(METRIC_INTERVIEW_PACKS, count)
+
+    def can_ask_copilot(self, count: int = 1) -> Decision:
+        """Feature gate AND volume quota for one Copilot question."""
+        gate = self.feature("ai_copilot")
+        if not gate.allowed:
+            return gate
+        return self.quota(METRIC_COPILOT_QUESTIONS, count)
+
+    def can_add_campaign_candidates(self, existing: int, adding: int = 1) -> Decision:
+        """Would this campaign stay within the plan's per-campaign candidate cap?
+
+        `existing` is a live count of the campaign's candidates — this limit is
+        scoped per CAMPAIGN, so it cannot come from the org usage snapshot.
+        """
+        plan = self.effective_plan
+        limit = campaign_candidate_limit(
+            plan, ruleset=self.ruleset, overrides=self.limit_overrides
+        )
+        if is_unlimited(limit):
+            return Decision(allowed=True, metric=METRIC_CAMPAIGN_CANDIDATES,
+                            current_plan=self.plan.value, limit=UNLIMITED,
+                            used=existing, plan_version=self.plan_version)
+        if existing + adding <= limit:
+            return Decision(allowed=True, metric=METRIC_CAMPAIGN_CANDIDATES,
+                            current_plan=self.plan.value, limit=limit,
+                            used=existing, plan_version=self.plan_version)
+
+        required = minimum_plan_for_campaign_candidates(existing + adding, above=plan)
+        target = required.value if required else None
+        noun = METRIC_LABELS[METRIC_CAMPAIGN_CANDIDATES]
+        remaining = max(0, limit - existing)
+        if adding > 1:
+            head = (f"This adds {adding} candidates; {remaining} of {limit} "
+                    f"{noun} remain on the {PLAN_LABELS[plan]} plan.")
+        else:
+            head = (f"This role already holds {existing} of {limit} "
+                    f"candidates on the {PLAN_LABELS[plan]} plan.")
+        message = f"{head} Upgrade to {PLAN_LABELS[required]} for more." if target else head
+        return Decision(
+            allowed=False, reason=REASON_LIMIT, metric=METRIC_CAMPAIGN_CANDIDATES,
+            current_plan=self.plan.value, required_plan=target, upgrade_target=target,
+            limit=limit, used=existing, plan_version=self.plan_version,
+            message=message, extra={"requested": adding},
+        )
+
     def can_use_advanced_analytics(self) -> Decision:
         return self.feature("advanced_analytics")
 
@@ -356,4 +421,21 @@ class PlanService:
             }
         out[METRIC_RESUMES]["window"] = resume_window(self.effective_plan)
         out[METRIC_RESUMES]["period"] = self.usage.period
+
+        # Interview / Copilot credits: serialized only where the plan carries a
+        # NON-ZERO allowance. A plan without the capability would render a
+        # "0 of 0" meter, which reads as a fault rather than an absence — the
+        # feature lock is that plan's surface, not a meter.
+        for metric in (METRIC_INTERVIEW_PACKS, METRIC_COPILOT_QUESTIONS):
+            limit = limit_for(self.effective_plan, metric,
+                              ruleset=self.ruleset, overrides=self.limit_overrides)
+            if limit == 0:
+                continue
+            d = self.quota(metric, 0)
+            out[metric] = {
+                "used": d.used, "limit": d.limit, "remaining": d.remaining,
+                "label": METRIC_LABELS.get(metric, metric),
+                "window": metric_window(metric, self.effective_plan),
+                "period": self.usage.period,
+            }
         return out

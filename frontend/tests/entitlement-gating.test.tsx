@@ -159,7 +159,7 @@ describe('usePlanGate — four states', () => {
       entitlements: { webhooks: { enabled: false, required_plan: 'pro', label: 'Webhooks' } },
     })
     const { result } = renderHook(() => usePlanGate('webhooks'))
-    expect(result.current).toMatchObject({ requiredPlan: 'enterprise', cta: 'Upgrade to Enterprise' })
+    expect(result.current).toMatchObject({ requiredPlan: 'enterprise', cta: 'Upgrade to Custom' })
   })
 
   it('does not lock a founding organization', () => {
