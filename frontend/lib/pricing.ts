@@ -143,10 +143,12 @@ export const PRICING: Record<CurrencyCode, Record<PlanKey, PlanPricing>> = {
   // United States
   USD: {
     free: { monthly: 0, yearly: 0 },
-    // Not priced for the US market — the trials are an INR/checkout offer, and
-    // USD has no checkout. `null` keeps them off every USD surface.
-    trial: { monthly: null, yearly: null },
-    trial_interview: { monthly: null, yearly: null },
+    // One-time trial prices for the US market — a market decision like every
+    // other figure here, not a conversion of ₹99/₹149. Display/quote only
+    // until USD joins `CHECKOUT_CURRENCIES`; the CTA already routes an
+    // unchargeable market to sales.
+    trial: { monthly: 2, yearly: null },
+    trial_interview: { monthly: 3, yearly: null },
     plus: { monthly: 19, yearly: null },
     pro: { monthly: 49, yearly: null },
     enterprise: { monthly: null, yearly: null },
@@ -223,8 +225,10 @@ export function availableBillingPeriods(): BillingPeriod[] {
  */
 export const PLAN_POSITIONING: Record<PlanKey, string> = {
   free: 'Try the full analysis on a couple of résumés before you commit anything.',
-  trial: 'Ten résumés and one role, analysed in full, for a one-time ₹99.',
-  trial_interview: 'The trial plus one full interview pack and one Copilot question, one-time.',
+  // Currency-neutral on purpose: this line renders under whichever currency is
+  // selected, so it must not carry a ₹ or $ figure of its own.
+  trial: 'Ten résumés and one role, analysed in full, bought once.',
+  trial_interview: 'The trial plus one full interview pack and one Copilot question, bought once.',
   plus: 'For the recruiter running their own roles end to end.',
   pro: 'For a hiring team that needs the intelligence layer and shared memory.',
   enterprise: 'For organizations with their own AI, their own identity, and their own rules.',

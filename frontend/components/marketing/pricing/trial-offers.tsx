@@ -10,7 +10,6 @@ import {
 import {
   PLAN_POSITIONING,
   formatPrice,
-  isCheckoutSupported,
   priceOf,
   type CurrencyCode,
 } from '@/lib/pricing'
@@ -25,12 +24,11 @@ import { PlanCta } from './plan-cta'
  * a metered slice of a Pro capability. Rendering them inline would break the
  * "everything in X, plus:" reading that makes the ladder legible.
  *
- * Rendered only where they can actually be bought: the trials are an
- * INR/checkout offer with no USD price, and a strip of offers a visitor cannot
- * purchase is a dead end, not information.
+ * Rendered wherever the trials carry a real price. Whether the market can
+ * CHECK OUT is a separate fact the CTA already owns — an unchargeable currency
+ * gets "Talk to sales" from `PlanCta`, exactly like the main plan cards.
  */
 export function TrialOffers({ currency }: { currency: CurrencyCode }) {
-  if (!isCheckoutSupported(currency)) return null
   const offered = TRIAL_PLAN_KEYS.filter((plan) => priceOf(plan, currency) !== null)
   if (offered.length === 0) return null
 

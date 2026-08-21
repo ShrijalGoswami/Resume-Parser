@@ -48,6 +48,7 @@ import {
 import {
   CURRENCIES,
   DEFAULT_CURRENCY,
+  PLAN_POSITIONING,
   PRICING,
   YEARLY_BILLING_ENABLED,
   availableBillingPeriods,
@@ -62,6 +63,7 @@ import {
 } from '../lib/pricing'
 import { ComparisonTable } from '../components/marketing/pricing/comparison-table'
 import { PlanCards } from '../components/marketing/pricing/plan-cards'
+import { TrialOffers } from '../components/marketing/pricing/trial-offers'
 import { PricingFaq } from '../components/marketing/pricing/pricing-faq'
 import { CurrencyToggle } from '../components/marketing/pricing/currency-toggle'
 import { PlanCta } from '../components/marketing/pricing/plan-cta'
@@ -122,6 +124,17 @@ describe('price configuration', () => {
     expect(formatPrice('plus', 'USD')).toBe('$19')
     expect(formatPrice('pro', 'USD')).toBe('$49')
     expect(formatPrice('enterprise', 'USD')).toBe('Custom')
+  })
+
+  it('quotes the one-time trials in both markets, always as one-time', () => {
+    expect(formatPrice('trial', 'INR')).toBe('₹99')
+    expect(formatPrice('trial_interview', 'INR')).toBe('₹149')
+    expect(formatPrice('trial', 'USD')).toBe('$2')
+    expect(formatPrice('trial_interview', 'USD')).toBe('$3')
+    for (const currency of ['INR', 'USD'] as const) {
+      expect(priceSuffix('trial', currency)).toBe(' one-time')
+      expect(priceSuffix('trial_interview', currency)).toBe(' one-time')
+    }
   })
 
   it('does not compute one market from another', () => {
@@ -259,6 +272,46 @@ describe('plan cards', () => {
     renderCards()
     expect(screen.getByText(/2 résumés to try/)).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Interview Trial' })).not.toBeInTheDocument()
+  })
+})
+
+describe('trial strip', () => {
+  const renderStrip = (currency: 'INR' | 'USD') =>
+    render(
+      <Providers>
+        <TrialOffers currency={currency} />
+      </Providers>,
+    )
+
+  it('shows ₹99 and ₹149 one-time in INR', () => {
+    renderStrip('INR')
+    expect(screen.getByText('₹99')).toBeInTheDocument()
+    expect(screen.getByText('₹149')).toBeInTheDocument()
+    expect(screen.getAllByText('one-time').length).toBe(2)
+    expect(screen.queryByText(/\/month/)).not.toBeInTheDocument()
+  })
+
+  it('shows $2 and $3 one-time in USD', () => {
+    renderStrip('USD')
+    expect(screen.getByText('$2')).toBeInTheDocument()
+    expect(screen.getByText('$3')).toBeInTheDocument()
+    expect(screen.getAllByText('one-time').length).toBe(2)
+  })
+
+  it('routes an unchargeable market to sales, not to checkout', () => {
+    // USD is quoted but not in CHECKOUT_CURRENCIES — the CTA must be the same
+    // "Talk to sales" the main cards use, never a dead-end purchase button.
+    renderStrip('USD')
+    const sales = screen.getAllByRole('link', { name: 'Talk to sales' })
+    expect(sales.length).toBe(2)
+    for (const link of sales) expect(link).toHaveAttribute('href', '/contact')
+  })
+
+  it('carries no hardcoded currency in its positioning copy', () => {
+    // The same line renders under either currency, so a ₹ or $ typed into it
+    // would be wrong for one market the moment it renders.
+    expect(PLAN_POSITIONING.trial).not.toMatch(/₹|\$/)
+    expect(PLAN_POSITIONING.trial_interview).not.toMatch(/₹|\$/)
   })
 })
 
