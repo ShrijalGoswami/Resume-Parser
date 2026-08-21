@@ -116,10 +116,22 @@ class TestPublishedPrices:
         """These are the numbers `frontend/lib/pricing.ts` shows, in
         minor units. If the page changes, this must change with it — and then a
         NEW Razorpay plan must be created, because plans are immutable."""
+        assert plans.PUBLISHED_PRICE["trial"].minor_units == 9_900
+        assert plans.PUBLISHED_PRICE["trial_interview"].minor_units == 14_900
         assert plans.PUBLISHED_PRICE["plus"].minor_units == 99_900
         assert plans.PUBLISHED_PRICE["pro"].minor_units == 249_900
         assert all(p.currency == "INR" for p in plans.PUBLISHED_PRICE.values())
 
-    def test_only_plus_and_pro_are_sold_through_the_gateway(self):
-        """Free is not a purchase and Enterprise is contracted offline."""
-        assert sorted(plans.PLAN_ENV_VARS) == ["plus", "pro"]
+    def test_sellable_set_is_trials_plus_and_pro(self):
+        """Free is not a purchase and Custom (enterprise) is contracted
+        offline. The one-time trials sell through the gateway as single-cycle
+        subscriptions."""
+        assert sorted(plans.PLAN_ENV_VARS) == ["plus", "pro", "trial", "trial_interview"]
+
+    def test_trials_are_single_cycle(self):
+        """One charge, then `subscription.completed` → active. A trial that
+        renewed monthly would be a subscription sold as a one-time purchase."""
+        assert plans.cycles_for("trial") == 1
+        assert plans.cycles_for("trial_interview") == 1
+        assert plans.cycles_for("plus") == plans.SUBSCRIPTION_CYCLES
+        assert plans.cycles_for("pro") == plans.SUBSCRIPTION_CYCLES

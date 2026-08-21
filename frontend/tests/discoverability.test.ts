@@ -21,6 +21,7 @@ import {
   FEATURE_KEYS,
   LIMITS,
   PLAN_KEYS,
+  PLAN_LABELS,
 } from '../components/hirelens/lib/entitlements/catalog'
 import { PRICING, formatPrice } from '../lib/pricing'
 
@@ -66,9 +67,7 @@ describe('structured data is derived, not written', () => {
     // A price typed into schema is the copy nobody proofreads and the one a
     // machine repeats verbatim.
     for (const offer of offerSchemas()) {
-      const plan = PLAN_KEYS.find(
-        (p) => `Hirevo ${p[0].toUpperCase()}${p.slice(1)}` === offer.name,
-      )
+      const plan = PLAN_KEYS.find((p) => `Hirevo ${PLAN_LABELS[p]}` === offer.name)
       expect(plan, `unexpected offer ${offer.name}`).toBeDefined()
       expect(offer.price).toBe(PRICING.INR[plan!].monthly)
     }

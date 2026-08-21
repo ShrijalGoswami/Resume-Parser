@@ -6,14 +6,13 @@ import Link from 'next/link'
 import { Reveal } from './motion'
 import { EditorialBackdrop } from './fx/editorial-backdrops'
 import {
+  CORE_PLAN_KEYS,
   FEATURES,
   FEATURE_KEYS,
   LIMITS,
-  PLAN_KEYS,
   PLAN_LABELS,
   RESUME_WINDOW,
   isUnlimited,
-  planRank,
 } from '@/components/hirelens/lib/entitlements/catalog'
 import {
   FEATURED_PLAN,
@@ -291,9 +290,11 @@ export function Frame05Conclusion() {
         </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-          {PLAN_KEYS.map((plan, i) => {
+          {CORE_PLAN_KEYS.map((plan, i) => {
             const featured = plan === FEATURED_PLAN
-            const previous = PLAN_KEYS[planRank(plan) - 1]
+            // Previous rung of the LADDER — the one-time trials are not part of
+            // the "everything in X, plus:" chain (see pricing/plan-cards.tsx).
+            const previous = CORE_PLAN_KEYS[i - 1]
             const resumes = LIMITS[plan].resumes
             const seats = LIMITS[plan].members
             return (

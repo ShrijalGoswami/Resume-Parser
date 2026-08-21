@@ -33,7 +33,8 @@ from app.core.deps import (
     EmbeddingRepoDep,
     NoteRepoDep,
 )
-from app.enterprise.deps import OrgIdDep
+from app.enterprise.deps import OrgContextDep, OrgIdDep
+from app.enterprise.usage import record_copilot_questions, record_interview_packs
 from app.knowledge.service import safe_ingest as knowledge_ingest
 from app.ai.services.copilot_service import generate_copilot_answer
 from app.llm.copilot import answer_question
@@ -70,11 +71,17 @@ from app.ai.utils.limits import CHAT_MESSAGE_MAX_CHARS as _MAX_MESSAGE_CHARS
 
 # ── Stateless (legacy) ──────────────────────────────────────────────────────
 @router.post("/chat", response_model=CopilotResponse, status_code=status.HTTP_200_OK, dependencies=[RequireAiUse])
-async def copilot_chat(request: CopilotRequest):
+async def copilot_chat(request: CopilotRequest, ctx: OrgContextDep):
     if not request.message or not request.message.strip():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Message cannot be empty.")
+    # Volume quota on top of the router-level `ai_copilot` gate: every answered
+    # question is one credit, on this legacy surface as much as the V5 one —
+    # otherwise this endpoint is a metering bypass.
+    ctx.plan_service().can_ask_copilot().raise_for_denied()
     # answer_question degrades gracefully; run off the event loop (sync LLM call).
-    return await run_in_threadpool(answer_question, request)
+    response = await run_in_threadpool(answer_question, request)
+    record_copilot_questions(ctx.organization_id)
+    return response
 
 
 @router.get("/suggestions", response_model=SuggestionsResponse, dependencies=[RequireAiUse])
@@ -155,11 +162,16 @@ async def post_conversation_message(
     embedding_repo: EmbeddingRepoDep,
     agent_repo: AgentRepoDep,
     activity: ActivityRepoDep,
+    ctx: OrgContextDep,
     org_id: OrgIdDep,
 ):
     message = (payload.message or "").strip()[:_MAX_MESSAGE_CHARS]
     if not message:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Message cannot be empty.")
+
+    # Volume quota on top of the router-level `ai_copilot` gate. Checked before
+    # any work; the credit is consumed only after an answer was produced.
+    ctx.plan_service().can_ask_copilot().raise_for_denied()
 
     conv = conv_repo.get(conversation_id)  # 404 if not owned / deleted
 
@@ -195,13 +207,19 @@ async def post_conversation_message(
         report, structured = comparison_pair
         asst_metadata = {**structured.model_dump(), "comparison": report.model_dump()}
 
-    if structured is None:
+    if structured is None and ctx.plan_service().can_generate_interview_pack().allowed:
         # Interview requests reuse the SHARED Interview Intelligence engine.
+        # Guarded by the interview quota: a Copilot turn that fans out into pack
+        # generation spends interview credits exactly like the interview screen
+        # would — without the guard this branch is a metering bypass. When the
+        # quota is exhausted the question falls through to the ordinary grounded
+        # answer instead of a refusal.
         interview_pair = await run_in_threadpool(
             safe_try_interview, message, payload.context, candidate_repo, campaign_repo, note_repo
         )
         if interview_pair is not None:
             packs, structured = interview_pair
+            record_interview_packs(ctx.organization_id, len(packs))
             asst_metadata = {**structured.model_dump(), "interviews": [p.model_dump() for p in packs]}
 
     if structured is None:
@@ -286,6 +304,9 @@ async def post_conversation_message(
             conv_repo.rename(conversation_id, _auto_title(message))
         except Exception:  # pragma: no cover — non-critical
             pass
+
+    # One answered question = one credit, whichever engine produced the answer.
+    record_copilot_questions(ctx.organization_id)
 
     activity.record(
         "copilot_message",

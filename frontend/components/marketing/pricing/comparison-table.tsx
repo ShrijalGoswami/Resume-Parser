@@ -2,16 +2,17 @@
 
 import * as React from 'react'
 import {
+  CAMPAIGN_CANDIDATE_LIMITS,
+  CORE_PLAN_KEYS,
   FEATURES,
   FEATURE_KEYS,
   LIMITS,
   METRIC_KEYS,
   METRIC_LABELS,
-  PLAN_KEYS,
   PLAN_LABELS,
-  RESUME_WINDOW,
   isAtLeast,
   isUnlimited,
+  metricWindow,
   type MetricKey,
   type PlanKey,
 } from '@/components/hirelens/lib/entitlements/catalog'
@@ -69,13 +70,26 @@ function CheckCell({ included, label }: { included: boolean; label: string }) {
 function limitText(plan: PlanKey, metric: MetricKey): string {
   const limit = LIMITS[plan][metric]
   if (isUnlimited(limit)) return 'Unlimited'
+  // A zero allowance means the capability is not on this plan at all — the
+  // feature rows below say that; "0" in a limits row reads as a misprint.
+  if (limit === 0) return '—'
+  if (metric === 'interview_packs' || metric === 'copilot_questions') {
+    return metricWindow(metric, plan) === 'month' ? `${limit} / month` : `${limit} total`
+  }
   if (metric === 'resumes') {
     // Free's credits are for the lifetime of the organization — it is a trial,
     // not an allowance. Labelling them "/month" would promise a reset that
     // never comes, and the customer would find out in week five.
-    return RESUME_WINDOW[plan] === 'month' ? `${limit} / month` : `${limit} total`
+    return metricWindow('resumes', plan) === 'month' ? `${limit} / month` : `${limit} total`
   }
   return String(limit)
+}
+
+/** The per-campaign candidate cap — its own row: it is scoped per role, not
+ *  per organization, so it does not live in `LIMITS`. */
+function campaignCandidateText(plan: PlanKey): string {
+  const limit = CAMPAIGN_CANDIDATE_LIMITS[plan]
+  return isUnlimited(limit) ? 'Unlimited' : `${limit} / role`
 }
 
 function SectionRow({ title }: { title: string }) {
@@ -83,7 +97,7 @@ function SectionRow({ title }: { title: string }) {
     <tr>
       <th
         scope="colgroup"
-        colSpan={PLAN_KEYS.length + 1}
+        colSpan={CORE_PLAN_KEYS.length + 1}
         className="border-b border-mkt-border bg-mkt-subtle px-4 py-2.5 text-left mkt-label text-mkt-fg-secondary"
       >
         {title}
@@ -98,7 +112,7 @@ export function ComparisonTable({ featured }: { featured: PlanKey }) {
   // list. Empty groups are dropped — a heading over nothing is worse than none.
   const groups = React.useMemo(
     () =>
-      PLAN_KEYS.map((plan) => ({
+      CORE_PLAN_KEYS.map((plan) => ({
         plan,
         features: FEATURE_KEYS.map((key) => FEATURES[key]).filter((f) => f.minPlan === plan),
       })).filter((group) => group.features.length > 0),
@@ -124,7 +138,7 @@ export function ComparisonTable({ featured }: { featured: PlanKey }) {
           and `contain: paint` on this element alone fixed it completely. */}
       <table className="w-full min-w-[720px] border-collapse text-left">
         <caption className="sr-only">
-          Feature and limit comparison across the Free, Plus, Pro and Enterprise plans
+          Feature and limit comparison across the Free, Plus, Pro and Custom plans
         </caption>
         <thead>
           <tr>
@@ -134,7 +148,7 @@ export function ComparisonTable({ featured }: { featured: PlanKey }) {
             >
               Compare plans
             </th>
-            {PLAN_KEYS.map((plan) => (
+            {CORE_PLAN_KEYS.map((plan) => (
               <th
                 key={plan}
                 scope="col"
@@ -160,7 +174,7 @@ export function ComparisonTable({ featured }: { featured: PlanKey }) {
               >
                 <span className="capitalize">{METRIC_LABELS[metric]}</span>
               </th>
-              {PLAN_KEYS.map((plan) => (
+              {CORE_PLAN_KEYS.map((plan) => (
                 <td
                   key={plan}
                   className="border-b border-mkt-border-subtle px-4 py-3.5 text-center font-mkt-mono mkt-body-sm text-mkt-fg-secondary"
@@ -170,6 +184,22 @@ export function ComparisonTable({ featured }: { featured: PlanKey }) {
               ))}
             </tr>
           ))}
+          <tr>
+            <th
+              scope="row"
+              className="border-b border-mkt-border-subtle px-4 py-3.5 text-left mkt-body-sm font-normal text-mkt-fg"
+            >
+              <span className="capitalize">Candidates per role</span>
+            </th>
+            {CORE_PLAN_KEYS.map((plan) => (
+              <td
+                key={plan}
+                className="border-b border-mkt-border-subtle px-4 py-3.5 text-center font-mkt-mono mkt-body-sm text-mkt-fg-secondary"
+              >
+                {campaignCandidateText(plan)}
+              </td>
+            ))}
+          </tr>
 
           {groups.map((group) => (
             <React.Fragment key={group.plan}>
@@ -187,7 +217,7 @@ export function ComparisonTable({ featured }: { featured: PlanKey }) {
                       </span>
                     ) : null}
                   </th>
-                  {PLAN_KEYS.map((plan) => (
+                  {CORE_PLAN_KEYS.map((plan) => (
                     <CheckCell
                       key={plan}
                       included={isAtLeast(plan, feature.minPlan)}

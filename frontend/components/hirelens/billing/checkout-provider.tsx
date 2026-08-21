@@ -50,9 +50,12 @@ import {
  * client-side claim about money.
  */
 
-/** Only these can be bought. Enterprise is quoted; Free is not a purchase. */
+/** Only these can be bought. Enterprise is quoted; Free is not a purchase.
+ *  The trials buy through the same checkout (single-cycle, one charge). */
 function asSellable(plan: PlanKey | null | undefined): SellablePlan | null {
-  return plan === 'plus' || plan === 'pro' ? plan : null
+  return plan === 'trial' || plan === 'trial_interview' || plan === 'plus' || plan === 'pro'
+    ? plan
+    : null
 }
 
 /**

@@ -3,14 +3,13 @@
 import * as React from 'react'
 import { Reveal } from '@/components/marketing/motion'
 import {
+  CORE_PLAN_KEYS,
   FEATURES,
   FEATURE_KEYS,
   LIMITS,
-  PLAN_KEYS,
   PLAN_LABELS,
   RESUME_WINDOW,
   isUnlimited,
-  planRank,
   type PlanKey,
 } from '@/components/hirelens/lib/entitlements/catalog'
 import {
@@ -56,9 +55,12 @@ function seatText(plan: PlanKey): string {
 export function PlanCards({ currency }: { currency: CurrencyCode }) {
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-      {PLAN_KEYS.map((plan, index) => {
+      {CORE_PLAN_KEYS.map((plan, index) => {
         const featured = plan === FEATURED_PLAN
-        const previous = PLAN_KEYS[planRank(plan) - 1]
+        // Previous rung of the LADDER, not of the full plan list — the one-time
+        // trials sit between Free and Plus in rank but are not part of the
+        // "everything in X, plus:" chain.
+        const previous = CORE_PLAN_KEYS[index - 1]
         const adds = FEATURE_KEYS.map((key) => FEATURES[key]).filter((f) => f.minPlan === plan)
 
         return (

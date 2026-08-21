@@ -39,15 +39,24 @@ from app.billing.providers.razorpay.config import is_configured, load_settings
 
 #: Razorpay plan definitions, derived from the published prices so the script
 #: and the boot check can never disagree about what a plan should cost.
+def _display_name(plan: str) -> str:
+    return plan.replace("_", " ").title()
+
+
 PLAN_SPECS = {
     plan: {
         "period": "monthly",
         "interval": 1,
         "item": {
-            "name": f"Hirevo {plan.capitalize()}",
+            "name": f"Hirevo {_display_name(plan)}",
             "amount": money.minor_units,
             "currency": money.currency,
-            "description": f"Hirevo {plan.capitalize()} — monthly subscription (GST inclusive)",
+            "description": (
+                f"Hirevo {_display_name(plan)} — "
+                + ("one-time trial (single cycle, GST inclusive)"
+                   if plan_bindings.cycles_for(plan) == 1
+                   else "monthly subscription (GST inclusive)")
+            ),
         },
         "notes": {"hirelens_plan": plan},
     }

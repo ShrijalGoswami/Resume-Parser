@@ -232,7 +232,8 @@ class RazorpayProvider:
             subscription = self._client().subscription.create({
                 "plan_id": binding.razorpay_plan_id,
                 # Mandatory at Razorpay — there is no unbounded subscription.
-                "total_count": plans.SUBSCRIPTION_CYCLES,
+                # One cycle for the one-time trials, 120 for everything else.
+                "total_count": plans.cycles_for(plan),
                 "customer_notify": 1,
                 "quantity": 1,
                 "notes": {"organization_id": organization_id, "plan": plan},

@@ -50,6 +50,7 @@ import {
   CURRENCIES,
   DEFAULT_CURRENCY,
   PLAN_POSITIONING,
+  isOneTime,
   isQuoted,
   priceOf,
 } from '@/lib/pricing'
@@ -160,8 +161,10 @@ export function offerSchemas(): Json[] {
         price: amount,
         priceCurrency: CURRENCIES[currency].code,
         valueAddedTaxIncluded: true,
-        // Free has no recurrence to describe.
-        ...(amount > 0
+        // Free has no recurrence to describe, and the one-time trials are a
+        // single charge — a MON recurrence on them would be a machine-readable
+        // promise of a subscription nobody sells.
+        ...(amount > 0 && !isOneTime(plan)
           ? {
               billingIncrement: 1,
               unitCode: 'MON',

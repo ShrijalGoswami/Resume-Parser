@@ -230,3 +230,70 @@ def test_non_inr_currency_is_refused():
         service.start_checkout(
             organization_id=ORG, plan="pro", email="owner@example.com", currency="USD"
         )
+
+
+# ── One-time trials ──────────────────────────────────────────────────────────
+def test_free_organization_can_buy_a_trial():
+    """A trial is an ordinary checkout from Free — reaching the gateway is the
+    pass condition (the exploding stub proves every guard let it through)."""
+    service, _ = service_for(subscription())
+    with pytest.raises(AssertionError, match="before reaching the gateway"):
+        service.start_checkout(organization_id=ORG, plan="trial", email="o@example.com")
+
+
+def test_trial_holder_upgrades_through_a_new_checkout():
+    """The BILL-13 refusal must NOT catch a completed trial: its single gateway
+    cycle has already run, so there is no live mandate to protect and nothing to
+    PATCH. Reaching the gateway is the pass condition."""
+    service, _ = service_for(
+        subscription(
+            plan="trial_interview",
+            state=BillingState.active,
+            billing_mode=BillingMode.provider,
+            provider=BillingProviderId.razorpay,
+            provider_subscription_id="sub_TRIAL",
+        )
+    )
+    with pytest.raises(AssertionError, match="before reaching the gateway"):
+        service.start_checkout(organization_id=ORG, plan="plus", email="o@example.com")
+
+
+def test_trial_pending_state_is_written_when_upgrading_from_a_trial():
+    """The same upgrade, driven to completion with the fake gateway: the saved
+    row must be `pending_activation` on the NEW plan — access changes only when
+    the webhook says so."""
+    from app.billing.providers.fake import FakeBillingProvider
+
+    repo = StubRepo(
+        subscription(
+            plan="trial",
+            state=BillingState.active,
+            billing_mode=BillingMode.provider,
+            provider=BillingProviderId.razorpay,
+            provider_customer_id="cust_1",
+            provider_subscription_id="sub_TRIAL",
+        )
+    )
+    service = BillingService(provider=FakeBillingProvider(), repository=repo)
+    service.start_checkout(organization_id=ORG, plan="plus", email="o@example.com")
+    assert len(repo.saved) == 1
+    pending = repo.saved[0]
+    assert pending.plan == "plus"
+    assert pending.state is BillingState.pending_activation
+
+
+def test_repurchasing_the_same_trial_is_refused():
+    """The lifetime counters do not reset, so selling the same trial twice
+    would take money for nothing."""
+    service, repo = service_for(
+        subscription(
+            plan="trial",
+            state=BillingState.active,
+            billing_mode=BillingMode.provider,
+            provider=BillingProviderId.razorpay,
+            provider_subscription_id="sub_TRIAL",
+        )
+    )
+    with pytest.raises(CheckoutRefused, match="already on trial"):
+        service.start_checkout(organization_id=ORG, plan="trial", email="o@example.com")
+    assert repo.saved == []

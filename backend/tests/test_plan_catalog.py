@@ -21,10 +21,13 @@ from __future__ import annotations
 import sys
 
 from app.enterprise.catalog import (
-    FEATURES, FOUNDING_FEATURES, LIMITS, METRIC_CAMPAIGNS, METRIC_MEMBERS,
-    METRIC_RESUMES, PLAN_ORDER, RULESET_FOUNDING, RULESET_V1, UNLIMITED, Plan,
-    features_for_plan, is_at_least, limits_for_plan, minimum_plan_for_limit,
-    normalize_plan, normalize_ruleset, resume_window,
+    CAMPAIGN_CANDIDATE_LIMITS, CORE_PLAN_ORDER, FEATURES, FOUNDING_FEATURES,
+    LIMITS, METRIC_CAMPAIGNS, METRIC_COPILOT_QUESTIONS, METRIC_INTERVIEW_PACKS,
+    METRIC_MEMBERS, METRIC_RESUMES, PLAN_FEATURE_EXTRAS, PLAN_ORDER,
+    RULESET_FOUNDING, RULESET_V1, TRIAL_PLANS, UNLIMITED, Plan,
+    campaign_candidate_limit, features_for_plan, is_at_least, limits_for_plan,
+    metric_window, minimum_plan_for_limit, normalize_plan, normalize_ruleset,
+    resume_window,
 )
 
 
@@ -34,21 +37,38 @@ def test_every_feature_has_a_min_plan():
         assert feature.label, f"{key} has no label — the lock surface would render blank"
 
 
-def test_plans_are_monotonic():
-    """Each tier includes everything the tier below it does.
+def test_core_ladder_is_monotonic():
+    """Each LADDER tier includes everything the tier below it does.
 
-    A customer who upgrades must never lose a capability. This is the property
-    that makes `min_plan` a sound basis for "Upgrade to X".
+    A customer who upgrades along the ladder must never lose a capability. The
+    one-time trials sit OFF the ladder by design: `trial_interview` carries a
+    metered slice of two Pro capabilities that Plus does not include, which is
+    why monotonicity is asserted over `CORE_PLAN_ORDER`, not `PLAN_ORDER`.
     """
-    for lower, higher in zip(PLAN_ORDER, PLAN_ORDER[1:]):
+    for lower, higher in zip(CORE_PLAN_ORDER, CORE_PLAN_ORDER[1:]):
         low = features_for_plan(lower)
         high = features_for_plan(higher)
         missing = low - high
         assert not missing, f"{higher.value} is missing {missing} that {lower.value} includes"
 
 
-def test_limits_are_monotonic():
-    for lower, higher in zip(PLAN_ORDER, PLAN_ORDER[1:]):
+def test_trials_are_not_on_the_ladder():
+    """The trials' shape is deliberate and pinned: extras above their rank,
+    fewer résumés than Free, everything windowed to the lifetime."""
+    assert TRIAL_PLANS == {Plan.trial, Plan.trial_interview}
+    assert set(PLAN_ORDER) - set(CORE_PLAN_ORDER) == TRIAL_PLANS
+    assert PLAN_FEATURE_EXTRAS[Plan.trial] == {"full_resume_analysis"}
+    assert PLAN_FEATURE_EXTRAS[Plan.trial_interview] == {
+        "full_resume_analysis", "interview_intelligence", "ai_copilot",
+    }
+    for plan in TRIAL_PLANS:
+        assert "interview_intelligence" in features_for_plan(plan) or plan is Plan.trial
+        for metric in (METRIC_RESUMES, METRIC_INTERVIEW_PACKS, METRIC_COPILOT_QUESTIONS):
+            assert metric_window(metric, plan) == "lifetime"
+
+
+def test_limits_are_monotonic_along_the_ladder():
+    for lower, higher in zip(CORE_PLAN_ORDER, CORE_PLAN_ORDER[1:]):
         for metric in LIMITS[lower]:
             low = LIMITS[lower][metric]
             high = LIMITS[higher][metric]
@@ -61,17 +81,37 @@ def test_limits_are_monotonic():
 def test_plan_matrix_matches_the_approved_product_decisions():
     """The numbers the plans were sold on. If a tier's allowance changes, this
     test should fail and be updated deliberately — never silently."""
-    assert LIMITS[Plan.free][METRIC_RESUMES] == 2
+    assert LIMITS[Plan.free][METRIC_RESUMES] == 100
     assert LIMITS[Plan.free][METRIC_MEMBERS] == 1
     assert LIMITS[Plan.free][METRIC_CAMPAIGNS] == 2
-    assert LIMITS[Plan.plus][METRIC_RESUMES] == 25
+    assert LIMITS[Plan.trial][METRIC_RESUMES] == 10
+    assert LIMITS[Plan.trial][METRIC_CAMPAIGNS] == 1
+    assert LIMITS[Plan.trial][METRIC_INTERVIEW_PACKS] == 0
+    assert LIMITS[Plan.trial][METRIC_COPILOT_QUESTIONS] == 0
+    assert LIMITS[Plan.trial_interview][METRIC_RESUMES] == 10
+    assert LIMITS[Plan.trial_interview][METRIC_CAMPAIGNS] == 1
+    assert LIMITS[Plan.trial_interview][METRIC_INTERVIEW_PACKS] == 1
+    assert LIMITS[Plan.trial_interview][METRIC_COPILOT_QUESTIONS] == 1
+    assert LIMITS[Plan.plus][METRIC_RESUMES] == 200
     assert LIMITS[Plan.plus][METRIC_MEMBERS] == 3
-    assert LIMITS[Plan.pro][METRIC_RESUMES] == UNLIMITED
+    assert LIMITS[Plan.pro][METRIC_RESUMES] == 700
     assert LIMITS[Plan.pro][METRIC_MEMBERS] == 25
+    assert LIMITS[Plan.pro][METRIC_INTERVIEW_PACKS] == UNLIMITED
+    # Copilot on Pro is deliberately finite — cost protection, not a feature gap.
+    assert LIMITS[Plan.pro][METRIC_COPILOT_QUESTIONS] == 300
     assert LIMITS[Plan.enterprise][METRIC_MEMBERS] == UNLIMITED
 
-    # FREE's credits are for the lifetime of the account; paid plans renew.
-    assert resume_window(Plan.free) == "lifetime"
+    # Per-campaign candidate caps (scoped per role, enforced at persist time).
+    assert campaign_candidate_limit(Plan.plus) == 100
+    assert campaign_candidate_limit(Plan.pro) == 200
+    assert campaign_candidate_limit(Plan.free) == UNLIMITED
+    assert CAMPAIGN_CANDIDATE_LIMITS[Plan.enterprise] == UNLIMITED
+
+    # The trials' credits are for the lifetime of the account; every other
+    # plan — Free included — renews on the calendar month.
+    assert resume_window(Plan.free) == "month"
+    assert resume_window(Plan.trial) == "lifetime"
+    assert resume_window(Plan.trial_interview) == "lifetime"
     assert resume_window(Plan.plus) == "month"
     assert resume_window(Plan.pro) == "month"
 
@@ -137,9 +177,10 @@ def test_founding_does_not_grant_capabilities_that_never_existed():
 
 
 def test_minimum_plan_for_limit():
-    assert minimum_plan_for_limit(METRIC_RESUMES, 2) is Plan.free
-    assert minimum_plan_for_limit(METRIC_RESUMES, 3) is Plan.plus
-    assert minimum_plan_for_limit(METRIC_RESUMES, 26) is Plan.pro
+    assert minimum_plan_for_limit(METRIC_RESUMES, 100) is Plan.free
+    assert minimum_plan_for_limit(METRIC_RESUMES, 101) is Plan.plus
+    assert minimum_plan_for_limit(METRIC_RESUMES, 201) is Plan.pro
+    assert minimum_plan_for_limit(METRIC_RESUMES, 701) is Plan.enterprise
     assert minimum_plan_for_limit(METRIC_MEMBERS, 1) is Plan.free
     assert minimum_plan_for_limit(METRIC_MEMBERS, 3) is Plan.plus
     assert minimum_plan_for_limit(METRIC_MEMBERS, 26) is Plan.enterprise

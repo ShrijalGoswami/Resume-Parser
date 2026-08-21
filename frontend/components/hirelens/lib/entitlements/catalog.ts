@@ -44,14 +44,44 @@ export function isUnlimited(limit: number | null | undefined): boolean {
 // ── Plans ───────────────────────────────────────────────────────────────────
 
 /** Ascending. Everything comparative derives from this order. */
-export const PLAN_KEYS = ['free', 'plus', 'pro', 'enterprise'] as const
+export const PLAN_KEYS = [
+  'free',
+  'trial',
+  'trial_interview',
+  'plus',
+  'pro',
+  'enterprise',
+] as const
 export type PlanKey = (typeof PLAN_KEYS)[number]
+
+/**
+ * The upgrade LADDER — the tiers a customer moves along, and the only sequence
+ * that is monotonic. The paid trials sit OFF the ladder: `trial_interview`
+ * carries a metered slice of Interview Intelligence that Plus does not, and
+ * both trials allow fewer résumés than Free. Marketing surfaces (plan cards,
+ * the comparison table) render the ladder; the trials get their own strip.
+ */
+export const CORE_PLAN_KEYS = ['free', 'plus', 'pro', 'enterprise'] as const satisfies
+  readonly PlanKey[]
+
+/** One-time paid trials — bought once, lifetime-windowed credits, never a
+ *  scheduled-change target. */
+export const TRIAL_PLAN_KEYS = ['trial', 'trial_interview'] as const satisfies
+  readonly PlanKey[]
+
+export function isTrialPlan(plan: PlanKey): boolean {
+  return (TRIAL_PLAN_KEYS as readonly PlanKey[]).includes(plan)
+}
 
 export const PLAN_LABELS: Record<PlanKey, string> = {
   free: 'Free',
+  trial: 'Trial',
+  trial_interview: 'Interview Trial',
   plus: 'Plus',
   pro: 'Pro',
-  enterprise: 'Enterprise',
+  // Sold as "Custom": no fixed public limits, quoted and contracted offline.
+  // The slug stays `enterprise` — it is on live rows and in the DB CHECKs.
+  enterprise: 'Custom',
 }
 
 /**
@@ -71,6 +101,8 @@ export const PLAN_LABELS: Record<PlanKey, string> = {
  */
 export const PLAN_BLURBS: Record<PlanKey, string> = {
   free: 'Enough of the real analysis to judge whether it is worth anything to you.',
+  trial: 'Ten résumés and one role, analysed in full, bought once.',
+  trial_interview: 'The trial plus one full interview pack and one Copilot question.',
   plus: 'For one recruiter running their own roles end to end.',
   pro: 'Adds the intelligence layer — search, copilot, analytics, and shared memory across the team.',
   enterprise: 'Your own models, your own sign-on, and rules set by your organization.',
@@ -240,6 +272,17 @@ export function getFeature(key: string): CatalogFeature | undefined {
   return FEATURES[key as FeatureKey]
 }
 
+/**
+ * Capabilities a plan includes ON TOP of the `minPlan` ladder — the paid
+ * trials' metered slice of higher-tier features. Mirror of the backend's
+ * `PLAN_FEATURE_EXTRAS`. Presentation only, like everything here: the volume
+ * (1 pack, 1 question) is enforced server-side by the metered limits.
+ */
+export const PLAN_FEATURE_EXTRAS: Partial<Record<PlanKey, readonly FeatureKey[]>> = {
+  trial: ['full_resume_analysis'],
+  trial_interview: ['full_resume_analysis', 'interview_intelligence', 'ai_copilot'],
+}
+
 /** Display name for a feature key. Falls back to the key so copy is never blank. */
 export function featureLabel(key: string): string {
   return getFeature(key)?.label ?? key
@@ -251,7 +294,10 @@ export function featureBlurb(key: string): string {
 
 /** Every feature a plan includes, for the pricing/comparison surfaces only. */
 export function featuresForPlan(plan: PlanKey): CatalogFeature[] {
-  return FEATURE_KEYS.map((k) => FEATURES[k]).filter((f) => isAtLeast(plan, f.minPlan))
+  const extras = PLAN_FEATURE_EXTRAS[plan] ?? []
+  return FEATURE_KEYS.map((k) => FEATURES[k]).filter(
+    (f) => isAtLeast(plan, f.minPlan) || extras.includes(f.key),
+  )
 }
 
 /** Features grouped by the tier that introduces them, in presentation order. */
@@ -265,8 +311,26 @@ export function featuresByTier(): { plan: PlanKey; label: string; features: Cata
 
 // ── Limits ──────────────────────────────────────────────────────────────────
 
-export const METRIC_KEYS = ['resumes', 'members', 'campaigns', 'organizations'] as const
+export const METRIC_KEYS = [
+  'resumes',
+  'members',
+  'campaigns',
+  'organizations',
+  'interview_packs',
+  'copilot_questions',
+] as const
 export type MetricKey = (typeof METRIC_KEYS)[number]
+
+/** The metrics every plan carries a meter for. `interview_packs` and
+ *  `copilot_questions` are serialized by the server only where the plan's
+ *  allowance is non-zero — a plan without the capability gets a feature lock,
+ *  not a "0 of 0" meter. */
+export const BASE_METRIC_KEYS = [
+  'resumes',
+  'members',
+  'campaigns',
+  'organizations',
+] as const satisfies readonly MetricKey[]
 
 /** Metric copy for meters and limit messages ("2 of 2 résumés used"). */
 export const METRIC_LABELS: Record<MetricKey, string> = {
@@ -274,9 +338,16 @@ export const METRIC_LABELS: Record<MetricKey, string> = {
   members: 'team members',
   campaigns: 'roles',
   organizations: 'organizations',
+  interview_packs: 'interview packs',
+  copilot_questions: 'copilot questions',
 }
 
+/** Copy for the per-campaign candidate cap, which is not an org metric and so
+ *  lives outside `METRIC_LABELS`. Mirrors the backend's label. */
+export const CAMPAIGN_CANDIDATE_LABEL = 'candidates in this role'
+
 export function metricLabel(metric: string): string {
+  if (metric === 'campaign_candidates') return CAMPAIGN_CANDIDATE_LABEL
   return METRIC_LABELS[metric as MetricKey] ?? metric
 }
 
@@ -288,24 +359,83 @@ export function metricLabel(metric: string): string {
  * `limit_overrides` and the founding ruleset's absence of limits.
  */
 export const LIMITS: Record<PlanKey, Record<MetricKey, number>> = {
-  free: { resumes: 2, members: 1, campaigns: 2, organizations: 1 },
-  plus: { resumes: 25, members: 3, campaigns: UNLIMITED, organizations: 1 },
-  pro: { resumes: UNLIMITED, members: 25, campaigns: UNLIMITED, organizations: 1 },
+  free: {
+    resumes: 100,
+    members: 1,
+    campaigns: 2,
+    organizations: 1,
+    interview_packs: 0,
+    copilot_questions: 0,
+  },
+  trial: {
+    resumes: 10,
+    members: 1,
+    campaigns: 1,
+    organizations: 1,
+    interview_packs: 0,
+    copilot_questions: 0,
+  },
+  trial_interview: {
+    resumes: 10,
+    members: 1,
+    campaigns: 1,
+    organizations: 1,
+    interview_packs: 1,
+    copilot_questions: 1,
+  },
+  plus: {
+    resumes: 200,
+    members: 3,
+    campaigns: UNLIMITED,
+    organizations: 1,
+    interview_packs: 0,
+    copilot_questions: 0,
+  },
+  pro: {
+    resumes: 700,
+    members: 25,
+    campaigns: UNLIMITED,
+    organizations: 1,
+    interview_packs: UNLIMITED,
+    // Deliberately finite — see the backend catalog's rationale: it bounds the
+    // worst-case Copilot spend to a small fraction of what the tier brings in.
+    copilot_questions: 300,
+  },
   enterprise: {
     resumes: UNLIMITED,
     members: UNLIMITED,
     campaigns: UNLIMITED,
     organizations: 1,
+    interview_packs: UNLIMITED,
+    copilot_questions: UNLIMITED,
   },
 }
 
 /**
- * Résumé counting window per plan. Free's credits are for the LIFETIME of the
- * organization — it is a trial, not a monthly allowance — so a meter must not
- * promise a Free user that anything resets.
+ * Maximum candidates a single campaign may hold, per plan. Scoped PER CAMPAIGN
+ * — enforced server-side where candidates are persisted, so it deliberately
+ * does not live in `LIMITS` (whose metrics are all per-organization) and never
+ * gets an org-level meter. Presentation only, like everything here.
+ */
+export const CAMPAIGN_CANDIDATE_LIMITS: Record<PlanKey, number> = {
+  free: UNLIMITED,
+  trial: UNLIMITED,
+  trial_interview: UNLIMITED,
+  plus: 100,
+  pro: 200,
+  enterprise: UNLIMITED,
+}
+
+/**
+ * Résumé counting window per plan. The paid trials' credits are for the
+ * LIFETIME of the organization — bought once, consumed once — so a meter must
+ * not promise a trial buyer that anything resets. Every other plan, Free
+ * included, renews on the calendar month.
  */
 export const RESUME_WINDOW: Record<PlanKey, 'lifetime' | 'month'> = {
-  free: 'lifetime',
+  free: 'month',
+  trial: 'lifetime',
+  trial_interview: 'lifetime',
   plus: 'month',
   pro: 'month',
   enterprise: 'month',
@@ -313,6 +443,16 @@ export const RESUME_WINDOW: Record<PlanKey, 'lifetime' | 'month'> = {
 
 export function resumeWindow(plan: string | null | undefined): 'lifetime' | 'month' {
   return RESUME_WINDOW[normalizePlan(plan)]
+}
+
+/**
+ * Counting window for any METERED metric — mirror of the backend's
+ * `metric_window()`. Résumés keep their per-plan table; the interview and
+ * copilot credits are lifetime on the trials and monthly everywhere else.
+ */
+export function metricWindow(metric: MetricKey, plan: PlanKey): 'lifetime' | 'month' {
+  if (metric === 'resumes') return RESUME_WINDOW[plan]
+  return isTrialPlan(plan) ? 'lifetime' : 'month'
 }
 
 /** The cheapest plan whose allowance for `metric` covers `required`. */
@@ -345,7 +485,11 @@ export function nextPlanWithMoreOf(
   currentLimit: number,
 ): PlanKey | null {
   if (isUnlimited(currentLimit)) return null
+  // Ladder tiers only: a one-time trial is an entry offer, never the remedy
+  // for a running-low meter — offering "Upgrade to Trial" to someone out of
+  // credits would sell them a smaller allowance with an expiry.
   for (const plan of PLAN_KEYS.slice(planRank(current) + 1)) {
+    if (isTrialPlan(plan)) continue
     const limit = LIMITS[plan][metric]
     if (isUnlimited(limit) || limit > currentLimit) return plan
   }
@@ -402,9 +546,11 @@ export function planAllowanceOf(metric: MetricKey, plan: PlanKey): string {
   const limit = LIMITS[plan][metric]
   const label = METRIC_LABELS[metric]
   if (isUnlimited(limit)) return `unlimited ${label}`
-  // Only résumés are metered over a window; a seat count is a standing figure,
-  // and "3 team members a month" would describe a subscription nobody sells.
-  const perMonth = metric === 'resumes' && RESUME_WINDOW[plan] === 'month'
+  // Metered credits carry their window; a seat count is a standing figure, and
+  // "3 team members a month" would describe a subscription nobody sells.
+  const metered =
+    metric === 'resumes' || metric === 'interview_packs' || metric === 'copilot_questions'
+  const perMonth = metered && metricWindow(metric, plan) === 'month'
   return `${limit} ${label}${perMonth ? ' a month' : ''}`
 }
 

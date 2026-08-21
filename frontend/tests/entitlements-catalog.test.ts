@@ -1,18 +1,22 @@
 import { describe, it, expect } from 'vitest'
 import snapshot from '../components/hirelens/lib/entitlements/catalog.snapshot.json'
 import {
+  CAMPAIGN_CANDIDATE_LIMITS,
+  CORE_PLAN_KEYS,
   FEATURES,
   FEATURE_KEYS,
   LIMITS,
   METRIC_KEYS,
-  METRIC_LABELS,
   PLAN_KEYS,
   PLAN_LABELS,
   RESUME_WINDOW,
+  TRIAL_PLAN_KEYS,
   UNLIMITED,
   featuresByTier,
   featuresForPlan,
   isAtLeast,
+  metricLabel,
+  metricWindow,
   minimumPlanForLimit,
   nextPlanWithMoreOf,
   normalizePlan,
@@ -47,6 +51,8 @@ type SnapshotPlan = {
   rank: number
   limits: Record<string, number>
   resume_window: string
+  metric_windows: Record<string, string>
+  campaign_candidates: number
   features: string[]
 }
 
@@ -77,11 +83,33 @@ describe('catalog parity: plans', () => {
     }
   })
 
-  it('mirrors the résumé window — Free is lifetime, paid plans are monthly', () => {
+  it('mirrors the résumé window — trials are lifetime, everything else monthly', () => {
     for (const plan of snapPlans) {
       expect(RESUME_WINDOW[plan.key as PlanKey]).toBe(plan.resume_window)
     }
-    expect(RESUME_WINDOW.free).toBe('lifetime')
+    expect(RESUME_WINDOW.free).toBe('month')
+    expect(RESUME_WINDOW.trial).toBe('lifetime')
+    expect(RESUME_WINDOW.trial_interview).toBe('lifetime')
+  })
+
+  it('mirrors the per-campaign candidate caps', () => {
+    for (const plan of snapPlans) {
+      expect(
+        CAMPAIGN_CANDIDATE_LIMITS[plan.key as PlanKey],
+        `campaign_candidates for ${plan.key}`,
+      ).toBe(plan.campaign_candidates)
+    }
+  })
+
+  it('mirrors the metered windows', () => {
+    for (const plan of snapPlans) {
+      for (const [metric, window] of Object.entries(plan.metric_windows)) {
+        expect(
+          metricWindow(metric as MetricKey, plan.key as PlanKey),
+          `${metric} window on ${plan.key}`,
+        ).toBe(window)
+      }
+    }
   })
 })
 
@@ -117,10 +145,19 @@ describe('catalog parity: features', () => {
 
 describe('catalog parity: metrics', () => {
   it('mirrors the metric keys and their labels', () => {
-    expect([...METRIC_KEYS].sort()).toEqual(Object.keys(snapMetrics).sort())
+    // The snapshot carries the org metrics plus the per-campaign candidate cap,
+    // which is deliberately not an org metric on this side.
+    expect([...METRIC_KEYS, 'campaign_candidates'].sort()).toEqual(
+      Object.keys(snapMetrics).sort(),
+    )
     for (const [key, label] of Object.entries(snapMetrics)) {
-      expect(METRIC_LABELS[key as MetricKey]).toBe(label)
+      expect(metricLabel(key)).toBe(label)
     }
+  })
+
+  it('splits the plan list into the ladder and the trials, like the server', () => {
+    expect([...CORE_PLAN_KEYS]).toEqual(snapshot.core_plans)
+    expect([...TRIAL_PLAN_KEYS].sort()).toEqual([...snapshot.trial_plans].sort())
   })
 })
 
@@ -150,20 +187,27 @@ describe('plan resolution', () => {
 
 describe('limit arithmetic', () => {
   it('finds the cheapest plan that covers a requirement', () => {
-    expect(minimumPlanForLimit('resumes', 3)).toBe('plus') // Free stops at 2
-    expect(minimumPlanForLimit('resumes', 26)).toBe('pro') // Plus stops at 25
+    expect(minimumPlanForLimit('resumes', 101)).toBe('plus') // Free stops at 100
+    expect(minimumPlanForLimit('resumes', 201)).toBe('pro') // Plus stops at 200
     expect(minimumPlanForLimit('members', 2)).toBe('plus')
     expect(minimumPlanForLimit('members', 26)).toBe('enterprise')
     expect(minimumPlanForLimit('campaigns', 3)).toBe('plus') // unlimited on Plus
   })
 
   it('offers the next tier that grants MORE, not the one covering today', () => {
-    // At 20 of 25 on Plus, the plan covering 21 is Plus — offering it would
+    // At 190 of 200 on Plus, the plan covering 191 is Plus — offering it would
     // sell a customer the plan they are already on. Pro is the real remedy.
-    expect(nextPlanWithMoreOf('resumes', 'plus', 25)).toBe('pro')
-    expect(nextPlanWithMoreOf('resumes', 'free', 2)).toBe('plus')
+    expect(nextPlanWithMoreOf('resumes', 'plus', 200)).toBe('pro')
+    expect(nextPlanWithMoreOf('resumes', 'free', 100)).toBe('plus')
     expect(nextPlanWithMoreOf('members', 'plus', 3)).toBe('pro')
     expect(nextPlanWithMoreOf('members', 'pro', 25)).toBe('enterprise')
+  })
+
+  it('never offers a trial as the remedy for a running-low meter', () => {
+    // The trials rank between Free and Plus but hold FEWER résumés than Free —
+    // `nextPlanWithMoreOf` must skip past them to the first tier with more.
+    expect(nextPlanWithMoreOf('resumes', 'free', 100)).toBe('plus')
+    expect(LIMITS.trial.resumes).toBeLessThan(LIMITS.free.resumes)
   })
 
   it('offers nothing above an unlimited allowance, or when no tier gives more', () => {
@@ -173,9 +217,9 @@ describe('limit arithmetic', () => {
   })
 
   it('respects a negotiated override rather than the catalog figure', () => {
-    // An org on Plus with a 200-résumé deal must not be offered a tier that
+    // An org on Plus with a 300-résumé deal must not be offered a tier that
     // would give it less than it already has.
-    expect(nextPlanWithMoreOf('resumes', 'plus', 200)).toBe('pro') // pro is unlimited
+    expect(nextPlanWithMoreOf('resumes', 'plus', 300)).toBe('pro') // pro is 700
     expect(nextPlanWithMoreOf('members', 'plus', 40)).toBe('enterprise') // pro caps at 25
   })
 
@@ -185,8 +229,8 @@ describe('limit arithmetic', () => {
   })
 
   it('treats -1 as unlimited everywhere it appears', () => {
-    expect(LIMITS.pro.resumes).toBe(UNLIMITED)
-    expect(minimumPlanForLimit('resumes', 10_000)).toBe('pro')
+    expect(LIMITS.pro.interview_packs).toBe(UNLIMITED)
+    expect(minimumPlanForLimit('resumes', 10_000)).toBe('enterprise')
   })
 })
 
@@ -196,7 +240,7 @@ describe('upgrade targets', () => {
     // first, which names Pro. Pro is a true next step but would not unlock
     // webhooks; upgrading on that advice buys the wrong plan.
     expect(upgradeTargetFor('pro', 'webhooks')).toBe('enterprise')
-    expect(upgradeCta(upgradeTargetFor('pro', 'webhooks'))).toBe('Upgrade to Enterprise')
+    expect(upgradeCta(upgradeTargetFor('pro', 'webhooks'))).toBe('Upgrade to Custom')
   })
 
   it('keeps the server target when the catalog agrees or knows less', () => {

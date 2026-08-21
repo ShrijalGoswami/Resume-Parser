@@ -38,6 +38,7 @@ vi.mock('next/navigation', () => ({
 }))
 
 import {
+  CORE_PLAN_KEYS,
   FEATURES,
   FEATURE_KEYS,
   LIMITS,
@@ -54,6 +55,7 @@ import {
   checkoutUnavailableReason,
   formatPrice,
   isCheckoutSupported,
+  isOneTime,
   isQuoted,
   priceOf,
   priceSuffix,
@@ -148,10 +150,11 @@ describe('price configuration', () => {
     for (const currency of availableCurrencies()) {
       for (const plan of PLAN_KEYS) {
         if (isQuoted(plan) || plan === 'free') continue
-        expect(
-          PRICING[currency.code][plan].monthly,
-          `${currency.market} has no real price for ${plan}`,
-        ).toBeGreaterThan(0)
+        const amount = PRICING[currency.code][plan].monthly
+        // The one-time trials are an INR/checkout offer; an unpriced market
+        // simply does not list them, which is not a placeholder.
+        if (amount === null && isOneTime(plan)) continue
+        expect(amount, `${currency.market} has no real price for ${plan}`).toBeGreaterThan(0)
       }
     }
   })
@@ -190,9 +193,9 @@ describe('price configuration', () => {
 })
 
 describe('comparison table is derived from the catalog', () => {
-  it('renders a column for every plan', () => {
+  it('renders a column for every ladder plan — trials are a strip, not columns', () => {
     render(<ComparisonTable featured="pro" />)
-    for (const plan of PLAN_KEYS) {
+    for (const plan of CORE_PLAN_KEYS) {
       expect(screen.getByRole('columnheader', { name: PLAN_LABELS[plan] })).toBeInTheDocument()
     }
   })
@@ -214,15 +217,15 @@ describe('comparison table is derived from the catalog', () => {
     expect(within(row).getByText('AI Copilot on Free: not included')).toBeInTheDocument()
     expect(within(row).getByText('AI Copilot on Plus: not included')).toBeInTheDocument()
     expect(within(row).getByText('AI Copilot on Pro: included')).toBeInTheDocument()
-    expect(within(row).getByText('AI Copilot on Enterprise: included')).toBeInTheDocument()
+    expect(within(row).getByText('AI Copilot on Custom: included')).toBeInTheDocument()
   })
 
   it('states limits the way the server enforces them', () => {
     render(<ComparisonTable featured="pro" />)
     const row = screen.getByRole('rowheader', { name: /résumés/ }).closest('tr')!
-    // Free's credits are lifetime — "2 / month" would promise a reset that
-    // never comes and the customer would discover it in week five.
-    expect(within(row).getByText(`${LIMITS.free.resumes} total`)).toBeInTheDocument()
+    // Every ladder plan renews monthly now (the lifetime window belongs to the
+    // one-time trials, which have no column here).
+    expect(within(row).getByText(`${LIMITS.free.resumes} / month`)).toBeInTheDocument()
     expect(within(row).getByText(`${LIMITS.plus.resumes} / month`)).toBeInTheDocument()
     expect(within(row).getAllByText('Unlimited').length).toBeGreaterThan(0)
   })
@@ -241,19 +244,21 @@ describe('plan cards', () => {
       </Providers>,
     )
 
-  it('shows all four plans with their prices', () => {
+  it('shows the four ladder plans with their prices', () => {
     renderCards()
-    for (const plan of PLAN_KEYS) {
+    for (const plan of CORE_PLAN_KEYS) {
       expect(screen.getByRole('heading', { name: PLAN_LABELS[plan] })).toBeInTheDocument()
     }
     expect(screen.getByText('₹999')).toBeInTheDocument()
     expect(screen.getByText('₹2,499')).toBeInTheDocument()
-    expect(screen.getByText('Custom')).toBeInTheDocument()
+    // "Custom" appears twice — as the plan's name and as its quoted price.
+    expect(screen.getAllByText('Custom').length).toBeGreaterThan(0)
   })
 
-  it('does not promise a monthly reset on the free trial credits', () => {
+  it('describes Free as a monthly allowance and keeps trials off the cards', () => {
     renderCards()
-    expect(screen.getByText(/2 résumés to try/)).toBeInTheDocument()
+    expect(screen.getByText(/100 résumés \/ month/)).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Interview Trial' })).not.toBeInTheDocument()
   })
 })
 

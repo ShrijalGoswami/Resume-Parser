@@ -131,6 +131,11 @@ export const PRICING: Record<CurrencyCode, Record<PlanKey, PlanPricing>> = {
   // India
   INR: {
     free: { monthly: 0, yearly: 0 },
+    // The trials are ONE-TIME purchases; the figure lives in the `monthly`
+    // slot because that is the slot checkout charges from, but `isOneTime`
+    // below strips the "/month" promise from every surface.
+    trial: { monthly: 99, yearly: null },
+    trial_interview: { monthly: 149, yearly: null },
     plus: { monthly: 999, yearly: null },
     pro: { monthly: 2499, yearly: null },
     enterprise: { monthly: null, yearly: null },
@@ -138,10 +143,26 @@ export const PRICING: Record<CurrencyCode, Record<PlanKey, PlanPricing>> = {
   // United States
   USD: {
     free: { monthly: 0, yearly: 0 },
+    // Not priced for the US market — the trials are an INR/checkout offer, and
+    // USD has no checkout. `null` keeps them off every USD surface.
+    trial: { monthly: null, yearly: null },
+    trial_interview: { monthly: null, yearly: null },
     plus: { monthly: 19, yearly: null },
     pro: { monthly: 49, yearly: null },
     enterprise: { monthly: null, yearly: null },
   },
+}
+
+/**
+ * Plans charged ONCE, not on a cycle. Sold through the same checkout (the
+ * backend expresses them as single-cycle gateway subscriptions), but every
+ * price surface must say "one-time" rather than "/month" — a cadence that will
+ * never recur is not a cadence.
+ */
+export const ONE_TIME_PLANS: readonly PlanKey[] = ['trial', 'trial_interview']
+
+export function isOneTime(plan: PlanKey): boolean {
+  return ONE_TIME_PLANS.includes(plan)
 }
 
 /**
@@ -201,7 +222,9 @@ export function availableBillingPeriods(): BillingPeriod[] {
  * product, where a sales voice would be wrong.
  */
 export const PLAN_POSITIONING: Record<PlanKey, string> = {
-  free: 'Try the full analysis on a couple of résumés before you commit anything.',
+  free: 'Analyse up to a hundred résumés a month before you commit anything.',
+  trial: 'Ten résumés and one role, analysed in full, for a one-time ₹99.',
+  trial_interview: 'The trial plus one full interview pack and one Copilot question, one-time.',
   plus: 'For the recruiter running their own roles end to end.',
   pro: 'For a hiring team that needs the intelligence layer and shared memory.',
   enterprise: 'For organizations with their own AI, their own identity, and their own rules.',
@@ -322,5 +345,6 @@ export function priceSuffix(
 ): string {
   const amount = priceOf(plan, currency, period)
   if (amount === null || amount === 0) return ''
+  if (isOneTime(plan)) return ' one-time'
   return period === 'yearly' ? '/year' : '/month'
 }

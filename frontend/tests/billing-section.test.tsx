@@ -170,7 +170,7 @@ describe('no forced upgrade ladder', () => {
     state.plan = 'free'
     state.subscription = { plan: 'free' }
     renderBilling()
-    expect(screen.queryByRole('button', { name: /Upgrade to Enterprise/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Upgrade to Custom/ })).not.toBeInTheDocument()
   })
 })
 

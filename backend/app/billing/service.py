@@ -62,12 +62,20 @@ logger = logging.getLogger("app.billing.service")
 #: offline (`BillingMode.manual`), and Free is not a purchase. Deriving this
 #: from the catalog would be wrong: the catalog says what a plan *includes*, not
 #: whether it is sold self-serve.
-SELLABLE_PLANS = ("plus", "pro")
+SELLABLE_PLANS = ("trial", "trial_interview", "plus", "pro")
+
+#: One-time paid trials. Sold through the SAME checkout as the subscriptions —
+#: as single-cycle gateway subscriptions (`cycles_for()` in the Razorpay
+#: bindings) — but they are never a plan-change target (a trial is bought once,
+#: and `subscriptions_scheduled_plan_chk` pins `scheduled_plan` to the ladder
+#: slugs), and an organization holding one upgrades through a NEW checkout
+#: rather than a gateway PATCH (its single cycle has already completed).
+TRIAL_PLANS = ("trial", "trial_interview")
 
 
 #: Tier order, for deciding what is an upgrade. Mirrors the catalog's ranking;
 #: this module deliberately holds no prices, only the sequence.
-PLAN_ORDER = ("free", "plus", "pro", "enterprise")
+PLAN_ORDER = ("free", "trial", "trial_interview", "plus", "pro", "enterprise")
 
 
 def plan_rank(plan: str) -> int:
@@ -197,7 +205,12 @@ class BillingService:
         # a route is a worse experience than a working upgrade and a far better
         # one than a 500 — and every plan change goes through support today
         # anyway, so this describes what actually happens. See BILL-13.
-        if current and current.grants_paid_access and current.is_gateway_billed:
+        if (
+            current
+            and current.grants_paid_access
+            and current.is_gateway_billed
+            and current.plan not in TRIAL_PLANS
+        ):
             # A LIVE SUBSCRIPTION CHANGES PLAN; IT DOES NOT CHECK OUT AGAIN.
             #
             # `active -> pending_activation` is deliberately not a legal edge: an
@@ -242,6 +255,11 @@ class BillingService:
             current
             and current.state is not BillingState.pending_activation
             and not machine.can_transition(current.state, BillingState.pending_activation)
+            # A completed trial is `active` — the one ACTIVE shape that IS
+            # allowed back into checkout. Its single gateway cycle has already
+            # run, so there is no live mandate to protect; the upgrade replaces
+            # the finished subscription with a new one. See `_to_pending`.
+            and current.plan not in TRIAL_PLANS
         ):
             raise CheckoutRefused(
                 f"this organization's plan is managed directly by us "
@@ -299,14 +317,27 @@ class BillingService:
             "provider_customer_id": customer_id,
             "provider_subscription_id": subscription_id,
         }
-        if base.state is BillingState.pending_activation:
-            # Already mid-checkout — the customer abandoned the modal and came
-            # back. `pending_activation -> pending_activation` is not in the
-            # table (nothing has changed about their access), so update the ids
-            # in place rather than forcing an illegal edge.
+        if base.state is BillingState.pending_activation or (
+            base.plan in TRIAL_PLANS and base.state is BillingState.active
+        ):
+            # Two in-place updates the transition table deliberately refuses:
+            #   * Already mid-checkout — the customer abandoned the modal and
+            #     came back. `pending_activation -> pending_activation` is not
+            #     in the table (nothing has changed about their access).
+            #   * A trial holder upgrading. The trial's single gateway cycle is
+            #     complete, so `active -> pending_activation` here does not
+            #     abandon a live mandate — it replaces a finished subscription.
+            #     Like every pending checkout, the row moves to the new plan in
+            #     `pending_activation` (which does not grant paid access); the
+            #     webhook is what activates it.
             from dataclasses import replace
 
-            return replace(base, plan_version=base.plan_version + 1, **changes)
+            return replace(
+                base,
+                state=BillingState.pending_activation,
+                plan_version=base.plan_version + 1,
+                **changes,
+            )
         return machine.transition(
             base,
             BillingState.pending_activation,
@@ -341,10 +372,24 @@ class BillingService:
                 f"{target!r} is not a plan you can move to "
                 f"(available: {', '.join(SELLABLE_PLANS)})"
             )
+        if target in TRIAL_PLANS:
+            # A trial is bought once through checkout — it is never a scheduled
+            # move, and `subscriptions_scheduled_plan_chk` would refuse the
+            # write anyway. Refusing here keeps the DB constraint unreachable.
+            raise CheckoutRefused(
+                "a trial is a one-time purchase — it can't be scheduled as a plan change"
+            )
 
         current = self.repo.get_subscription(organization_id)
         if current is None:
             raise CheckoutRefused("this organization has no subscription to change")
+        if current.plan in TRIAL_PLANS:
+            # The trial's single cycle has already completed at the gateway;
+            # there is nothing live to PATCH. Upgrading from a trial is a new
+            # checkout, which `start_checkout` explicitly allows.
+            raise CheckoutRefused(
+                "trial plans upgrade through checkout — start a new checkout instead"
+            )
         if current.is_founding:
             raise CheckoutRefused(
                 "this organization is on the founding plan and is not billed"

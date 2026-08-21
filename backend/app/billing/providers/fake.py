@@ -48,6 +48,8 @@ from app.billing.domain.provider import (
 #: that confusion. Real amounts live in `lib/pricing.ts` and, from Step 3, in
 #: the Razorpay adapter's plan bindings.
 FAKE_PLAN_AMOUNTS: dict[str, Money] = {
+    "trial": Money(10_00, "INR"),
+    "trial_interview": Money(20_00, "INR"),
     "plus": Money(100_00, "INR"),
     "pro": Money(200_00, "INR"),
 }
