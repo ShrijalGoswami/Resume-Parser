@@ -349,9 +349,16 @@ class TestPlanBindings:
         assert plans.PUBLISHED_PRICE["plus"].minor_units == 99_900
         assert plans.PUBLISHED_PRICE["pro"].minor_units == 249_900
 
-    def test_verify_bindings_passes_when_the_gateway_agrees(self, monkeypatch):
+    @staticmethod
+    def _only_pro(monkeypatch):
+        """Leave exactly one binding standing — the shell may carry real
+        test-mode ids for every plan via .env.local."""
+        for env_var in plans.PLAN_ENV_VARS.values():
+            monkeypatch.delenv(env_var, raising=False)
         monkeypatch.setenv("RAZORPAY_PLAN_PRO_INR", "plan_pro_1")
-        monkeypatch.delenv("RAZORPAY_PLAN_PLUS_INR", raising=False)
+
+    def test_verify_bindings_passes_when_the_gateway_agrees(self, monkeypatch):
+        self._only_pro(monkeypatch)
         problems = plans.verify_bindings(
             lambda pid: {"item": {"amount": 249_900, "currency": "INR"}}
         )
@@ -360,8 +367,7 @@ class TestPlanBindings:
     def test_verify_bindings_catches_a_price_mismatch(self, monkeypatch):
         # The worst defect this integration can have: the page says one number
         # and the card is charged another. It must fail a deploy, not a customer.
-        monkeypatch.setenv("RAZORPAY_PLAN_PRO_INR", "plan_pro_1")
-        monkeypatch.delenv("RAZORPAY_PLAN_PLUS_INR", raising=False)
+        self._only_pro(monkeypatch)
         problems = plans.verify_bindings(
             lambda pid: {"item": {"amount": 199_900, "currency": "INR"}}
         )

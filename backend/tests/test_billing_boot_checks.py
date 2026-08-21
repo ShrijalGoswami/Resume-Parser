@@ -22,9 +22,17 @@ from app.billing.providers.razorpay import plans
 from app.core.startup import StartupError, _validate_plan_bindings
 
 
+def _clear_bindings(monkeypatch):
+    """Remove EVERY plan binding the shell may carry (.env.local exports real
+    test-mode ids into os.environ) so each test starts from a known set."""
+    for env_var in plans.PLAN_ENV_VARS.values():
+        monkeypatch.delenv(env_var, raising=False)
+
+
 @pytest.fixture
 def bound(monkeypatch):
-    """Bind Plus and Pro to plan ids for the duration of a test."""
+    """Bind Plus and Pro — and ONLY Plus and Pro — for the duration of a test."""
+    _clear_bindings(monkeypatch)
     monkeypatch.setenv("RAZORPAY_PLAN_PLUS_INR", "plan_plus")
     monkeypatch.setenv("RAZORPAY_PLAN_PRO_INR", "plan_pro")
 
@@ -49,8 +57,7 @@ class TestPlanBindingCheck:
         """Checkout is simply unavailable. A billing-less deployment is a
         configuration this app supports, and `start_checkout` says so honestly
         at request time."""
-        monkeypatch.delenv("RAZORPAY_PLAN_PLUS_INR", raising=False)
-        monkeypatch.delenv("RAZORPAY_PLAN_PRO_INR", raising=False)
+        _clear_bindings(monkeypatch)
         _validate_plan_bindings()  # must not raise
 
     def test_matching_prices_pass(self, bound, monkeypatch):
