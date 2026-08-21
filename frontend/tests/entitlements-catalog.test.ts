@@ -83,13 +83,14 @@ describe('catalog parity: plans', () => {
     }
   })
 
-  it('mirrors the résumé window — trials are lifetime, everything else monthly', () => {
+  it('mirrors the résumé window — Free and the trials are lifetime, paid is monthly', () => {
     for (const plan of snapPlans) {
       expect(RESUME_WINDOW[plan.key as PlanKey]).toBe(plan.resume_window)
     }
-    expect(RESUME_WINDOW.free).toBe('month')
+    expect(RESUME_WINDOW.free).toBe('lifetime')
     expect(RESUME_WINDOW.trial).toBe('lifetime')
     expect(RESUME_WINDOW.trial_interview).toBe('lifetime')
+    expect(RESUME_WINDOW.plus).toBe('month')
   })
 
   it('mirrors the per-campaign candidate caps', () => {
@@ -187,7 +188,9 @@ describe('plan resolution', () => {
 
 describe('limit arithmetic', () => {
   it('finds the cheapest plan that covers a requirement', () => {
-    expect(minimumPlanForLimit('resumes', 101)).toBe('plus') // Free stops at 100
+    // Plus, NOT the ₹99 trial whose 10 résumés would cover 3 — quota denials
+    // sell the ladder, never a one-time trial.
+    expect(minimumPlanForLimit('resumes', 3)).toBe('plus') // Free stops at 2
     expect(minimumPlanForLimit('resumes', 201)).toBe('pro') // Plus stops at 200
     expect(minimumPlanForLimit('members', 2)).toBe('plus')
     expect(minimumPlanForLimit('members', 26)).toBe('enterprise')
@@ -198,16 +201,18 @@ describe('limit arithmetic', () => {
     // At 190 of 200 on Plus, the plan covering 191 is Plus — offering it would
     // sell a customer the plan they are already on. Pro is the real remedy.
     expect(nextPlanWithMoreOf('resumes', 'plus', 200)).toBe('pro')
-    expect(nextPlanWithMoreOf('resumes', 'free', 100)).toBe('plus')
+    expect(nextPlanWithMoreOf('resumes', 'free', 2)).toBe('plus')
     expect(nextPlanWithMoreOf('members', 'plus', 3)).toBe('pro')
     expect(nextPlanWithMoreOf('members', 'pro', 25)).toBe('enterprise')
   })
 
   it('never offers a trial as the remedy for a running-low meter', () => {
-    // The trials rank between Free and Plus but hold FEWER résumés than Free —
-    // `nextPlanWithMoreOf` must skip past them to the first tier with more.
-    expect(nextPlanWithMoreOf('resumes', 'free', 100)).toBe('plus')
-    expect(LIMITS.trial.resumes).toBeLessThan(LIMITS.free.resumes)
+    // The trials' 10 résumés WOULD cover a Free org that hit its 2 — which is
+    // exactly why the skip matters: a quota upsell sells the ladder, never a
+    // one-time trial with an expiry on its credits.
+    expect(LIMITS.trial.resumes).toBeGreaterThan(LIMITS.free.resumes)
+    expect(nextPlanWithMoreOf('resumes', 'free', 2)).toBe('plus')
+    expect(minimumPlanForLimit('resumes', 3)).toBe('plus')
   })
 
   it('offers nothing above an unlimited allowance, or when no tier gives more', () => {

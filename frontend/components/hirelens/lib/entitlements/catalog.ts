@@ -360,7 +360,7 @@ export function metricLabel(metric: string): string {
  */
 export const LIMITS: Record<PlanKey, Record<MetricKey, number>> = {
   free: {
-    resumes: 100,
+    resumes: 2,
     members: 1,
     campaigns: 2,
     organizations: 1,
@@ -427,13 +427,13 @@ export const CAMPAIGN_CANDIDATE_LIMITS: Record<PlanKey, number> = {
 }
 
 /**
- * Résumé counting window per plan. The paid trials' credits are for the
- * LIFETIME of the organization — bought once, consumed once — so a meter must
- * not promise a trial buyer that anything resets. Every other plan, Free
- * included, renews on the calendar month.
+ * Résumé counting window per plan. Free's 2 credits and the paid trials' 10
+ * are for the LIFETIME of the organization — a trial proves the product, it is
+ * not an allowance — so a meter must not promise that anything resets. Paid
+ * plans renew on the calendar month.
  */
 export const RESUME_WINDOW: Record<PlanKey, 'lifetime' | 'month'> = {
-  free: 'month',
+  free: 'lifetime',
   trial: 'lifetime',
   trial_interview: 'lifetime',
   plus: 'month',
@@ -455,9 +455,14 @@ export function metricWindow(metric: MetricKey, plan: PlanKey): 'lifetime' | 'mo
   return isTrialPlan(plan) ? 'lifetime' : 'month'
 }
 
-/** The cheapest plan whose allowance for `metric` covers `required`. */
+/**
+ * The cheapest LADDER plan whose allowance for `metric` covers `required`.
+ * Trials are skipped, mirroring the backend: a one-time trial is an entry
+ * offer, never the remedy a quota denial should sell.
+ */
 export function minimumPlanForLimit(metric: MetricKey, required: number): PlanKey | null {
   for (const plan of PLAN_KEYS) {
+    if (isTrialPlan(plan)) continue
     const limit = LIMITS[plan][metric]
     if (isUnlimited(limit) || limit >= required) return plan
   }

@@ -223,9 +223,9 @@ describe('comparison table is derived from the catalog', () => {
   it('states limits the way the server enforces them', () => {
     render(<ComparisonTable featured="pro" />)
     const row = screen.getByRole('rowheader', { name: /résumés/ }).closest('tr')!
-    // Every ladder plan renews monthly now (the lifetime window belongs to the
-    // one-time trials, which have no column here).
-    expect(within(row).getByText(`${LIMITS.free.resumes} / month`)).toBeInTheDocument()
+    // Free's credits are lifetime — "2 / month" would promise a reset that
+    // never comes and the customer would discover it in week five.
+    expect(within(row).getByText(`${LIMITS.free.resumes} total`)).toBeInTheDocument()
     expect(within(row).getByText(`${LIMITS.plus.resumes} / month`)).toBeInTheDocument()
     expect(within(row).getAllByText('Unlimited').length).toBeGreaterThan(0)
   })
@@ -255,9 +255,9 @@ describe('plan cards', () => {
     expect(screen.getAllByText('Custom').length).toBeGreaterThan(0)
   })
 
-  it('describes Free as a monthly allowance and keeps trials off the cards', () => {
+  it('does not promise a monthly reset on Free, and keeps trials off the cards', () => {
     renderCards()
-    expect(screen.getByText(/100 résumés \/ month/)).toBeInTheDocument()
+    expect(screen.getByText(/2 résumés to try/)).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Interview Trial' })).not.toBeInTheDocument()
   })
 })

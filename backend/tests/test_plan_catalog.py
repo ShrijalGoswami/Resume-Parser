@@ -81,7 +81,7 @@ def test_limits_are_monotonic_along_the_ladder():
 def test_plan_matrix_matches_the_approved_product_decisions():
     """The numbers the plans were sold on. If a tier's allowance changes, this
     test should fail and be updated deliberately — never silently."""
-    assert LIMITS[Plan.free][METRIC_RESUMES] == 100
+    assert LIMITS[Plan.free][METRIC_RESUMES] == 2
     assert LIMITS[Plan.free][METRIC_MEMBERS] == 1
     assert LIMITS[Plan.free][METRIC_CAMPAIGNS] == 2
     assert LIMITS[Plan.trial][METRIC_RESUMES] == 10
@@ -107,9 +107,9 @@ def test_plan_matrix_matches_the_approved_product_decisions():
     assert campaign_candidate_limit(Plan.free) == UNLIMITED
     assert CAMPAIGN_CANDIDATE_LIMITS[Plan.enterprise] == UNLIMITED
 
-    # The trials' credits are for the lifetime of the account; every other
-    # plan — Free included — renews on the calendar month.
-    assert resume_window(Plan.free) == "month"
+    # Free's 2 credits and the trials' 10 are for the lifetime of the account;
+    # paid plans renew on the calendar month.
+    assert resume_window(Plan.free) == "lifetime"
     assert resume_window(Plan.trial) == "lifetime"
     assert resume_window(Plan.trial_interview) == "lifetime"
     assert resume_window(Plan.plus) == "month"
@@ -177,8 +177,10 @@ def test_founding_does_not_grant_capabilities_that_never_existed():
 
 
 def test_minimum_plan_for_limit():
-    assert minimum_plan_for_limit(METRIC_RESUMES, 100) is Plan.free
-    assert minimum_plan_for_limit(METRIC_RESUMES, 101) is Plan.plus
+    assert minimum_plan_for_limit(METRIC_RESUMES, 2) is Plan.free
+    # NOT the ₹99 trial, even though its 10 résumés would cover 3 — quota
+    # denials sell the ladder, never a one-time trial.
+    assert minimum_plan_for_limit(METRIC_RESUMES, 3) is Plan.plus
     assert minimum_plan_for_limit(METRIC_RESUMES, 201) is Plan.pro
     assert minimum_plan_for_limit(METRIC_RESUMES, 701) is Plan.enterprise
     assert minimum_plan_for_limit(METRIC_MEMBERS, 1) is Plan.free

@@ -104,13 +104,16 @@ def test_unknown_feature_denies_without_offering_an_upgrade():
 
 # ── Quotas ──────────────────────────────────────────────────────────────────
 def test_free_resume_quota_boundary():
-    """Free is 100 résumés per calendar month: the 100th succeeds, the 101st
-    is refused."""
-    s99 = svc("free", usage=UsageSnapshot(resumes_period=99))
-    s100 = svc("free", usage=UsageSnapshot(resumes_period=100))
-    assert s99.can_upload_resume(1).allowed          # the 100th résumé
-    assert not s99.can_upload_resume(2).allowed
-    assert not s100.can_upload_resume(1).allowed     # the 101st — the wall
+    """Free is 2 résumés for the LIFETIME of the organization: the 2nd
+    succeeds, the 3rd is refused — and a month rolling over restores nothing."""
+    s1 = svc("free", usage=UsageSnapshot(resumes_lifetime=1))
+    s2 = svc("free", usage=UsageSnapshot(resumes_lifetime=2))
+    assert s1.can_upload_resume(1).allowed           # the 2nd résumé
+    assert not s1.can_upload_resume(2).allowed
+    assert not s2.can_upload_resume(1).allowed       # the 3rd — the wall
+    # Lifetime window: a fresh month with the same lifetime figure stays shut.
+    fresh_month = svc("free", usage=UsageSnapshot(resumes_lifetime=2, resumes_period=0))
+    assert not fresh_month.can_upload_resume(1).allowed
 
 
 def test_plus_resume_quota_boundary():
@@ -144,26 +147,27 @@ def test_trial_resume_quota_is_ten_lifetime():
 
 
 def test_exhausted_free_quota_decision_contents():
-    d = svc("free", usage=UsageSnapshot(resumes_period=100)).can_upload_resume(1)
+    d = svc("free", usage=UsageSnapshot(resumes_lifetime=2)).can_upload_resume(1)
     assert not d.allowed
     assert d.reason == REASON_LIMIT
-    assert d.limit == 100 and d.used == 100 and d.remaining == 0
+    assert d.limit == 2 and d.used == 2 and d.remaining == 0
+    # Plus, never the ₹99 trial — quota denials sell the ladder.
     assert d.required_plan == "plus"
     assert d.metric == METRIC_RESUMES
 
 
 def test_batch_denial_describes_the_batch():
-    """"You've used 0 of 100" is confusing when 101 were requested and refused."""
-    d = svc("free", usage=UsageSnapshot(resumes_period=0)).can_upload_resume(101)
+    """"You've used 0 of 2" is confusing when 3 were requested and refused."""
+    d = svc("free", usage=UsageSnapshot(resumes_lifetime=0)).can_upload_resume(3)
     assert not d.allowed
-    assert "101" in d.message
-    assert d.extra.get("requested") == 101
+    assert "3" in d.message
+    assert d.extra.get("requested") == 3
 
 
-def test_trials_count_lifetime_and_paid_counts_the_month():
+def test_free_and_trials_count_lifetime_and_paid_counts_the_month():
     usage = UsageSnapshot(resumes_lifetime=40, resumes_period=3)
+    assert svc("free", usage=usage).can_upload_resume(1).used == 40
     assert svc("trial", usage=usage).can_upload_resume(1).used == 40
-    assert svc("free", usage=usage).can_upload_resume(1).used == 3
     assert svc("plus", usage=usage).can_upload_resume(1).used == 3
     # …and the monthly window is what decides for a paid plan.
     assert svc("plus", usage=usage).can_upload_resume(1).allowed
@@ -307,11 +311,11 @@ def test_entitlements_map_lists_every_feature_including_locked_ones():
 
 
 def test_limits_map_reports_usage_and_window():
-    limits = svc("free", usage=UsageSnapshot(resumes_period=1, period="2026-07")).limits()
+    limits = svc("free", usage=UsageSnapshot(resumes_lifetime=1, period="2026-07")).limits()
     assert limits[METRIC_RESUMES]["used"] == 1
-    assert limits[METRIC_RESUMES]["limit"] == 100
-    assert limits[METRIC_RESUMES]["remaining"] == 99
-    assert limits[METRIC_RESUMES]["window"] == "month"
+    assert limits[METRIC_RESUMES]["limit"] == 2
+    assert limits[METRIC_RESUMES]["remaining"] == 1
+    assert limits[METRIC_RESUMES]["window"] == "lifetime"
     assert limits[METRIC_MEMBERS]["limit"] == 1
     # Zero-allowance credits are NOT serialized — a plan without the capability
     # gets a feature lock, not a "0 of 0" meter.

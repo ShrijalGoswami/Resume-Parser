@@ -100,8 +100,8 @@ describe('value copy is derived from the catalog', () => {
   it('never promises a trial’s credits will renew — they are lifetime', () => {
     expect(planAllowanceOf('resumes', 'trial')).toBe('10 résumés')
     expect(planAllowanceOf('resumes', 'trial_interview')).toBe('10 résumés')
-    // Free renews monthly now, and says so.
-    expect(planAllowanceOf('resumes', 'free')).toBe('100 résumés a month')
+    // Free's credits are lifetime too, and must not read as an allowance.
+    expect(planAllowanceOf('resumes', 'free')).toBe('2 résumés')
   })
 
   it('offers nothing when there is no higher tier', () => {

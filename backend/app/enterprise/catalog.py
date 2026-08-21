@@ -204,14 +204,14 @@ METERED_METRICS: tuple[str, ...] = (
     METRIC_RESUMES, METRIC_INTERVIEW_PACKS, METRIC_COPILOT_QUESTIONS,
 )
 
-#: Counting window for the résumé credit, per plan. The paid trials' credits are
-#: for the LIFETIME of the organization (bought once, consumed once); every
-#: other plan — Free included — renews on the UTC calendar month.
+#: Counting window for the résumé credit, per plan. FREE's 2 credits and the
+#: paid trials' 10 are for the LIFETIME of the organization (a trial proves the
+#: product, it is not an allowance); paid plans renew on the UTC calendar month.
 WINDOW_LIFETIME = "lifetime"
 WINDOW_MONTH = "month"
 
 RESUME_WINDOW: dict[Plan, str] = {
-    Plan.free: WINDOW_MONTH,
+    Plan.free: WINDOW_LIFETIME,
     Plan.trial: WINDOW_LIFETIME,
     Plan.trial_interview: WINDOW_LIFETIME,
     Plan.plus: WINDOW_MONTH,
@@ -231,7 +231,7 @@ RESUME_WINDOW: dict[Plan, str] = {
 #: even a future grant cannot create unmetered volume.
 LIMITS: dict[Plan, dict[str, int]] = {
     Plan.free: {
-        METRIC_RESUMES: 100,
+        METRIC_RESUMES: 2,
         METRIC_MEMBERS: 1,
         METRIC_CAMPAIGNS: 2,
         METRIC_ORGANIZATIONS: 1,
@@ -450,12 +450,17 @@ def is_unlimited(value: int) -> bool:
 
 
 def minimum_plan_for_limit(metric: str, required: int) -> Optional[Plan]:
-    """The cheapest plan whose `metric` allowance covers `required`.
+    """The cheapest LADDER plan whose `metric` allowance covers `required`.
 
     This is what turns "you need more seats" into "Upgrade to Pro" without any
-    call site knowing the tier names.
+    call site knowing the tier names. Trials are skipped: a one-time trial is
+    an entry offer, never the remedy a quota denial should sell (the trials'
+    10 résumés would otherwise be "the cheapest plan covering 3" for a Free
+    organization at its lifetime wall).
     """
     for plan in PLAN_ORDER:
+        if plan in TRIAL_PLANS:
+            continue
         limit = LIMITS.get(plan, {}).get(metric, UNLIMITED)
         if is_unlimited(limit) or limit >= required:
             return plan
